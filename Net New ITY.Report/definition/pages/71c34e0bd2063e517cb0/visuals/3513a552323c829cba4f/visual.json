@@ -1,0 +1,243 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.9.0/schema.json",
+  "name": "3513a552323c829cba4f",
+  "position": {
+    "x": 5.8128973660308816,
+    "y": 490.60853769300638,
+    "z": 3000,
+    "height": 218.56494096276114,
+    "width": 340,
+    "tabOrder": 3000
+  },
+  "visual": {
+    "visualType": "zebraBiCards2C860CFAA9944091B75F0DBD117F20FA",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "0. Measuretabelle"
+                    }
+                  },
+                  "Property": "CRM_Won_ITY"
+                }
+              },
+              "queryRef": "Measuretabelle.CRM_Won_ITY",
+              "nativeQueryRef": "Confirmed Wins FY",
+              "displayName": "Confirmed Wins FY"
+            }
+          ]
+        },
+        "Plan": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "0. Measuretabelle"
+                    }
+                  },
+                  "Property": "New Business ITY BUD"
+                }
+              },
+              "queryRef": "Measuretabelle.New Business ITY BUD",
+              "nativeQueryRef": "New Business ITY BUD"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "0. Measuretabelle"
+                  }
+                },
+                "Property": "CRM_Won_ITY"
+              }
+            },
+            "direction": "Descending"
+          }
+        ],
+        "isDefaultSort": true
+      }
+    },
+    "objects": {
+      "licenseSettings": [
+        {
+          "properties": {
+            "lastLicenseCheck": {
+              "expr": {
+                "Literal": {
+                  "Value": "'1778143866329'"
+                }
+              }
+            },
+            "licenseKey": {
+              "expr": {
+                "Literal": {
+                  "Value": "'GOdA2ZmAXMvQi9eyS+sBj96oQXC81N2lB4y2BvlibCqe7FYRH+c7b1wuMyD74HlRATrHLyoxJMwiyl8jv51jCnsiY29tcGFueSI6IkNvbXBhc3MgR3JvdXAgRGV1dHNjaGxhbmQgR21iSCIsImV4cGlyeURhdGUiOiIyMDI2LTExLTI1Iiwib3JkZXJEYXRlIjoiMjAyNS0xMS0yMyIsIm5PZlVzZXJzIjoiNTAwIiwibGljZW5zZVR5cGUiOiJQYWlkIiwibGljZW5zZVRpZXIiOm51bGwsInZpc3VhbFR5cGUiOiJBbGwifQ=='"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "license": [
+        {
+          "properties": {
+            "licenseKey": {
+              "expr": {
+                "Literal": {
+                  "Value": "'GOdA2ZmAXMvQi9eyS+sBj96oQXC81N2lB4y2BvlibCqe7FYRH+c7b1wuMyD74HlRATrHLyoxJMwiyl8jv51jCnsiY29tcGFueSI6IkNvbXBhc3MgR3JvdXAgRGV1dHNjaGxhbmQgR21iSCIsImV4cGlyeURhdGUiOiIyMDI2LTExLTI1Iiwib3JkZXJEYXRlIjoiMjAyNS0xMS0yMyIsIm5PZlVzZXJzIjoiNTAwIiwibGljZW5zZVR5cGUiOiJQYWlkIiwibGljZW5zZVRpZXIiOm51bGwsInZpc3VhbFR5cGUiOiJBbGwifQ=='"
+                }
+              }
+            },
+            "licensedTo": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Compass Group Deutschland GmbH'"
+                }
+              }
+            },
+            "validUntil": {
+              "expr": {
+                "Literal": {
+                  "Value": "'2026-11-25T00:00:00.000Z'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "customData": [
+        {
+          "properties": {
+            "version": {
+              "expr": {
+                "Literal": {
+                  "Value": "'7.4.2.115'"
+                }
+              }
+            },
+            "migrations": {
+              "expr": {
+                "Literal": {
+                  "Value": "'{\"dataMigrationVersion\":\"7.4.2.115\"}'"
+                }
+              }
+            },
+            "gridData": {
+              "expr": {
+                "Literal": {
+                  "Value": "'{\"instance\":0,\"cards\":{\"card-688ac748-3a55-5e40-bfb7-d678a9669d49\":{\"id\":\"card-688ac748-3a55-5e40-bfb7-d678a9669d49\",\"cardTitle\":\"Secured Losses FY\",\"cardValue\":-6447487.4176,\"cardType\":1,\"cardMeasureMode\":4,\"total\":-6447487.4176,\"groupFormat\":\"\",\"valueFormat\":\"\",\"sortScenarioAbsoluteValue\":0,\"sortScenarioRelativeValue\":0,\"role\":\"Values\",\"invertedCategories\":[],\"highlightedCategories\":[],\"highlightedCategoriesColors\":[],\"decimals\":1,\"relativeDecimals\":1,\"basisPointDecimals\":0,\"percentPointDecimals\":0,\"currency\":\"None\",\"chartMax\":0,\"chartMin\":0,\"coordinates\":null,\"hasComments\":false,\"isNegative\":false,\"isMixed\":false}},\"groups\":{}}'"
+                }
+              }
+            },
+            "dataVersion": {
+              "expr": {
+                "Literal": {
+                  "Value": "32L"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "legend": [
+        {
+          "properties": {
+            "actual": {
+              "expr": {
+                "Literal": {
+                  "Value": "'New Business'"
+                }
+              }
+            },
+            "plan": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Budget'"
+                }
+              }
+            },
+            "actualPlan": {
+              "expr": {
+                "Literal": {
+                  "Value": "'ΔBudget'"
+                }
+              }
+            },
+            "actualPlanPercent": {
+              "expr": {
+                "Literal": {
+                  "Value": "'ΔBudget%'"
+                }
+              }
+            },
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "design": [
+        {
+          "properties": {
+            "varianceDisplayType": {
+              "expr": {
+                "Literal": {
+                  "Value": "1D"
+                }
+              }
+            },
+            "style": {
+              "expr": {
+                "Literal": {
+                  "Value": "3D"
+                }
+              }
+            },
+            "positiveColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#CA9100'"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "card": [
+        {
+          "properties": {
+            "cardIcon": {
+              "expr": {
+                "Literal": {
+                  "Value": "'circle-arrow'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

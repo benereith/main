@@ -1,0 +1,267 @@
+{
+  "version": "1.1.0",
+  "diagrams": [
+    {
+      "ordinal": 0,
+      "scrollPosition": {
+        "x": 564.57144601004393,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 626.87781439810533,
+            "y": 128.08546327953957
+          },
+          "nodeIndex": "DIM_DATE",
+          "nodeLineageTag": "c9978af4-b0e0-449a-87be-5ce8065fa95f",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 19
+        },
+        {
+          "location": {
+            "x": 50,
+            "y": -50
+          },
+          "nodeIndex": "Revenues",
+          "nodeLineageTag": "818d442a-3b2e-4916-8ad0-5d6d953286e5",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 18
+        },
+        {
+          "location": {
+            "x": 50.327116021008806,
+            "y": 361.82907999389761
+          },
+          "nodeIndex": "SAP_Stammdaten",
+          "nodeLineageTag": "71d979ea-d6db-498a-b656-8117a88ee56d",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 17
+        },
+        {
+          "location": {
+            "x": 1145.0885236008812,
+            "y": 341.69256170970448
+          },
+          "nodeIndex": "Granularität",
+          "nodeLineageTag": "ea5a3882-2528-406b-b684-1069da49173c",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 15
+        },
+        {
+          "location": {
+            "x": 1292.3116574777414,
+            "y": 6.7374114691271529
+          },
+          "nodeIndex": "Abgeschlossene Periode",
+          "nodeLineageTag": "fef90f2d-bf96-4bad-a78f-c4b2467bdeea",
+          "size": {
+            "height": 224,
+            "width": 234
+          },
+          "zIndex": 20
+        },
+        {
+          "location": {
+            "x": 339.35687880511261,
+            "y": 485.38512341940896
+          },
+          "nodeIndex": "Retention_ITY_CRM",
+          "nodeLineageTag": "21a5c9ff-0ede-4ef5-92a8-2a569865dec1",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 16
+        },
+        {
+          "location": {
+            "x": 911.0885236008811,
+            "y": -22.717976021102913
+          },
+          "nodeIndex": "Sales_Pipeline_ITY",
+          "nodeLineageTag": "fddf4ea0-07a2-406e-a53b-b109830e50b2",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 1
+        },
+        {
+          "location": {
+            "x": 1582.1735231687328,
+            "y": 25.402113148713738
+          },
+          "nodeIndex": "0. Measuretabelle",
+          "nodeLineageTag": "eb0c82ac-27a9-4a47-8bea-d697799910f4",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 2
+        },
+        {
+          "location": {
+            "x": 1997.0885236008812,
+            "y": 317.69256170970448
+          },
+          "nodeIndex": "Snapshot_Timestamp_R",
+          "nodeLineageTag": "f2654cbf-e1d3-47b1-8327-847188e17b5d",
+          "size": {
+            "height": 200,
+            "width": 234
+          },
+          "zIndex": 3
+        },
+        {
+          "location": {
+            "x": 2281.0885236008812,
+            "y": 317.69256170970448
+          },
+          "nodeIndex": "Snapshot_Timestamp_S",
+          "nodeLineageTag": "9d630e8f-b3ec-41fd-aad9-09003af8f63f",
+          "size": {
+            "height": 200,
+            "width": 234
+          },
+          "zIndex": 4
+        },
+        {
+          "location": {
+            "x": 2565.0885236008812,
+            "y": 365.69256170970448
+          },
+          "nodeIndex": "N_Geschäftsjahr",
+          "nodeLineageTag": "d3edc80f-ae4f-4cef-8ec0-6c05545fee46",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 5
+        },
+        {
+          "location": {
+            "x": 2849.0885236008812,
+            "y": 365.69256170970448
+          },
+          "nodeIndex": "N_Geschäftsjahr-1",
+          "nodeLineageTag": "adf423f9-fa4a-4d3c-a2a2-12b7dea2a8df",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 6
+        },
+        {
+          "location": {
+            "x": 3083.0885236008812,
+            "y": 372.62553974227939
+          },
+          "nodeIndex": "Geschafätsjahresende",
+          "nodeLineageTag": "9e9e01e9-9e66-4e15-b2b2-b4f5c34b8792",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 9
+        },
+        {
+          "location": {
+            "x": 3367.0885236008812,
+            "y": 372.62553974227939
+          },
+          "nodeIndex": "Geschäftsjahresbeginn",
+          "nodeLineageTag": "d460bd03-941c-47d5-b250-62325534bc59",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 10
+        },
+        {
+          "location": {
+            "x": 3835.0885236008812,
+            "y": 324.62553974227939
+          },
+          "nodeIndex": "KPI",
+          "size": {
+            "height": 200,
+            "width": 234
+          },
+          "zIndex": 11
+        },
+        {
+          "location": {
+            "x": 1288.3150937699324,
+            "y": 570.4189415046028
+          },
+          "nodeIndex": "Comments",
+          "nodeLineageTag": "363d2f51-5af0-46a9-b9ca-8a270554526e",
+          "size": {
+            "height": 128,
+            "width": 234
+          },
+          "zIndex": 12
+        },
+        {
+          "location": {
+            "x": 4069.0885236008812,
+            "y": 348.62553974227939
+          },
+          "nodeIndex": "Zeitansicht",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 13
+        },
+        {
+          "location": {
+            "x": 4303.0885236008817,
+            "y": 360.62553974227939
+          },
+          "nodeIndex": "Zeitfilter",
+          "nodeLineageTag": "3e13c632-792c-4e60-a004-7fbfd7d4e0d8",
+          "size": {
+            "height": 128,
+            "width": 234
+          },
+          "zIndex": 14
+        },
+        {
+          "location": {
+            "x": 359.08873286427968,
+            "y": 104.83541885256182
+          },
+          "nodeIndex": "DIM_Struktur",
+          "nodeLineageTag": "501809f9-cec4-4d16-802f-c16b13bfa5f4",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        }
+      ],
+      "name": "Alle Tabellen",
+      "zoomValue": 70.000000000000085,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    }
+  ],
+  "selectedDiagram": "Alle Tabellen",
+  "defaultDiagram": "Alle Tabellen"
+}

@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "Net New ITY"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "3384ba57-596f-4808-a7cc-65fb961308fb"
+  }
+}

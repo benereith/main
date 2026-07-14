@@ -1,0 +1,173 @@
+table DIM_Struktur
+	lineageTag: 501809f9-cec4-4d16-802f-c16b13bfa5f4
+
+	column MetricId
+		dataType: int64
+		formatString: 0
+		lineageTag: 953c6ee8-c4d3-48e5-8d90-269bd55a72af
+		summarizeBy: none
+		sourceColumn: MetricId
+
+		annotation SummarizationSetBy = Automatic
+
+	column Metric
+		dataType: string
+		lineageTag: 5b9b9297-5425-4492-a47f-76ec93fed38a
+		summarizeBy: none
+		sourceColumn: Metric
+
+		annotation SummarizationSetBy = Automatic
+
+	column ParentId
+		dataType: int64
+		formatString: 0
+		lineageTag: 26c23f8d-7d91-4e53-a72f-56f9bc9b451f
+		summarizeBy: none
+		sourceColumn: ParentId
+
+		annotation SummarizationSetBy = Automatic
+
+	column Sort
+		dataType: int64
+		formatString: 0
+		lineageTag: 86fdac75-ed2c-471e-b384-a4b4a1383eee
+		summarizeBy: none
+		sourceColumn: Sort
+
+		annotation SummarizationSetBy = Automatic
+
+	column Path
+		dataType: string
+		lineageTag: a251d00f-f18a-455d-89e1-8ac0390abcc7
+		summarizeBy: none
+		sourceColumn: Path
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Level 1'
+		dataType: int64
+		formatString: 0
+		lineageTag: 68348e6d-fdfc-448a-8923-561b78131520
+		summarizeBy: none
+		sourceColumn: Level 1
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Level 2'
+		dataType: int64
+		formatString: 0
+		lineageTag: 0f9d6dfc-e0f4-45f0-86df-926121d6efee
+		summarizeBy: none
+		sourceColumn: Level 2
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Level 2 Label'
+		dataType: string
+		lineageTag: 51b80331-c10f-41fe-8320-0291007bb941
+		summarizeBy: none
+		sourceColumn: Level 2 Label
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Level 1 Label'
+		dataType: string
+		lineageTag: 280372a0-dcc3-4494-a5b5-ca239ae1edc2
+		summarizeBy: none
+		sourceColumn: Level 1 Label
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Level 3'
+		dataType: int64
+		formatString: 0
+		lineageTag: 7933a7a8-06cf-4778-8c26-d5ebfcee231e
+		summarizeBy: none
+		sourceColumn: Level 3
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Level 3 Label'
+		dataType: string
+		lineageTag: 78605b0e-2e26-4178-ab82-630296d4fed6
+		summarizeBy: none
+		sourceColumn: Level 3 Label
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Level 4'
+		dataType: int64
+		formatString: 0
+		lineageTag: b378f774-f96b-48dd-b665-cf90fbc238e6
+		summarizeBy: none
+		sourceColumn: Level 4
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Level 4 Label'
+		dataType: string
+		lineageTag: f4fb5f05-a6b1-4cf0-8572-ee65fc24ccf9
+		summarizeBy: none
+		sourceColumn: Level 4 Label
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Level Depth'
+		dataType: int64
+		formatString: 0
+		lineageTag: 42b478f8-1fd9-4c69-98ab-7bd832eb0423
+		summarizeBy: none
+		sourceColumn: Level Depth
+
+		annotation SummarizationSetBy = Automatic
+
+	column IsLeaf
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 6b0e8008-8783-4de6-a3c4-9e857b733de1
+		summarizeBy: none
+		sourceColumn: IsLeaf
+
+		annotation SummarizationSetBy = Automatic
+
+	column HFM_Account
+		dataType: string
+		lineageTag: 93553d17-b816-4b72-beee-dc6d530c8694
+		summarizeBy: none
+		sourceColumn: HFM_Account
+
+		annotation SummarizationSetBy = Automatic
+
+	hierarchy 'Net New Hierarchie'
+		lineageTag: 15f8c1e1-e6a6-40c2-b16e-418230bd2d44
+
+		level 'Level 1 Label'
+			lineageTag: 691da234-0f42-42d3-a08a-68de899bf35e
+			column: 'Level 1 Label'
+
+		level 'Level 2 Label'
+			lineageTag: 34fc95c5-65db-4284-bf80-df04e4b374e0
+			column: 'Level 2 Label'
+
+		level 'Level 3 Label'
+			lineageTag: c58dbf25-24f0-4761-974c-0c33233553b4
+			column: 'Level 3 Label'
+
+		level 'Level 4 Label'
+			lineageTag: 4641585a-522d-4c04-a815-39f2a4b01ece
+			column: 'Level 4 Label'
+
+	partition DIM_Struktur = m
+		mode: import
+		source =
+				let
+				  Quelle = Table.FromRows(Json.Document(Binary.Decompress(Binary.FromText("rZNLi4MwEMe/Ssi5B/OwrdctLCwspSy9iPRQShbKugYSbS9++M3DVzTpKghGnGHmPz8nM1kGEdzAUwoEe7CiYuBb8F9w40UprrdSgicvwClVIUQdhMyrjmtSo9aO1TmyJ3ir5L1gUhqzBCMXGUWBL57nWmJedarOWVQMXjYZxMo4zCTGPTFeh3hmdYc4pKVJEOkQ1wEMuHX4+zWXloiOoz7OaQtEWyC6DCig6feSYX88+nbW4gZlGcjwwc5vb5X1yWU5ncNIxzbzjaJ62yFE4xR/zaByyO80YPdyDXKdf9BdSzQl7iiTereUM5nw2PuYS+DM9f7lLoywyQB7vxb2XAIHOyRmh4D2nGtRBtzuSnqLmPI4bpGWAoU3wcj4M+K+DOqy/xFHjnhiGnH/URfCBdAfNsr4+1fTmWmcI2uv7fIH", BinaryEncoding.Base64), Compression.Deflate)), let _t = ((type nullable text) meta [Serialized.Text = true]) in type table [MetricId = _t, Metric = _t, ParentId = _t, Sort = _t, Path = _t, #"Level 1" = _t, #"Level 2" = _t, #"Level 2 Label" = _t, #"Level 1 Label" = _t, #"Level 3" = _t, #"Level 3 Label" = _t, #"Level 4" = _t, #"Level 4 Label" = _t, #"Level Depth" = _t, IsLeaf = _t]),
+				  #"Geänderter Spaltentyp" = Table.TransformColumnTypes(Quelle, {{"MetricId", Int64.Type}, {"ParentId", Int64.Type}, {"Sort", Int64.Type}, {"Level 1", Int64.Type}, {"Level 2", Int64.Type}, {"Level Depth", Int64.Type}, {"Level 4", Int64.Type}, {"Level 3", Int64.Type}}),
+				  #"Bedingte Spalte eingefügt" = Table.AddColumn(#"Geänderter Spaltentyp", "Benutzerdefiniert", each if [MetricId] = 1 then "MAP111a" else if [MetricId] = 2 then "MAP111b" else if [MetricId] = 4 then "MAP111c" else if [MetricId] = 6 then "MAP112a" else if [MetricId] = 7 then "MAP112b" else if [MetricId] = 8 then "MAP112c" else ""),
+				  #"Geänderter Spaltentyp 1" = Table.TransformColumnTypes(#"Bedingte Spalte eingefügt", {{"Metric", type text}, {"Path", type text}, {"Level 2 Label", type text}, {"Level 1 Label", type text}, {"Level 3 Label", type text}, {"Level 4 Label", type text}, {"IsLeaf", type logical}}, "de"),
+				  #"Umbenannte Spalten" = Table.RenameColumns(#"Geänderter Spaltentyp 1", {{"Benutzerdefiniert", "HFM_Account"}})
+				in
+				  #"Umbenannte Spalten"
+
+	annotation PBI_ResultType = Table
+

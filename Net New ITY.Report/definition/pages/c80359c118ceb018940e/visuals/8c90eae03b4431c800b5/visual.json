@@ -1,0 +1,920 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.10.0/schema.json",
+  "name": "8c90eae03b4431c800b5",
+  "position": {
+    "x": 5.8128973660308816,
+    "y": 81.380563124432342,
+    "z": 0,
+    "height": 396.43960036330611,
+    "width": 1045.1589464123524,
+    "tabOrder": 0
+  },
+  "visual": {
+    "visualType": "ZebraBITablesBAE31B370F254F808553548EFB35BFA5",
+    "query": {
+      "queryState": {
+        "Group": {
+          "projections": [],
+          "fieldParameters": [
+            {
+              "parameterExpr": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Granularität"
+                    }
+                  },
+                  "Property": "Granularität"
+                }
+              },
+              "index": 0,
+              "length": 0
+            }
+          ]
+        },
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Retention_ITY_CRM"
+                    }
+                  },
+                  "Property": "Retention_Status"
+                }
+              },
+              "queryRef": "Retention_ITY_CRM.Retention_Status",
+              "nativeQueryRef": "Retention_Status",
+              "active": true
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "SAP_Stammdaten"
+                    }
+                  },
+                  "Property": "Werk - Bezeichnung"
+                }
+              },
+              "queryRef": "SAP_Stammdaten.Werk - Bezeichnung",
+              "nativeQueryRef": "Werk - Bezeichnung",
+              "active": true
+            }
+          ]
+        },
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "0. Measuretabelle"
+                    }
+                  },
+                  "Property": "Retention_ITY_Act"
+                }
+              },
+              "queryRef": "0. Measuretabelle.Retention_ITY_Latest",
+              "nativeQueryRef": "Retention_ITY_Latest"
+            }
+          ]
+        },
+        "Tooltips": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "0. Measuretabelle"
+                    }
+                  },
+                  "Property": "Retention_%"
+                }
+              },
+              "queryRef": "0. Measuretabelle.Retention_%",
+              "nativeQueryRef": "Retention_%"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "0. Measuretabelle"
+                    }
+                  },
+                  "Property": "LT_Retention%"
+                }
+              },
+              "queryRef": "0. Measuretabelle.LT_Retention%",
+              "nativeQueryRef": "LT_Retention%"
+            },
+            {
+              "field": {
+                "Aggregation": {
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Retention_ITY_CRM"
+                        }
+                      },
+                      "Property": "Decisiondate"
+                    }
+                  },
+                  "Function": 3
+                }
+              },
+              "queryRef": "Min(Retention_ITY_CRM.Decisiondate)",
+              "nativeQueryRef": "Decisiondate",
+              "displayName": "Decisiondate"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "0. Measuretabelle"
+                    }
+                  },
+                  "Property": "Contract_End_Date"
+                }
+              },
+              "queryRef": "0. Measuretabelle.Contract_End_Date",
+              "nativeQueryRef": "Contract End Date",
+              "displayName": "Contract End Date"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "0. Measuretabelle"
+                    }
+                  },
+                  "Property": "LT_Contract End Date"
+                }
+              },
+              "queryRef": "0. Measuretabelle.LT_Contract End Date",
+              "nativeQueryRef": "LT_Contract End Date"
+            }
+          ]
+        },
+        "PreviousYear": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "0. Measuretabelle"
+                    }
+                  },
+                  "Property": "Retention_ITY_Hist"
+                }
+              },
+              "queryRef": "0. Measuretabelle.Retention_ITY_Hist",
+              "nativeQueryRef": "Retention_ITY_Hist"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "0. Measuretabelle"
+                  }
+                },
+                "Property": "Retention_ITY_Act"
+              }
+            },
+            "direction": "Descending"
+          }
+        ],
+        "isDefaultSort": true
+      }
+    },
+    "expansionStates": [
+      {
+        "roles": [
+          "Category"
+        ],
+        "levels": [
+          {
+            "queryRefs": [
+              "Retention_ITY_CRM.Retention_Status"
+            ],
+            "isCollapsed": true,
+            "identityKeys": [
+              {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Retention_ITY_CRM"
+                    }
+                  },
+                  "Property": "Retention_Status"
+                }
+              }
+            ],
+            "isPinned": true
+          },
+          {
+            "queryRefs": [
+              "SAP_Stammdaten.Werk - Bezeichnung"
+            ],
+            "isCollapsed": true,
+            "isPinned": true
+          }
+        ],
+        "root": {
+          "children": [
+            {
+              "identityValues": [
+                {
+                  "Literal": {
+                    "Value": "'Lost YTD'"
+                  }
+                }
+              ],
+              "isToggled": true
+            },
+            {
+              "identityValues": [
+                {
+                  "Literal": {
+                    "Value": "'Expected Lost'"
+                  }
+                }
+              ],
+              "isToggled": true
+            },
+            {
+              "identityValues": [
+                {
+                  "Literal": {
+                    "Value": "'At Risk'"
+                  }
+                }
+              ],
+              "isToggled": true
+            }
+          ]
+        }
+      }
+    ],
+    "objects": {
+      "licenseSettings": [
+        {
+          "properties": {
+            "licenseKey": {
+              "expr": {
+                "Literal": {
+                  "Value": "'GOdA2ZmAXMvQi9eyS+sBj96oQXC81N2lB4y2BvlibCqe7FYRH+c7b1wuMyD74HlRATrHLyoxJMwiyl8jv51jCnsiY29tcGFueSI6IkNvbXBhc3MgR3JvdXAgRGV1dHNjaGxhbmQgR21iSCIsImV4cGlyeURhdGUiOiIyMDI2LTExLTI1Iiwib3JkZXJEYXRlIjoiMjAyNS0xMS0yMyIsIm5PZlVzZXJzIjoiNTAwIiwibGljZW5zZVR5cGUiOiJQYWlkIiwibGljZW5zZVRpZXIiOm51bGwsInZpc3VhbFR5cGUiOiJBbGwifQ=='"
+                }
+              }
+            },
+            "appliedTimestamp": {
+              "expr": {
+                "Literal": {
+                  "Value": "1779881688111D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "version": [
+        {
+          "properties": {
+            "version": {
+              "expr": {
+                "Literal": {
+                  "Value": "'8.1.1.18'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "migrationLog": [
+        {
+          "properties": {
+            "isMigrating": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "previewSettings": [
+        {
+          "properties": {
+            "migrationsLog": {
+              "expr": {
+                "Literal": {
+                  "Value": "'{\"calculationCorrectionFeature\":{\"visualVersion\":\"1.0.0\",\"isMigrationCompleted\":true}}'"
+                }
+              }
+            },
+            "activationLog": {
+              "expr": {
+                "Literal": {
+                  "Value": "'{\"calculationCorrectionFeature\":{\"previewFeatureVersion\":\"1.0.0\"}}'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "categoriesMetadata": [
+        {
+          "properties": {
+            "collapsedVirtually": {
+              "expr": {
+                "Literal": {
+                  "Value": "'[]'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "proFeaturesSettings": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "chartSettings": [
+        {
+          "properties": {
+            "firstTimeShowingColumnAdder": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            },
+            "showAsTable": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "columnSettings": {
+              "expr": {
+                "Literal": {
+                  "Value": "'{\"actual\":{\"invert\":false,\"order\":1,\"scaleGroup\":1,\"format\":0,\"useMeasureName\":false,\"suppressOthers\":false,\"pbiFormatString\":\"\",\"tableView\":{\"bold\":false,\"textColor\":\"\",\"backgroundFill\":\"\",\"markerStyle\":5,\"border\":\"\",\"showAsTable\":0,\"hidden\":false,\"hiddenFromGroups\":[]},\"chartView\":{\"bold\":false,\"textColor\":\"\",\"backgroundFill\":\"\",\"markerStyle\":5,\"border\":\"\",\"showAsTable\":0,\"hidden\":false,\"hiddenFromGroups\":[]},\"conditionalVariance\":{\"cvLowerThreshold\":0,\"cvUpperThreshold\":0,\"unit\":\"P\",\"style\":0,\"positiveColor\":\"#7aca00\",\"negativeColor\":\"#ff0000\",\"neutralVarianceColor\":\"#dcdcdc\",\"neutralColor\":\"#404040\",\"markerColor\":\"#000\",\"lineColor\":\"#404040\",\"gridlineColor\":\"#ccc\"}},\"previousYear\":{\"invert\":false,\"order\":0,\"scaleGroup\":1,\"format\":0,\"useMeasureName\":false,\"suppressOthers\":false,\"pbiFormatString\":\"\",\"tableView\":{\"bold\":false,\"textColor\":\"\",\"backgroundFill\":\"\",\"markerStyle\":5,\"border\":\"\",\"showAsTable\":0,\"hidden\":false,\"hiddenFromGroups\":[]},\"chartView\":{\"bold\":false,\"textColor\":\"\",\"backgroundFill\":\"\",\"markerStyle\":5,\"border\":\"\",\"showAsTable\":0,\"hidden\":false,\"hiddenFromGroups\":[]},\"conditionalVariance\":{\"cvLowerThreshold\":0,\"cvUpperThreshold\":0,\"unit\":\"P\",\"style\":0,\"positiveColor\":\"#7aca00\",\"negativeColor\":\"#ff0000\",\"neutralVarianceColor\":\"#dcdcdc\",\"neutralColor\":\"#404040\",\"markerColor\":\"#000\",\"lineColor\":\"#404040\",\"gridlineColor\":\"#ccc\"}},\"actual-previousYear\":{\"invert\":false,\"order\":2,\"scaleGroup\":1,\"format\":1,\"useMeasureName\":false,\"suppressOthers\":false,\"pbiFormatString\":\"\",\"tableView\":{\"bold\":false,\"textColor\":\"\",\"backgroundFill\":\"\",\"markerStyle\":5,\"border\":\"\",\"showAsTable\":0,\"hidden\":false,\"hiddenFromGroups\":[]},\"chartView\":{\"bold\":false,\"textColor\":\"\",\"backgroundFill\":\"\",\"markerStyle\":5,\"border\":\"\",\"showAsTable\":0,\"hidden\":false,\"hiddenFromGroups\":[]},\"conditionalVariance\":{\"cvLowerThreshold\":0,\"cvUpperThreshold\":0,\"unit\":\"P\",\"style\":0,\"positiveColor\":\"#7aca00\",\"negativeColor\":\"#ff0000\",\"neutralVarianceColor\":\"#dcdcdc\",\"neutralColor\":\"#404040\",\"markerColor\":\"#000\",\"lineColor\":\"#404040\",\"gridlineColor\":\"#ccc\"}},\"actual-previousYear-percent\":{\"invert\":false,\"order\":3,\"scaleGroup\":1,\"format\":2,\"useMeasureName\":false,\"suppressOthers\":false,\"pbiFormatString\":\"\",\"tableView\":{\"bold\":false,\"textColor\":\"\",\"backgroundFill\":\"\",\"markerStyle\":5,\"border\":\"\",\"showAsTable\":0,\"hidden\":true,\"hiddenFromGroups\":[]},\"chartView\":{\"bold\":false,\"textColor\":\"\",\"backgroundFill\":\"\",\"markerStyle\":5,\"border\":\"\",\"showAsTable\":0,\"hidden\":false,\"hiddenFromGroups\":[]},\"conditionalVariance\":{\"cvLowerThreshold\":0,\"cvUpperThreshold\":0,\"unit\":\"P\",\"style\":0,\"positiveColor\":\"#7aca00\",\"negativeColor\":\"#ff0000\",\"neutralVarianceColor\":\"#dcdcdc\",\"neutralColor\":\"#404040\",\"markerColor\":\"#000\",\"lineColor\":\"#404040\",\"gridlineColor\":\"#ccc\"}},\"plan\":{\"invert\":false,\"scaleGroup\":1,\"format\":0,\"useMeasureName\":false,\"suppressOthers\":false,\"pbiFormatString\":\"\",\"tableView\":{\"bold\":false,\"textColor\":\"\",\"backgroundFill\":\"\",\"markerStyle\":5,\"border\":\"\",\"showAsTable\":0,\"hidden\":false,\"hiddenFromGroups\":[]},\"chartView\":{\"bold\":false,\"textColor\":\"\",\"backgroundFill\":\"\",\"markerStyle\":5,\"border\":\"\",\"showAsTable\":0,\"hidden\":false,\"hiddenFromGroups\":[]},\"conditionalVariance\":{\"cvLowerThreshold\":0,\"cvUpperThreshold\":0,\"unit\":\"P\",\"style\":0,\"positiveColor\":\"#7aca00\",\"negativeColor\":\"#ff0000\",\"neutralVarianceColor\":\"#dcdcdc\",\"neutralColor\":\"#404040\",\"markerColor\":\"#000\",\"lineColor\":\"#404040\",\"gridlineColor\":\"#ccc\"},\"order\":null},\"actual-plan\":{\"invert\":false,\"scaleGroup\":1,\"format\":1,\"useMeasureName\":false,\"suppressOthers\":false,\"pbiFormatString\":\"\",\"tableView\":{\"bold\":false,\"textColor\":\"\",\"backgroundFill\":\"\",\"markerStyle\":5,\"border\":\"\",\"showAsTable\":0,\"hidden\":true,\"hiddenFromGroups\":[]},\"chartView\":{\"bold\":false,\"textColor\":\"\",\"backgroundFill\":\"\",\"markerStyle\":5,\"border\":\"\",\"showAsTable\":0,\"hidden\":false,\"hiddenFromGroups\":[]},\"conditionalVariance\":{\"cvLowerThreshold\":0,\"cvUpperThreshold\":0,\"unit\":\"P\",\"style\":0,\"positiveColor\":\"#7aca00\",\"negativeColor\":\"#ff0000\",\"neutralVarianceColor\":\"#dcdcdc\",\"neutralColor\":\"#404040\",\"markerColor\":\"#000\",\"lineColor\":\"#404040\",\"gridlineColor\":\"#ccc\"},\"order\":null},\"actual-plan-percent\":{\"invert\":false,\"scaleGroup\":1,\"format\":2,\"useMeasureName\":false,\"suppressOthers\":false,\"pbiFormatString\":\"\",\"tableView\":{\"bold\":false,\"textColor\":\"\",\"backgroundFill\":\"\",\"markerStyle\":5,\"border\":\"\",\"showAsTable\":0,\"hidden\":false,\"hiddenFromGroups\":[]},\"chartView\":{\"bold\":false,\"textColor\":\"\",\"backgroundFill\":\"\",\"markerStyle\":5,\"border\":\"\",\"showAsTable\":0,\"hidden\":false,\"hiddenFromGroups\":[]},\"conditionalVariance\":{\"cvLowerThreshold\":0,\"cvUpperThreshold\":0,\"unit\":\"P\",\"style\":0,\"positiveColor\":\"#7aca00\",\"negativeColor\":\"#ff0000\",\"neutralVarianceColor\":\"#dcdcdc\",\"neutralColor\":\"#404040\",\"markerColor\":\"#000\",\"lineColor\":\"#404040\",\"gridlineColor\":\"#ccc\"},\"order\":null}}'"
+                }
+              }
+            },
+            "showGrandTotal": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "showColumnGrandTotal": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "titleSettings": [
+        {
+          "properties": {}
+        }
+      ],
+      "categorySettings": [
+        {
+          "properties": {}
+        }
+      ],
+      "sortSettings": [
+        {
+          "properties": {
+            "categorySort": {
+              "expr": {
+                "Literal": {
+                  "Value": "1D"
+                }
+              }
+            },
+            "chartSort": {
+              "expr": {
+                "Literal": {
+                  "Value": "1D"
+                }
+              }
+            },
+            "columnName": {
+              "expr": {
+                "Literal": {
+                  "Value": "'plan'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "legendHeaderSettings": [
+        {
+          "properties": {
+            "previousYear": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Last Time'"
+                }
+              }
+            },
+            "actual": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Actuals'"
+                }
+              }
+            },
+            "actual-previousYear": {
+              "expr": {
+                "Literal": {
+                  "Value": "'ΔLT'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "dataLabelSettings": [
+        {
+          "properties": {
+            "units": {
+              "expr": {
+                "Literal": {
+                  "Value": "'K'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "groupsMetadata": [
+        {
+          "properties": {}
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "titleWrap": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "fontColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "ThemeDataColor": {
+                      "ColorId": 0,
+                      "Percent": 0
+                    }
+                  }
+                }
+              }
+            },
+            "background": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#B3985A'"
+                    }
+                  }
+                }
+              }
+            },
+            "bold": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Retention ITY in €'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "background": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "transparency": {
+              "expr": {
+                "Literal": {
+                  "Value": "0D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "border": [
+        {
+          "properties": {
+            "width": {
+              "expr": {
+                "Literal": {
+                  "Value": "1D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualTooltip": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "type": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Default'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "286050b243a4e72642bd",
+        "ordinal": 0,
+        "field": {
+          "HierarchyLevel": {
+            "Expression": {
+              "Hierarchy": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "DIM_Struktur"
+                  }
+                },
+                "Hierarchy": "Net New Hierarchie"
+              }
+            },
+            "Level": "Level 1 Label"
+          }
+        },
+        "type": "Categorical",
+        "howCreated": "User"
+      },
+      {
+        "name": "dbc318334692b089e00e",
+        "ordinal": 1,
+        "field": {
+          "HierarchyLevel": {
+            "Expression": {
+              "Hierarchy": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "DIM_Struktur"
+                  }
+                },
+                "Hierarchy": "Net New Hierarchie"
+              }
+            },
+            "Level": "Level 2 Label"
+          }
+        },
+        "type": "Categorical",
+        "howCreated": "User"
+      },
+      {
+        "name": "6408eee03e08b09a5da6",
+        "ordinal": 2,
+        "field": {
+          "HierarchyLevel": {
+            "Expression": {
+              "Hierarchy": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "DIM_Struktur"
+                  }
+                },
+                "Hierarchy": "Net New Hierarchie"
+              }
+            },
+            "Level": "Level 3 Label"
+          }
+        },
+        "type": "Categorical",
+        "howCreated": "User"
+      },
+      {
+        "name": "49c743683aa78956006d",
+        "ordinal": 3,
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "SAP_Stammdaten"
+              }
+            },
+            "Property": "Betriebstyp"
+          }
+        },
+        "type": "Categorical",
+        "howCreated": "User",
+        "objects": {
+          "general": [
+            {
+              "properties": {
+                "isInvertedSelectionMode": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "true"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "name": "af8f3f70731e67248c22",
+        "ordinal": 4,
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "0. Measuretabelle"
+              }
+            },
+            "Property": "RGF_Value"
+          }
+        },
+        "type": "Advanced",
+        "howCreated": "User"
+      },
+      {
+        "name": "2d82805458c0d05a17e1",
+        "ordinal": 5,
+        "field": {
+          "HierarchyLevel": {
+            "Expression": {
+              "Hierarchy": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "DIM_Struktur"
+                  }
+                },
+                "Hierarchy": "Net New Hierarchie"
+              }
+            },
+            "Level": "Level 4 Label"
+          }
+        },
+        "type": "Categorical",
+        "howCreated": "User"
+      },
+      {
+        "name": "73d0a912affec995de77",
+        "ordinal": 6,
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "SAP_Stammdaten"
+              }
+            },
+            "Property": "Werk - Bezeichnung"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "c93299e2980a032e7fcb",
+        "ordinal": 7,
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "0. Measuretabelle"
+              }
+            },
+            "Property": "Retention_ITY_Act"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "38d8550943904b3c6ef7",
+        "ordinal": 8,
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "0. Measuretabelle"
+              }
+            },
+            "Property": "Retention_ITY_Hist"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "268eb050d89dfaec837b",
+        "ordinal": 9,
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "DIM_DATE"
+              }
+            },
+            "Property": "FY_Periode"
+          }
+        },
+        "type": "Categorical",
+        "howCreated": "User",
+        "objects": {
+          "general": [
+            {
+              "properties": {}
+            }
+          ]
+        }
+      },
+      {
+        "name": "68ec34415a5edf2b0343",
+        "ordinal": 10,
+        "field": {
+          "Aggregation": {
+            "Expression": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Retention_ITY_CRM"
+                  }
+                },
+                "Property": "Retention-Wahrscheinlichkeit"
+              }
+            },
+            "Function": 1
+          }
+        },
+        "type": "Advanced",
+        "howCreated": "User"
+      },
+      {
+        "name": "7c8d3fcfa0002c2a88e6",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "0. Measuretabelle"
+              }
+            },
+            "Property": "Retention_%"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "1ce94e9b500c012b70a0",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "0. Measuretabelle"
+              }
+            },
+            "Property": "LT_Retention%"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "b404ea42e52c1b03a823",
+        "field": {
+          "Aggregation": {
+            "Expression": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Retention_ITY_CRM"
+                  }
+                },
+                "Property": "Decisiondate"
+              }
+            },
+            "Function": 3
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "58ec9b63773c519c9023",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "0. Measuretabelle"
+              }
+            },
+            "Property": "Contract_End_Date"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "d05e21844593713e53cd",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "0. Measuretabelle"
+              }
+            },
+            "Property": "LT_Contract End Date"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "8d93bd7a782464ae7a01",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Retention_ITY_CRM"
+              }
+            },
+            "Property": "Retention_Status"
+          }
+        },
+        "type": "Categorical"
+      }
+    ],
+    "filterSortOrder": "Custom"
+  }
+}

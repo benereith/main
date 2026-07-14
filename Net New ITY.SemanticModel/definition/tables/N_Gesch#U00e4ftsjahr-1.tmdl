@@ -1,0 +1,27 @@
+table N_Geschäftsjahr-1
+	lineageTag: adf423f9-fa4a-4d3c-a2a2-12b7dea2a8df
+
+	column N_Geschäftsjahr-1
+		dataType: double
+		lineageTag: 83d0d6dd-0b11-4679-9e4b-3c0261641a7e
+		summarizeBy: sum
+		sourceColumn: N_Geschäftsjahr-1
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition N_Geschäftsjahr-1 = m
+		mode: import
+		source = ```
+				let 
+				Datumswert = Geschäftsjahresbeginn,
+				Extrahiertes_Geschäftsjahr = Date.Year(Datumswert)-1
+				in
+				Extrahiertes_Geschäftsjahr
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Number
+

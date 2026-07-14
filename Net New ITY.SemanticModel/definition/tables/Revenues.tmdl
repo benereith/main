@@ -1,0 +1,223 @@
+table Revenues
+	lineageTag: bda1b3df-fbc6-4a94-9ae1-169be4d301c6
+
+	column Werk
+		dataType: int64
+		formatString: 0
+		lineageTag: c750f3fe-94d2-4036-9dec-ba9ca012b730
+		summarizeBy: none
+		sourceColumn: Werk
+
+		annotation SummarizationSetBy = Automatic
+
+	column Geschäftsjahr
+		dataType: int64
+		formatString: 0
+		lineageTag: e766aa9c-2b2c-4bf8-89fa-172ceb0233b8
+		summarizeBy: sum
+		sourceColumn: Geschäftsjahr
+
+		annotation SummarizationSetBy = Automatic
+
+	column Buchungsperiode
+		dataType: int64
+		formatString: 0
+		lineageTag: 3cfab399-5793-4aa1-a31e-18bedd3d52c1
+		summarizeBy: sum
+		sourceColumn: Buchungsperiode
+
+		annotation SummarizationSetBy = Automatic
+
+	column Werttyp
+		dataType: string
+		lineageTag: 6e7d9464-a85a-4535-baa6-de8bae6980cd
+		summarizeBy: none
+		sourceColumn: Werttyp
+
+		annotation SummarizationSetBy = Automatic
+
+	column Version
+		dataType: string
+		lineageTag: 25720a79-f4a8-4914-9593-f2255b76c8df
+		summarizeBy: none
+		sourceColumn: Version
+
+		annotation SummarizationSetBy = Automatic
+
+	column Datum
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 8d9b0e26-f6ea-4559-b650-5e8362396605
+		summarizeBy: none
+		sourceColumn: Datum
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column cause_of_change
+		dataType: int64
+		formatString: 0
+		lineageTag: 64d91459-fd0b-4009-b0e3-63b5e65d8553
+		summarizeBy: sum
+		sourceColumn: cause_of_change
+
+		annotation SummarizationSetBy = Automatic
+
+	column cause_of_change_fy
+		dataType: int64
+		formatString: 0
+		lineageTag: 9276f68c-7d89-4904-83f9-9458b1e7708c
+		summarizeBy: sum
+		sourceColumn: cause_of_change_fy
+
+		annotation SummarizationSetBy = Automatic
+
+	column cause_of_change_ny
+		dataType: int64
+		formatString: 0
+		lineageTag: 28d8234a-02f1-4eff-858e-d17aae0df39e
+		summarizeBy: sum
+		sourceColumn: cause_of_change_ny
+
+		annotation SummarizationSetBy = Automatic
+
+	column Werttyp_Version
+		dataType: string
+		lineageTag: 27ad9c57-f0aa-4fd4-b202-75e794a71abe
+		summarizeBy: none
+		sourceColumn: Werttyp_Version
+
+		annotation SummarizationSetBy = Automatic
+
+	column Betrag
+		dataType: decimal
+		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		lineageTag: 8469e34c-c8bd-4db4-90ac-1792b921766a
+		summarizeBy: sum
+		sourceColumn: Betrag
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	column 'Mapping Art'
+		dataType: string
+		lineageTag: 627602ff-e756-4e7a-80cf-9c3d8322c1bd
+		summarizeBy: none
+		sourceColumn: Mapping Art
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Mapping Wert'
+		dataType: int64
+		formatString: 0
+		lineageTag: 06289a06-ce08-4ea7-9f0d-f941ff4f22dc
+		summarizeBy: none
+		sourceColumn: Mapping Wert
+
+		annotation SummarizationSetBy = Automatic
+
+	column cause_of_change_BUD
+		dataType: int64
+		formatString: 0
+		lineageTag: e21549d9-af48-44d0-bec7-d2fb1fe13d43
+		summarizeBy: sum
+		sourceColumn: cause_of_change_BUD
+
+		annotation SummarizationSetBy = Automatic
+
+	column cause_of_change_RGF
+		dataType: int64
+		formatString: 0
+		lineageTag: 7d39abed-22eb-420b-8739-f7903b6fae66
+		summarizeBy: sum
+		sourceColumn: cause_of_change_RGF
+
+		annotation SummarizationSetBy = Automatic
+
+	column cause_of_change_R03
+		dataType: string
+		lineageTag: d7dbd032-df54-440f-88ad-caf90a386429
+		summarizeBy: none
+		sourceColumn: cause_of_change_R03
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Revenues = m
+		mode: import
+		source = ```
+				let
+				  Quelle = Table.Combine({SAP_Revenues_offen, SAP_Revenues_abg, Man_Rev}),
+				    #"Sortierte Zeilen" = Table.Sort(Quelle,{{"Werk", Order.Descending}}),
+				  #"Zusammengeführte Spalte eingefügt" = Table.AddColumn(#"Sortierte Zeilen", "Werttyp_Version", each Text.Combine({[Werttyp], "_", [Version]}), type text),
+				    #"Hinzugefügte bedingte Spalte" = Table.AddColumn(#"Zusammengeführte Spalte eingefügt", "Benutzerdefiniert", each if [Geschäftsjahr] = N_Geschäftsjahr then [#"Betrag"]*-1 else [#"Betrag"]),
+				    #"Entfernte Spalten1" = Table.RemoveColumns(#"Hinzugefügte bedingte Spalte",{"Betrag"}),
+				    #"Umbenannte Spalten1" = Table.RenameColumns(#"Entfernte Spalten1",{{"Benutzerdefiniert", "Betrag"}}),
+				   
+				   
+				    #"Bedingte Spalte hinzugefügt" = Table.AddColumn(#"Umbenannte Spalten1", "Mapping CoCh", each if [Geschäftsjahr] = N_Geschäftsjahr-1 and [cause_of_change] = 1 then 1
+				        else if [Geschäftsjahr] = N_Geschäftsjahr and [cause_of_change] = 1 then 2
+				        else if [Geschäftsjahr] = N_Geschäftsjahr and [cause_of_change] = 2 then 4
+				        else if [cause_of_change] = 3 then 6
+				        else if [Geschäftsjahr] = N_Geschäftsjahr-1 and [cause_of_change] = 4 then 7
+				        else if [Geschäftsjahr] = N_Geschäftsjahr and [cause_of_change] = 4 then 8
+				        else 99),
+				        
+				    #"Bedingte Spalte hinzugefügt1" = Table.AddColumn(#"Bedingte Spalte hinzugefügt", "Mapping CoCh FY", each if [Geschäftsjahr] = N_Geschäftsjahr-1 and [cause_of_change_fy] = 1 then 1
+				        else if [Geschäftsjahr] = N_Geschäftsjahr and [cause_of_change_fy] = 1 then 2
+				        else if [Geschäftsjahr] = N_Geschäftsjahr and [cause_of_change_fy] = 2 then 4
+				        else if [cause_of_change_fy] = 3 then 6
+				        else if [Geschäftsjahr] = N_Geschäftsjahr-1 and [cause_of_change_fy] = 4 then 7
+				        else if [Geschäftsjahr] = N_Geschäftsjahr and [cause_of_change_fy] = 4 then 8
+				        else 99),
+				
+				            #"Bedingte Spalte hinzugefügt2" = Table.AddColumn(#"Bedingte Spalte hinzugefügt1", "Mapping CoCh NY", each if [Geschäftsjahr] = N_Geschäftsjahr-1 and [cause_of_change_ny] = 1 then 1
+				        else if [Geschäftsjahr] = N_Geschäftsjahr and [cause_of_change_ny] = 1 then 2
+				        else if [Geschäftsjahr] = N_Geschäftsjahr and [cause_of_change_ny] = 2 then 4
+				        else if [cause_of_change_ny] = 3 then 6
+				        else if [Geschäftsjahr] = N_Geschäftsjahr-1 and [cause_of_change_ny] = 4 then 7
+				        else if [Geschäftsjahr] = N_Geschäftsjahr and [cause_of_change_ny] = 4 then 8
+				        else 99),
+				
+				        
+				    #"Bedingte Spalte hinzugefügt3" = Table.AddColumn(#"Bedingte Spalte hinzugefügt2", "Mapping CoCh BUD", each if 
+				    [Geschäftsjahr] = N_Geschäftsjahr-1 and [cause_of_change_BUD] = 1 then 1
+				        else if [Geschäftsjahr] = N_Geschäftsjahr and [cause_of_change_BUD] = 1 then 2
+				        else if [Geschäftsjahr] = N_Geschäftsjahr and [cause_of_change_BUD] = 2 then 4
+				        else if [cause_of_change_BUD] = 3 then 6
+				        else if [Geschäftsjahr] = N_Geschäftsjahr-1 and [cause_of_change_BUD] = 4 then 7
+				        else if [Geschäftsjahr] = N_Geschäftsjahr and [cause_of_change_BUD] = 4 then 8
+				        else 99),
+				
+				            #"Bedingte Spalte hinzugefügt4" = Table.AddColumn(#"Bedingte Spalte hinzugefügt3", "Mapping CoCh RGF", each if 
+				    [Geschäftsjahr] = N_Geschäftsjahr-1 and [cause_of_change_RGF] = 1 then 1
+				        else if [Geschäftsjahr] = N_Geschäftsjahr and [cause_of_change_RGF] = 1 then 2
+				        else if [Geschäftsjahr] = N_Geschäftsjahr and [cause_of_change_RGF] = 2 then 4
+				        else if [cause_of_change_RGF] = 3 then 6
+				        else if [Geschäftsjahr] = N_Geschäftsjahr-1 and [cause_of_change_RGF] = 4 then 7
+				        else if [Geschäftsjahr] = N_Geschäftsjahr and [cause_of_change_RGF] = 4 then 8
+				        else 99),
+				    #"Hinzugefügte benutzerdefinierte Spalte" = Table.AddColumn(#"Bedingte Spalte hinzugefügt4", "Mapping CoCh R03", each if 
+				    [Geschäftsjahr] = N_Geschäftsjahr-1 and [cause_of_change_R03] = 1 then 1
+				        else if [Geschäftsjahr] = N_Geschäftsjahr and [cause_of_change_R03] = 1 then 2
+				        else if [Geschäftsjahr] = N_Geschäftsjahr and [cause_of_change_R03] = 2 then 4
+				        else if [cause_of_change_R03] = 3 then 6
+				        else if [Geschäftsjahr] = N_Geschäftsjahr-1 and [cause_of_change_R03] = 4 then 7
+				        else if [Geschäftsjahr] = N_Geschäftsjahr and [cause_of_change_R03] = 4 then 8
+				        else 99),
+				
+				
+				    #"Geänderter Typ1" = Table.TransformColumnTypes(#"Hinzugefügte benutzerdefinierte Spalte",{{"Betrag", type number}, {"Mapping CoCh", Int64.Type}, {"Mapping CoCh FY", Int64.Type},{"Mapping CoCh NY", Int64.Type}, {"Mapping CoCh RGF", Int64.Type}}),
+				    #"Entpivotierte Spalten1" = Table.UnpivotOtherColumns(#"Geänderter Typ1", {"Werk", "Geschäftsjahr", "Buchungsperiode", "Werttyp", "Version", "Datum", "cause_of_change", "cause_of_change_fy", "cause_of_change_ny", "cause_of_change_BUD", "cause_of_change_RGF","cause_of_change_R03", "Werttyp_Version", "Betrag"}, "Attribut", "Wert"),
+				    #"Umbenannte Spalten" = Table.RenameColumns(#"Entpivotierte Spalten1",{{"Attribut", "Mapping Art"}, {"Wert", "Mapping Wert"}}),
+				    #"Ersetzter Wert" = Table.ReplaceValue(#"Umbenannte Spalten",0,null,Replacer.ReplaceValue,{"Betrag"}),
+				    #"Geänderter Typ" = Table.TransformColumnTypes(#"Ersetzter Wert",{{"Betrag", Currency.Type}, {"Mapping Wert", Int64.Type}})
+				in
+				    #"Geänderter Typ"
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,23 @@
+table Snapshot_Timestamp_R
+	lineageTag: f2654cbf-e1d3-47b1-8327-847188e17b5d
+
+	column Timestamp
+		formatString: Short Date
+		lineageTag: bac965e8-8837-4410-844a-fd351104f2b1
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: Retention_ITY_CRM[Timestamp]
+
+		variation Variation
+			isDefault
+			relationship: aaad6ec6-4728-4437-9710-101467e6f598
+			defaultHierarchy: LocalDateTable_66371451-b8f9-40ae-9b0f-bde80ea59dc7.Datumshierarchie
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Snapshot_Timestamp_R = calculated
+		mode: import
+		source = DISTINCT(Retention_ITY_CRM[Timestamp])
+
+	annotation PBI_Id = bb97261ffd76492cadb26c0fc7a63295
+

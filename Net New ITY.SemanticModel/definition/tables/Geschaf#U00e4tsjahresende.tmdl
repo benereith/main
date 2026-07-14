@@ -1,0 +1,27 @@
+table Geschafätsjahresende
+	lineageTag: 9e9e01e9-9e66-4e15-b2b2-b4f5c34b8792
+
+	column Geschafätsjahresende
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: e6ef0e9e-02ba-4dd3-a10b-562322bca66c
+		summarizeBy: none
+		sourceColumn: Geschafätsjahresende
+
+		variation Variation
+			isDefault
+			relationship: ee5bed74-6f98-4927-bf70-7f041359840a
+			defaultHierarchy: LocalDateTable_c905f3a3-d944-4806-87d6-a42c69e2b146.Datumshierarchie
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	partition Geschafätsjahresende = m
+		mode: import
+		source = #date(2026, 9, 30) meta [IsParameterQuery=true, Type="Date", IsParameterQueryRequired=true]
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Date
+

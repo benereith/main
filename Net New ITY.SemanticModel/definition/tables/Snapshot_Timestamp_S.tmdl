@@ -1,0 +1,23 @@
+table Snapshot_Timestamp_S
+	lineageTag: 9d630e8f-b3ec-41fd-aad9-09003af8f63f
+
+	column Timestamp
+		formatString: Short Date
+		lineageTag: dd1e663f-135d-4231-a74e-a94260701054
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: Sales_Pipeline_ITY[Timestamp]
+
+		variation Variation
+			isDefault
+			relationship: 6b3295ac-9094-4234-96c5-f071a0711ac8
+			defaultHierarchy: LocalDateTable_149818ef-0a38-40eb-811b-ee02415113b6.Datumshierarchie
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Snapshot_Timestamp_S = calculated
+		mode: import
+		source = DISTINCT(Sales_Pipeline_ITY[Timestamp])
+
+	annotation PBI_Id = db52d2ee5a8941a9aa915c1ec7b93ae6
+

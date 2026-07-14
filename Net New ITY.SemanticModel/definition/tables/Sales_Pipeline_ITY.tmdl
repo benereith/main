@@ -1,0 +1,163 @@
+table Sales_Pipeline_ITY
+	lineageTag: fddf4ea0-07a2-406e-a53b-b109830e50b2
+
+	column name
+		dataType: string
+		lineageTag: 4aa285cc-6e68-45b1-9bbe-75a860a303b2
+		summarizeBy: none
+		sourceColumn: name
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Est Close Date'
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: c7529590-cdd2-45db-8df0-010b9324d11c
+		summarizeBy: none
+		sourceColumn: Est Close Date
+
+		variation Variation
+			isDefault
+			relationship: cae17dc0-8597-44c8-9732-be9ac3e243cf
+			defaultHierarchy: LocalDateTable_f30044f4-e028-4a67-b167-516be3867632.Datumshierarchie
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column owneridname
+		dataType: string
+		lineageTag: 286c4b0c-4680-4ef2-ae5e-6e97c5c2395b
+		summarizeBy: none
+		sourceColumn: owneridname
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Opening Date'
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: c79aa4b2-0ec1-4615-b508-6c1fc564625d
+		summarizeBy: none
+		sourceColumn: Opening Date
+
+		variation Variation
+			isDefault
+			relationship: f739e423-ebdc-4c37-965b-59bef70c5430
+			defaultHierarchy: LocalDateTable_a3df90da-dc57-4251-8f04-794a2fb2d332.Datumshierarchie
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column cgplc_salesstagename
+		dataType: string
+		lineageTag: 077c6276-601f-4a90-81ef-45c624641329
+		summarizeBy: none
+		sourceColumn: cgplc_salesstagename
+
+		annotation SummarizationSetBy = Automatic
+
+	column statecodename
+		dataType: string
+		lineageTag: f2dcb6be-2021-467a-87b6-4767313a28b2
+		summarizeBy: none
+		sourceColumn: statecodename
+
+		annotation SummarizationSetBy = Automatic
+
+	column Buchungsperiode
+		dataType: int64
+		formatString: 0
+		lineageTag: e1d14e9b-aead-49ed-b470-b871594c1a75
+		summarizeBy: sum
+		sourceColumn: Buchungsperiode
+
+		annotation SummarizationSetBy = Automatic
+
+	column Betrag
+		dataType: decimal
+		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		lineageTag: fd215768-9c9b-4568-a20e-ac736f3ed484
+		summarizeBy: sum
+		sourceColumn: Betrag
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	column Geschäftsjahr
+		dataType: int64
+		formatString: 0
+		lineageTag: 7f2fc6d5-6606-4001-8849-0ef35a397399
+		summarizeBy: sum
+		sourceColumn: Geschäftsjahr
+
+		annotation SummarizationSetBy = Automatic
+
+	column Werttyp
+		dataType: string
+		lineageTag: 54bbbd22-5252-496d-9f97-aca845b23a12
+		summarizeBy: none
+		sourceColumn: Werttyp
+
+		annotation SummarizationSetBy = Automatic
+
+	column Datum
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 33ea8f4f-8837-40d6-9676-9163959a7f50
+		summarizeBy: none
+		sourceColumn: Datum
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column 'Win %'
+		dataType: double
+		formatString: 0.00\ %;-0.00\ %;0.00\ %
+		lineageTag: 9cee896b-1293-4d6d-92fa-218d3a2112d9
+		summarizeBy: sum
+		sourceColumn: Win %
+
+		annotation SummarizationSetBy = Automatic
+
+	column Sales_Status
+		dataType: string
+		lineageTag: c483accd-3cf3-4a09-9f6d-ee20e189c75b
+		summarizeBy: none
+		sourceColumn: Sales_Status
+
+		annotation SummarizationSetBy = Automatic
+
+	column Timestamp
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: d9d2a94a-0798-4921-b35c-600be93dc2c9
+		summarizeBy: none
+		sourceColumn: Timestamp
+
+		variation Variation
+			isDefault
+			relationship: 3de07930-33ce-4e93-bbbc-8541ba35430b
+			defaultHierarchy: LocalDateTable_e05992a1-dd8d-4e6c-9bf1-90df21dbe778.Datumshierarchie
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	partition Sales_Pipeline_ITY = m
+		mode: import
+		source =
+				let
+				    Quelle = Sql.Database("3w3wftkijo6ujehh4fb2eleovu-sdjibi3hrggujev7dt4yjznhu4.datawarehouse.fabric.microsoft.com", "lakehouse_group_controlling"),
+				    dbo_Sales_Pipeline_ITY = Quelle{[Schema="dbo",Item="Sales_Pipeline_ITY"]}[Data],
+				    #"Geänderter Typ" = Table.TransformColumnTypes(dbo_Sales_Pipeline_ITY,{{"Win %", Percentage.Type}, {"Betrag", Currency.Type}}),
+				    #"Entfernte Duplikate" = Table.Distinct(#"Geänderter Typ")
+				in
+				    #"Entfernte Duplikate"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

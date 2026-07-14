@@ -1,0 +1,158 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.10.0/schema.json",
+  "name": "2a9f5c3250a74e330679",
+  "position": {
+    "x": 9.9921935987509762,
+    "y": 0,
+    "z": 0,
+    "height": 501.60811865729903,
+    "width": 1090.1483216237316,
+    "tabOrder": 0
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Sales_Pipeline_ITY"
+                    }
+                  },
+                  "Property": "Sales_Status"
+                }
+              },
+              "queryRef": "Sales_Pipeline_ITY.Sales_Status",
+              "nativeQueryRef": "Sales_Status"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Sales_Pipeline_ITY"
+                    }
+                  },
+                  "Property": "name"
+                }
+              },
+              "queryRef": "Sales_Pipeline_ITY.name",
+              "nativeQueryRef": "name"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Sales_Pipeline_ITY"
+                    }
+                  },
+                  "Property": "Buchungsperiode"
+                }
+              },
+              "queryRef": "Sum(Sales_Pipeline_ITY.Buchungsperiode)",
+              "nativeQueryRef": "Buchungsperiode"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "0. Measuretabelle"
+                    }
+                  },
+                  "Property": "Sales_ITY_Act"
+                }
+              },
+              "queryRef": "0. Measuretabelle.Sales_ITY_Act",
+              "nativeQueryRef": "Sales_ITY_Act"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "0. Measuretabelle"
+                  }
+                },
+                "Property": "Sales_ITY_Act"
+              }
+            },
+            "direction": "Descending"
+          }
+        ],
+        "isDefaultSort": true
+      }
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "60820ae5775a9802c29d",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Sales_Pipeline_ITY"
+              }
+            },
+            "Property": "Sales_Status"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "ef74690e0f17462c271c",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "0. Measuretabelle"
+              }
+            },
+            "Property": "Sales_ITY_Act"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "180b5a6a0ee754772443",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Sales_Pipeline_ITY"
+              }
+            },
+            "Property": "Buchungsperiode"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "47701f97f857be1eb027",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Sales_Pipeline_ITY"
+              }
+            },
+            "Property": "name"
+          }
+        },
+        "type": "Categorical"
+      }
+    ]
+  }
+}

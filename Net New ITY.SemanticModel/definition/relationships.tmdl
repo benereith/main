@@ -1,0 +1,89 @@
+relationship 46835ed0-1534-f337-b706-1220ef7629c6
+	fromColumn: Retention_ITY_CRM.Werk
+	toColumn: SAP_Stammdaten.betrieb
+
+relationship 3980b1e3-35c5-8082-4b7d-48f36f13b2ac
+	fromColumn: Retention_ITY_CRM.Datum
+	toColumn: DIM_DATE.Datum
+
+relationship f6dff9e8-45db-43d7-be60-6a2025ed0c9b
+	joinOnDateBehavior: datePartOnly
+	fromColumn: Retention_ITY_CRM.'Contract End Date'
+	toColumn: LocalDateTable_d05434e4-e92c-476b-a119-bb077b28d575.Date
+
+relationship 87b55bf8-edb9-4551-9900-8b215738ab71
+	joinOnDateBehavior: datePartOnly
+	fromColumn: Retention_ITY_CRM.Decisiondate
+	toColumn: LocalDateTable_6d44c5fd-30c5-4562-8573-8f45ab88e306.Date
+
+relationship 5f5e52ea-ec89-4499-b8de-d0936a368586
+	joinOnDateBehavior: datePartOnly
+	fromColumn: Retention_ITY_CRM.Timestamp
+	toColumn: LocalDateTable_83f9d4b1-fd64-4538-a095-c50887f96910.Date
+
+relationship 6b3295ac-9094-4234-96c5-f071a0711ac8
+	joinOnDateBehavior: datePartOnly
+	fromColumn: Snapshot_Timestamp_S.Timestamp
+	toColumn: LocalDateTable_149818ef-0a38-40eb-811b-ee02415113b6.Date
+
+relationship cae17dc0-8597-44c8-9732-be9ac3e243cf
+	joinOnDateBehavior: datePartOnly
+	fromColumn: Sales_Pipeline_ITY.'Est Close Date'
+	toColumn: LocalDateTable_f30044f4-e028-4a67-b167-516be3867632.Date
+
+relationship f739e423-ebdc-4c37-965b-59bef70c5430
+	joinOnDateBehavior: datePartOnly
+	fromColumn: Sales_Pipeline_ITY.'Opening Date'
+	toColumn: LocalDateTable_a3df90da-dc57-4251-8f04-794a2fb2d332.Date
+
+relationship 3de07930-33ce-4e93-bbbc-8541ba35430b
+	joinOnDateBehavior: datePartOnly
+	fromColumn: Sales_Pipeline_ITY.Timestamp
+	toColumn: LocalDateTable_e05992a1-dd8d-4e6c-9bf1-90df21dbe778.Date
+
+relationship ac51f2de-7070-d783-dcc5-73f66d52b023
+	fromColumn: Sales_Pipeline_ITY.Datum
+	toColumn: DIM_DATE.Datum
+
+relationship aaad6ec6-4728-4437-9710-101467e6f598
+	joinOnDateBehavior: datePartOnly
+	fromColumn: Snapshot_Timestamp_R.Timestamp
+	toColumn: LocalDateTable_66371451-b8f9-40ae-9b0f-bde80ea59dc7.Date
+
+relationship cb1c494f-e8fc-4a5a-a626-f6f42cd27289
+	joinOnDateBehavior: datePartOnly
+	fromColumn: Geschäftsjahresbeginn.Geschäftsjahresbeginn
+	toColumn: LocalDateTable_5b966d0f-fe88-460b-9ad7-eebaf7432be3.Date
+
+relationship ee5bed74-6f98-4927-bf70-7f041359840a
+	joinOnDateBehavior: datePartOnly
+	fromColumn: Geschafätsjahresende.Geschafätsjahresende
+	toColumn: LocalDateTable_c905f3a3-d944-4806-87d6-a42c69e2b146.Date
+
+relationship AutoDetected_72613004-b46b-42db-b9ae-4626f40ead33
+	crossFilteringBehavior: bothDirections
+	fromColumn: Comments.'Werk - Bezeichnung'
+	toColumn: SAP_Stammdaten.'Werk - Bezeichnung'
+
+relationship 6182d8fb-7051-a263-8752-a0b8f79a2133
+	fromColumn: Revenues.Datum
+	toColumn: DIM_DATE.Datum
+
+relationship 614b0961-0588-365a-bb81-bc8c33cbe8a0
+	fromColumn: Revenues.Werk
+	toColumn: SAP_Stammdaten.betrieb
+
+relationship ffe216e2-33cb-4847-b7dc-4c7c3499dba1
+	joinOnDateBehavior: datePartOnly
+	fromColumn: Comments.Datum
+	toColumn: LocalDateTable_037d5e5e-d09b-4118-ac82-78435c7db37d.Date
+
+relationship e6f2ec52-6aae-4d51-9296-b14c02c22363
+	joinOnDateBehavior: datePartOnly
+	fromColumn: SAP_Stammdaten.vertragsbeginn
+	toColumn: LocalDateTable_f5941182-b87d-4faa-8515-b9f7b0af7dd0.Date
+
+relationship 35ae39be-c111-e2ff-6d54-286b4867bfa1
+	fromColumn: Revenues.'Mapping Wert'
+	toColumn: DIM_Struktur.MetricId
+

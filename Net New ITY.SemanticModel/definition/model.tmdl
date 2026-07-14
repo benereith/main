@@ -1,0 +1,61 @@
+model Model
+	culture: de-DE
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: de-DE
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+queryGroup 'Datei aus  Comments  transformieren'
+
+	annotation PBI_QueryGroupOrder = 0
+
+queryGroup 'Datei aus  Comments  transformieren\Hilfsprogrammabfragen'
+
+	annotation PBI_QueryGroupOrder = 0
+
+annotation __PBI_TimeIntelligenceEnabled = 1
+
+annotation PBI_QueryOrder = ["SAP_Stammdaten","SAP_Revenues","0. Measuretabelle","DIM_DATE","Revenues","md_BUD","Retention_ITY_CRM","Sales_Pipeline_ITY","Geschafätsjahresende","Geschäftsjahresbeginn","N_Geschäftsjahr","N_Geschäftsjahr-1","Comments","Abgeschlossene_Periode","exports_md","SAP_Revenues_offen","SAP_Revenues_abg","Filter_Stammdatenhistorisierung","md_RGF","Zeitfilter","Parameter_RGF_Stammdaten","Parameter_BUD_Stammdaten","Parameter1","Beispieldatei transformieren","Beispieldatei","Datei transformieren","Man_Stamm","Man_Rev","md_R03","Parameter_R01_Stammdaten","DIM_Struktur"]
+
+annotation PBI_ProTooling = ["WebModelingEdit","CopilotTooling","DevMode"]
+
+annotation __LastRPTime = 134279038210718411
+
+ref table DateTableTemplate_0b867cd2-bb97-43fd-9204-d95f28aaa92a
+ref table '0. Measuretabelle'
+ref table DIM_DATE
+ref table SAP_Stammdaten
+ref table Granularität
+ref table 'Abgeschlossene Periode'
+ref table Retention_ITY_CRM
+ref table LocalDateTable_d05434e4-e92c-476b-a119-bb077b28d575
+ref table LocalDateTable_6d44c5fd-30c5-4562-8573-8f45ab88e306
+ref table LocalDateTable_83f9d4b1-fd64-4538-a095-c50887f96910
+ref table Snapshot_Timestamp_R
+ref table Snapshot_Timestamp_S
+ref table LocalDateTable_149818ef-0a38-40eb-811b-ee02415113b6
+ref table Sales_Pipeline_ITY
+ref table LocalDateTable_f30044f4-e028-4a67-b167-516be3867632
+ref table LocalDateTable_a3df90da-dc57-4251-8f04-794a2fb2d332
+ref table LocalDateTable_e05992a1-dd8d-4e6c-9bf1-90df21dbe778
+ref table LocalDateTable_66371451-b8f9-40ae-9b0f-bde80ea59dc7
+ref table N_Geschäftsjahr
+ref table N_Geschäftsjahr-1
+ref table Geschäftsjahresbeginn
+ref table LocalDateTable_5b966d0f-fe88-460b-9ad7-eebaf7432be3
+ref table Geschafätsjahresende
+ref table LocalDateTable_c905f3a3-d944-4806-87d6-a42c69e2b146
+ref table KPI
+ref table Comments
+ref table Revenues
+ref table Zeitansicht
+ref table Zeitfilter
+ref table LocalDateTable_037d5e5e-d09b-4118-ac82-78435c7db37d
+ref table LocalDateTable_f5941182-b87d-4faa-8515-b9f7b0af7dd0
+ref table DIM_Struktur
+
+ref role All
+
+ref cultureInfo de-DE
+

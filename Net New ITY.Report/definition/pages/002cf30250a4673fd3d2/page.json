@@ -1,0 +1,65 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/2.1.0/schema.json",
+  "name": "002cf30250a4673fd3d2",
+  "displayName": "Recherche",
+  "displayOption": "FitToPage",
+  "height": 720,
+  "width": 1280,
+  "objects": {
+    "outspacePane": [
+      {
+        "properties": {
+          "width": {
+            "expr": {
+              "Literal": {
+                "Value": "201L"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "background": [
+      {
+        "properties": {
+          "color": {
+            "solid": {
+              "color": {
+                "expr": {
+                  "Literal": {
+                    "Value": "'#E5E5E5'"
+                  }
+                }
+              }
+            }
+          },
+          "transparency": {
+            "expr": {
+              "Literal": {
+                "Value": "0D"
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "visibility": "HiddenInViewMode",
+  "visualInteractions": [
+    {
+      "source": "82d6014046d58f85309c",
+      "target": "7d2b256825ca695e683c",
+      "type": "DataFilter"
+    },
+    {
+      "source": "6326dae7b63a863d99c7",
+      "target": "7d2b256825ca695e683c",
+      "type": "NoFilter"
+    },
+    {
+      "source": "7d2b256825ca695e683c",
+      "target": "82d6014046d58f85309c",
+      "type": "DataFilter"
+    }
+  ]
+}

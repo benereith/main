@@ -1,0 +1,501 @@
+table SAP_Stammdaten
+	lineageTag: 71d979ea-d6db-498a-b656-8117a88ee56d
+
+	column betrieb
+		dataType: string
+		lineageTag: 39c720e0-790a-4574-a0b7-5fd772d37355
+		summarizeBy: none
+		sourceColumn: betrieb
+
+		annotation SummarizationSetBy = Automatic
+
+	column bezeichnung_betrieb
+		dataType: string
+		lineageTag: 9a11cfcf-068a-4b7d-9dfd-ddc9c54d5e7f
+		summarizeBy: none
+		sourceColumn: bezeichnung_betrieb
+
+		annotation SummarizationSetBy = Automatic
+
+	column buchungskreis
+		dataType: string
+		lineageTag: 883111c7-f45b-4e90-ba26-e83581683e55
+		summarizeBy: none
+		sourceColumn: buchungskreis
+
+		annotation SummarizationSetBy = Automatic
+
+	column sektor
+		dataType: string
+		lineageTag: 41503303-9cb9-4f8a-9648-b552a52a39b4
+		summarizeBy: none
+		sourceColumn: sektor
+
+		annotation SummarizationSetBy = Automatic
+
+	column vertragsbeginn
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: f045b805-f520-4d05-9da9-c7239eff4bb9
+		summarizeBy: none
+		sourceColumn: vertragsbeginn
+
+		variation Variation
+			isDefault
+			relationship: e6f2ec52-6aae-4d51-9296-b14c02c22363
+			defaultHierarchy: LocalDateTable_f5941182-b87d-4faa-8515-b9f7b0af7dd0.Datumshierarchie
+
+		changedProperty = DataType
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column schliessung
+		dataType: string
+		lineageTag: ab1ca147-db51-4455-87de-39980b131cf8
+		summarizeBy: none
+		sourceColumn: schliessung
+
+		annotation SummarizationSetBy = Automatic
+
+	column vertragsart
+		dataType: string
+		lineageTag: 94c608da-728b-4ad9-80d3-e028f97eb2ba
+		summarizeBy: none
+		sourceColumn: vertragsart
+
+		annotation SummarizationSetBy = Automatic
+
+	column kennzeichen_pacht/mandat
+		dataType: string
+		lineageTag: c0ee021d-e11f-45fe-af3d-ef4e7931c113
+		summarizeBy: none
+		sourceColumn: kennzeichen_pacht/mandat
+
+		annotation SummarizationSetBy = Automatic
+
+	column innenauftragsart
+		dataType: string
+		lineageTag: 3ec2fe1c-5202-40d7-b33f-d81ffe8ed2f2
+		summarizeBy: none
+		sourceColumn: innenauftragsart
+
+		annotation SummarizationSetBy = Automatic
+
+	column bezirk
+		dataType: string
+		lineageTag: 2f6067ae-b8b5-4e2f-9888-0de913758cfc
+		summarizeBy: none
+		sourceColumn: bezirk
+
+		annotation SummarizationSetBy = Automatic
+
+	column bezeichnung_bezirk
+		dataType: string
+		lineageTag: c1a4d5e4-44b1-49f3-aa1a-a2c4c516655e
+		summarizeBy: none
+		sourceColumn: bezeichnung_bezirk
+
+		annotation SummarizationSetBy = Automatic
+
+	column adresse_name
+		dataType: string
+		lineageTag: 2541b3a3-d647-45de-ad5e-87538c45a67f
+		summarizeBy: none
+		sourceColumn: adresse_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column adresse_kurz
+		dataType: string
+		lineageTag: 3baa7c00-c1d6-4004-b882-2e73c022e57a
+		summarizeBy: none
+		sourceColumn: adresse_kurz
+
+		annotation SummarizationSetBy = Automatic
+
+	column stadt
+		dataType: string
+		lineageTag: 223e601f-c5ab-4550-a384-d6db61b8a8b1
+		summarizeBy: none
+		sourceColumn: stadt
+
+		annotation SummarizationSetBy = Automatic
+
+	column plz
+		dataType: string
+		lineageTag: 8bd4741a-ca82-4a0f-a208-0cfc41b921d7
+		summarizeBy: none
+		sourceColumn: plz
+
+		annotation SummarizationSetBy = Automatic
+
+	column strasse
+		dataType: string
+		lineageTag: 7d423bac-13ed-4306-81b1-244bfeceda98
+		summarizeBy: none
+		sourceColumn: strasse
+
+		annotation SummarizationSetBy = Automatic
+
+	column hausnummer
+		dataType: string
+		lineageTag: bf02c1b2-66d2-42b1-acc6-c4146795d8e4
+		summarizeBy: none
+		sourceColumn: hausnummer
+
+		annotation SummarizationSetBy = Automatic
+
+	column bundesland_key
+		dataType: string
+		lineageTag: 24ed61c1-0ab2-47fd-b0e9-bcae3f30c590
+		summarizeBy: none
+		sourceColumn: bundesland_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column bundesland
+		dataType: string
+		lineageTag: 72059402-bc4e-4a01-9889-658b56dc5cef
+		summarizeBy: none
+		sourceColumn: bundesland
+
+		annotation SummarizationSetBy = Automatic
+
+	column land_kuerzel
+		dataType: string
+		lineageTag: f06c55d5-ad2d-41c0-9cc4-14a57a4accd9
+		summarizeBy: none
+		sourceColumn: land_kuerzel
+
+		annotation SummarizationSetBy = Automatic
+
+	column bezeichnung_debitor
+		dataType: string
+		lineageTag: 65846c31-a035-4028-9a37-77a89119ae20
+		summarizeBy: none
+		sourceColumn: bezeichnung_debitor
+
+		annotation SummarizationSetBy = Automatic
+
+	column service
+		dataType: string
+		lineageTag: 240e11f5-a7af-4693-b4fd-054c67d8b204
+		summarizeBy: none
+		sourceColumn: service
+
+		annotation SummarizationSetBy = Automatic
+
+	column sus_cluster
+		dataType: string
+		lineageTag: 39254bb0-cb0d-4f8e-bef7-ba2f1fb8e84f
+		summarizeBy: none
+		sourceColumn: sus_cluster
+
+		annotation SummarizationSetBy = Automatic
+
+	column food_cluster
+		dataType: string
+		lineageTag: b3a8d563-45ab-4ac7-ad84-15aaaea716a8
+		summarizeBy: none
+		sourceColumn: food_cluster
+
+		annotation SummarizationSetBy = Automatic
+
+	column branche
+		dataType: string
+		lineageTag: 145c027b-dbb1-45eb-9fc1-ce15973d4893
+		summarizeBy: none
+		sourceColumn: branche
+
+		annotation SummarizationSetBy = Automatic
+
+	column bezeichnung_branche
+		dataType: string
+		lineageTag: b9bbc723-a8d9-406e-9711-3416eed42874
+		summarizeBy: none
+		sourceColumn: bezeichnung_branche
+
+		annotation SummarizationSetBy = Automatic
+
+	column kundengruppe
+		dataType: string
+		lineageTag: 8a0cf975-8666-4b2b-b35e-5f66d3a7e8d7
+		summarizeBy: none
+		sourceColumn: kundengruppe
+
+		annotation SummarizationSetBy = Automatic
+
+	column bezeichnung_kundengruppe
+		dataType: string
+		lineageTag: 60d31118-c9a0-4c1f-9b7f-ad03abf929c5
+		summarizeBy: none
+		sourceColumn: bezeichnung_kundengruppe
+
+		annotation SummarizationSetBy = Automatic
+
+	column debitor
+		dataType: string
+		lineageTag: 0a1e3536-028e-4b71-bdaa-dc1710cdf7e8
+		summarizeBy: none
+		sourceColumn: debitor
+
+		annotation SummarizationSetBy = Automatic
+
+	column management
+		dataType: string
+		lineageTag: 37b6f13b-aa94-4778-9b3e-0e905734f8d7
+		summarizeBy: none
+		sourceColumn: management
+
+		annotation SummarizationSetBy = Automatic
+
+	column bezeichnung_management
+		dataType: string
+		lineageTag: f0979bc9-4ada-43c0-86fb-d89fe6ee5074
+		summarizeBy: none
+		sourceColumn: bezeichnung_management
+
+		annotation SummarizationSetBy = Automatic
+
+	column name_buchungskreis
+		dataType: string
+		lineageTag: 75a89102-28d4-4967-8873-0fd2867d58c2
+		summarizeBy: none
+		sourceColumn: name_buchungskreis
+
+		annotation SummarizationSetBy = Automatic
+
+	column cause_of_change
+		dataType: int64
+		formatString: 0
+		lineageTag: 8af6cad2-c743-45ff-9c06-928a9ab0f587
+		summarizeBy: sum
+		sourceColumn: cause_of_change
+
+		annotation SummarizationSetBy = Automatic
+
+	column bezeichnung_cause_of_change
+		dataType: string
+		lineageTag: 9da48ac5-2ede-4b67-94ef-7491d328be1c
+		summarizeBy: none
+		sourceColumn: bezeichnung_cause_of_change
+
+		annotation SummarizationSetBy = Automatic
+
+	column cause_of_change_fy
+		dataType: int64
+		formatString: 0
+		lineageTag: b09b3d30-8167-49bc-bc05-cea9d74b432d
+		summarizeBy: sum
+		sourceColumn: cause_of_change_fy
+
+		annotation SummarizationSetBy = Automatic
+
+	column bezeichnung_cause_of_change_fy
+		dataType: string
+		lineageTag: 5f1d7bff-2b03-4eab-9689-b3b8cc55e62d
+		summarizeBy: none
+		sourceColumn: bezeichnung_cause_of_change_fy
+
+		annotation SummarizationSetBy = Automatic
+
+	column cause_of_change_ny
+		dataType: int64
+		formatString: 0
+		lineageTag: d0e704f8-e95b-4fa0-9243-d8cf5622578c
+		summarizeBy: sum
+		sourceColumn: cause_of_change_ny
+
+		annotation SummarizationSetBy = Automatic
+
+	column bezeichnung_cause_of_change_ny
+		dataType: string
+		lineageTag: af90fb9e-6d2f-4b5c-ac84-23c2feb592a7
+		summarizeBy: none
+		sourceColumn: bezeichnung_cause_of_change_ny
+
+		annotation SummarizationSetBy = Automatic
+
+	column verantwortungsbereich
+		dataType: string
+		lineageTag: a83502b1-0f3a-4679-943e-0c7385014610
+		summarizeBy: none
+		sourceColumn: verantwortungsbereich
+
+		annotation SummarizationSetBy = Automatic
+
+	column bezeichnung_verantwortungsbereich
+		dataType: string
+		lineageTag: 63c5b88c-f1f9-48bc-b659-31f3edadb482
+		summarizeBy: none
+		sourceColumn: bezeichnung_verantwortungsbereich
+
+		annotation SummarizationSetBy = Automatic
+
+	column region
+		dataType: string
+		lineageTag: 57732548-3eda-43a1-bf65-9c08e750a0e3
+		summarizeBy: none
+		sourceColumn: region
+
+		annotation SummarizationSetBy = Automatic
+
+	column bezeichnung_region
+		dataType: string
+		lineageTag: e5db459a-34ec-4477-837f-841ce5c93a56
+		summarizeBy: none
+		sourceColumn: bezeichnung_region
+
+		annotation SummarizationSetBy = Automatic
+
+	column id_region_perm
+		dataType: string
+		lineageTag: 17280afd-9bb9-4f33-9fdc-b0c716f9b645
+		summarizeBy: none
+		sourceColumn: id_region_perm
+
+		annotation SummarizationSetBy = Automatic
+
+	column bezeichnung_vertragsart
+		dataType: string
+		lineageTag: e7798c1e-a261-461c-b115-f3e26a56166e
+		summarizeBy: none
+		sourceColumn: bezeichnung_vertragsart
+
+		annotation SummarizationSetBy = Automatic
+
+	column update_ts
+		dataType: string
+		lineageTag: b41d1219-00a9-486d-816b-5e2e4d8437f8
+		summarizeBy: none
+		sourceColumn: update_ts
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Werk - Bezeichnung'
+		dataType: string
+		lineageTag: a46a4628-18f5-4762-bcfd-a0569b2a0569
+		summarizeBy: none
+		sourceColumn: Werk - Bezeichnung
+
+		annotation SummarizationSetBy = Automatic
+
+	column Betriebstyp
+		dataType: string
+		lineageTag: 89fcb58f-0cd3-450d-bb9f-874614c3a62d
+		summarizeBy: none
+		sourceColumn: Betriebstyp
+
+		annotation SummarizationSetBy = Automatic
+
+	column cause_of_change_BUD
+		dataType: int64
+		formatString: 0
+		lineageTag: 59a404f8-63e3-4861-94af-fbefdc430fc3
+		summarizeBy: sum
+		sourceColumn: cause_of_change_BUD
+
+		annotation SummarizationSetBy = Automatic
+
+	column cause_of_change_RGF
+		dataType: int64
+		formatString: 0
+		lineageTag: 5640d26d-ffd6-4c5e-bfb1-505593cd5cc0
+		summarizeBy: sum
+		sourceColumn: cause_of_change_RGF
+
+		annotation SummarizationSetBy = Automatic
+
+	column cause_of_change_R03
+		dataType: int64
+		formatString: 0
+		lineageTag: adc2e30b-c7ee-4773-878e-b53dafc0bbbf
+		summarizeBy: sum
+		sourceColumn: cause_of_change_R03
+
+		annotation SummarizationSetBy = Automatic
+
+	column HFM_sektor
+		dataType: string
+		lineageTag: 1837fb80-586a-49ef-af21-f8214af79b22
+		summarizeBy: none
+		sourceColumn: HFM_sektor
+
+		annotation SummarizationSetBy = Automatic
+
+	column HFM_Bereich
+		dataType: string
+		lineageTag: 3c69128e-aadd-40e6-a4d8-85eedd2948ae
+		summarizeBy: none
+		sourceColumn: HFM_Bereich
+
+		annotation SummarizationSetBy = Automatic
+
+	column HFM_Sek_SE
+		dataType: string
+		lineageTag: 60d2f6fd-ec0c-4bc2-b48d-30cd2a1fd96f
+		summarizeBy: none
+		sourceColumn: HFM_Sek_SE
+
+		annotation SummarizationSetBy = Automatic
+
+	partition SAP_Stammdaten = m
+		mode: import
+		source = ```
+				let
+				    Quelle = PowerPlatform.Dataflows(null),
+				    Workspaces = Quelle{[Id="Workspaces"]}[Data],
+				    #"ddc66bda-5a20-49f0-be6e-b68e17a1cc90" = Workspaces{[workspaceId="ddc66bda-5a20-49f0-be6e-b68e17a1cc90"]}[Data],
+				    #"a65e47b1-6a8b-4cf2-8131-c90e55bf14c7" = #"ddc66bda-5a20-49f0-be6e-b68e17a1cc90"{[dataflowId="a65e47b1-6a8b-4cf2-8131-c90e55bf14c7"]}[Data],
+				    sap_master_data_unit_ = #"a65e47b1-6a8b-4cf2-8131-c90e55bf14c7"{[entity="sap_master_data_unit",version=""]}[Data],
+				    #"Benutzerdefinierte Spalte hinzugefügt" = Table.AddColumn(sap_master_data_unit_, "Werk - Bezeichnung", each Text.Combine({Text.PadStart(Text.From([betrieb], "de-DE"), 4, "0"), " - ", [bezeichnung_betrieb]}), type text),
+				
+				// 👉 Bereinigte, sortierte Listen deiner Planbetriebe
+				
+				PlanbetriebeRoll = 
+				{   127, 1678, 1680, 1682, 1684, 1686, 1688, 1690, 1692, 1694, 1696, 1862, 1863,
+				    2119, 4350, 4590, 5200, 5226, 7133, 7120, 7937, 8535, 8849, 9736, 9747, 9876, 9937 },
+				
+				PlanbetriebeITY = 
+				{   1679, 1681, 1683, 1685, 1687, 1689, 1691, 1693, 1695, 7933, 8385, 8386, 9911, 
+				    9913, 9916, 9920, 9922, 9924, 9926, 9933, 9936, 9940, 9944, 9945, 9946, 9947, 
+				    9950, 9952 },
+				
+				
+				    // 👉 Neue Spalte hinzufügen
+				    Hinzugefügt = Table.AddColumn(#"Benutzerdefinierte Spalte hinzugefügt", "Betriebstyp", each if List.Contains(PlanbetriebeRoll, [betrieb]) then "Plan-Betriebe Roll"
+				            else if List.Contains(PlanbetriebeITY, [betrieb]) then "Plan-Betriebe ITY"
+				            else "Real-Betriebe"),
+				  #"Geänderter Spaltentyp" = Table.TransformColumnTypes(Hinzugefügt, {{"Betriebstyp", type text}}),
+				    #"Zusammengeführte Abfragen" = Table.NestedJoin(#"Geänderter Spaltentyp", {"betrieb"}, md_BUD, {"betrieb"}, "Stammdaten_BUD", JoinKind.LeftOuter),
+				  #"Erweitert Stammdaten_BUD" = Table.ExpandTableColumn(#"Zusammengeführte Abfragen", "Stammdaten_BUD", {"cause_of_change_BUD"}, {"cause_of_change_BUD"}),
+				    #"Zusammengeführte Abfragen1" = Table.NestedJoin(#"Erweitert Stammdaten_BUD", {"betrieb"}, md_RGF, {"betrieb"}, "exports_md_RGF", JoinKind.LeftOuter),
+				    #"Erweiterte exports_md_RGF" = Table.ExpandTableColumn(#"Zusammengeführte Abfragen1", "exports_md_RGF", {"cause_of_change_RGF"}, {"cause_of_change_RGF"}),
+				    #"Zusammengeführte Abfragen2" = Table.NestedJoin(#"Erweiterte exports_md_RGF", {"betrieb"}, md_R03, {"betrieb"}, "md_R03", JoinKind.LeftOuter),
+				    #"Erweiterte md_R01" = Table.ExpandTableColumn(#"Zusammengeführte Abfragen2", "md_R03", {"cause_of_change_R03"}, {"cause_of_change_R03"}),
+				    #"Angefügte Abfrage" = Table.Combine({#"Erweiterte md_R01", Man_Stamm}),
+				    #"Geänderter Typ" = Table.TransformColumnTypes(#"Angefügte Abfrage",{{"cause_of_change_R03", Int64.Type}}),
+				     HFM_Sektor = Table.TransformColumnTypes(Table.AddColumn(#"Geänderter Typ", "HFM_sektor", each if [bezeichnung_verantwortungsbereich] = "Food Services" then
+				    if [sektor] = "SE" then "HC"
+				    else if [sektor] = "OV" then "BU"
+				    else if [sektor] = "RE" then "HC"
+				    else if [sektor] = "ED" then "HC"
+				    else if [sektor] = "RT" then "BU"
+				    else [sektor]
+				else if [bezeichnung_verantwortungsbereich] = "Support Service" then
+				    if [sektor] = "OV" then "BU"
+				    else [sektor]
+				else 
+				    [sektor]), {{"HFM_sektor", type text}}),
+				  #"Bedingte Spalte eingefügt" = Table.AddColumn(HFM_Sektor, "HFM_Bereich", each if [bezeichnung_verantwortungsbereich] = "Support Service" then "Support" else "Food"),
+				  #"Hinzugefügte benutzerdefinierte Spalte 2" = Table.TransformColumnTypes(Table.AddColumn(#"Bedingte Spalte eingefügt", "HFM_Sek_SE", each if [HFM_sektor]="BU" then "SE11100" else if [HFM_sektor]="IN" then "SE12100" else if [HFM_sektor]="MT"  then "SE11200" else if [HFM_sektor]="LE" then "SE41200" else if [HFM_sektor]="HC" then "SE39000" else if [HFM_sektor]="ST" then "SE42300" else if [HFM_sektor]="EV" then "SE42200" else if [HFM_sektor]="ED" then "SE22100" else null), {{"HFM_Sek_SE", type text}})
+				in
+				    #"Hinzugefügte benutzerdefinierte Spalte 2"
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,122 @@
+table KPI
+	lineageTag: 9ce214e6-b105-4a5a-96f1-f179643fdef3
+
+	column KPIKey
+		formatString: 0
+		lineageTag: 4ac3ce8c-bf45-4e10-af55-1d6225d208ea
+		summarizeBy: count
+		isNameInferred
+		sourceColumn: [KPIKey]
+		sortByColumn: Sort
+
+		annotation SummarizationSetBy = Automatic
+
+	column Section
+		lineageTag: 52b83e85-8ca4-4578-8284-2a3e0e366556
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Section]
+
+		annotation SummarizationSetBy = Automatic
+
+	column KPI
+		lineageTag: dbaf87b1-e391-4c04-8027-fa7c56367b47
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [KPI]
+		sortByColumn: Sort
+
+		annotation SummarizationSetBy = Automatic
+
+	column Sort
+		formatString: 0
+		lineageTag: 1fd6a5c1-9b55-4918-a424-a9eaaa1298d3
+		summarizeBy: sum
+		isNameInferred
+		sourceColumn: [Sort]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition KPI = calculated
+		mode: import
+		source =
+				
+				DATATABLE (
+				    "KPIKey", INTEGER,
+				    "Section", STRING,
+				    "KPI", STRING,
+				    "Sort", INTEGER,
+				    {
+				        { 1, "New Roll", "New Roll Budget", 10 },
+				        { 2, "New Roll", "New Roll Forecast/Actuals", 20 },
+				        { 3, "New Roll", "New Roll Delta", 30 },
+				        { 991, " ", " ", 35 }, -- Leerzeile nach New Roll
+				
+				        { 4, "Lost Roll", "Lost Roll Budget", 40 },
+				        { 5, "Lost Roll", "Lost Roll Forecast/Actuals", 50 },
+				        { 6, "Lost Roll", "Lost Roll Delta", 60 },
+				        { 992, "Lost Roll", " ", 65 }, -- Leerzeile nach Lost Roll
+				
+				        { 7, "Net New Roll", "Net New Roll Budget", 70 },
+				        { 8, "Net New Roll", "Net New Roll Forecast/Actuals", 80 },
+				        { 9, "Net New Roll", "Net New Roll Delta", 90 },
+				        { 993, "Net New Roll", " ", 95 }, -- Leerzeile nach Net New Roll
+				
+				        { 10, "In the Year ITY (from Growth)", "New ITY Budget", 110 },
+				        { 11, "In the Year ITY (from Growth)", "New ITY Pipeline Forecast/Actual", 120 },
+				        { 12, "In the Year ITY (from Growth)", "New ITY Delta", 130 },
+				        { 994, "In the Year ITY (from Growth)", " ", 135 },
+				
+				        { 13, "In the Year ITY (from Growth)", "Lost ITY Budget", 140 },
+				        { 14, "In the Year ITY (from Growth)", "Lost ITY Pipeline Forecast/Actual", 150 },
+				        { 15, "In the Year ITY (from Growth)", "Lost ITY Delta", 160 },
+				        { 995, "In the Year ITY (from Growth)", " ", 165 },
+				
+				        { 16, "In the Year ITY (from Growth)", "Net New ITY Budget (Unsecured)", 170 },
+				        { 17, "In the Year ITY (from Growth)", "Net New ITY Actuals (Unsecured)", 180 },
+				        { 18, "In the Year ITY (from Growth)", "Net New ITY Delta (Unsecured)", 190 },
+				        { 996, "In the Year ITY (from Growth)", " ", 195 },
+				
+				        { 19, "Net New ITY FY 26", "Net New ITY Budget", 210 },
+				        { 20, "Net New ITY FY 26", "Net New ITY Actuals", 220 },
+				        { 21, "Net New ITY FY 26", "Net New ITY Delta", 230 },
+				        { 997, "Net New ITY FY 26", " ", 235 },
+				
+				        { 30, "Adjusted PY Organic Revenue", "Adjusted PY Organic Revenue", 300 },
+				        { 998, "Adjusted PY Organic Revenue", " ", 305 },
+				
+				        { 40, "New Business %", "New Business Roll % Budget", 410 },
+				        { 41, "New Business %", "New Business Roll % Forecast/Actual", 420 },
+				        { 42, "New Business %", "New Business Roll % Delta", 430 },
+				        { 999, "New Business %", " ", 435 },
+				
+				        { 43, "New Business %", "New Business ITY % Budget", 440 },
+				        { 44, "New Business %", "New Business ITY % Forecast/Actual", 450 },
+				        { 45, "New Business %", "New Business ITY % Delta", 460 },
+				        { 1000, "New Business %", " ", 465 },
+				
+				        { 46, "New Business %", "New Business % Budget", 470 },
+				        { 47, "New Business %", "New Business % Forecast/Actual", 480 },
+				        { 48, "New Business %", "New Business % Delta", 490 },
+				        { 1001, "New Business %", " ", 495 },
+				
+				        { 49, "Lost Business %", "Lost Business ITY % Budget", 510 },
+				        { 50, "Lost Business %", "Lost Business ITY % Forecast/Actual", 520 },
+				        { 51, "Lost Business %", "Lost Business ITY % Delta", 530 },
+				        { 1002, "Lost Business %", " ", 535 },
+				
+				        { 52, "Lost Business %", "Lost Business % Budget", 540 },
+				        { 53, "Lost Business %", "Lost Business % Forecast/Actual", 550 },
+				        { 54, "Lost Business %", "Lost Business % Delta", 560 },
+				        { 1003, "Lost Business %", " ", 565 },
+				
+				        { 55, "Net New Business %", "Net New Business % Budget", 610 },
+				        { 56, "Net New Business %", "Net New Business % Forecast/Actual", 620 },
+				        { 57, "Net New Business %", "Impact Autostadt & Four Frankfurt €", 630 },
+				        { 58, "Net New Business %", "Impact Autostadt & Four Frankfurt %", 640 },
+				        { 59, "Net New Business %", "Net New Business % Delta", 650 }
+				    }
+				)
+
+	annotation PBI_Id = 1347a2373f064db181eedc233d788545
+

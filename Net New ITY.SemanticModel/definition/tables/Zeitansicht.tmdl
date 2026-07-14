@@ -1,0 +1,58 @@
+table Zeitansicht
+	lineageTag: 2dcb6cd9-b030-4ad3-a943-02215447f311
+
+	column Parameter
+		lineageTag: ef6d2c80-9cdc-4ee1-b55e-6a468bad3aea
+		summarizeBy: none
+		sourceColumn: [Value1]
+		sortByColumn: 'Parameter Reihenfolge'
+
+		relatedColumnDetails
+			groupByColumn: 'Parameter Felder'
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Parameter Felder'
+		isHidden
+		lineageTag: 2c242298-cbcc-4ad2-9afc-abde34deb98e
+		summarizeBy: none
+		sourceColumn: [Value2]
+		sortByColumn: 'Parameter Reihenfolge'
+
+		extendedProperty ParameterMetadata =
+				{
+				  "version": 3,
+				  "kind": 2
+				}
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Parameter Reihenfolge'
+		isHidden
+		formatString: 0
+		lineageTag: a66719c4-d7e4-471d-9543-bb62f1c3e707
+		summarizeBy: sum
+		sourceColumn: [Value3]
+
+		annotation SummarizationSetBy = Automatic
+
+	column Value4
+		lineageTag: 572960c2-16ba-4e89-9035-5c55b05fc149
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Value4]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Zeitansicht = calculated
+		mode: import
+		source =
+				{
+				    ("ACT_Periodic", NAMEOF('0. Measuretabelle'[ACT_Periodic]), 0,"MTD"),
+				    ("BUD_Periodic", NAMEOF('0. Measuretabelle'[BUD_Periodic]), 1,"MTD"),
+				    ("ACT_Value", NAMEOF('0. Measuretabelle'[ACT_Value]), 2,"YTD"),
+				    ("BUD_Value", NAMEOF('0. Measuretabelle'[BUD_Value]), 3,"YTD")
+				}
+
+	annotation PBI_Id = 02b9481495ba411fa052b7cbcc992fdb
+

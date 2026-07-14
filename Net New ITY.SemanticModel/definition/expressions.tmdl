@@ -1,0 +1,307 @@
+expression SAP_Revenues =
+		let
+		  Quelle = SharePoint.Contents("https://cpgplc.sharepoint.com/sites/GroupControlling/", [ApiVersion = 15]),
+		  Navigation = Quelle{[Name = "Shared Documents"]}[Content],
+		  #"Navigation 1" = Navigation{[Name = "Group Controlling"]}[Content],
+		  #"Navigation 2" = #"Navigation 1"{[Name = "Net New ITY"]}[Content],
+		  #"Navigation 3" = #"Navigation 2"{[Name = "02_Revenues"]}[Content],
+		  #"Navigation 4" = #"Navigation 3"{[Name = "Revenues_SAP.xlsx"]}[Content],
+		  #"Importierte Excel-Arbeitsmappe" = Excel.Workbook(#"Navigation 4", null, true),
+		  #"Navigation 5" = #"Importierte Excel-Arbeitsmappe"{[Item = "Revenues", Kind = "Sheet"]}[Data],
+		  #"Geänderter Spaltentyp" = Table.TransformColumnTypes(#"Navigation 5", {{"Column1", type text}, {"Column3", type text}, {"Column8", type text}, {"Column9", type text}, {"Column10", type text}, {"Column11", type text}, {"Column12", type text}}, "de"),
+		  #"Höher gestufte Header" = Table.PromoteHeaders(#"Geänderter Spaltentyp", [PromoteAllScalars = true]),
+		  #"Höher gestufte Header 1" = Table.PromoteHeaders(#"Höher gestufte Header", [PromoteAllScalars = true]),#"Entfernte Spalten" = Table.RemoveColumns(#"Höher gestufte Header 1",{"Auftragsart", "Column2", "", "Column4", "Column5", "Column6", "Column7"}),
+		    #"Gefilterte Zeilen" = Table.SelectRows(#"Entfernte Spalten", each ([Geschäftsjahr] <> "Ergebnis")),
+		    #"Geänderter Typ" = Table.TransformColumnTypes(#"Gefilterte Zeilen",{{"Werk", Int64.Type}, {"Werttyp", type text}, {"Version", type text}, {"EUR", type number}, {"Geschäftsjahr", Int64.Type}, {"Buchungsperiode", Int64.Type}}),
+		    #"Umbenannte Spalten" = Table.RenameColumns(#"Geänderter Typ",{{"EUR", "Betrag"}}),
+		    #"Gefilterte Zeilen1" = Table.SelectRows(#"Umbenannte Spalten", each [Werk] <> null and [Werk] <> ""),
+		    Benutzerdefiniert1 = Table.AddColumn(#"Gefilterte Zeilen1", "Datum", each let
+		            p = [Buchungsperiode],
+		            y = [Geschäftsjahr],
+		            m = if p <= 3 then p + 9 else p - 3,   // P1..P3 → Okt..Dez
+		            j = if p <= 3 then y  else y  +1      // FY-Schiebung
+		        in
+		            #date(j, m, 1)),
+		    #"Geänderter Typ2" = Table.TransformColumnTypes(Benutzerdefiniert1,{{"Datum", type date}})
+		in
+		    #"Geänderter Typ2"
+	lineageTag: 2ecfe17d-cd77-4a79-958e-a1c69f41bb6f
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+
+expression md_BUD =
+		let
+		    Quelle = Sql.Database("3w3wftkijo6ujehh4fb2eleovu-sdjibi3hrggujev7dt4yjznhu4.datawarehouse.fabric.microsoft.com", "lakehouse_group_controlling"),
+		    dbo_exports_md = Quelle{[Schema="dbo",Item="exports_md"]}[Data],
+		    #"Geänderter Typ" = Table.TransformColumnTypes(dbo_exports_md,{{"update_ts", type date}}),
+		    #"Andere entfernte Spalten" = Table.SelectColumns(#"Geänderter Typ",{"betrieb", "cause_of_change_fy", "update_ts"}),
+		    #"Umbenannte Spalten" = Table.RenameColumns(#"Andere entfernte Spalten",{{"cause_of_change_fy", "cause_of_change_BUD"}}),
+		    #"Gefilterte Zeilen" = Table.SelectRows(#"Umbenannte Spalten", each [update_ts] = Parameter_BUD_Stammdaten)
+		in
+		    #"Gefilterte Zeilen"
+	lineageTag: 1cae1b60-5217-4f28-bc97-527ed67bcd6e
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+
+expression Abgeschlossene_Periode = 7 meta [IsParameterQuery = true, IsParameterQueryRequired = true, Type = "Number", List = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}]
+	lineageTag: 2844149a-ea19-4f91-a4e0-b8c115111635
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Number
+
+expression exports_md = ```
+		let
+		    Quelle = Sql.Database("3w3wftkijo6ujehh4fb2eleovu-sdjibi3hrggujev7dt4yjznhu4.datawarehouse.fabric.microsoft.com", "lakehouse_group_controlling"),
+		    dbo_exports_md = Quelle{[Schema="dbo",Item="exports_md"]}[Data],
+		    #"Geänderter Typ" = Table.TransformColumnTypes(dbo_exports_md,{{"update_ts", type date}}),
+		    #"Hinzugefügte benutzerdefinierte Spalte" = Table.AddColumn(#"Geänderter Typ", "Periode", each if Date.Month([update_ts]) >= 11
+		then Date.Month([update_ts]) - 10 
+		else Date.Month([update_ts]) + 2),
+		    #"Andere entfernte Spalten" = Table.SelectColumns(#"Hinzugefügte benutzerdefinierte Spalte",{"betrieb", "bezeichnung_betrieb", "cause_of_change", "cause_of_change_ny", "update_ts", "Periode"}),
+		    #"Gefilterte Zeilen" = Table.SelectRows(#"Andere entfernte Spalten", each [update_ts] > Filter_Stammdatenhistorisierung),
+		    #"Zusammengeführte Spalte eingefügt" = Table.AddColumn(#"Gefilterte Zeilen", "Zusammengeführt", each Text.Combine({Text.From([betrieb], "de-DE"), "_", Text.From([Periode], "de-DE")}), type text),
+		    #"Zusammengeführte Abfragen" = Table.NestedJoin(#"Zusammengeführte Spalte eingefügt", {"betrieb"}, SAP_Stammdaten, {"betrieb"}, "md_BUD", JoinKind.LeftOuter),
+		  #"Erweitert Stammdaten_BUD" = Table.ExpandTableColumn(#"Zusammengeführte Abfragen", "md_BUD", {"cause_of_change_BUD", "cause_of_change_RGF"}, {"cause_of_change_BUD", "cause_of_change_RGF"}),
+		    #"Sortierte Zeilen" = Table.Sort(#"Erweitert Stammdaten_BUD",{{"update_ts", Order.Descending}}),
+		    #"Gruppierte Zeilen" = Table.Group(#"Sortierte Zeilen", {"betrieb", "Periode"}, 
+		    {{"Inhalt", each Table.FromRecords({Table.Max(_, "update_ts")})}}
+		),
+		    #"Erweiterte Inhalt" = Table.ExpandTableColumn(#"Gruppierte Zeilen", "Inhalt", {"bezeichnung_betrieb", "cause_of_change", "cause_of_change_ny", "update_ts", "Zusammengeführt", "cause_of_change_BUD","cause_of_change_RGF"}, {"bezeichnung_betrieb", "cause_of_change", "cause_of_change_ny", "update_ts", "Zusammengeführt", "cause_of_change_BUD", "cause_of_change_RGF"})
+		in
+		    #"Erweiterte Inhalt"
+		```
+	lineageTag: 84a18e72-c9c5-43b3-842b-3567ac09ec5e
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+
+expression SAP_Revenues_offen =
+		let
+		    Quelle = SAP_Revenues,
+		    #"Gefilterte Zeilen" = Table.SelectRows(Quelle, each [Buchungsperiode] > Abgeschlossene_Periode),
+		    #"Zusammengeführte Abfragen" = Table.NestedJoin(#"Gefilterte Zeilen", {"Werk"}, SAP_Stammdaten, {"betrieb"}, "SAP_Stammdaten", JoinKind.LeftOuter),
+		    #"Erweiterte SAP_Stammdaten" = Table.ExpandTableColumn(#"Zusammengeführte Abfragen", "SAP_Stammdaten", {"cause_of_change", "cause_of_change_fy", "cause_of_change_ny", "cause_of_change_BUD", "cause_of_change_RGF", "cause_of_change_R03"}, {"cause_of_change", "cause_of_change_fy", "cause_of_change_ny", "cause_of_change_BUD", "cause_of_change_RGF", "cause_of_change_R03"})
+		in
+		    #"Erweiterte SAP_Stammdaten"
+	lineageTag: 038e24ee-a566-4503-9ae1-f252e4dee592
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+
+expression SAP_Revenues_abg =
+		let
+		    Quelle = SAP_Revenues,
+		    #"Gefilterte Zeilen" = Table.SelectRows(Quelle, each [Buchungsperiode] <= Abgeschlossene_Periode),
+		    #"Zusammengeführte Spalte eingefügt" = Table.AddColumn(#"Gefilterte Zeilen", "Zusammengeführt", each Text.Combine({Text.From([Werk], "de-DE"), "_", Text.From([Buchungsperiode], "de-DE")}), type text),
+		    #"Zusammengeführte Abfragen" = Table.NestedJoin(#"Zusammengeführte Spalte eingefügt", {"Zusammengeführt"}, exports_md, {"Zusammengeführt"}, "exports_md", JoinKind.LeftOuter),
+		    #"Erweiterte exports_md" = Table.ExpandTableColumn(#"Zusammengeführte Abfragen", "exports_md", {"cause_of_change", "cause_of_change_ny", "cause_of_change_BUD"}, {"cause_of_change", "cause_of_change_ny", "cause_of_change_BUD"}),
+		    #"Hinzugefügte benutzerdefinierte Spalte" = Table.AddColumn(#"Erweiterte exports_md", "cause_of_change_RGF", each [cause_of_change]),
+		    #"Hinzugefügte benutzerdefinierte Spalte1" = Table.AddColumn(#"Hinzugefügte benutzerdefinierte Spalte", "cause_of_change_fy", each [cause_of_change]),
+		    #"Hinzugefügte benutzerdefinierte Spalte2" = Table.AddColumn(#"Hinzugefügte benutzerdefinierte Spalte1", "cause_of_change_R03", each [cause_of_change]),
+		    #"Geänderter Typ" = Table.TransformColumnTypes(#"Hinzugefügte benutzerdefinierte Spalte2",{{"cause_of_change_fy", Int64.Type}}),
+		    #"Entfernte Spalten" = Table.RemoveColumns(#"Geänderter Typ",{"Zusammengeführt"}),
+		    #"Geänderter Typ1" = Table.TransformColumnTypes(#"Entfernte Spalten",{{"cause_of_change", Int64.Type}, {"cause_of_change_ny", Int64.Type}, {"cause_of_change_BUD", Int64.Type}, {"cause_of_change_RGF", Int64.Type}, {"cause_of_change_fy", Int64.Type}, {"cause_of_change_R03", Int64.Type}})
+		in
+		    #"Geänderter Typ1"
+	lineageTag: 988f83e2-c433-4e2e-90a4-8109bcc275a8
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+
+expression Filter_Stammdatenhistorisierung =
+		let
+		    // Wir nehmen deinen existierenden Parameter
+		    StartDatum = Geschäftsjahresbeginn,
+		    // Wir addieren einen Monat
+		    Folgemonat = Date.AddMonths(StartDatum, 1),
+		    #"Extrahiertes Datum" = Date.From(Folgemonat)
+		in
+		    // WICHTIG: Hier muss das Ergebnis stehen
+		    #"Extrahiertes Datum"
+	lineageTag: a20b9acb-b5ff-448c-95f4-55712efdf51c
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Date
+
+expression Parameter_RGF_Stammdaten = #date(2026, 3, 11) meta [IsParameterQuery=true, Type="Date", IsParameterQueryRequired=true]
+	lineageTag: affc642c-a446-46bc-b1cc-55833834f4ee
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Date
+
+expression md_RGF =
+		let
+		    Quelle = Sql.Database("3w3wftkijo6ujehh4fb2eleovu-sdjibi3hrggujev7dt4yjznhu4.datawarehouse.fabric.microsoft.com", "lakehouse_group_controlling"),
+		    dbo_exports_md = Quelle{[Schema="dbo",Item="exports_md"]}[Data],
+		    #"Geänderter Typ" = Table.TransformColumnTypes(dbo_exports_md,{{"update_ts", type date}}),
+		    #"Andere entfernte Spalten" = Table.SelectColumns(#"Geänderter Typ",{"betrieb", "cause_of_change_fy", "update_ts"}),
+		    #"Umbenannte Spalten" = Table.RenameColumns(#"Andere entfernte Spalten",{{"cause_of_change_fy", "cause_of_change_RGF"}}),
+		    #"Gefilterte Zeilen" = Table.SelectRows(#"Umbenannte Spalten", each [update_ts] = Parameter_RGF_Stammdaten),
+		    #"Entfernte Duplikate" = Table.Distinct(#"Gefilterte Zeilen", {"betrieb"})
+		in
+		    #"Entfernte Duplikate"
+	lineageTag: 9d568c03-f0d4-4ff5-b7de-36650d3a059c
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+
+expression Parameter_BUD_Stammdaten = #date(2025, 8, 31) meta [IsParameterQuery=true, Type="Date", IsParameterQueryRequired=true]
+	lineageTag: 4fe35a94-a9c4-4d1c-a22c-8adf76f98c55
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Date
+
+expression Parameter1 = Beispieldatei meta [IsParameterQuery=true, BinaryIdentifier=Beispieldatei, Type="Binary", IsParameterQueryRequired=true]
+	lineageTag: 1773caac-543c-4ac0-88ba-04be94ad6752
+	queryGroup: 'Datei aus  Comments  transformieren\Hilfsprogrammabfragen'
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Binary
+
+expression 'Beispieldatei transformieren' =
+		let
+		    Quelle = Excel.Workbook(Parameter1, null, true),
+		    #"Top 15 Rolls Buckets_Sheet" = Quelle{[Item="Top 15 Rolls Buckets",Kind="Sheet"]}[Data],
+		    #"Entfernte oberste Zeilen1" = Table.Skip(#"Top 15 Rolls Buckets_Sheet",2),
+		    #"Höher gestufte Header1" = Table.PromoteHeaders(#"Entfernte oberste Zeilen1", [PromoteAllScalars=true]),
+		    #"Andere entfernte Spalten1" = Table.SelectColumns(#"Höher gestufte Header1",{"Werk - Bezeichnung", "Comment"}),
+		    #"Gefilterte Zeilen" = Table.SelectRows(#"Andere entfernte Spalten1", each ([#"Werk - Bezeichnung"] <> null and [#"Werk - Bezeichnung"] <> "Top 15 Rolls Budget" and [#"Werk - Bezeichnung"] <> "Top 15 Rolls Not Opening Yet" and [#"Werk - Bezeichnung"] <> "Top 15 Rolls Opening CY" and [#"Werk - Bezeichnung"] <> "Top 15 Rolls Opening PY" and [#"Werk - Bezeichnung"] <> "Werk - Bezeichnung") and ([Comment] <> null)),
+		    #"Entfernte Duplikate" = Table.Distinct(#"Gefilterte Zeilen")
+		in
+		    #"Entfernte Duplikate"
+	lineageTag: 978a058c-64c5-48aa-8fd0-75f61c7126cc
+	queryGroup: 'Datei aus  Comments  transformieren'
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+
+expression Beispieldatei =
+		let
+		    Quelle = SharePoint.Contents("https://cpgplc.sharepoint.com/sites/GroupControlling", [ApiVersion = 15]),
+		    #"Shared Documents" = Quelle{[Name="Shared Documents"]}[Content],
+		    #"Group Controlling" = #"Shared Documents"{[Name="Group Controlling"]}[Content],
+		    #"Net New ITY" = #"Group Controlling"{[Name="Net New ITY"]}[Content],
+		    #"06_Comments" = #"Net New ITY"{[Name="06_Comments"]}[Content],
+		    #"Benutzerdefinierte Spalte hinzugefügt" = Table.AddColumn(#"06_Comments", "Benutzerdefiniert", each Text.Combine({Text.Middle([Name], 8, 2), Text.Middle(Text.From([Date created], "de-DE"), 2, 7), Text.Middle([Name], 16, 1)}), type text),
+		    #"Entfernte Spalten" = Table.RemoveColumns(#"Benutzerdefinierte Spalte hinzugefügt",{"Name", "Extension", "Date accessed", "Date modified", "Date created", "Attributes", "Folder Path"}),
+		    Content = #"Entfernte Spalten"{1}[Content]
+		in
+		    Content
+	lineageTag: 7890d755-80a4-46c4-a916-5f695b16cf52
+	queryGroup: 'Datei aus  Comments  transformieren\Hilfsprogrammabfragen'
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Binary
+
+expression 'Datei transformieren' =
+		let
+		    Quelle = (Parameter1 as binary) => let
+		    Quelle = Excel.Workbook(Parameter1, null, true),
+		    #"Top 15 Rolls Buckets_Sheet" = Quelle{[Item="Top 15 Rolls Buckets",Kind="Sheet"]}[Data],
+		    #"Entfernte oberste Zeilen1" = Table.Skip(#"Top 15 Rolls Buckets_Sheet",2),
+		    #"Höher gestufte Header1" = Table.PromoteHeaders(#"Entfernte oberste Zeilen1", [PromoteAllScalars=true]),
+		    #"Andere entfernte Spalten1" = Table.SelectColumns(#"Höher gestufte Header1",{"Werk - Bezeichnung", "Comment"}),
+		    #"Gefilterte Zeilen" = Table.SelectRows(#"Andere entfernte Spalten1", each ([#"Werk - Bezeichnung"] <> null and [#"Werk - Bezeichnung"] <> "Top 15 Rolls Budget" and [#"Werk - Bezeichnung"] <> "Top 15 Rolls Not Opening Yet" and [#"Werk - Bezeichnung"] <> "Top 15 Rolls Opening CY" and [#"Werk - Bezeichnung"] <> "Top 15 Rolls Opening PY" and [#"Werk - Bezeichnung"] <> "Werk - Bezeichnung") and ([Comment] <> null)),
+		    #"Entfernte Duplikate" = Table.Distinct(#"Gefilterte Zeilen")
+		in
+		    #"Entfernte Duplikate"
+		in
+		    Quelle
+	mAttributes: [ FunctionQueryBinding = "{""exemplarFormulaName"":""Beispieldatei transformieren""}" ]
+	lineageTag: de7a01ec-8cea-4628-8a94-4f3c417b9372
+	queryGroup: 'Datei aus  Comments  transformieren\Hilfsprogrammabfragen'
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Function
+
+expression Man_Stamm =
+		let
+		    Quelle = SharePoint.Contents("https://cpgplc.sharepoint.com/sites/GroupControlling", [ApiVersion = 15]),
+		    #"Shared Documents" = Quelle{[Name="Shared Documents"]}[Content],
+		    #"Group Controlling" = #"Shared Documents"{[Name="Group Controlling"]}[Content],
+		    #"Net New ITY" = #"Group Controlling"{[Name="Net New ITY"]}[Content],
+		    #"02_Revenues" = #"Net New ITY"{[Name="02_Revenues"]}[Content],
+		    #"Manuelle_Adjustments_2+10_RGF xlsx" = #"02_Revenues"{[Name="Manuelle_Adjustments.xlsx"]}[Content],
+		    #"Importierte Excel-Arbeitsmappe" = Excel.Workbook(#"Manuelle_Adjustments_2+10_RGF xlsx"),
+		    Adj_Werke_Sheet = #"Importierte Excel-Arbeitsmappe"{[Item="Adj_Werke",Kind="Sheet"]}[Data],
+		    #"Höher gestufte Header" = Table.PromoteHeaders(Adj_Werke_Sheet, [PromoteAllScalars=true]),
+		    #"Geänderter Typ" = Table.TransformColumnTypes(#"Höher gestufte Header",{{"cause_of_change_RGF", Int64.Type}, {"cause_of_change_BUD", Int64.Type}, {"bezeichnung_cause_of_change_fy", Int64.Type}, {"cause_of_change_fy", Int64.Type}, {"cause_of_change_ny", Int64.Type}, {"cause_of_change", Int64.Type}}),
+		    #"Hinzugefügte benutzerdefinierte Spalte" = Table.AddColumn(#"Geänderter Typ", "cause_of_change_R03", each [cause_of_change_RGF])
+		in
+		    #"Hinzugefügte benutzerdefinierte Spalte"
+	lineageTag: aff7ee1e-b51f-4ead-92c0-524b6167f6d6
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+
+expression Man_Rev =
+		let
+		    Quelle = SharePoint.Contents("https://cpgplc.sharepoint.com/sites/GroupControlling", [ApiVersion = 15]),
+		    #"Shared Documents" = Quelle{[Name="Shared Documents"]}[Content],
+		    #"Group Controlling" = #"Shared Documents"{[Name="Group Controlling"]}[Content],
+		    #"Net New ITY" = #"Group Controlling"{[Name="Net New ITY"]}[Content],
+		    #"02_Revenues" = #"Net New ITY"{[Name="02_Revenues"]}[Content],
+		    #"Manuelle_Adjustments_2+10_RGF xlsx" = #"02_Revenues"{[Name="Manuelle_Adjustments.xlsx"]}[Content],
+		    #"Importierte Excel-Arbeitsmappe" = Excel.Workbook(#"Manuelle_Adjustments_2+10_RGF xlsx"),
+		    Adj_Revenues_Sheet = #"Importierte Excel-Arbeitsmappe"{[Item="Adj_Revenues",Kind="Sheet"]}[Data],
+		    #"Höher gestufte Header" = Table.PromoteHeaders(Adj_Revenues_Sheet, [PromoteAllScalars=true]),
+		    #"Andere entfernte Spalten" = Table.SelectColumns(#"Höher gestufte Header",{"Werk", "Geschäftsjahr", "Buchungsperiode", "Werttyp", "Version", "Betrag", "cause_of_change", "cause_of_change_ny", "cause_of_change_BUD", "cause_of_change_RGF", "cause_of_change_fy", "cause_of_change_R03"}),
+		    #"Geänderter Typ" = Table.TransformColumnTypes(#"Andere entfernte Spalten",{{"Werk", Int64.Type}, {"Geschäftsjahr", Int64.Type}, {"Buchungsperiode", Int64.Type}, {"Betrag", type number}, {"cause_of_change", Int64.Type}, {"cause_of_change_ny", Int64.Type}, {"cause_of_change_BUD", Int64.Type}, {"cause_of_change_RGF", Int64.Type}, {"cause_of_change_fy", Int64.Type}, {"Version", type text}}),
+		    #"Hinzugefügte benutzerdefinierte Spalte" = Table.AddColumn(#"Geänderter Typ", "Datum", each let
+		            p = [Buchungsperiode],
+		            y = [Geschäftsjahr],
+		            m = if p <= 3 then p + 9 else p - 3,   // P1..P3 → Okt..Dez
+		            j = if p <= 3 then y  else y  +1      // FY-Schiebung
+		        in
+		            #date(j, m, 1)),
+		    #"Geänderter Typ1" = Table.TransformColumnTypes(#"Hinzugefügte benutzerdefinierte Spalte",{{"Datum", type date}}),
+		    #"Gefilterte Zeilen" = Table.SelectRows(#"Geänderter Typ1", each ([Werk] <> null))
+		in
+		    #"Gefilterte Zeilen"
+	lineageTag: 5bfc6593-0a68-4501-89fa-4de1626b8f97
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+
+expression Parameter_R01_Stammdaten = #date(2026, 5, 23) meta [IsParameterQuery = true, IsParameterQueryRequired = true, Type = type date]
+	lineageTag: f0168b6c-f7f6-4248-a475-f189e0006bca
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Date
+
+expression md_R03 =
+		let
+		    Quelle = Sql.Database("3w3wftkijo6ujehh4fb2eleovu-sdjibi3hrggujev7dt4yjznhu4.datawarehouse.fabric.microsoft.com", "lakehouse_group_controlling"),
+		    dbo_exports_md = Quelle{[Schema="dbo",Item="exports_md"]}[Data],
+		    #"Geänderter Typ" = Table.TransformColumnTypes(dbo_exports_md,{{"update_ts", type date}}),
+		    #"Andere entfernte Spalten" = Table.SelectColumns(#"Geänderter Typ",{"betrieb", "cause_of_change_fy", "update_ts"}),
+		    #"Umbenannte Spalten" = Table.RenameColumns(#"Andere entfernte Spalten",{{"cause_of_change_fy", "cause_of_change_R03"}}),
+		    #"Gefilterte Zeilen" = Table.SelectRows(#"Umbenannte Spalten", each [update_ts] = Parameter_R01_Stammdaten),
+		  #"Doppelte Werte entfernt" = Table.Distinct(#"Gefilterte Zeilen", {"betrieb"})
+		in
+		    #"Doppelte Werte entfernt"
+	lineageTag: 2916a795-63b7-468f-9166-f8f924e7fedb
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

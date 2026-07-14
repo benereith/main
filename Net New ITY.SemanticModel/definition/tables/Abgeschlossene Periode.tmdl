@@ -1,0 +1,26 @@
+table 'Abgeschlossene Periode'
+	lineageTag: fef90f2d-bf96-4bad-a78f-c4b2467bdeea
+
+	measure 'Abgeschlossene Periode Wert' = SELECTEDVALUE('Abgeschlossene Periode'[Abgeschlossene Periode])
+		formatString: 0
+		lineageTag: 647b2d1f-b912-4dc4-a6c3-0e221231f0b5
+
+	column 'Abgeschlossene Periode'
+		formatString: 0
+		lineageTag: 6b8d7824-94c3-4020-9f80-06abe665fba2
+		summarizeBy: none
+		sourceColumn: [Value]
+
+		extendedProperty ParameterMetadata =
+				{
+				  "version": 0
+				}
+
+		annotation SummarizationSetBy = User
+
+	partition 'Abgeschlossene Periode' = calculated
+		mode: import
+		source = GENERATESERIES(0, 12, 1)
+
+	annotation PBI_Id = 117c0108c17048dfbc02c6e91f8547ac
+

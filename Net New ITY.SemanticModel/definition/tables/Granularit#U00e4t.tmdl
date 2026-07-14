@@ -1,0 +1,50 @@
+table Granularität
+	lineageTag: ea5a3882-2528-406b-b684-1069da49173c
+
+	column Granularität
+		lineageTag: f38b54c9-a21a-4733-8a8b-eb89f3b6f8f7
+		summarizeBy: none
+		sourceColumn: [Value1]
+		sortByColumn: 'Granularität Reihenfolge'
+
+		relatedColumnDetails
+			groupByColumn: 'Granularität Felder'
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Granularität Felder'
+		isHidden
+		lineageTag: 275b8e51-874c-4fbd-99f4-35af1570a607
+		summarizeBy: none
+		sourceColumn: [Value2]
+		sortByColumn: 'Granularität Reihenfolge'
+
+		extendedProperty ParameterMetadata =
+				{
+				  "version": 3,
+				  "kind": 2
+				}
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Granularität Reihenfolge'
+		isHidden
+		formatString: 0
+		lineageTag: 33d4c09a-ac56-4e07-9cdd-7032d752e113
+		summarizeBy: sum
+		sourceColumn: [Value3]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Granularität = calculated
+		mode: import
+		source = ```
+				{
+				    
+				    ("Periode", NAMEOF('DIM_DATE'[FY_Periode]), 1),
+				    ("Gesamtjahr", "Gesamt", 0)
+				}
+				```
+
+	annotation PBI_Id = 7c6ba014404649b188aa9083b0d355dc
+

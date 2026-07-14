@@ -1,0 +1,149 @@
+table Retention_ITY_CRM
+	lineageTag: 21a5c9ff-0ede-4ef5-92a8-2a569865dec1
+
+	column Werk
+		dataType: int64
+		formatString: 0
+		lineageTag: ba24599d-b95a-45f7-9cff-ddf75f3598a3
+		summarizeBy: none
+		sourceColumn: Werk
+
+		annotation SummarizationSetBy = Automatic
+
+	column Buchungsperiode
+		dataType: int64
+		formatString: 0
+		lineageTag: 5f266e93-74d6-4686-bcbc-a485b7424670
+		summarizeBy: sum
+		sourceColumn: Buchungsperiode
+
+		annotation SummarizationSetBy = Automatic
+
+	column Geschäftsjahr
+		dataType: int64
+		formatString: 0
+		lineageTag: d26fb32b-69e5-4432-967c-db5a4b9b73e2
+		summarizeBy: sum
+		sourceColumn: Geschäftsjahr
+
+		annotation SummarizationSetBy = Automatic
+
+	column Betrag
+		dataType: decimal
+		lineageTag: 6dcaa394-9cb0-4406-843a-bd9f2084cdf1
+		summarizeBy: sum
+		sourceColumn: Betrag
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column Werttyp
+		dataType: string
+		lineageTag: 319475d9-53d4-4e5d-976d-5a990fa296b0
+		summarizeBy: none
+		sourceColumn: Werttyp
+
+		annotation SummarizationSetBy = Automatic
+
+	column Datum
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: e6979f0e-ba52-43e8-b0f0-ba14f33630ea
+		summarizeBy: none
+		sourceColumn: Datum
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column Retention-Wahrscheinlichkeit
+		dataType: double
+		formatString: 0.00\ %;-0.00\ %;0.00\ %
+		lineageTag: ec1a5544-e40c-492c-90eb-b3c11c939c26
+		summarizeBy: none
+		sourceColumn: Retention-Wahrscheinlichkeit
+
+		annotation SummarizationSetBy = User
+
+	column 'Contract End Date'
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: 61863978-ea9c-46ef-98d4-21afdd652c44
+		summarizeBy: none
+		sourceColumn: Contract End Date
+
+		variation Variation
+			isDefault
+			relationship: f6dff9e8-45db-43d7-be60-6a2025ed0c9b
+			defaultHierarchy: LocalDateTable_d05434e4-e92c-476b-a119-bb077b28d575.Datumshierarchie
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column Decisiondate
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: 761a577d-ef15-43b1-9f5e-7154167204a4
+		summarizeBy: none
+		sourceColumn: Decisiondate
+
+		variation Variation
+			isDefault
+			relationship: 87b55bf8-edb9-4551-9900-8b215738ab71
+			defaultHierarchy: LocalDateTable_6d44c5fd-30c5-4562-8573-8f45ab88e306.Datumshierarchie
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column Retention_Status
+		dataType: string
+		lineageTag: a4540e29-1dce-49eb-a1eb-4b09b1cc7123
+		summarizeBy: none
+		sourceColumn: Retention_Status
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'LY ARO'
+		dataType: decimal
+		lineageTag: 915c3634-fde6-4905-b8f7-ea9b77d2e0d6
+		summarizeBy: sum
+		sourceColumn: LY ARO
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column Timestamp
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 5c7aff3a-c08a-47bb-bf78-9e66556893c1
+		summarizeBy: none
+		sourceColumn: Timestamp
+
+		variation Variation
+			isDefault
+			relationship: 5f5e52ea-ec89-4499-b8de-d0936a368586
+			defaultHierarchy: LocalDateTable_83f9d4b1-fd64-4538-a095-c50887f96910.Datumshierarchie
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	partition Retention_ITY_CRM = m
+		mode: import
+		source =
+				let
+				    Quelle = Sql.Database("3w3wftkijo6ujehh4fb2eleovu-sdjibi3hrggujev7dt4yjznhu4.datawarehouse.fabric.microsoft.com", "lakehouse_group_controlling"),
+				    dbo_Retention_ITY_CRM = Quelle{[Schema="dbo",Item="Retention_ITY_CRM"]}[Data],
+				    #"Geänderter Typ" = Table.TransformColumnTypes(dbo_Retention_ITY_CRM,{{"Betrag", Currency.Type}, {"Retention-Wahrscheinlichkeit", Percentage.Type}, {"LY ARO", Currency.Type}}),
+				    #"Entfernte Duplikate" = Table.Distinct(#"Geänderter Typ")
+				in
+				    #"Entfernte Duplikate"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+
