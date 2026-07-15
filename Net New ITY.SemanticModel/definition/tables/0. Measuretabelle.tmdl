@@ -557,7 +557,7 @@ table '0. Measuretabelle'
 
 	measure Sales_ITY_Hist = ```
 			VAR SelTS =
-			    SELECTEDVALUE ( Snapshot_Timestamp_S[Timestamp] )
+			    SELECTEDVALUE ( Vergleichszeitpunkt[Timestamp] )
 			RETURN
 			IF (
 			    ISBLANK ( SelTS ),
@@ -592,7 +592,7 @@ table '0. Measuretabelle'
 
 	measure Retention_ITY_Hist = ```
 			VAR SelTS =
-			    SELECTEDVALUE ( Snapshot_Timestamp_R[Timestamp] )
+			    SELECTEDVALUE ( Vergleichszeitpunkt[Timestamp] )
 			RETURN
 			IF (
 			    ISBLANK ( SelTS ),
@@ -759,7 +759,7 @@ table '0. Measuretabelle'
 			VAR GJBeginn =
 			    CALCULATE ( MIN ( 'DIM_DATE'[Datum] ), REMOVEFILTERS ( 'DIM_DATE' ), 'DIM_DATE'[FY_Offset] = 0 )
 			VAR SnapshotR =
-			    MAX ( Snapshot_Timestamp_R[Timestamp] )
+			    MAX ( Vergleichszeitpunkt[Timestamp] )
 			RETURN
 			    CALCULATE (
 			        [BUD_2_FC],
@@ -778,7 +778,7 @@ table '0. Measuretabelle'
 	/// Delta Forecast vs. Budget, Vertragsbeginn leer oder nach dem Retention-Snapshot.
 	measure New_Roll_Bud_No_Exp = ```
 			VAR SnapshotR =
-			    MAX ( Snapshot_Timestamp_R[Timestamp] )
+			    MAX ( Vergleichszeitpunkt[Timestamp] )
 			RETURN
 			    CALCULATE (
 			        [BUD_2_FC],
@@ -1076,7 +1076,7 @@ table '0. Measuretabelle'
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
 	measure LT_Win% = ```
-			VAR SelectedDate = ALLSELECTED ( 'Snapshot_Timestamp_S'[Timestamp] )
+			VAR SelectedDate = ALLSELECTED ( Vergleichszeitpunkt[Timestamp] )
 			VAR Result =
 			    CALCULATE (
 			        MAX ( 'Sales_Pipeline_ITY'[Win %] ),
@@ -1090,7 +1090,7 @@ table '0. Measuretabelle'
 		lineageTag: b0d9cf1b-c53c-4c33-8819-7c69b9dc0c89
 
 	measure LT_Opening_Date = ```
-			VAR SelectedDate = ALLSELECTED ( 'Snapshot_Timestamp_S'[Timestamp] )
+			VAR SelectedDate = ALLSELECTED ( Vergleichszeitpunkt[Timestamp] )
 			VAR Result =
 			    CALCULATE (
 			        MAX ( 'Sales_Pipeline_ITY'[Opening Date] ),
@@ -1104,7 +1104,7 @@ table '0. Measuretabelle'
 		lineageTag: 3066f06e-e087-493c-8744-a20d6cc40143
 
 	measure LT_Retention% = ```
-			VAR SelectedDate = ALLSELECTED ( 'Snapshot_Timestamp_R'[Timestamp] )
+			VAR SelectedDate = ALLSELECTED ( Vergleichszeitpunkt[Timestamp] )
 			VAR Result =
 			    CALCULATE (
 			        MAX ( 'Retention_ITY_CRM'[Retention-Wahrscheinlichkeit] ),
@@ -1153,7 +1153,7 @@ table '0. Measuretabelle'
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
 	measure 'LT_Contract End Date' = ```
-			VAR SelectedDate = ALLSELECTED ( 'Snapshot_Timestamp_R'[Timestamp] )
+			VAR SelectedDate = ALLSELECTED ( Vergleichszeitpunkt[Timestamp] )
 			VAR Result =
 			    CALCULATE (
 			        MAX ( 'Retention_ITY_CRM'[Contract End Date] ),

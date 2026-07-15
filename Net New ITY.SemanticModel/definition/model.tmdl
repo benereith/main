@@ -42,12 +42,11 @@ ref table SAP_Stammdaten
 ref table Granularität
 ref table 'Abgeschlossene Periode'
 ref table Retention_ITY_CRM
-ref table Snapshot_Timestamp_R
-ref table Snapshot_Timestamp_S
 ref table Sales_Pipeline_ITY
 ref table KPI
 ref table Comments
 ref table Revenues
+ref table Vergleichszeitpunkt
 ref table Zeitansicht
 ref table Zeitfilter
 ref table DIM_Struktur

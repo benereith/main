@@ -4,13 +4,13 @@
     {
       "ordinal": 0,
       "scrollPosition": {
-        "x": 564.57144601004393,
+        "x": 564.5714460100439,
         "y": 0
       },
       "nodes": [
         {
           "location": {
-            "x": 626.87781439810533,
+            "x": 626.8778143981053,
             "y": 128.08546327953957
           },
           "nodeIndex": "DIM_DATE",
@@ -37,7 +37,7 @@
         {
           "location": {
             "x": 50.327116021008806,
-            "y": 361.82907999389761
+            "y": 361.8290799938976
           },
           "nodeIndex": "SAP_Stammdaten",
           "nodeLineageTag": "71d979ea-d6db-498a-b656-8117a88ee56d",
@@ -50,7 +50,7 @@
         {
           "location": {
             "x": 1145.0885236008812,
-            "y": 341.69256170970448
+            "y": 341.6925617097045
           },
           "nodeIndex": "Granularität",
           "nodeLineageTag": "ea5a3882-2528-406b-b684-1069da49173c",
@@ -63,7 +63,7 @@
         {
           "location": {
             "x": 1292.3116574777414,
-            "y": 6.7374114691271529
+            "y": 6.737411469127153
           },
           "nodeIndex": "Abgeschlossene Periode",
           "nodeLineageTag": "fef90f2d-bf96-4bad-a78f-c4b2467bdeea",
@@ -75,7 +75,7 @@
         },
         {
           "location": {
-            "x": 339.35687880511261,
+            "x": 339.3568788051126,
             "y": 485.38512341940896
           },
           "nodeIndex": "Retention_ITY_CRM",
@@ -114,34 +114,8 @@
         },
         {
           "location": {
-            "x": 1997.0885236008812,
-            "y": 317.69256170970448
-          },
-          "nodeIndex": "Snapshot_Timestamp_R",
-          "nodeLineageTag": "f2654cbf-e1d3-47b1-8327-847188e17b5d",
-          "size": {
-            "height": 200,
-            "width": 234
-          },
-          "zIndex": 3
-        },
-        {
-          "location": {
-            "x": 2281.0885236008812,
-            "y": 317.69256170970448
-          },
-          "nodeIndex": "Snapshot_Timestamp_S",
-          "nodeLineageTag": "9d630e8f-b3ec-41fd-aad9-09003af8f63f",
-          "size": {
-            "height": 200,
-            "width": 234
-          },
-          "zIndex": 4
-        },
-        {
-          "location": {
-            "x": 2565.0885236008812,
-            "y": 365.69256170970448
+            "x": 2565.088523600881,
+            "y": 365.6925617097045
           },
           "nodeIndex": "N_Geschäftsjahr",
           "nodeLineageTag": "d3edc80f-ae4f-4cef-8ec0-6c05545fee46",
@@ -153,8 +127,8 @@
         },
         {
           "location": {
-            "x": 2849.0885236008812,
-            "y": 365.69256170970448
+            "x": 2849.088523600881,
+            "y": 365.6925617097045
           },
           "nodeIndex": "N_Geschäftsjahr-1",
           "nodeLineageTag": "adf423f9-fa4a-4d3c-a2a2-12b7dea2a8df",
@@ -166,8 +140,8 @@
         },
         {
           "location": {
-            "x": 3083.0885236008812,
-            "y": 372.62553974227939
+            "x": 3083.088523600881,
+            "y": 372.6255397422794
           },
           "nodeIndex": "Geschafätsjahresende",
           "nodeLineageTag": "9e9e01e9-9e66-4e15-b2b2-b4f5c34b8792",
@@ -179,8 +153,8 @@
         },
         {
           "location": {
-            "x": 3367.0885236008812,
-            "y": 372.62553974227939
+            "x": 3367.088523600881,
+            "y": 372.6255397422794
           },
           "nodeIndex": "Geschäftsjahresbeginn",
           "nodeLineageTag": "d460bd03-941c-47d5-b250-62325534bc59",
@@ -192,8 +166,8 @@
         },
         {
           "location": {
-            "x": 3835.0885236008812,
-            "y": 324.62553974227939
+            "x": 3835.088523600881,
+            "y": 324.6255397422794
           },
           "nodeIndex": "KPI",
           "size": {
@@ -217,8 +191,8 @@
         },
         {
           "location": {
-            "x": 4069.0885236008812,
-            "y": 348.62553974227939
+            "x": 4069.088523600881,
+            "y": 348.6255397422794
           },
           "nodeIndex": "Zeitansicht",
           "size": {
@@ -229,8 +203,8 @@
         },
         {
           "location": {
-            "x": 4303.0885236008817,
-            "y": 360.62553974227939
+            "x": 4303.088523600882,
+            "y": 360.6255397422794
           },
           "nodeIndex": "Zeitfilter",
           "nodeLineageTag": "3e13c632-792c-4e60-a004-7fbfd7d4e0d8",
@@ -242,7 +216,7 @@
         },
         {
           "location": {
-            "x": 359.08873286427968,
+            "x": 359.0887328642797,
             "y": 104.83541885256182
           },
           "nodeIndex": "DIM_Struktur",
@@ -255,7 +229,7 @@
         }
       ],
       "name": "Alle Tabellen",
-      "zoomValue": 70.000000000000085,
+      "zoomValue": 70.00000000000009,
       "pinKeyFieldsToTop": false,
       "showExtraHeaderInfo": false,
       "hideKeyFieldsWhenCollapsed": false,

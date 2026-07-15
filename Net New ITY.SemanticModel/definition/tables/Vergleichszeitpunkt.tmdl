@@ -1,0 +1,33 @@
+/// Gemeinsamer Vergleichszeitpunkt (Snapshot-Datum) für Sales UND Retention.
+/// Ersetzt die früher getrennten Tabellen Snapshot_Timestamp_S/_R – die
+/// Trennung war nur nötig, solange die Zeitstempel eine Uhrzeit (Sekunden)
+/// enthielten. Jetzt reine Datumswerte, daher als Union vereinheitlicht.
+/// Bewusst OHNE Beziehung (Slicer-Tabelle); die Measures filtern die
+/// jeweiligen Faktenspalten (Retention_ITY_CRM[Timestamp] /
+/// Sales_Pipeline_ITY[Timestamp]) per CALCULATE gegen den gewählten Wert.
+table Vergleichszeitpunkt
+	lineageTag: c075deaf-64b4-4248-8ae6-24aa5746e831
+
+	column Timestamp
+		formatString: Short Date
+		lineageTag: 9c6cbf46-b122-473f-b093-2b1bd1413119
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Timestamp]
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	partition Vergleichszeitpunkt = calculated
+		mode: import
+		source = ```
+				DISTINCT (
+				    UNION (
+				        SELECTCOLUMNS ( Retention_ITY_CRM, "Timestamp", Retention_ITY_CRM[Timestamp] ),
+				        SELECTCOLUMNS ( Sales_Pipeline_ITY, "Timestamp", Sales_Pipeline_ITY[Timestamp] )
+				    )
+				)
+				```
+
+	annotation PBI_Id = 6fd6e9de29384c6f91df2d592386ecfd

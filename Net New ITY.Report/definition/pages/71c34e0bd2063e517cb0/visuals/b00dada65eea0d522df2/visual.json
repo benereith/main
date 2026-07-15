@@ -20,13 +20,13 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "Snapshot_Timestamp_S"
+                      "Entity": "Vergleichszeitpunkt"
                     }
                   },
                   "Property": "Timestamp"
                 }
               },
-              "queryRef": "Snapshot_Timestamp_S.Timestamp",
+              "queryRef": "Vergleichszeitpunkt.Timestamp",
               "nativeQueryRef": "Timestamp",
               "active": true
             }
@@ -40,7 +40,7 @@
               "Column": {
                 "Expression": {
                   "SourceRef": {
-                    "Entity": "Snapshot_Timestamp_S"
+                    "Entity": "Vergleichszeitpunkt"
                   }
                 },
                 "Property": "Timestamp"
@@ -69,7 +69,7 @@
                 "From": [
                   {
                     "Name": "s",
-                    "Entity": "Snapshot_Timestamp_S",
+                    "Entity": "Vergleichszeitpunkt",
                     "Type": 0
                   }
                 ],
@@ -254,7 +254,7 @@
           "Column": {
             "Expression": {
               "SourceRef": {
-                "Entity": "Snapshot_Timestamp_S"
+                "Entity": "Vergleichszeitpunkt"
               }
             },
             "Property": "Timestamp"
@@ -266,7 +266,7 @@
           "From": [
             {
               "Name": "s",
-              "Entity": "Snapshot_Timestamp_S",
+              "Entity": "Vergleichszeitpunkt",
               "Type": 0
             }
           ],
