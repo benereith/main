@@ -8,11 +8,6 @@ table Snapshot_Timestamp_R
 		isNameInferred
 		sourceColumn: Retention_ITY_CRM[Timestamp]
 
-		variation Variation
-			isDefault
-			relationship: aaad6ec6-4728-4437-9710-101467e6f598
-			defaultHierarchy: LocalDateTable_66371451-b8f9-40ae-9b0f-bde80ea59dc7.Datumshierarchie
-
 		annotation SummarizationSetBy = Automatic
 
 	partition Snapshot_Timestamp_R = calculated

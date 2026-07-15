@@ -16,11 +16,6 @@ table Sales_Pipeline_ITY
 		summarizeBy: none
 		sourceColumn: Est Close Date
 
-		variation Variation
-			isDefault
-			relationship: cae17dc0-8597-44c8-9732-be9ac3e243cf
-			defaultHierarchy: LocalDateTable_f30044f4-e028-4a67-b167-516be3867632.Datumshierarchie
-
 		annotation SummarizationSetBy = Automatic
 
 		annotation UnderlyingDateTimeDataType = Date
@@ -39,11 +34,6 @@ table Sales_Pipeline_ITY
 		lineageTag: c79aa4b2-0ec1-4615-b508-6c1fc564625d
 		summarizeBy: none
 		sourceColumn: Opening Date
-
-		variation Variation
-			isDefault
-			relationship: f739e423-ebdc-4c37-965b-59bef70c5430
-			defaultHierarchy: LocalDateTable_a3df90da-dc57-4251-8f04-794a2fb2d332.Datumshierarchie
 
 		annotation SummarizationSetBy = Automatic
 
@@ -136,11 +126,6 @@ table Sales_Pipeline_ITY
 		lineageTag: d9d2a94a-0798-4921-b35c-600be93dc2c9
 		summarizeBy: none
 		sourceColumn: Timestamp
-
-		variation Variation
-			isDefault
-			relationship: 3de07930-33ce-4e93-bbbc-8541ba35430b
-			defaultHierarchy: LocalDateTable_e05992a1-dd8d-4e6c-9bf1-90df21dbe778.Datumshierarchie
 
 		annotation SummarizationSetBy = Automatic
 

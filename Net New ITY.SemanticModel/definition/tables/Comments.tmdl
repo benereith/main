@@ -24,11 +24,6 @@ table Comments
 		summarizeBy: none
 		sourceColumn: Datum
 
-		variation Variation
-			isDefault
-			relationship: ffe216e2-33cb-4847-b7dc-4c7c3499dba1
-			defaultHierarchy: LocalDateTable_037d5e5e-d09b-4118-ac82-78435c7db37d.Datumshierarchie
-
 		annotation SummarizationSetBy = Automatic
 
 		annotation UnderlyingDateTimeDataType = Date

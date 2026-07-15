@@ -1,3 +1,7 @@
+/// Zentrale Datumstabelle. Geschäftsjahreslogik vollständig aus dem Parameter
+/// "Geschäftsjahresbeginn" abgeleitet (FY_Startmonat) und damit für beliebig
+/// viele Geschäftsjahre gültig. FY_Offset = Geschäftsjahr relativ zum
+/// laufenden GJ (0 = aktuell, -1 = Vorjahr, ...).
 table DIM_DATE
 	lineageTag: c9978af4-b0e0-449a-87be-5ce8065fa95f
 	dataCategory: Time
@@ -18,16 +22,19 @@ table DIM_DATE
 		dataType: int64
 		formatString: 0
 		lineageTag: a4e60fd5-42eb-4f80-94d1-689e04bb6bcc
-		summarizeBy: sum
+		summarizeBy: none
 		sourceColumn: Jahr
 
-		annotation SummarizationSetBy = Automatic
+		annotation SummarizationSetBy = User
 
 	column Monat
 		dataType: string
 		lineageTag: 6b40006e-945d-4256-ab57-aea0e2d677b5
 		summarizeBy: none
 		sourceColumn: Monat
+		sortByColumn: 'Monat Nummer'
+
+		changedProperty = SortByColumn
 
 		annotation SummarizationSetBy = Automatic
 
@@ -35,25 +42,28 @@ table DIM_DATE
 		dataType: int64
 		formatString: 0
 		lineageTag: 60ac040d-d628-4851-9e3d-27c81d60a2ae
-		summarizeBy: sum
+		summarizeBy: none
 		sourceColumn: Monat Nummer
 
-		annotation SummarizationSetBy = Automatic
+		annotation SummarizationSetBy = User
 
 	column Tag
 		dataType: int64
 		formatString: 0
 		lineageTag: 2a8cbba4-4d0c-49b5-84cf-ab5ca7fcb1c9
-		summarizeBy: sum
+		summarizeBy: none
 		sourceColumn: Tag
 
-		annotation SummarizationSetBy = Automatic
+		annotation SummarizationSetBy = User
 
 	column Wochentag
 		dataType: string
 		lineageTag: 9d065dd6-a2da-4df3-b751-c8165afccfd6
 		summarizeBy: none
 		sourceColumn: Wochentag
+		sortByColumn: 'Wochentag Nummer'
+
+		changedProperty = SortByColumn
 
 		annotation SummarizationSetBy = Automatic
 
@@ -61,10 +71,10 @@ table DIM_DATE
 		dataType: int64
 		formatString: 0
 		lineageTag: bbad43c2-e1a1-4783-9667-321587d3c490
-		summarizeBy: sum
+		summarizeBy: none
 		sourceColumn: Wochentag Nummer
 
-		annotation SummarizationSetBy = Automatic
+		annotation SummarizationSetBy = User
 
 	column Quartal
 		dataType: string
@@ -87,6 +97,9 @@ table DIM_DATE
 		lineageTag: 2a72f005-4101-40b3-b974-8ec3b76fcc95
 		summarizeBy: none
 		sourceColumn: FY_Jahr
+		sortByColumn: FY_Start
+
+		changedProperty = SortByColumn
 
 		annotation SummarizationSetBy = Automatic
 
@@ -113,10 +126,10 @@ table DIM_DATE
 		dataType: int64
 		formatString: 0
 		lineageTag: 2719e0a1-696c-4ffe-ba75-c57bb96637b8
-		summarizeBy: sum
+		summarizeBy: none
 		sourceColumn: FY_QuartalNr
 
-		annotation SummarizationSetBy = Automatic
+		annotation SummarizationSetBy = User
 
 	column FY_Monat
 		dataType: string
@@ -133,10 +146,10 @@ table DIM_DATE
 		dataType: int64
 		formatString: 0
 		lineageTag: a6b234ab-d2f1-47cd-a901-a1ac0cd65e4d
-		summarizeBy: sum
+		summarizeBy: none
 		sourceColumn: FY_MonatNr
 
-		annotation SummarizationSetBy = Automatic
+		annotation SummarizationSetBy = User
 
 	column FY_Periode
 		dataType: string
@@ -154,82 +167,96 @@ table DIM_DATE
 		lineageTag: c1f6e982-0d98-435b-8279-6e2d287d2ee7
 		summarizeBy: none
 		sourceColumn: FY_JahrLang
+		sortByColumn: FY_Start
+
+		changedProperty = SortByColumn
 
 		annotation SummarizationSetBy = Automatic
+
+	/// Kalenderjahr, in dem das Geschäftsjahr beginnt (z. B. 2025 für FY2025/26).
+	column FY_Start
+		dataType: int64
+		formatString: 0
+		lineageTag: e705b0e9-d8f0-42b0-ada1-a05d9bb656f5
+		summarizeBy: none
+		sourceColumn: FY_Start
+
+		annotation SummarizationSetBy = User
+
+	/// Geschäftsjahr relativ zum laufenden GJ: 0 = aktuell, -1 = Vorjahr, ...
+	column FY_Offset
+		dataType: int64
+		formatString: 0
+		lineageTag: e90c7d99-5d8d-494a-b91d-5ca889434574
+		summarizeBy: none
+		sourceColumn: FY_Offset
+
+		annotation SummarizationSetBy = User
 
 	partition DIM_DATE = m
 		mode: import
 		source = ```
 				let
-				    // === Parameter (einfach anpassen) ===
-				    Startdatum = #date(2020, 1, 1),
-				    Enddatum   = #date(2030, 12, 31),
-				
-				    // === Basis-Datumstabelle ===
-				    DatumsListe   = List.Dates(Startdatum, Duration.Days(Enddatum - Startdatum) + 1, #duration(1,0,0,0)),
+				    // Kalenderbereich rollierend um den konfigurierten GJ-Beginn
+				    Startdatum = Date.StartOfYear(Date.AddYears(Geschäftsjahresbeginn, -6)),
+				    Enddatum = Date.EndOfYear(Date.AddYears(Geschäftsjahresbeginn, 3)),
+
+				    DatumsListe = List.Dates(Startdatum, Duration.Days(Enddatum - Startdatum) + 1, #duration(1, 0, 0, 0)),
 				    DatumsTabelle = Table.FromList(DatumsListe, Splitter.SplitByNothing(), {"Datum"}),
-				
-				    // === Kalender-Spalten ===
-				    MitJahr        = Table.AddColumn(DatumsTabelle, "Jahr",           each Date.Year([Datum]),           Int64.Type),
-				    MitMonatName   = Table.AddColumn(MitJahr,       "Monat",           each Date.MonthName([Datum]),      type text),
-				    MitMonatNr     = Table.AddColumn(MitMonatName,  "Monat Nummer",    each Date.Month([Datum]),          Int64.Type),
-				    MitTag         = Table.AddColumn(MitMonatNr,    "Tag",             each Date.Day([Datum]),            Int64.Type),
-				    MitWochentag   = Table.AddColumn(MitTag,        "Wochentag",       each Date.DayOfWeekName([Datum]),  type text),
-				    MitWochentagNr = Table.AddColumn(MitWochentag,  "Wochentag Nummer",each Date.DayOfWeek([Datum], Day.Monday) + 1, Int64.Type), // 1=Montag
-				    MitQuartal     = Table.AddColumn(MitWochentagNr,"Quartal",         each "Q" & Text.From(Date.QuarterOfYear([Datum])), type text),
-				    MitHalbjahr    = Table.AddColumn(MitQuartal,    "Halbjahr",        each if Date.Month([Datum]) <= 6 then "H1" else "H2", type text),
-				
-				    // === Fiscal Year ab 1. Oktober (FY2025/26-Format) – FEHLERFREI ===
-				    AddFiscalColumns = Table.AddColumn(MitHalbjahr, "FiscalTemp", each 
+
+				    // Kalender-Spalten
+				    MitJahr        = Table.AddColumn(DatumsTabelle, "Jahr",             each Date.Year([Datum]),          Int64.Type),
+				    MitMonatName   = Table.AddColumn(MitJahr,       "Monat",            each Date.MonthName([Datum]),     type text),
+				    MitMonatNr     = Table.AddColumn(MitMonatName,  "Monat Nummer",     each Date.Month([Datum]),         Int64.Type),
+				    MitTag         = Table.AddColumn(MitMonatNr,    "Tag",              each Date.Day([Datum]),           Int64.Type),
+				    MitWochentag   = Table.AddColumn(MitTag,        "Wochentag",        each Date.DayOfWeekName([Datum]), type text),
+				    MitWochentagNr = Table.AddColumn(MitWochentag,  "Wochentag Nummer", each Date.DayOfWeek([Datum], Day.Monday) + 1, Int64.Type),
+				    MitQuartal     = Table.AddColumn(MitWochentagNr, "Quartal",         each "Q" & Text.From(Date.QuarterOfYear([Datum])), type text),
+				    MitHalbjahr    = Table.AddColumn(MitQuartal,    "Halbjahr",         each if Date.Month([Datum]) <= 6 then "H1" else "H2", type text),
+
+				    // Geschäftsjahres-Spalten – abgeleitet aus FY_Startmonat,
+				    // dadurch gültig für beliebig viele Geschäftsjahre
+				    MitFiscal = Table.AddColumn(MitHalbjahr, "FiscalTemp", each
 				        let
-				            m  = Date.Month([Datum]),
-				            y  = Date.Year([Datum]),
-				            
-				            // FY-Startjahr und Endjahr
-				            FY_Start = if m >= 10 then y else y - 1,
-				            FY_End   = FY_Start + 1,
-				            
-				            // Fiscal Monat 1–12 (Okt=1, Nov=2, ..., Sep=12)
-				            FY_Monat_Nr = if m >= 10 then m - 9 else m + 3,
-				            
-				            // Fiscal Quartal 1–4
+				            FY_Start = fnFiscal_DatumZuGJ([Datum]),
+				            FY_Ende = FY_Start + 1,
+				            FY_Monat_Nr = fnFiscal_DatumZuPeriode([Datum]),
 				            FY_Quartal_Nr = Number.RoundUp(FY_Monat_Nr / 3)
 				        in
-				            [ 
-				                FY_Jahr       = "FY" & Text.From(FY_Start) & "/" & Text.End(Text.From(FY_End), 2),   // FY2025/26
-				                FY_JahrLang   = Text.From(FY_Start) & "/" & Text.From(FY_End),                     // 2025/26
-				                FY_Quartal    = "FQ" & Text.From(FY_Quartal_Nr),                                   // FQ1 … FQ4
-				                FY_Monat      = "FM" & Text.PadStart(Text.From(FY_Monat_Nr), 2, "0"),              // FM01 … FM12
-				                FY_Periode    = "P" & Text.PadStart(Text.From(FY_Monat_Nr), 2, "0"),              // FP01 … FP12
-				                FY_JahrMonat  = Text.From(FY_Start) & "-" & Text.PadStart(Text.From(FY_Monat_Nr), 2, "0"), // 2025-01 für Okt 2024
-				                FY_MonatNr    = FY_Monat_Nr,                                                       // 1–12 als Zahl
-				                FY_QuartalNr  = FY_Quartal_Nr                                                      // 1–4 als Zahl
+				            [
+				                FY_Start      = FY_Start,
+				                FY_Offset     = FY_Start - Aktuelles_Geschäftsjahr,
+				                FY_Jahr       = "FY" & Text.From(FY_Start) & "/" & Text.End(Text.From(FY_Ende), 2),
+				                FY_JahrLang   = Text.From(FY_Start) & "/" & Text.End(Text.From(FY_Ende), 2),
+				                FY_Quartal    = "FQ" & Text.From(FY_Quartal_Nr),
+				                FY_Monat      = "FM" & Text.PadStart(Text.From(FY_Monat_Nr), 2, "0"),
+				                FY_Periode    = "P" & Text.PadStart(Text.From(FY_Monat_Nr), 2, "0"),
+				                FY_JahrMonat  = Text.From(FY_Start) & "-" & Text.PadStart(Text.From(FY_Monat_Nr), 2, "0"),
+				                FY_MonatNr    = FY_Monat_Nr,
+				                FY_QuartalNr  = FY_Quartal_Nr
 				            ]
 				    ),
-				
-				    // Record-Spalten aufklappen
-				    Erweitert = Table.ExpandRecordColumn(AddFiscalColumns, "FiscalTemp", 
-				        {"FY_Jahr", "FY_JahrLang", "FY_Quartal", "FY_Monat", "FY_Periode", "FY_JahrMonat", "FY_MonatNr", "FY_QuartalNr"}),
-				
-				    // Datentypen final setzen
-				    #"Typen korrigiert" = Table.TransformColumnTypes(Erweitert,{
+				    Erweitert = Table.ExpandRecordColumn(MitFiscal, "FiscalTemp",
+				        {"FY_Start", "FY_Offset", "FY_Jahr", "FY_JahrLang", "FY_Quartal", "FY_Monat", "FY_Periode", "FY_JahrMonat", "FY_MonatNr", "FY_QuartalNr"}),
+
+				    Typisiert = Table.TransformColumnTypes(Erweitert, {
 				        {"Datum", type date},
 				        {"Jahr", Int64.Type},
 				        {"Monat Nummer", Int64.Type},
 				        {"Tag", Int64.Type},
 				        {"Wochentag Nummer", Int64.Type},
+				        {"FY_Start", Int64.Type},
+				        {"FY_Offset", Int64.Type},
 				        {"FY_MonatNr", Int64.Type},
 				        {"FY_QuartalNr", Int64.Type}
 				    }),
-				
-				    // Spalten in gewünschter Reihenfolge
-				    Ergebnis = Table.SelectColumns(#"Typen korrigiert", {
+
+				    Ergebnis = Table.SelectColumns(Typisiert, {
 				        "Datum", "Jahr", "Monat Nummer", "Monat", "Tag",
 				        "Wochentag", "Wochentag Nummer", "Quartal", "Halbjahr",
-				        "FY_Jahr", "FY_JahrLang", "FY_JahrMonat",
+				        "FY_Start", "FY_Offset", "FY_Jahr", "FY_JahrLang", "FY_JahrMonat",
 				        "FY_Quartal", "FY_QuartalNr", "FY_Monat", "FY_MonatNr", "FY_Periode"
 				    })
-				
 				in
 				    Ergebnis
 				```
@@ -237,4 +264,3 @@ table DIM_DATE
 	annotation PBI_NavigationStepName = Navigation
 
 	annotation PBI_ResultType = Table
-

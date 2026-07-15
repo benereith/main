@@ -73,11 +73,6 @@ table Retention_ITY_CRM
 		summarizeBy: none
 		sourceColumn: Contract End Date
 
-		variation Variation
-			isDefault
-			relationship: f6dff9e8-45db-43d7-be60-6a2025ed0c9b
-			defaultHierarchy: LocalDateTable_d05434e4-e92c-476b-a119-bb077b28d575.Datumshierarchie
-
 		annotation SummarizationSetBy = Automatic
 
 		annotation UnderlyingDateTimeDataType = Date
@@ -88,11 +83,6 @@ table Retention_ITY_CRM
 		lineageTag: 761a577d-ef15-43b1-9f5e-7154167204a4
 		summarizeBy: none
 		sourceColumn: Decisiondate
-
-		variation Variation
-			isDefault
-			relationship: 87b55bf8-edb9-4551-9900-8b215738ab71
-			defaultHierarchy: LocalDateTable_6d44c5fd-30c5-4562-8573-8f45ab88e306.Datumshierarchie
 
 		annotation SummarizationSetBy = Automatic
 
@@ -122,11 +112,6 @@ table Retention_ITY_CRM
 		lineageTag: 5c7aff3a-c08a-47bb-bf78-9e66556893c1
 		summarizeBy: none
 		sourceColumn: Timestamp
-
-		variation Variation
-			isDefault
-			relationship: 5f5e52ea-ec89-4499-b8de-d0936a368586
-			defaultHierarchy: LocalDateTable_83f9d4b1-fd64-4538-a095-c50887f96910.Datumshierarchie
 
 		annotation SummarizationSetBy = Automatic
 

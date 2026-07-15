@@ -1,0 +1,59 @@
+/// Szenario-Dimension (Actuals, Budget, Forecast-Runden). Wird aus
+/// Szenario_Konfig abgeleitet – neue Forecast-Runden erscheinen hier
+/// automatisch und stehen als Slicer zur Verfügung.
+table DIM_Szenario
+	lineageTag: 339b1122-9f4d-487b-afa9-0b52fd6c65f7
+
+	column Szenario
+		dataType: string
+		lineageTag: 2c4164ca-21f1-4d29-ab4d-87926b3cd1c5
+		summarizeBy: none
+		sourceColumn: Szenario
+		sortByColumn: Sort
+
+		changedProperty = SortByColumn
+
+		annotation SummarizationSetBy = Automatic
+
+	column Sort
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: c7e1be0f-0107-49a6-aec5-305ed0b22eb4
+		summarizeBy: none
+		sourceColumn: Sort
+
+		annotation SummarizationSetBy = User
+
+	column Beschreibung
+		dataType: string
+		lineageTag: 3e1cf919-5328-49d7-92e4-7f3aaf2d45fb
+		summarizeBy: none
+		sourceColumn: Beschreibung
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DIM_Szenario = m
+		mode: import
+		source = ```
+				let
+				    Beschreibungen = [
+				        ACT     = "Actuals (Ist)",
+				        BUD     = "Budget (eingefroren zum Budget-Snapshot)",
+				        RGF     = "Rolling Forecast (RGF/R12) + Ist Vorjahr",
+				        RF      = "Forecast RF/RTD + Ist Vorjahr",
+				        P35     = "Plan 35/RTD + Ist Vorjahr",
+				        R03     = "Forecast-Runde R03 (Snapshot)",
+				        FC02    = "Forecast Plan 02 + Ist Vorjahr",
+				        ARO_RGF = "ARO-Sicht auf RGF-Snapshot",
+				        R01     = "Plan 01 (Recherche)"
+				    ],
+				    Auswahl = Table.Distinct(Table.SelectColumns(Szenario_Konfig, {"Szenario", "Sort"})),
+				    MitBeschreibung = Table.AddColumn(Auswahl, "Beschreibung", each Record.FieldOrDefault(Beschreibungen, [Szenario], [Szenario]), type text)
+				in
+				    MitBeschreibung
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table

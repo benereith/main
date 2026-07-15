@@ -1,3 +1,7 @@
+/// Stammdaten-Dimension (aktueller Stand). Eingefrorene Cause-of-Change-
+/// Stände liegen nicht mehr hier, sondern in Stammdaten_CoC (pro Szenario)
+/// bzw. Stammdaten_Historie (pro Monatsabschluss) und werden beim Laden in
+/// die Faktentabelle Revenues aufgelöst.
 table SAP_Stammdaten
 	lineageTag: 71d979ea-d6db-498a-b656-8117a88ee56d
 
@@ -39,11 +43,6 @@ table SAP_Stammdaten
 		lineageTag: f045b805-f520-4d05-9da9-c7239eff4bb9
 		summarizeBy: none
 		sourceColumn: vertragsbeginn
-
-		variation Variation
-			isDefault
-			relationship: e6f2ec52-6aae-4d51-9296-b14c02c22363
-			defaultHierarchy: LocalDateTable_f5941182-b87d-4faa-8515-b9f7b0af7dd0.Datumshierarchie
 
 		changedProperty = DataType
 
@@ -390,33 +389,6 @@ table SAP_Stammdaten
 
 		annotation SummarizationSetBy = Automatic
 
-	column cause_of_change_BUD
-		dataType: int64
-		formatString: 0
-		lineageTag: 59a404f8-63e3-4861-94af-fbefdc430fc3
-		summarizeBy: sum
-		sourceColumn: cause_of_change_BUD
-
-		annotation SummarizationSetBy = Automatic
-
-	column cause_of_change_RGF
-		dataType: int64
-		formatString: 0
-		lineageTag: 5640d26d-ffd6-4c5e-bfb1-505593cd5cc0
-		summarizeBy: sum
-		sourceColumn: cause_of_change_RGF
-
-		annotation SummarizationSetBy = Automatic
-
-	column cause_of_change_R03
-		dataType: int64
-		formatString: 0
-		lineageTag: adc2e30b-c7ee-4773-878e-b53dafc0bbbf
-		summarizeBy: sum
-		sourceColumn: cause_of_change_R03
-
-		annotation SummarizationSetBy = Automatic
-
 	column HFM_sektor
 		dataType: string
 		lineageTag: 1837fb80-586a-49ef-af21-f8214af79b22
@@ -443,57 +415,12 @@ table SAP_Stammdaten
 
 	partition SAP_Stammdaten = m
 		mode: import
-		source = ```
+		source =
 				let
-				    Quelle = PowerPlatform.Dataflows(null),
-				    Workspaces = Quelle{[Id="Workspaces"]}[Data],
-				    #"ddc66bda-5a20-49f0-be6e-b68e17a1cc90" = Workspaces{[workspaceId="ddc66bda-5a20-49f0-be6e-b68e17a1cc90"]}[Data],
-				    #"a65e47b1-6a8b-4cf2-8131-c90e55bf14c7" = #"ddc66bda-5a20-49f0-be6e-b68e17a1cc90"{[dataflowId="a65e47b1-6a8b-4cf2-8131-c90e55bf14c7"]}[Data],
-				    sap_master_data_unit_ = #"a65e47b1-6a8b-4cf2-8131-c90e55bf14c7"{[entity="sap_master_data_unit",version=""]}[Data],
-				    #"Benutzerdefinierte Spalte hinzugefügt" = Table.AddColumn(sap_master_data_unit_, "Werk - Bezeichnung", each Text.Combine({Text.PadStart(Text.From([betrieb], "de-DE"), 4, "0"), " - ", [bezeichnung_betrieb]}), type text),
-				
-				// 👉 Bereinigte, sortierte Listen deiner Planbetriebe
-				
-				PlanbetriebeRoll = 
-				{   127, 1678, 1680, 1682, 1684, 1686, 1688, 1690, 1692, 1694, 1696, 1862, 1863,
-				    2119, 4350, 4590, 5200, 5226, 7133, 7120, 7937, 8535, 8849, 9736, 9747, 9876, 9937 },
-				
-				PlanbetriebeITY = 
-				{   1679, 1681, 1683, 1685, 1687, 1689, 1691, 1693, 1695, 7933, 8385, 8386, 9911, 
-				    9913, 9916, 9920, 9922, 9924, 9926, 9933, 9936, 9940, 9944, 9945, 9946, 9947, 
-				    9950, 9952 },
-				
-				
-				    // 👉 Neue Spalte hinzufügen
-				    Hinzugefügt = Table.AddColumn(#"Benutzerdefinierte Spalte hinzugefügt", "Betriebstyp", each if List.Contains(PlanbetriebeRoll, [betrieb]) then "Plan-Betriebe Roll"
-				            else if List.Contains(PlanbetriebeITY, [betrieb]) then "Plan-Betriebe ITY"
-				            else "Real-Betriebe"),
-				  #"Geänderter Spaltentyp" = Table.TransformColumnTypes(Hinzugefügt, {{"Betriebstyp", type text}}),
-				    #"Zusammengeführte Abfragen" = Table.NestedJoin(#"Geänderter Spaltentyp", {"betrieb"}, md_BUD, {"betrieb"}, "Stammdaten_BUD", JoinKind.LeftOuter),
-				  #"Erweitert Stammdaten_BUD" = Table.ExpandTableColumn(#"Zusammengeführte Abfragen", "Stammdaten_BUD", {"cause_of_change_BUD"}, {"cause_of_change_BUD"}),
-				    #"Zusammengeführte Abfragen1" = Table.NestedJoin(#"Erweitert Stammdaten_BUD", {"betrieb"}, md_RGF, {"betrieb"}, "exports_md_RGF", JoinKind.LeftOuter),
-				    #"Erweiterte exports_md_RGF" = Table.ExpandTableColumn(#"Zusammengeführte Abfragen1", "exports_md_RGF", {"cause_of_change_RGF"}, {"cause_of_change_RGF"}),
-				    #"Zusammengeführte Abfragen2" = Table.NestedJoin(#"Erweiterte exports_md_RGF", {"betrieb"}, md_R03, {"betrieb"}, "md_R03", JoinKind.LeftOuter),
-				    #"Erweiterte md_R01" = Table.ExpandTableColumn(#"Zusammengeführte Abfragen2", "md_R03", {"cause_of_change_R03"}, {"cause_of_change_R03"}),
-				    #"Angefügte Abfrage" = Table.Combine({#"Erweiterte md_R01", Man_Stamm}),
-				    #"Geänderter Typ" = Table.TransformColumnTypes(#"Angefügte Abfrage",{{"cause_of_change_R03", Int64.Type}}),
-				     HFM_Sektor = Table.TransformColumnTypes(Table.AddColumn(#"Geänderter Typ", "HFM_sektor", each if [bezeichnung_verantwortungsbereich] = "Food Services" then
-				    if [sektor] = "SE" then "HC"
-				    else if [sektor] = "OV" then "BU"
-				    else if [sektor] = "RE" then "HC"
-				    else if [sektor] = "ED" then "HC"
-				    else if [sektor] = "RT" then "BU"
-				    else [sektor]
-				else if [bezeichnung_verantwortungsbereich] = "Support Service" then
-				    if [sektor] = "OV" then "BU"
-				    else [sektor]
-				else 
-				    [sektor]), {{"HFM_sektor", type text}}),
-				  #"Bedingte Spalte eingefügt" = Table.AddColumn(HFM_Sektor, "HFM_Bereich", each if [bezeichnung_verantwortungsbereich] = "Support Service" then "Support" else "Food"),
-				  #"Hinzugefügte benutzerdefinierte Spalte 2" = Table.TransformColumnTypes(Table.AddColumn(#"Bedingte Spalte eingefügt", "HFM_Sek_SE", each if [HFM_sektor]="BU" then "SE11100" else if [HFM_sektor]="IN" then "SE12100" else if [HFM_sektor]="MT"  then "SE11200" else if [HFM_sektor]="LE" then "SE41200" else if [HFM_sektor]="HC" then "SE39000" else if [HFM_sektor]="ST" then "SE42300" else if [HFM_sektor]="EV" then "SE42200" else if [HFM_sektor]="ED" then "SE22100" else null), {{"HFM_Sek_SE", type text}})
+				    // Aufbau siehe Abfrage "Stammdaten_Basis" (3. Stammdaten)
+				    Quelle = Stammdaten_Basis
 				in
-				    #"Hinzugefügte benutzerdefinierte Spalte 2"
-				```
+				    Quelle
 
 	annotation PBI_NavigationStepName = Navigation
 
