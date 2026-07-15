@@ -150,12 +150,17 @@ Stand der Forecasts/des Budgets zu haben". Umsetzung:
   `update_ts`. `fnStammdaten_Snapshot(datum)` holt den Stand zu genau diesem
   Datum – **eine** Funktion für alle Runden (früher: `md_BUD`, `md_RGF`,
   `md_R03` als drei fast identische Abfragen).
-- Pro Runde gibt es **einen Datums-Parameter**:
-  - `Parameter_BUD_Stammdaten` – Budget-Snapshot
-  - `Parameter_RGF_Stammdaten` – RGF/ARO-Snapshot
-  - `Parameter_R03_Stammdaten` – Forecast-Runde R03
-- In `Szenario_Konfig` verweist die Spalte `CoC_Snapshot` auf den passenden
-  Parameter. Damit ist ein Snapshot = ein Datum. Fertig.
+- Pro Runde gibt es **einen Datums-Parameter** und **eine Blatt-Abfrage**, die
+  die Funktion mit diesem Datum aufruft:
+  - `Parameter_BUD_Stammdaten` → `Snapshot_BUD` – Budget
+  - `Parameter_RGF_Stammdaten` → `Snapshot_RGF` – RGF/ARO
+  - `Parameter_R03_Stammdaten` → `Snapshot_R03` – Forecast-Runde R03
+- Die Blatt-Abfragen sind bewusst getrennt (nur Lakehouse-Zugriff, keine
+  Referenz auf andere Abfragen), damit die **Formula-Firewall** nicht anschlägt.
+- `Stammdaten_CoC` bindet die Snapshots über die Zuordnung **`SnapshotMap`**
+  ein (Szenario-Kürzel → Blatt-Abfrage); `Szenario_Konfig` verknüpft jedes
+  Szenario per `CoC_Quelle = "snapshot"` mit dieser Logik. Ein Snapshot =
+  ein Datum. Fertig.
 
 ---
 
@@ -177,15 +182,60 @@ Stand der Forecasts/des Budgets zu haben". Umsetzung:
 > bei dir nicht, ist es die **einzige** Stelle zum Anpassen
 > (`Date.AddMonths([update_ts], -1)` in `expressions.tmdl`).
 
-### 5.2 Neue Forecast-Runde (z. B. R04)
+### 5.2 Neuen Snapshot / neue Forecast-Runde anlegen (z. B. R06)
 
-1. Ggf. neuen Parameter `Parameter_R04_Stammdaten` (Snapshot-Datum) anlegen.
-2. In `Szenario_Konfig` Zeilen ergänzen, z. B.:
-   `{"R04", 10, 0, "Plan_R04", "snapshot", Parameter_R04_Stammdaten, "cause_of_change_R04", true}`
-   und die Vorjahres-Basiszeile (`FY_Offset -1`, `Actual_0`).
-3. Falls die Runde eigene Zahlen zeigen soll: zwei Measures nach dem Muster
-   `RGF_Value` / `RGF_Periodic` anlegen (nur `Revenues[Szenario] = "R04"`).
-4. Aktualisieren – die Runde erscheint automatisch in `DIM_Szenario`.
+Alle Schritte in Power BI Desktop → **Daten transformieren** (Power-Query-Editor).
+Beispiel: neue Runde „R06" mit Version `Plan_R06`, eingefroren zum 15.06.2026.
+
+**1. Snapshot-Datum als Parameter.** Neuen Parameter `Parameter_R06_Stammdaten`
+   (Typ Datum) anlegen und auf den Freeze-Stichtag setzen (den `update_ts`, zu
+   dem der Stammdaten-Export im Lakehouse eingefroren werden soll), z. B.
+   `#date(2026, 6, 15)`. Am schnellsten: bestehenden `Parameter_R03_Stammdaten`
+   duplizieren und umbenennen.
+
+**2. Snapshot-Blatt-Abfrage.** Neue leere Abfrage anlegen (Gruppe
+   „3. Stammdaten"), Name `Snapshot_R06`, im erweiterten Editor exakt:
+   ```m
+   fnStammdaten_Snapshot(Parameter_R06_Stammdaten)
+   ```
+   > Wichtig: genau diese eine Zeile – kein direkter Lakehouse-Zugriff hier,
+   > sonst schlägt die Firewall an.
+
+**3. In `SnapshotMap` eintragen.** In der Abfrage `Stammdaten_CoC` die Zeile
+   `SnapshotMap = [ BUD = Snapshot_BUD, ARO_RGF = Snapshot_RGF, R03 = Snapshot_R03 ],`
+   um das neue Szenario ergänzen:
+   ```m
+   SnapshotMap = [ BUD = Snapshot_BUD, ARO_RGF = Snapshot_RGF, R03 = Snapshot_R03, R06 = Snapshot_R06 ],
+   ```
+
+**4. Szenario-Zeilen in `Szenario_Konfig`.** Runde (laufendes GJ + Vorjahres-
+   Basis) ergänzen:
+   ```m
+   {"R06", 10,  0, "Plan_R06", "snapshot", Parameter_R06_Stammdaten, "cause_of_change_R03", true},
+   {"R06", 10, -1, "Actual_0", "snapshot", Parameter_R06_Stammdaten, "cause_of_change_R03", true},
+   ```
+   - Spalte `CoC_Spalte_Adjustments`: nur relevant für **manuelle** Werke aus
+     `Manuelle_Adjustments.xlsx`. Reicht eine bestehende Spalte (z. B.
+     `cause_of_change_R03`), einfach diese verwenden. Braucht die Runde eine
+     **eigene** manuelle CoC-Spalte, siehe Hinweis unten.
+
+**5. (Optional) Measures für Zahlen.** Soll die Runde eigene Werte im Bericht
+   zeigen, in `0. Measuretabelle` zwei Measures nach Muster `RGF_Value` /
+   `RGF_Periodic` anlegen – nur `Revenues[Szenario] = "R06"` als Filter tauschen.
+
+**6. Aktualisieren.** Die Runde erscheint automatisch in `DIM_Szenario` (als
+   Slicer) und in der Faktentabelle.
+
+> **Nur neu einfrieren (kein neues Szenario)?** Dann genügt Schritt 1: das
+> Datum des vorhandenen Parameters ändern und aktualisieren. Der Snapshot
+> zieht dann den Stammdaten-Stand des neuen Stichtags.
+
+> **Eigene manuelle CoC-Spalte je Runde:** Braucht die Runde in
+> `Manuelle_Adjustments.xlsx` eine eigene Spalte `cause_of_change_R06`, dann
+> (a) Spalte in der Excel ergänzen, (b) in den Abfragen `Man_Rev` und
+> `Man_Stamm` in die Spaltenauswahl aufnehmen, (c) in `Revenues` im Schritt
+> `ManCoC` mit `{"cause_of_change_R06", "Man_cause_of_change_R06"}` umbenennen.
+> Für die meisten Runden ist das nicht nötig – eine bestehende Spalte genügt.
 
 ### 5.3 Jahreswechsel (neues Geschäftsjahr)
 
