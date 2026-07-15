@@ -66,6 +66,7 @@ table DIM_Szenario
 				        ACT     = "Actuals (Ist)",
 				        BUD     = "Budget (eingefroren zum Budget-Snapshot)",
 				        RGF     = "Rolling Forecast = aktueller FC 8+4 (Plan_RGF + R12) + Ist Vorjahr",
+				        FC57    = "Forecast 5+7 (Plan_RGF ohne R12-Aufsatz) + Ist Vorjahr",
 				        RF      = "Forecast RF/RTD + Ist Vorjahr",
 				        P35     = "Plan 35/RTD + Ist Vorjahr",
 				        R03     = "Forecast-Runde R03 (Snapshot)",
@@ -75,10 +76,10 @@ table DIM_Szenario
 				    ],
 				    // Vergleichsleiter: Szenario-Kürzel -> Anzeigename + Sortierung.
 				    // Zuordnung laut Version-Mapping des Controllings:
-				    //   2+10 = Plan_R03 (R03), 8+4 = Plan_RGF+R12 (RGF), 10+2 = Plan_35+RTD (P35).
-				    // 5+7 (Plan_RGF ohne Zusatz) hat noch KEINE eigene Spur -> siehe README 5.2a.
-				    RundeMap     = [ BUD = "Budget", R03 = "2+10", RGF = "8+4", P35 = "10+2", ACT = "Actual" ],
-				    RundeSortMap = [ BUD = 1,        R03 = 2,      RGF = 4,     P35 = 5,      ACT = 6 ],
+				    //   2+10 = Plan_R03 (R03), 5+7 = Plan_RGF ohne R12 (FC57),
+				    //   8+4 = Plan_RGF + R12 (RGF), 10+2 = Plan_35 + RTD (P35).
+				    RundeMap     = [ BUD = "Budget", R03 = "2+10", FC57 = "5+7", RGF = "8+4", P35 = "10+2", ACT = "Actual" ],
+				    RundeSortMap = [ BUD = 1,        R03 = 2,      FC57 = 3,     RGF = 4,     P35 = 5,      ACT = 6 ],
 				    Auswahl = Table.Distinct(Table.SelectColumns(Szenario_Konfig, {"Szenario", "Sort"})),
 				    MitBeschreibung = Table.AddColumn(Auswahl, "Beschreibung", each Record.FieldOrDefault(Beschreibungen, [Szenario], [Szenario]), type text),
 				    MitRunde = Table.AddColumn(MitBeschreibung, "Runde", each Record.FieldOrDefault(RundeMap, [Szenario], null), type nullable text),

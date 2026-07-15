@@ -256,10 +256,24 @@ Version + zu welchem Stammdaten-Stand die Runde eingefroren wurde.
   {"RGF", 3, 0, "Plan_RTD", "live_fy", null, "cause_of_change_fy", true},
   {"RGF", 3,-1, "Actual_0", "live_fy", null, "cause_of_change_fy", true},
   ```
-- Jede **archivierte** Runde bekommt ein festes Szenario (`FC_02_10`,
-  `FC_05_07`, `FC_08_04`, `FC_10_02` …) mit der Version, auf die sie gesichert
-  wurde, und ihrem eigenen Stammdaten-Snapshot. Beispiel für eine auf `Plan_R03`
-  gesicherte 8+4-Runde, Stammdaten-Stand 15.02.2026:
+**Konkrete Zuordnung in diesem Modell** (Version-Mapping des Controllings):
+
+| Runde | Version(en) | Szenario | CoC-Stand |
+|---|---|---|---|
+| Budget | Plan_20 / Plan_35 | `BUD` | Snapshot (Budget) |
+| 2+10 | Plan_R03 | `R03` | Snapshot (R03) |
+| 5+7 | Plan_RGF (ohne R12) | `FC57` | live (umstellbar) |
+| 8+4 (aktuell) | Plan_RGF + Plan_R12 | `RGF` | live |
+| 10+2 | Plan_35 + Plan_RTD | `P35` | live |
+| Actual | Actual_0 | `ACT` | live |
+
+Diese Runden tragen in `DIM_Szenario` die Spalte **`Runde`** (Budget/2+10/5+7/
+8+4/10+2/Actual, korrekt sortiert). 5+7 und 8+4 teilen sich die `Plan_RGF`-Basis
+– 8+4 ist 5+7 **plus** den `Plan_R12`-Aufsatz.
+
+- Jede weitere **archivierte** Runde bekommt ein festes Szenario mit der
+  Version, auf die sie gesichert wurde, und ihrem eigenen Stammdaten-Snapshot.
+  Beispiel für eine auf `Plan_R03` gesicherte Runde, Stammdaten-Stand 15.02.2026:
   ```m
   // Snapshot-Parameter + Blatt-Abfrage (einmalig je Runde):
   //   Parameter_FC0804_Stamm = #date(2026,2,15)

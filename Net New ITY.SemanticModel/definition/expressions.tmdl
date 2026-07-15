@@ -63,10 +63,15 @@ expression Szenario_Konfig = ```
 		            // Budget (vollständig eingefroren zum Budget-Snapshot)
 		            {"BUD",     2,  0, "Plan_20",  "snapshot", Parameter_BUD_Stammdaten, "cause_of_change_BUD", false},
 		            {"BUD",     2, -1, "Plan_35",  "snapshot", Parameter_BUD_Stammdaten, "cause_of_change_BUD", false},
-		            // Rolling Forecast (RGF): Plan laufendes GJ + Ist Vorjahr
+		            // Rolling Forecast (RGF) = aktueller FC 8+4: Plan_RGF + R12-Aufsatz + Ist Vorjahr
 		            {"RGF",     3,  0, "Plan_RGF", "live_fy",  null,                     "cause_of_change_fy",  true},
 		            {"RGF",     3,  0, "Plan_R12", "live_fy",  null,                     "cause_of_change_fy",  true},
 		            {"RGF",     3, -1, "Actual_0", "live_fy",  null,                     "cause_of_change_fy",  true},
+		            // 5+7 = Plan_RGF ohne R12-Aufsatz (Basis von 8+4) + Ist Vorjahr.
+		            // Für einen eingefrorenen CoC-Stand: CoC_Quelle auf "snapshot"
+		            // umstellen und einen eigenen Snapshot-Parameter hinterlegen.
+		            {"FC57",   10,  0, "Plan_RGF", "live_fy",  null,                     "cause_of_change_fy",  true},
+		            {"FC57",   10, -1, "Actual_0", "live_fy",  null,                     "cause_of_change_fy",  true},
 		            // Forecast RF/RTD
 		            {"RF",      4,  0, "Plan_RF",  "live_fy",  null,                     "cause_of_change_fy",  true},
 		            {"RF",      4,  0, "Plan_RTD", "live_fy",  null,                     "cause_of_change_fy",  true},
