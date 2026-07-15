@@ -11,6 +11,37 @@
 table '0. Measuretabelle'
 	lineageTag: eb0c82ac-27a9-4a47-8bea-d697799910f4
 
+	/// Generischer Monatswert – reagiert auf das per DIM_Szenario gewählte
+	/// Szenario. Für Vergleichsmatrizen (Budget/2+10/5+7/8+4/10+2/Actual
+	/// nebeneinander): DIM_Szenario[Szenario] in die Spalten, dieses Measure
+	/// als Wert – kein szenariospezifisches Measure nötig.
+	measure Wert_Periodic = CALCULATE ( SUM ( Revenues[Betrag] ), Revenues[MetricId] <> 99 )
+		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		displayFolder: Vergleich
+		lineageTag: 22532937-16e2-498e-b238-86c2aa219e3e
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Generischer YTD-Wert (kumuliert bis zur Periode im Kontext), reagiert
+	/// ebenfalls auf DIM_Szenario. Gegenstück zu Wert_Periodic.
+	measure Wert_YTD = ```
+			VAR p = MAX ( 'DIM_DATE'[FY_MonatNr] )
+			VAR PeriodenYTD =
+			    CALCULATETABLE (
+			        DISTINCT ( 'DIM_DATE'[Datum] ),
+			        REMOVEFILTERS ( 'DIM_DATE' ),
+			        'DIM_DATE'[FY_MonatNr] <= p,
+			        VALUES ( 'DIM_DATE'[FY_Start] )
+			    )
+			RETURN
+			    CALCULATE ( [Wert_Periodic], REMOVEFILTERS ( 'DIM_DATE' ), PeriodenYTD )
+			```
+		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		displayFolder: Vergleich
+		lineageTag: 168fe963-2b19-4ce9-922d-81a4fbe49354
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
 	/// Monatswerte Actuals (Ist laufendes GJ + Vorjahr, ohne Like for Like).
 	measure ACT_Periodic = ```
 			CALCULATE (

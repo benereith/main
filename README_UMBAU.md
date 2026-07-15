@@ -237,6 +237,56 @@ Beispiel: neue Runde „R06" mit Version `Plan_R06`, eingefroren zum 15.06.2026.
 > `ManCoC` mit `{"cause_of_change_R06", "Man_cause_of_change_R06"}` umbenennen.
 > Für die meisten Runden ist das nicht nötig – eine bestehende Spalte genügt.
 
+### 5.2a Forecast-Register: Runden dauerhaft nebeneinander (Budget vs 2+10 vs 5+7 vs 8+4 vs 10+2 vs Actual)
+
+Ausgangslage im Quellsystem: Der **aktuelle** Forecast liegt immer auf `RGF`
+(teils zusätzlich auf `RTD`, muss addiert werden). Beim Rollen auf die nächste
+Runde wird der bisherige Forecast auf eine **andere** Planversion gesichert –
+welche, ist variabel. Genau diese Variabilität bildet `Szenario_Konfig` als
+**Register** ab: Beim Schließen einer Runde hältst du dort fest, auf welcher
+Version + zu welchem Stammdaten-Stand die Runde eingefroren wurde.
+
+**Modellprinzip – jede Runde ist eine eigene, unveränderliche Spur:**
+
+- `RGF` bleibt „der aktuelle Forecast" (bewegt sich mit; Haupt-Report-Seiten
+  nutzen weiter `RGF`). Ist der aktuelle FC = RGF **+** RTD, einfach beide
+  Versionen als Zeilen unter `RGF` listen – sie summieren automatisch:
+  ```m
+  {"RGF", 3, 0, "Plan_RGF", "live_fy", null, "cause_of_change_fy", true},
+  {"RGF", 3, 0, "Plan_RTD", "live_fy", null, "cause_of_change_fy", true},
+  {"RGF", 3,-1, "Actual_0", "live_fy", null, "cause_of_change_fy", true},
+  ```
+- Jede **archivierte** Runde bekommt ein festes Szenario (`FC_02_10`,
+  `FC_05_07`, `FC_08_04`, `FC_10_02` …) mit der Version, auf die sie gesichert
+  wurde, und ihrem eigenen Stammdaten-Snapshot. Beispiel für eine auf `Plan_R03`
+  gesicherte 8+4-Runde, Stammdaten-Stand 15.02.2026:
+  ```m
+  // Snapshot-Parameter + Blatt-Abfrage (einmalig je Runde):
+  //   Parameter_FC0804_Stamm = #date(2026,2,15)
+  //   Snapshot_FC0804        = fnStammdaten_Snapshot(Parameter_FC0804_Stamm)
+  //   SnapshotMap: ... , FC_08_04 = Snapshot_FC0804
+  {"FC_08_04", 5, 0, "Plan_R03", "snapshot", Parameter_FC0804_Stamm, "cause_of_change_fy", true},
+  {"FC_08_04", 5,-1, "Actual_0", "snapshot", Parameter_FC0804_Stamm, "cause_of_change_fy", true},
+  ```
+  (Liegt die Runde auf mehreren Versionen, z. B. Basis + RTD, einfach mehrere
+  `0`-Offset-Zeilen anlegen – sie addieren sich.)
+
+**Ablauf beim Rollen auf eine neue Runde (Register-Eintrag):**
+
+1. Notieren, auf welche Version das Quellsystem den bisherigen FC gesichert hat.
+2. Snapshot-Parameter + `Snapshot_…`-Blatt-Abfrage + `SnapshotMap`-Eintrag für
+   die Runde anlegen (Stammdaten-Stichtag der Runde).
+3. In `Szenario_Konfig` die zwei (oder mehr) Zeilen der Runde ergänzen.
+4. `RGF` auf den neuen aktuellen FC zeigen lassen (Version(en) tauschen).
+
+**Vergleichsansicht bauen (ohne Measure je Runde):**
+
+Matrix/Zebra-Tabelle: **Zeilen** = Net-New-Hierarchie (`DIM_Struktur`),
+**Spalten** = `DIM_Szenario[Szenario]`, **Wert** = `[Wert_YTD]` (oder
+`[Wert_Periodic]` für Monatswerte). Jede Runde erscheint automatisch als eigene
+Spalte; neue Runde = neue Spalte, kein neues Measure. Reihenfolge der Spalten
+steuert die Spalte `Sort` in `Szenario_Konfig` / `DIM_Szenario`.
+
 ### 5.3 Jahreswechsel (neues Geschäftsjahr)
 
 1. Parameter `Geschäftsjahresbeginn` auf den neuen 1. des GJ setzen.
