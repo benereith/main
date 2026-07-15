@@ -33,6 +33,31 @@ table DIM_Szenario
 
 		annotation SummarizationSetBy = Automatic
 
+	/// Anzeigename der Forecast-Runde (nur für die Vergleichsleiter gefüllt:
+	/// Budget / 2+10 / 5+7 / 8+4 / 10+2 / Actual). Interne Szenarien (RF, FC02,
+	/// ARO_RGF, R01) bleiben leer und werden in der Vergleichsansicht per
+	/// Filter "Runde ist nicht leer" ausgeblendet.
+	column Runde
+		dataType: string
+		lineageTag: 180c9ffb-fdf8-4abb-97c0-80deb70a0282
+		summarizeBy: none
+		sourceColumn: Runde
+		sortByColumn: RundeSort
+
+		changedProperty = SortByColumn
+
+		annotation SummarizationSetBy = Automatic
+
+	column RundeSort
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: f9a88fd8-1b15-498a-b36e-d3340270bd3f
+		summarizeBy: none
+		sourceColumn: RundeSort
+
+		annotation SummarizationSetBy = User
+
 	partition DIM_Szenario = m
 		mode: import
 		source = ```
@@ -40,7 +65,7 @@ table DIM_Szenario
 				    Beschreibungen = [
 				        ACT     = "Actuals (Ist)",
 				        BUD     = "Budget (eingefroren zum Budget-Snapshot)",
-				        RGF     = "Rolling Forecast (RGF/R12) + Ist Vorjahr",
+				        RGF     = "Rolling Forecast = aktueller FC 8+4 (Plan_RGF + R12) + Ist Vorjahr",
 				        RF      = "Forecast RF/RTD + Ist Vorjahr",
 				        P35     = "Plan 35/RTD + Ist Vorjahr",
 				        R03     = "Forecast-Runde R03 (Snapshot)",
@@ -48,10 +73,18 @@ table DIM_Szenario
 				        ARO_RGF = "ARO-Sicht auf RGF-Snapshot",
 				        R01     = "Plan 01 (Recherche)"
 				    ],
+				    // Vergleichsleiter: Szenario-Kürzel -> Anzeigename + Sortierung.
+				    // Zuordnung laut Version-Mapping des Controllings:
+				    //   2+10 = Plan_R03 (R03), 8+4 = Plan_RGF+R12 (RGF), 10+2 = Plan_35+RTD (P35).
+				    // 5+7 (Plan_RGF ohne Zusatz) hat noch KEINE eigene Spur -> siehe README 5.2a.
+				    RundeMap     = [ BUD = "Budget", R03 = "2+10", RGF = "8+4", P35 = "10+2", ACT = "Actual" ],
+				    RundeSortMap = [ BUD = 1,        R03 = 2,      RGF = 4,     P35 = 5,      ACT = 6 ],
 				    Auswahl = Table.Distinct(Table.SelectColumns(Szenario_Konfig, {"Szenario", "Sort"})),
-				    MitBeschreibung = Table.AddColumn(Auswahl, "Beschreibung", each Record.FieldOrDefault(Beschreibungen, [Szenario], [Szenario]), type text)
+				    MitBeschreibung = Table.AddColumn(Auswahl, "Beschreibung", each Record.FieldOrDefault(Beschreibungen, [Szenario], [Szenario]), type text),
+				    MitRunde = Table.AddColumn(MitBeschreibung, "Runde", each Record.FieldOrDefault(RundeMap, [Szenario], null), type nullable text),
+				    MitRundeSort = Table.AddColumn(MitRunde, "RundeSort", each Record.FieldOrDefault(RundeSortMap, [Szenario], 99), Int64.Type)
 				in
-				    MitBeschreibung
+				    MitRundeSort
 				```
 
 	annotation PBI_NavigationStepName = Navigation
