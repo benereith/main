@@ -184,9 +184,9 @@ expression fnStammdaten_Snapshot = ```
 
 	annotation PBI_ResultType = Function
 
-expression Stammdaten_Basis = ```
-		// Stammdaten aus dem Dataflow + manuelle Werke, OHNE Snapshot-Spalten.
-		// Eingefrorene CoC-Stände liegen in Stammdaten_CoC / Stammdaten_Historie.
+expression Stammdaten_Dataflow = ```
+		// BLATT-ABFRAGE: greift ausschließlich auf den Dataflow zu (keine
+		// Referenz auf andere Abfragen) -> Formula-Firewall-konform.
 		let
 		    Quelle = PowerPlatform.Dataflows(null),
 		    Workspaces = Quelle{[Id = "Workspaces"]}[Data],
@@ -206,10 +206,23 @@ expression Stammdaten_Basis = ```
 		    MitBetriebstyp = Table.AddColumn(MitWerkBezeichnung, "Betriebstyp", each
 		        if List.Contains(PlanbetriebeRoll, [betrieb]) then "Plan-Betriebe Roll"
 		        else if List.Contains(PlanbetriebeITY, [betrieb]) then "Plan-Betriebe ITY"
-		        else "Real-Betriebe", type text),
+		        else "Real-Betriebe", type text)
+		in
+		    MitBetriebstyp
+		```
+	lineageTag: b41d2d2b-cde2-4f3b-92a6-ae1342bfa511
+	queryGroup: '3. Stammdaten'
 
+	annotation PBI_ResultType = Table
+
+expression Stammdaten_Basis = ```
+		// KOMBINATIONS-ABFRAGE: referenziert nur andere Abfragen (Dataflow +
+		// manuelle Werke), kein direkter Datenquellen-Zugriff -> Firewall-konform.
+		// Stammdaten aus dem Dataflow + manuelle Werke, OHNE Snapshot-Spalten.
+		// Eingefrorene CoC-Stände liegen in Stammdaten_CoC / Stammdaten_Historie.
+		let
 		    // Manuelle Werke ergänzen
-		    MitManuellen = Table.Combine({MitBetriebstyp, Man_Stamm}),
+		    MitManuellen = Table.Combine({Stammdaten_Dataflow, Man_Stamm}),
 
 		    // HFM-Ableitungen (Logik unverändert übernommen)
 		    HFM_Sektor = Table.TransformColumnTypes(Table.AddColumn(MitManuellen, "HFM_sektor", each
@@ -247,25 +260,51 @@ expression Stammdaten_Basis = ```
 
 	annotation PBI_ResultType = Table
 
+expression Snapshot_BUD = fnStammdaten_Snapshot(Parameter_BUD_Stammdaten)
+	lineageTag: 292e9e2f-b205-4dcb-a6fc-6509223219d9
+	queryGroup: '3. Stammdaten'
+
+	annotation PBI_ResultType = Table
+
+expression Snapshot_RGF = fnStammdaten_Snapshot(Parameter_RGF_Stammdaten)
+	lineageTag: cd5ba636-3537-47ba-b0df-756ce043848f
+	queryGroup: '3. Stammdaten'
+
+	annotation PBI_ResultType = Table
+
+expression Snapshot_R03 = fnStammdaten_Snapshot(Parameter_R03_Stammdaten)
+	lineageTag: 9701f983-bd48-4340-82f6-2b509358a3a9
+	queryGroup: '3. Stammdaten'
+
+	annotation PBI_ResultType = Table
+
 expression Stammdaten_CoC = ```
+		// KOMBINATIONS-ABFRAGE: referenziert nur andere Abfragen (keine direkte
+		// Datenquelle) -> Formula-Firewall-konform. Die Snapshot-Zugriffe liegen
+		// in den Blatt-Abfragen Snapshot_BUD / Snapshot_RGF / Snapshot_R03.
+		//
 		// Cause-of-Change-Stand pro Betrieb und Szenario (langes Format).
 		// Quelle je Szenario laut Szenario_Konfig: aktueller Stand ("live"/"live_fy")
-		// oder eingefrorener Snapshot aus exports_md ("snapshot").
+		// oder eingefrorener Snapshot ("snapshot").
 		// Manuelle Werke fehlen im Lakehouse-Export und werden aus Man_Stamm ergänzt.
+		//
+		// Neue Snapshot-Runde: hier in "SnapshotMap" die neue Blatt-Abfrage
+		// unter ihrem Szenario-Kürzel ergänzen.
 		let
+		    SnapshotMap = [ BUD = Snapshot_BUD, ARO_RGF = Snapshot_RGF, R03 = Snapshot_R03 ],
 		    Basis = Table.Buffer(Table.SelectColumns(Stammdaten_Basis, {"betrieb", "cause_of_change", "cause_of_change_fy"})),
-		    Szenarien = Table.Distinct(Table.SelectColumns(Szenario_Konfig, {"Szenario", "CoC_Quelle", "CoC_Snapshot", "CoC_Spalte_Adjustments"})),
+		    Szenarien = Table.Distinct(Table.SelectColumns(Szenario_Konfig, {"Szenario", "CoC_Quelle", "CoC_Spalte_Adjustments"})),
 		    ProSzenario = Table.AddColumn(Szenarien, "Daten", each
 		        let
+		            s = [Szenario],
 		            q = [CoC_Quelle],
-		            d = [CoC_Snapshot],
 		            AdjSpalte = [CoC_Spalte_Adjustments],
 		            LiveSpalte = if q = "live_fy" then "cause_of_change_fy" else "cause_of_change",
 		            Live = Table.RenameColumns(Table.SelectColumns(Basis, {"betrieb", LiveSpalte}), {{LiveSpalte, "coc"}}),
 		            Ergebnis =
 		                if q = "snapshot" then
 		                    let
-		                        Snap = fnStammdaten_Snapshot(d),
+		                        Snap = Record.Field(SnapshotMap, s),
 		                        Manuelle = Table.RenameColumns(Table.SelectColumns(Man_Stamm, {"betrieb", AdjSpalte}), {{AdjSpalte, "coc"}}),
 		                        NeueManuelle = Table.SelectRows(Manuelle, (zeile) => not List.Contains(Snap[betrieb], zeile[betrieb]))
 		                    in
