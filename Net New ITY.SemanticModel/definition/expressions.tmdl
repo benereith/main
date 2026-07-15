@@ -40,6 +40,18 @@ expression Lakehouse_Datenbank = "lakehouse_group_controlling" meta [IsParameter
 
 	annotation PBI_ResultType = Text
 
+expression Reporting_Server = "3w3wftkijo6ujehh4fb2eleovu-tuq7lxe5lznu7hpei5nzy67o3e.datawarehouse.pbidedicated.windows.net" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: fd09cc05-2b12-4585-bdfe-1cb2cc70b3e1
+	queryGroup: '1. Konfiguration'
+
+	annotation PBI_ResultType = Text
+
+expression Reporting_Datenbank = "Reporting" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: 6a6914fc-d7d3-4d6f-9123-616eecaf6361
+	queryGroup: '1. Konfiguration'
+
+	annotation PBI_ResultType = Text
+
 expression FY_Startmonat = Date.Month(Geschäftsjahresbeginn)
 	lineageTag: f6c2b77f-b6ac-4e43-ae2e-96a0bf2ffd99
 	queryGroup: '1. Konfiguration'
@@ -353,23 +365,36 @@ expression Stammdaten_Historie = ```
 	annotation PBI_ResultType = Table
 
 expression SAP_Revenues = ```
+		// Revenue-Quelle aus dem Reporting-Warehouse (Lakehouse), monatlich.
+		// Liefert bereits Monatswerte (Betrag_Monat) -> in "Revenues" wird für
+		// SAP NICHT mehr differenziert (nur manuelle YTD-Werte, siehe dort).
+		// Die frühere Excel-Variante (Revenues_SAP.xlsx, YTD) liegt in der
+		// Git-Historie, falls ein Rückbau nötig ist.
+		// Mehrjahr: die IN-Liste um weitere Jahre erweitern bzw. auf
+		// ">= Aktuelles_Geschäftsjahr - 1" umstellen.
 		let
-		    Quelle = SharePoint.Contents("https://cpgplc.sharepoint.com/sites/GroupControlling/", [ApiVersion = 15]),
-		    Navigation = Quelle{[Name = "Shared Documents"]}[Content],
-		    #"Navigation 1" = Navigation{[Name = "Group Controlling"]}[Content],
-		    #"Navigation 2" = #"Navigation 1"{[Name = "Net New ITY"]}[Content],
-		    #"Navigation 3" = #"Navigation 2"{[Name = "02_Revenues"]}[Content],
-		    #"Navigation 4" = #"Navigation 3"{[Name = "Revenues_SAP.xlsx"]}[Content],
-		    Arbeitsmappe = Excel.Workbook(#"Navigation 4", null, true),
-		    Blatt = Arbeitsmappe{[Item = "Revenues", Kind = "Sheet"]}[Data],
-		    Spaltentypen = Table.TransformColumnTypes(Blatt, {{"Column1", type text}, {"Column3", type text}, {"Column8", type text}, {"Column9", type text}, {"Column10", type text}, {"Column11", type text}, {"Column12", type text}}, "de"),
-		    Header1 = Table.PromoteHeaders(Spaltentypen, [PromoteAllScalars = true]),
-		    Header2 = Table.PromoteHeaders(Header1, [PromoteAllScalars = true]),
-		    OhneHilfsspalten = Table.RemoveColumns(Header2, {"Auftragsart", "Column2", "", "Column4", "Column5", "Column6", "Column7"}),
-		    OhneErgebniszeilen = Table.SelectRows(OhneHilfsspalten, each ([Geschäftsjahr] <> "Ergebnis")),
-		    Typisiert = Table.TransformColumnTypes(OhneErgebniszeilen, {{"Werk", Int64.Type}, {"Werttyp", type text}, {"Version", type text}, {"EUR", type number}, {"Geschäftsjahr", Int64.Type}, {"Buchungsperiode", Int64.Type}}),
-		    Umbenannt = Table.RenameColumns(Typisiert, {{"EUR", "Betrag"}}),
-		    OhneLeereWerke = Table.SelectRows(Umbenannt, each [Werk] <> null and [Werk] <> "")
+		    SQL =
+		        "WITH AggregatedData AS (
+		            SELECT
+		                base.Object_group AS Werk,
+		                base.SAP_Version AS Version,
+		                base.Fiscal_Year AS Geschäftsjahr,
+		                base.Period AS Buchungsperiode,
+		                CASE WHEN base.SAP_Version = '0' THEN 'Actual' ELSE 'Plan' END AS Werttyp,
+		                SUM(base.Value) AS Betrag_Monat
+		            FROM V_SAP_EXPORTS_cleansed AS base
+		            LEFT JOIN tab_accounts_hierarchy AS hier ON base.Account = hier.Kostenart
+		            WHERE base.Object_type = 'OR'
+		                AND hier.Level_2_Key = 'IS10000_T - Total Revenue inkl. IFRS/ NEUTRA/MGMT'
+		                AND base.Fiscal_Year IN ('" & Text.From(Aktuelles_Geschäftsjahr - 1) & "', '" & Text.From(Aktuelles_Geschäftsjahr) & "')
+		            GROUP BY base.Object_group, base.SAP_Version, base.Fiscal_Year, base.Period
+		        )
+		        SELECT Werk, Version, Werttyp, Geschäftsjahr, Buchungsperiode, Betrag_Monat
+		        FROM AggregatedData",
+		    Ergebnis = Sql.Database(Reporting_Server, Reporting_Datenbank, [Query = SQL]),
+		    Umbenannt = Table.RenameColumns(Ergebnis, {{"Betrag_Monat", "Betrag"}}),
+		    Typisiert = Table.TransformColumnTypes(Umbenannt, {{"Werk", Int64.Type}, {"Version", type text}, {"Werttyp", type text}, {"Geschäftsjahr", Int64.Type}, {"Buchungsperiode", Int64.Type}, {"Betrag", type number}}),
+		    OhneLeereWerke = Table.SelectRows(Typisiert, each [Werk] <> null)
 		in
 		    OhneLeereWerke
 		```

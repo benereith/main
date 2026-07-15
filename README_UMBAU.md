@@ -310,19 +310,51 @@ steuert die Spalte `Sort` in `Szenario_Konfig` / `DIM_Szenario`.
 
 ---
 
-## 6. Migration auf monatliche Lakehouse-Daten
+## 6. Lakehouse-Anbindung (umgesetzt)
 
-Der Umstieg berührt **nur die Datenquelle**, nicht die Berichtslogik:
+Die Revenue-Quelle läuft jetzt über das **Reporting-Warehouse** statt der Excel:
 
-1. In `expressions.tmdl` die Abfrage **`SAP_Revenues`** auf die Lakehouse-
-   Quelle umstellen. Zielspalten unverändert: `Werk`, `Werttyp`, `Version`,
-   `Betrag`, `Geschäftsjahr`, `Buchungsperiode`.
-2. In `tables/Revenues.tmdl` den Block **„2) YTD → Monatswerte" ersatzlos
-   entfernen** und im weiteren Verlauf `MonatlicheWerte` durch `MitOffset`
-   ersetzen. Der Block ist genau dafür klar markiert.
+1. **`SAP_Revenues`** liest per nativer SQL (`Sql.Database(Reporting_Server,
+   Reporting_Datenbank, [Query=…])`) direkt **monatliche** Werte (`Betrag_Monat`).
+   Server/DB stehen als Parameter in „1. Konfiguration". Die alte Excel-Variante
+   (`Revenues_SAP.xlsx`, YTD) liegt in der Git-Historie.
+2. **`Revenues`** differenziert nur noch die **manuellen** Zeilen (Man_Rev, YTD)
+   auf Monatswerte; SAP wird als bereits monatlich durchgereicht (`if IstMan
+   then <diff> else <wert>`).
 3. Alles Übrige (Szenario-Expansion, CoC-Freeze, MetricId, Measures) bleibt
-   unverändert, weil YTD dort ausschließlich als Measure (`*_Value`) berechnet
-   wird – nicht mehr in den geladenen Daten.
+   unverändert, weil YTD ausschließlich als Measure (`*_Value`) berechnet wird.
+
+> **Zu prüfen — Granularität der manuellen Adjustments:** Aktuell als **YTD**
+> behandelt (unverändert wie vor dem Umstieg). Sind eure manuellen Werte
+> **monatlich** erfasst, im markierten Block in `Revenues.tmdl` die Bedingung
+> auf „nie differenzieren" setzen (Kommentar dort). 
+>
+> **Zu prüfen — `Werk` = `Object_group`:** wird nach `Int64` gecastet. Falls
+> `Object_group` nicht-numerische Werke enthält, dort den Typ anpassen.
+>
+> **Mehrjahr:** die `IN (…)`-Liste in `SAP_Revenues` um weitere Jahre erweitern
+> bzw. auf `>= Aktuelles_Geschäftsjahr - 1` umstellen.
+
+### Net New in % des Vorjahresumsatzes
+
+Kennzahl `Net New % (Forecast/Actual)` bzw. `(Budget)` = Net New / `Vorjahresumsatz`.
+Die **Basis** (`Vorjahresumsatz`) ist berichtsjahr-abhängig:
+- **FY26** → Planversion **35** des Vorjahres (`FY_Offset = -1`) — so umgesetzt.
+- **FY27** → **RGF + R12** des FY26. Setzt die Berichtsjahr-Erweiterung voraus
+  (dann wird die Basis-Version je Berichtsjahr umgeschaltet).
+
+### Mehrjahresvergleiche (Berichtsjahr, offen)
+
+Für FY26 **und** FY27 gleichzeitig (inkl. korrekter Net-New-Zerlegung) fehlt noch
+die Berichtsjahr-Expansion:
+- `fnCoC_ZuMetricId` ist bereits offset-basiert; der Offset muss nur relativ zum
+  **Berichtsjahr** statt zum fixen `Aktuelles_Geschäftsjahr` gebildet werden.
+- **CoC-Kennzeichen je Jahr:** laufendes Jahr nutzt `cause_of_change_fy`, das
+  **kommende** Jahr `cause_of_change_ny`. `fnStammdaten_Snapshot` liest aktuell
+  fest `_fy`; dafür wird die Spalte parametrisiert.
+- Neue Dimension `DIM_Berichtsjahr` (FY26/FY27) als Slicer; Measures
+  berichtsjahr-bewusst.
+- `DIM_DATE` deckt den Zeitraum bereits ab (rollierend GJ-6 … GJ+3).
 
 ### Mehrjahresvergleiche (> 2 Jahre)
 

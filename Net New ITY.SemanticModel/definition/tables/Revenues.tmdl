@@ -143,7 +143,7 @@ table Revenues
 		source = ```
 				let
 				    // =========================================================
-				    // 1) Quellen: SAP-Export (YTD-kumuliert) + manuelle Adjustments
+				    // 1) Quellen: SAP-Export (Lakehouse, MONATLICH) + manuelle Adjustments
 				    // =========================================================
 				    SapQuelle = Table.AddColumn(SAP_Revenues, "IstManuell", each false, type logical),
 				    ManQuelle = Table.AddColumn(Man_Rev, "IstManuell", each true, type logical),
@@ -162,23 +162,28 @@ table Revenues
 				    MitOffset = Table.AddColumn(MitWV, "FY_Offset", each [Geschäftsjahr] - Aktuelles_Geschäftsjahr, Int64.Type),
 
 				    // =========================================================
-				    // 2) YTD -> Monatswerte
-				    //    Die Quelle liefert pro Buchungsperiode den kumulierten
-				    //    YTD-Wert; hier wird auf Monatswerte differenziert.
-				    //    Sobald die Quelle (Lakehouse) monatliche Werte liefert,
-				    //    entfällt dieser Block ersatzlos: dann unten
-				    //    "MonatlicheWerte" durch "MitOffset" ersetzen.
+				    // 2) Auf Monatswerte bringen.
+				    //    SAP (Lakehouse) ist bereits MONATLICH -> wird nur
+				    //    durchgereicht. Manuelle Adjustments (Man_Rev, Excel)
+				    //    gelten weiterhin als YTD-kumuliert und werden hier
+				    //    differenziert.
+				    //    >>> Sind die manuellen Werte MONATLICH erfasst, die
+				    //        Bedingung "if IstMan then <diff> else <wert>" auf
+				    //        immer <wert> setzen (also nie differenzieren). <<<
 				    // =========================================================
 				    Gruppiert = Table.Group(MitOffset,
 				        {"Werk", "Geschäftsjahr", "FY_Offset", "Werttyp", "Version", "Werttyp_Version", "IstManuell", "Man_cause_of_change", "Man_cause_of_change_fy", "Man_cause_of_change_BUD", "Man_cause_of_change_RGF", "Man_cause_of_change_R03"},
 				        {{"Daten", each
 				            let
-				                ProPeriode = Table.Group(_, {"Buchungsperiode"}, {{"YTD", each List.Sum(List.RemoveNulls([Betrag])) ?? 0, type number}}),
+				                IstMan = List.First(_[IstManuell]),
+				                ProPeriode = Table.Group(_, {"Buchungsperiode"}, {{"Wert", each List.Sum(List.RemoveNulls([Betrag])) ?? 0, type number}}),
 				                Sortiert = Table.Sort(ProPeriode, {{"Buchungsperiode", Order.Ascending}}),
 				                Zeilen = Table.ToRecords(Sortiert),
 				                Monatlich = List.Transform(List.Positions(Zeilen), (i) =>
 				                    [Buchungsperiode = Zeilen{i}[Buchungsperiode],
-				                     Betrag = Zeilen{i}[YTD] - (if i = 0 then 0 else Zeilen{i - 1}[YTD])])
+				                     Betrag = if IstMan
+				                              then Zeilen{i}[Wert] - (if i = 0 then 0 else Zeilen{i - 1}[Wert])
+				                              else Zeilen{i}[Wert]])
 				            in
 				                Table.FromRecords(Monatlich, type table [Buchungsperiode = Int64.Type, Betrag = number]),
 				          type table [Buchungsperiode = Int64.Type, Betrag = number]}}),

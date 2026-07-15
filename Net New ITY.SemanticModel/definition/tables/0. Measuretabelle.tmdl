@@ -87,6 +87,35 @@ table '0. Measuretabelle'
 		displayFolder: 00 KPIs
 		lineageTag: 78a172da-da3c-467c-afc4-37819f5a264c
 
+	/// Vorjahresumsatz = Basis für die Net-New-%-Betrachtung.
+	/// FY26: Planversion 35 des Vorjahres (FY_Offset = -1).
+	/// Für das Berichtsjahr FY27 wäre die Basis RGF + R12 des FY26 – das
+	/// setzt die Mehrjahr-/Berichtsjahr-Erweiterung voraus (siehe README).
+	measure Vorjahresumsatz = ```
+			CALCULATE (
+			    SUM ( Revenues[Betrag] ),
+			    Revenues[Werttyp_Version] = "Plan_35",
+			    Revenues[FY_Offset] = -1
+			)
+			```
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 00 KPIs
+		lineageTag: ea5a5c64-80cb-44b7-a663-3ee6417d45ed
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Net New (Forecast/Actual) in % des Vorjahresumsatzes.
+	measure 'Net New % (Forecast/Actual)' = DIVIDE ( [Net New Roll Forecast/Actuals], [Vorjahresumsatz] )
+		formatString: 0.0\ %;-0.0\ %;0.0\ %
+		displayFolder: 00 KPIs
+		lineageTag: 9b5f848d-f29f-43ec-be3b-186e15198a64
+
+	/// Net New (Budget) in % des Vorjahresumsatzes.
+	measure 'Net New % (Budget)' = DIVIDE ( [Net New Roll Budget], [Vorjahresumsatz] )
+		formatString: 0.0\ %;-0.0\ %;0.0\ %
+		displayFolder: 00 KPIs
+		lineageTag: 20f2fb7a-3981-42a7-a7a1-e88e556da070
+
 	/// Monatswerte Actuals (Ist laufendes GJ + Vorjahr, ohne Like for Like).
 	measure ACT_Periodic = ```
 			CALCULATE (
