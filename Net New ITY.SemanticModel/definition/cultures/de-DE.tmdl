@@ -2,8 +2,7 @@ cultureInfo de-DE
 
 	linguisticMetadata =
 			{
-			  "Version": "4.1.0",
-			  "Language": "en-US",
-			  "DynamicImprovement": "HighConfidence"
+			  "Version": "1.0.0",
+			  "Language": "de-DE"
 			}
 		contentType: json
