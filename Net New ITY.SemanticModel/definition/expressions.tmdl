@@ -1,10 +1,3 @@
-/// ============================================================================
-/// KONFIGURATION
-/// Zentrale Parameter. Beim Jahreswechsel muss nur "Geschäftsjahresbeginn"
-/// angepasst werden – alles Weitere (aktuelles GJ, Periodenlogik, Kalender)
-/// leitet sich daraus ab.
-/// ============================================================================
-
 expression Geschäftsjahresbeginn = #date(2025, 10, 1) meta [IsParameterQuery=true, Type="Date", IsParameterQueryRequired=true]
 	lineageTag: c7fc004a-d303-4498-b91e-54fcb4223fea
 	queryGroup: '1. Konfiguration'
@@ -59,24 +52,6 @@ expression Aktuelles_Geschäftsjahr = Date.Year(Geschäftsjahresbeginn)
 
 	annotation PBI_ResultType = Number
 
-/// ============================================================================
-/// SZENARIO-KONFIGURATION
-/// Eine Zeile pro (Szenario, Geschäftsjahres-Offset, Werttyp_Version).
-/// Neue Forecast-Runde = neue Zeilen hier + ggf. neuer Snapshot-Parameter.
-///
-/// CoC_Quelle (Stand des Cause of Change für OFFENE Perioden):
-///   "live"     = aktueller Stand aus den Stammdaten (cause_of_change)
-///   "live_fy"  = eingefrorener FY-Stand aus den Stammdaten (cause_of_change_fy)
-///   "snapshot" = Stand aus exports_md zum Datum CoC_Snapshot
-///
-/// Perioden_Freeze = true: für abgeschlossene Perioden (<= Abgeschlossene_Periode)
-/// gilt der zum damaligen Monatsabschluss eingefrorene CoC-Stand aus
-/// Stammdaten_Historie. Das Budget (false) behält immer seinen Snapshot-Stand.
-///
-/// CoC_Spalte_Adjustments: Spalte in Manuelle_Adjustments.xlsx, aus der der
-/// CoC für manuelle Zeilen/Werke gelesen wird.
-/// ============================================================================
-
 expression Szenario_Konfig = ```
 		let
 		    Quelle = #table(
@@ -119,11 +94,6 @@ expression Szenario_Konfig = ```
 	queryGroup: '1. Konfiguration'
 
 	annotation PBI_ResultType = Table
-
-/// ============================================================================
-/// GESCHÄFTSJAHRES-FUNKTIONEN
-/// Einzige Stelle, an der die Verschiebung des Geschäftsjahres definiert ist.
-/// ============================================================================
 
 expression fnFiscal_DatumZuPeriode = ```
 		// Liefert die Buchungsperiode (1..12) eines Datums im verschobenen GJ.
@@ -213,10 +183,6 @@ expression fnStammdaten_Snapshot = ```
 	queryGroup: '2. Funktionen'
 
 	annotation PBI_ResultType = Function
-
-/// ============================================================================
-/// STAMMDATEN
-/// ============================================================================
 
 expression Stammdaten_Basis = ```
 		// Stammdaten aus dem Dataflow + manuelle Werke, OHNE Snapshot-Spalten.
@@ -342,15 +308,6 @@ expression Stammdaten_Historie = ```
 
 	annotation PBI_ResultType = Table
 
-/// ============================================================================
-/// REVENUE-QUELLEN
-/// SAP_Revenues liefert aktuell YTD-kumulierte Werte aus einer Excel-Datei.
-/// Beim Umstieg auf monatliche Lakehouse-Daten wird NUR diese Abfrage ersetzt
-/// (gleiche Spalten: Werk, Werttyp, Version, Betrag, Geschäftsjahr,
-/// Buchungsperiode) und in der Tabelle "Revenues" der Schritt
-/// "MonatlicheWerte" angepasst (siehe Kommentar dort).
-/// ============================================================================
-
 expression SAP_Revenues = ```
 		let
 		    Quelle = SharePoint.Contents("https://cpgplc.sharepoint.com/sites/GroupControlling/", [ApiVersion = 15]),
@@ -422,10 +379,6 @@ expression Man_Stamm = ```
 	queryGroup: '4. Revenue-Quellen'
 
 	annotation PBI_ResultType = Table
-
-/// ============================================================================
-/// COMMENTS (SharePoint) – unverändert übernommen
-/// ============================================================================
 
 expression Parameter1 = Beispieldatei meta [IsParameterQuery=true, BinaryIdentifier=Beispieldatei, Type="Binary", IsParameterQueryRequired=true]
 	lineageTag: 1773caac-543c-4ac0-88ba-04be94ad6752
