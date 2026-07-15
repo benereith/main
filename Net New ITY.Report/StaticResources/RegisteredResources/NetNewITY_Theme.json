@@ -1,0 +1,181 @@
+{
+  "name": "Net New ITY",
+  "dataColors": [
+    "#2a78d6",
+    "#008300",
+    "#e87ba4",
+    "#eda100",
+    "#1baf7a",
+    "#eb6834",
+    "#4a3aa7",
+    "#e34948"
+  ],
+  "foreground": "#0b0b0b",
+  "foregroundNeutralSecondary": "#52514e",
+  "foregroundNeutralTertiary": "#8a8984",
+  "background": "#ffffff",
+  "backgroundLight": "#fcfcfb",
+  "backgroundNeutral": "#f0efec",
+  "tableAccent": "#2a78d6",
+  "good": "#0ca30c",
+  "neutral": "#fab219",
+  "bad": "#d03b3b",
+  "maximum": "#0d366b",
+  "center": "#f0efec",
+  "minimum": "#cde2fb",
+  "null": "#f0efec",
+  "hyperlink": "#2a78d6",
+  "visitedHyperlink": "#4a3aa7",
+  "textClasses": {
+    "title": {
+      "fontFace": "Segoe UI Semibold",
+      "fontSize": 14,
+      "color": "#0b0b0b"
+    },
+    "header": {
+      "fontFace": "Segoe UI Semibold",
+      "fontSize": 12,
+      "color": "#0b0b0b"
+    },
+    "label": {
+      "fontFace": "Segoe UI",
+      "fontSize": 10,
+      "color": "#252423"
+    },
+    "callout": {
+      "fontFace": "Segoe UI Semibold",
+      "fontSize": 28,
+      "color": "#0b0b0b"
+    }
+  },
+  "visualStyles": {
+    "*": {
+      "*": {
+        "background": [
+          {
+            "show": true,
+            "color": { "solid": { "color": "#ffffff" } },
+            "transparency": 0
+          }
+        ],
+        "border": [
+          {
+            "show": true,
+            "color": { "solid": { "color": "#e7e6e2" } },
+            "radius": 8
+          }
+        ],
+        "dropShadow": [
+          {
+            "show": true,
+            "color": { "solid": { "color": "#000000" } },
+            "position": "Outer",
+            "preset": "Custom",
+            "shadowSpread": 2,
+            "shadowBlur": 6,
+            "transparency": 90,
+            "angle": 90,
+            "shadowDistance": 1
+          }
+        ],
+        "title": [
+          {
+            "show": true,
+            "fontColor": { "solid": { "color": "#0b0b0b" } },
+            "background": { "solid": { "color": "#ffffff" } },
+            "alignment": "left",
+            "fontSize": 12,
+            "fontFamily": "Segoe UI Semibold"
+          }
+        ],
+        "visualHeaderTooltip": [
+          { "titleText": "" }
+        ]
+      }
+    },
+    "page": {
+      "*": {
+        "background": [
+          { "color": { "solid": { "color": "#fcfcfb" } }, "transparency": 0 }
+        ],
+        "outspace": [
+          { "color": { "solid": { "color": "#f0efec" } }, "transparency": 0 }
+        ]
+      }
+    },
+    "card": {
+      "*": {
+        "labels": [
+          {
+            "color": { "solid": { "color": "#0b0b0b" } },
+            "fontSize": 26,
+            "fontFamily": "Segoe UI Semibold"
+          }
+        ],
+        "categoryLabels": [
+          {
+            "color": { "solid": { "color": "#52514e" } },
+            "fontSize": 10,
+            "fontFamily": "Segoe UI"
+          }
+        ]
+      }
+    },
+    "columnChart": {
+      "*": {
+        "categoryAxis": [
+          {
+            "gridlineShow": false,
+            "labelColor": { "solid": { "color": "#52514e" } }
+          }
+        ],
+        "valueAxis": [
+          {
+            "gridlineColor": { "solid": { "color": "#f0efec" } },
+            "gridlineThickness": 1,
+            "labelColor": { "solid": { "color": "#52514e" } }
+          }
+        ]
+      }
+    },
+    "barChart": {
+      "*": {
+        "categoryAxis": [
+          {
+            "gridlineShow": false,
+            "labelColor": { "solid": { "color": "#52514e" } }
+          }
+        ],
+        "valueAxis": [
+          {
+            "gridlineColor": { "solid": { "color": "#f0efec" } },
+            "labelColor": { "solid": { "color": "#52514e" } }
+          }
+        ]
+      }
+    },
+    "lineChart": {
+      "*": {
+        "categoryAxis": [
+          {
+            "gridlineShow": false,
+            "labelColor": { "solid": { "color": "#52514e" } }
+          }
+        ],
+        "valueAxis": [
+          {
+            "gridlineColor": { "solid": { "color": "#f0efec" } },
+            "labelColor": { "solid": { "color": "#52514e" } }
+          }
+        ]
+      }
+    },
+    "slicer": {
+      "*": {
+        "background": [
+          { "show": true, "color": { "solid": { "color": "#ffffff" } } }
+        ]
+      }
+    }
+  }
+}

@@ -9,6 +9,10 @@
         "page": "2.3.0"
       },
       "type": "SharedResources"
+    },
+    "customTheme": {
+      "name": "NetNewITY_Theme",
+      "type": "RegisteredResources"
     }
   },
   "objects": {
@@ -54,6 +58,17 @@
           "name": "CY25SU10",
           "path": "BaseThemes/CY25SU10.json",
           "type": "BaseTheme"
+        }
+      ]
+    },
+    {
+      "name": "RegisteredResources",
+      "type": "RegisteredResources",
+      "items": [
+        {
+          "name": "NetNewITY_Theme",
+          "path": "NetNewITY_Theme.json",
+          "type": "CustomTheme"
         }
       ]
     }

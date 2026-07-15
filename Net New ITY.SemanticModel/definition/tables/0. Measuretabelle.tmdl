@@ -42,6 +42,51 @@ table '0. Measuretabelle'
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
+	/// Delta Actual − Budget (YTD). Positiv = über Budget.
+	measure 'Δ Actual vs Budget' = [ACT_Value] - [BUD_Value]
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 00 KPIs
+		lineageTag: fd09cc05-2b12-4585-bdfe-1cb2cc70b3e9
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Delta Forecast − Budget (YTD). Positiv = Forecast über Budget.
+	measure 'Δ Forecast vs Budget' = [RGF_Value] - [BUD_Value]
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 00 KPIs
+		lineageTag: 6a6914fc-d7d3-4d6f-9123-616eecaf636f
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Zielerreichung Actual gegenüber Budget (YTD).
+	measure 'Zielerreichung Actual %' = DIVIDE ( [ACT_Value], [BUD_Value] )
+		formatString: 0.0\ %;-0.0\ %;0.0\ %
+		displayFolder: 00 KPIs
+		lineageTag: 157ce513-7585-4323-814e-346b00fcf66f
+
+	/// Zielerreichung Forecast gegenüber Budget (YTD).
+	measure 'Zielerreichung Forecast %' = DIVIDE ( [RGF_Value], [BUD_Value] )
+		formatString: 0.0\ %;-0.0\ %;0.0\ %
+		displayFolder: 00 KPIs
+		lineageTag: a1eb0132-44d1-408a-bb1d-fe36428c3444
+
+	/// Forecast Accuracy: 1 − |Actual − Forecast| / Actual (YTD).
+	/// 100 % = Forecast trifft Ist exakt.
+	measure 'Forecast Accuracy %' = ```
+			VAR Abweichung = ABS ( [ACT_Value] - [RGF_Value] )
+			RETURN
+			    IF ( [ACT_Value] <> 0, 1 - DIVIDE ( Abweichung, ABS ( [ACT_Value] ) ) )
+			```
+		formatString: 0.0\ %;-0.0\ %;0.0\ %
+		displayFolder: 00 KPIs
+		lineageTag: 50fd8e5b-8a43-4c46-9468-8f50ca0e0308
+
+	/// Net New Roll Delta relativ zum Budget (YTD).
+	measure 'Net New Roll Delta %' = DIVIDE ( [Net New Roll Delta], [Net New Roll Budget] )
+		formatString: 0.0\ %;-0.0\ %;0.0\ %
+		displayFolder: 00 KPIs
+		lineageTag: 78a172da-da3c-467c-afc4-37819f5a264c
+
 	/// Monatswerte Actuals (Ist laufendes GJ + Vorjahr, ohne Like for Like).
 	measure ACT_Periodic = ```
 			CALCULATE (
