@@ -202,14 +202,10 @@ table Revenues
 				    MonatlicheWerte = Table.ExpandTableColumn(Gruppiert, "Daten", {"Buchungsperiode", "Betrag"}),
 
 				    // =========================================================
-				    // 3) Vorzeichen:
-				    //    Das Reporting-Warehouse liefert Revenues bereits korrekt
-				    //    orientiert (positiv) – genau so, wie die Measures sie
-				    //    erwarten. Daher KEINE Invertierung mehr. (Früher wurde das
-				    //    laufende GJ negiert, weil die Excel die Werte umgekehrt
-				    //    hatte; das Lakehouse liefert bereits die "geflippte" Sicht.)
-				    //    Sollte eine Quelle doch invertiert vorliegen, hier die
-				    //    Regel setzen (z. B. je Werttyp oder je IstManuell).
+				    // 3) (Vorzeichen wird berichtsjahr-relativ erst in der
+				    //    Szenario-Expansion gesetzt, siehe Schritt 5 "MitVZ".
+				    //    Hier keine globale Invertierung, da dieselbe Quellzeile
+				    //    je nach Berichtsjahr laufend (+) oder Vorjahr (−) ist.)
 				    // =========================================================
 				    MitVorzeichen = MonatlicheWerte,
 
@@ -254,8 +250,14 @@ table Revenues
 				            KonfigSel = Table.RenameColumns(Table.SelectColumns(KonfigGJ, {"GJ_match", "Werttyp_Version", "FY_Offset"}), {{"FY_Offset", "rel_offset"}}),
 				            JoinK = Table.NestedJoin(Basis, {"Geschäftsjahr", "Werttyp_Version"}, KonfigSel, {"GJ_match", "Werttyp_Version"}, "K", JoinKind.Inner),
 				            Zeilen = Table.ExpandTableColumn(JoinK, "K", {"rel_offset"}),
+				            // Vorzeichen BERICHTSJAHR-RELATIV: das Vorjahr (rel_offset < 0)
+				            // wird negiert, das laufende Jahr bleibt positiv. Das Lakehouse
+				            // liefert alles positiv; die Net-New-Measures erwarten das Vorjahr
+				            // negativ, damit laufendes + Vorjahr = Wachstum ergibt. Dieselbe
+				            // Quellzeile ist so in FY26 "laufend" (+) und in FY27 "Vorjahr" (−).
+				            MitVZ = Table.RenameColumns(Table.RemoveColumns(Table.AddColumn(Zeilen, "_Betrag_vz", each if [rel_offset] < 0 then -[Betrag] else [Betrag], type number), {"Betrag"}), {{"_Betrag_vz", "Betrag"}}),
 				            CoCTab = Table.SelectRows(CoCAlle, each [Szenario] = s),
-				            JoinOffen = Table.NestedJoin(Zeilen, {"Werk"}, CoCTab, {"betrieb"}, "O", JoinKind.LeftOuter),
+				            JoinOffen = Table.NestedJoin(MitVZ, {"Werk"}, CoCTab, {"betrieb"}, "O", JoinKind.LeftOuter),
 				            MitOffen = Table.ExpandTableColumn(JoinOffen, "O", {"coc"}, {"coc_offen"}),
 				            MitSzCoC = Table.AddColumn(MitOffen, "cause_of_change_szenario", each
 				                if [IstManuell] then Record.Field(_, "Man_" & K0[CoC_Spalte_Adjustments])
