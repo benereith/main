@@ -190,13 +190,16 @@ table Revenues
 				    MonatlicheWerte = Table.ExpandTableColumn(Gruppiert, "Daten", {"Buchungsperiode", "Betrag"}),
 
 				    // =========================================================
-				    // 3) Vorzeichenkonvention der Quelle:
-				    //    Werte des laufenden Geschäftsjahres werden invertiert
-				    //    (unverändert aus dem Altmodell übernommen).
+				    // 3) Vorzeichen:
+				    //    Das Reporting-Warehouse liefert Revenues bereits korrekt
+				    //    orientiert (positiv) – genau so, wie die Measures sie
+				    //    erwarten. Daher KEINE Invertierung mehr. (Früher wurde das
+				    //    laufende GJ negiert, weil die Excel die Werte umgekehrt
+				    //    hatte; das Lakehouse liefert bereits die "geflippte" Sicht.)
+				    //    Sollte eine Quelle doch invertiert vorliegen, hier die
+				    //    Regel setzen (z. B. je Werttyp oder je IstManuell).
 				    // =========================================================
-				    VZ1 = Table.AddColumn(MonatlicheWerte, "Betrag_vz", each if [FY_Offset] = 0 then -[Betrag] else [Betrag], type number),
-				    VZ2 = Table.RemoveColumns(VZ1, {"Betrag"}),
-				    MitVorzeichen = Table.RenameColumns(VZ2, {{"Betrag_vz", "Betrag"}}),
+				    MitVorzeichen = MonatlicheWerte,
 
 				    MitDatum = Table.AddColumn(MitVorzeichen, "Datum", each fnFiscal_PeriodeZuDatum([Geschäftsjahr], [Buchungsperiode]), type date),
 
