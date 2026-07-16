@@ -72,14 +72,15 @@ table DIM_Szenario
 				        R03     = "Forecast-Runde R03 (Snapshot)",
 				        FC02    = "Forecast Plan 02 + Ist Vorjahr",
 				        ARO_RGF = "ARO-Sicht auf RGF-Snapshot",
-				        R01     = "Plan 01 (Recherche)"
+				        R01     = "Plan 01 (Recherche)",
+				        BUD_FY27 = "Budget FY27 (Plan_20 FY27, Vorjahr = RGF+R12 FY26)"
 				    ],
 				    // Vergleichsleiter: Szenario-Kürzel -> Anzeigename + Sortierung.
 				    // Zuordnung laut Version-Mapping des Controllings:
 				    //   2+10 = Plan_R03 (R03), 5+7 = Plan_RGF ohne R12 (FC57),
 				    //   8+4 = Plan_RGF + R12 (RGF), 10+2 = Plan_35 + RTD (P35).
-				    RundeMap     = [ BUD = "Budget", R03 = "2+10", FC57 = "5+7", RGF = "8+4", P35 = "10+2", ACT = "Actual" ],
-				    RundeSortMap = [ BUD = 1,        R03 = 2,      FC57 = 3,     RGF = 4,     P35 = 5,      ACT = 6 ],
+				    RundeMap     = [ BUD = "Budget", R03 = "2+10", FC57 = "5+7", RGF = "8+4", P35 = "10+2", ACT = "Actual", BUD_FY27 = "Budget FY27" ],
+				    RundeSortMap = [ BUD = 1,        R03 = 2,      FC57 = 3,     RGF = 4,     P35 = 5,      ACT = 6,      BUD_FY27 = 7 ],
 				    Auswahl = Table.Distinct(Table.SelectColumns(Szenario_Konfig, {"Szenario", "Sort"})),
 				    MitBeschreibung = Table.AddColumn(Auswahl, "Beschreibung", each Record.FieldOrDefault(Beschreibungen, [Szenario], [Szenario]), type text),
 				    MitRunde = Table.AddColumn(MitBeschreibung, "Runde", each Record.FieldOrDefault(RundeMap, [Szenario], null), type nullable text),

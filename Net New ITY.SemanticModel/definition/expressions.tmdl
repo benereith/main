@@ -66,42 +66,54 @@ expression Aktuelles_Geschäftsjahr = Date.Year(Geschäftsjahresbeginn)
 
 expression Szenario_Konfig = ```
 		let
+		    // Spalte Berichtsjahr_Start = absolutes Geschäftsjahr, auf das sich das
+		    // Szenario bezieht. FY_Offset ist der Offset RELATIV dazu (0 = dieses
+		    // Jahr, -1 = dessen Vorjahr). Absolutes Quelljahr = Berichtsjahr_Start
+		    // + FY_Offset. So funktioniert dieselbe Engine für beliebig viele
+		    // Berichtsjahre nebeneinander (FY26, FY27, …).
+		    A = Aktuelles_Geschäftsjahr,
 		    Quelle = #table(
-		        type table [Szenario = text, Sort = Int64.Type, FY_Offset = Int64.Type, Werttyp_Version = text, CoC_Quelle = text, CoC_Snapshot = nullable date, CoC_Spalte_Adjustments = text, Perioden_Freeze = logical],
+		        type table [Szenario = text, Sort = Int64.Type, Berichtsjahr_Start = Int64.Type, FY_Offset = Int64.Type, Werttyp_Version = text, CoC_Quelle = text, CoC_Snapshot = nullable date, CoC_Spalte_Adjustments = text, Perioden_Freeze = logical],
 		        {
+		            // ===== Berichtsjahr FY26 (= Aktuelles_Geschäftsjahr) =====
 		            // Actuals (Ist-Werte, CoC = aktueller Stand)
-		            {"ACT",     1,  0, "Actual_0", "live",     null,                     "cause_of_change",     true},
-		            {"ACT",     1, -1, "Actual_0", "live",     null,                     "cause_of_change",     true},
+		            {"ACT",     1, A,  0, "Actual_0", "live",     null,                     "cause_of_change",     true},
+		            {"ACT",     1, A, -1, "Actual_0", "live",     null,                     "cause_of_change",     true},
 		            // Budget (vollständig eingefroren zum Budget-Snapshot)
-		            {"BUD",     2,  0, "Plan_20",  "snapshot", Parameter_BUD_Stammdaten, "cause_of_change_BUD", false},
-		            {"BUD",     2, -1, "Plan_35",  "snapshot", Parameter_BUD_Stammdaten, "cause_of_change_BUD", false},
+		            {"BUD",     2, A,  0, "Plan_20",  "snapshot", Parameter_BUD_Stammdaten, "cause_of_change_BUD", false},
+		            {"BUD",     2, A, -1, "Plan_35",  "snapshot", Parameter_BUD_Stammdaten, "cause_of_change_BUD", false},
 		            // Rolling Forecast (RGF) = aktueller FC 8+4: Plan_RGF + R12-Aufsatz + Ist Vorjahr
-		            {"RGF",     3,  0, "Plan_RGF", "live_fy",  null,                     "cause_of_change_fy",  true},
-		            {"RGF",     3,  0, "Plan_R12", "live_fy",  null,                     "cause_of_change_fy",  true},
-		            {"RGF",     3, -1, "Actual_0", "live_fy",  null,                     "cause_of_change_fy",  true},
+		            {"RGF",     3, A,  0, "Plan_RGF", "live_fy",  null,                     "cause_of_change_fy",  true},
+		            {"RGF",     3, A,  0, "Plan_R12", "live_fy",  null,                     "cause_of_change_fy",  true},
+		            {"RGF",     3, A, -1, "Actual_0", "live_fy",  null,                     "cause_of_change_fy",  true},
 		            // 5+7 = Plan_RGF ohne R12-Aufsatz (Basis von 8+4) + Ist Vorjahr.
-		            // Für einen eingefrorenen CoC-Stand: CoC_Quelle auf "snapshot"
-		            // umstellen und einen eigenen Snapshot-Parameter hinterlegen.
-		            {"FC57",   10,  0, "Plan_RGF", "live_fy",  null,                     "cause_of_change_fy",  true},
-		            {"FC57",   10, -1, "Actual_0", "live_fy",  null,                     "cause_of_change_fy",  true},
+		            {"FC57",   10, A,  0, "Plan_RGF", "live_fy",  null,                     "cause_of_change_fy",  true},
+		            {"FC57",   10, A, -1, "Actual_0", "live_fy",  null,                     "cause_of_change_fy",  true},
 		            // Forecast RF/RTD
-		            {"RF",      4,  0, "Plan_RF",  "live_fy",  null,                     "cause_of_change_fy",  true},
-		            {"RF",      4,  0, "Plan_RTD", "live_fy",  null,                     "cause_of_change_fy",  true},
-		            {"RF",      4, -1, "Actual_0", "live_fy",  null,                     "cause_of_change_fy",  true},
-		            // Plan 35 + RTD
-		            {"P35",     5,  0, "Plan_35",  "live_fy",  null,                     "cause_of_change_fy",  true},
-		            {"P35",     5,  0, "Plan_RTD", "live_fy",  null,                     "cause_of_change_fy",  true},
-		            {"P35",     5, -1, "Actual_0", "live_fy",  null,                     "cause_of_change_fy",  true},
-		            // Forecast-Runde R03 (Snapshot-Stand R03)
-		            {"R03",     6,  0, "Plan_R03", "snapshot", Parameter_R03_Stammdaten, "cause_of_change_R03", true},
-		            {"R03",     6, -1, "Plan_41",  "snapshot", Parameter_R03_Stammdaten, "cause_of_change_R03", true},
+		            {"RF",      4, A,  0, "Plan_RF",  "live_fy",  null,                     "cause_of_change_fy",  true},
+		            {"RF",      4, A,  0, "Plan_RTD", "live_fy",  null,                     "cause_of_change_fy",  true},
+		            {"RF",      4, A, -1, "Actual_0", "live_fy",  null,                     "cause_of_change_fy",  true},
+		            // Plan 35 + RTD (= 10+2)
+		            {"P35",     5, A,  0, "Plan_35",  "live_fy",  null,                     "cause_of_change_fy",  true},
+		            {"P35",     5, A,  0, "Plan_RTD", "live_fy",  null,                     "cause_of_change_fy",  true},
+		            {"P35",     5, A, -1, "Actual_0", "live_fy",  null,                     "cause_of_change_fy",  true},
+		            // Forecast-Runde R03 (= 2+10, Snapshot-Stand R03)
+		            {"R03",     6, A,  0, "Plan_R03", "snapshot", Parameter_R03_Stammdaten, "cause_of_change_R03", true},
+		            {"R03",     6, A, -1, "Plan_41",  "snapshot", Parameter_R03_Stammdaten, "cause_of_change_R03", true},
 		            // Forecast Plan 02 (für Adj_FC_Value)
-		            {"FC02",    7,  0, "Plan_02",  "live_fy",  null,                     "cause_of_change_fy",  true},
-		            {"FC02",    7, -1, "Actual_0", "live_fy",  null,                     "cause_of_change_fy",  true},
+		            {"FC02",    7, A,  0, "Plan_02",  "live_fy",  null,                     "cause_of_change_fy",  true},
+		            {"FC02",    7, A, -1, "Actual_0", "live_fy",  null,                     "cause_of_change_fy",  true},
 		            // ARO-Sicht auf den RGF-Snapshot (für FC_ARO)
-		            {"ARO_RGF", 8,  0, "Plan_RGF", "snapshot", Parameter_RGF_Stammdaten, "cause_of_change_RGF", true},
+		            {"ARO_RGF", 8, A,  0, "Plan_RGF", "snapshot", Parameter_RGF_Stammdaten, "cause_of_change_RGF", true},
 		            // Recherche: Plan 01 (nur für verstecktes Measure RECH_adj_BUD_Value)
-		            {"R01",     9,  0, "Plan_01",  "live",     null,                     "cause_of_change",     true}
+		            {"R01",     9, A,  0, "Plan_01",  "live",     null,                     "cause_of_change",     true},
+
+		            // ===== Berichtsjahr FY27 (= Aktuelles_Geschäftsjahr + 1) =====
+		            // Budget FY27: laufendes Jahr = Plan_20 (FY27), Vorjahres-Basis =
+		            // FY26-Forecast (RGF + R12). CoC nach dem "kommenden Jahr" (ny).
+		            {"BUD_FY27", 20, A + 1,  0, "Plan_20",  "live_ny", null, "cause_of_change_BUD", false},
+		            {"BUD_FY27", 20, A + 1, -1, "Plan_RGF", "live_ny", null, "cause_of_change_BUD", false},
+		            {"BUD_FY27", 20, A + 1, -1, "Plan_R12", "live_ny", null, "cause_of_change_BUD", false}
 		        }
 		    )
 		in
@@ -309,14 +321,17 @@ expression Stammdaten_CoC = ```
 		// unter ihrem Szenario-Kürzel ergänzen.
 		let
 		    SnapshotMap = [ BUD = Snapshot_BUD, ARO_RGF = Snapshot_RGF, R03 = Snapshot_R03 ],
-		    Basis = Table.Buffer(Table.SelectColumns(Stammdaten_Basis, {"betrieb", "cause_of_change", "cause_of_change_fy"})),
+		    Basis = Table.Buffer(Table.SelectColumns(Stammdaten_Basis, {"betrieb", "cause_of_change", "cause_of_change_fy", "cause_of_change_ny"})),
 		    Szenarien = Table.Distinct(Table.SelectColumns(Szenario_Konfig, {"Szenario", "CoC_Quelle", "CoC_Spalte_Adjustments"})),
 		    ProSzenario = Table.AddColumn(Szenarien, "Daten", each
 		        let
 		            s = [Szenario],
 		            q = [CoC_Quelle],
 		            AdjSpalte = [CoC_Spalte_Adjustments],
-		            LiveSpalte = if q = "live_fy" then "cause_of_change_fy" else "cause_of_change",
+		            // live    = aktueller Stand (cause_of_change)
+		            // live_fy = Stand zum GJ-Ende (cause_of_change_fy) – laufendes Berichtsjahr
+		            // live_ny = Stand im kommenden GJ (cause_of_change_ny) – Folge-Berichtsjahr
+		            LiveSpalte = if q = "live_fy" then "cause_of_change_fy" else if q = "live_ny" then "cause_of_change_ny" else "cause_of_change",
 		            Live = Table.RenameColumns(Table.SelectColumns(Basis, {"betrieb", LiveSpalte}), {{LiveSpalte, "coc"}}),
 		            Ergebnis =
 		                if q = "snapshot" then
@@ -386,7 +401,7 @@ expression SAP_Revenues = ```
 		            LEFT JOIN tab_accounts_hierarchy AS hier ON base.Account = hier.Kostenart
 		            WHERE base.Object_type = 'OR'
 		                AND hier.Level_2_Key = 'IS10000_T - Total Revenue inkl. IFRS/ NEUTRA/MGMT'
-		                AND base.Fiscal_Year IN ('" & Text.From(Aktuelles_Geschäftsjahr - 1) & "', '" & Text.From(Aktuelles_Geschäftsjahr) & "')
+		                AND base.Fiscal_Year >= " & Text.From(Aktuelles_Geschäftsjahr - 1) & "
 		            GROUP BY base.Object_group, base.SAP_Version, base.Fiscal_Year, base.Period
 		        )
 		        SELECT Werk, Version, Werttyp, Geschäftsjahr, Buchungsperiode, Betrag_Monat

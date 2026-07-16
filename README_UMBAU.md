@@ -343,18 +343,33 @@ Die **Basis** (`Vorjahresumsatz`) ist berichtsjahr-abhängig:
 - **FY27** → **RGF + R12** des FY26. Setzt die Berichtsjahr-Erweiterung voraus
   (dann wird die Basis-Version je Berichtsjahr umgeschaltet).
 
-### Mehrjahresvergleiche (Berichtsjahr, offen)
+### Mehrjahr / Berichtsjahr (umgesetzt für FY26 + FY27)
 
-Für FY26 **und** FY27 gleichzeitig (inkl. korrekter Net-New-Zerlegung) fehlt noch
-die Berichtsjahr-Expansion:
-- `fnCoC_ZuMetricId` ist bereits offset-basiert; der Offset muss nur relativ zum
-  **Berichtsjahr** statt zum fixen `Aktuelles_Geschäftsjahr` gebildet werden.
-- **CoC-Kennzeichen je Jahr:** laufendes Jahr nutzt `cause_of_change_fy`, das
-  **kommende** Jahr `cause_of_change_ny`. `fnStammdaten_Snapshot` liest aktuell
-  fest `_fy`; dafür wird die Spalte parametrisiert.
-- Neue Dimension `DIM_Berichtsjahr` (FY26/FY27) als Slicer; Measures
-  berichtsjahr-bewusst.
-- `DIM_DATE` deckt den Zeitraum bereits ab (rollierend GJ-6 … GJ+3).
+Die Engine ist jetzt **berichtsjahr-fähig**:
+- `Szenario_Konfig` trägt je Zeile ein **`Berichtsjahr_Start`** (absolutes GJ);
+  `FY_Offset` ist der Offset **relativ dazu**. Absolutes Quelljahr =
+  `Berichtsjahr_Start + FY_Offset`. Dadurch kann dasselbe FY26-Jahr sowohl als
+  „laufend" (FY26) als auch als „Vorjahr" (FY27) auftreten.
+- **`MetricId`** wird aus dem **relativen** Offset zum Berichtsjahr gebildet –
+  die Net-New-Zerlegung stimmt damit je Berichtsjahr.
+- **CoC-Kennzeichen je Jahr:** FY26 nutzt `cause_of_change_fy` (`live_fy`),
+  FY27 als kommendes Jahr `cause_of_change_ny` (neue Option `live_ny`).
+- **`DIM_Berichtsjahr`** (FY26/FY27) als Slicer; **`SAP_Revenues`** zieht alle
+  Jahre ab Vorjahr (`Fiscal_Year >= Aktuelles_Geschäftsjahr - 1`).
+- **FY26-Measures bleiben unverändert**, weil ihre Szenarien (BUD/ACT/RGF …)
+  nur FY26-Zeilen enthalten. **FY27 = Szenario `BUD_FY27`** (Runde „Budget FY27"),
+  sichtbar über die generischen `Wert_YTD`/`Wert_Periodic` + `DIM_Szenario[Runde]`.
+
+**Weitere FY27-Sichten hinzufügen** (Actuals FY27, FC FY27 …): analog zu
+`BUD_FY27` eine Szenario-Zeilengruppe mit `Berichtsjahr_Start = A + 1` in
+`Szenario_Konfig` ergänzen (laufend = FY27-Version, Vorjahr = FY26-Basis).
+
+**Offen / zu prüfen:**
+- **FY27-Budget-Version** als `Plan_20` angenommen – bitte bestätigen.
+- **Net New % für FY27**: `Vorjahresumsatz` ist aktuell FY26-fix (Plan_35). Für
+  FY27 ist die Basis RGF+R12 (steckt bereits in `BUD_FY27`s Vorjahres-Zeilen);
+  ein berichtsjahr-abhängiger Nenner kann ergänzt werden.
+- `DIM_DATE` deckt den Zeitraum ab (rollierend GJ-6 … GJ+3).
 
 ### Mehrjahresvergleiche (> 2 Jahre)
 

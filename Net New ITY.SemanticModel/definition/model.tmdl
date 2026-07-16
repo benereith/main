@@ -51,6 +51,7 @@ ref table Zeitansicht
 ref table Zeitfilter
 ref table DIM_Struktur
 ref table DIM_Szenario
+ref table DIM_Berichtsjahr
 
 ref role All
 

@@ -34,6 +34,18 @@ table Revenues
 
 		annotation SummarizationSetBy = User
 
+	/// Berichtsjahr (absolutes Geschäftsjahr), auf das sich die Zeile bezieht.
+	/// Ein FY26-Jahr kann als Zeile sowohl in Berichtsjahr FY26 (laufend) als
+	/// auch FY27 (Vorjahr) erscheinen. Beziehung zu DIM_Berichtsjahr.
+	column Berichtsjahr
+		dataType: int64
+		formatString: 0
+		lineageTag: 11fd7c36-e1b7-4510-8404-fd5388aa4ccc
+		summarizeBy: none
+		sourceColumn: Berichtsjahr
+
+		annotation SummarizationSetBy = User
+
 	column Buchungsperiode
 		dataType: int64
 		formatString: 0
@@ -222,20 +234,26 @@ table Revenues
 				        else [coc_live], Int64.Type),
 
 				    // =========================================================
-				    // 5) Szenario-Expansion gemäß Szenario_Konfig:
-				    //    Pro Szenario werden die konfigurierten Zeilen
-				    //    (FY_Offset x Werttyp_Version) übernommen und mit dem für
-				    //    das Szenario gültigen CoC-Stand und der MetricId versehen.
+				    // 5) Szenario-Expansion gemäß Szenario_Konfig (berichtsjahr-fähig):
+				    //    Je Konfig-Zeile ist das absolute Quelljahr =
+				    //    Berichtsjahr_Start + FY_Offset. Faktenzeilen werden darauf
+				    //    (und auf Werttyp_Version) gematcht; die MetricId ergibt sich
+				    //    aus dem RELATIVEN Offset zum Berichtsjahr. Dadurch kann ein
+				    //    FY26-Jahr gleichzeitig als "laufend" (FY26) und als
+				    //    "Vorjahr" (FY27) auftreten.
 				    // =========================================================
-				    MitKey = Table.AddColumn(MitCoC, "SzenarioKey", each Text.From([FY_Offset]) & "|" & [Werttyp_Version], type text),
-				    Basis = Table.Buffer(MitKey),
+				    Basis = Table.Buffer(MitCoC),
 				    Szenarien = List.Distinct(Szenario_Konfig[Szenario]),
 				    ProSzenario = List.Transform(Szenarien, (s) =>
 				        let
 				            Konfig = Table.SelectRows(Szenario_Konfig, each [Szenario] = s),
 				            K0 = Konfig{0},
-				            Schluessel = List.Buffer(List.Transform(Table.ToRecords(Konfig), each Text.From([FY_Offset]) & "|" & [Werttyp_Version])),
-				            Zeilen = Table.SelectRows(Basis, each List.Contains(Schluessel, [SzenarioKey])),
+				            BJ = K0[Berichtsjahr_Start],
+				            // Konfig-Zeilen -> absolutes Quelljahr (GJ_match) + rel. Offset
+				            KonfigGJ = Table.AddColumn(Konfig, "GJ_match", each [Berichtsjahr_Start] + [FY_Offset], Int64.Type),
+				            KonfigSel = Table.RenameColumns(Table.SelectColumns(KonfigGJ, {"GJ_match", "Werttyp_Version", "FY_Offset"}), {{"FY_Offset", "rel_offset"}}),
+				            JoinK = Table.NestedJoin(Basis, {"Geschäftsjahr", "Werttyp_Version"}, KonfigSel, {"GJ_match", "Werttyp_Version"}, "K", JoinKind.Inner),
+				            Zeilen = Table.ExpandTableColumn(JoinK, "K", {"rel_offset"}),
 				            CoCTab = Table.SelectRows(CoCAlle, each [Szenario] = s),
 				            JoinOffen = Table.NestedJoin(Zeilen, {"Werk"}, CoCTab, {"betrieb"}, "O", JoinKind.LeftOuter),
 				            MitOffen = Table.ExpandTableColumn(JoinOffen, "O", {"coc"}, {"coc_offen"}),
@@ -244,7 +262,8 @@ table Revenues
 				                else if K0[Perioden_Freeze] and [Buchungsperiode] <= Abgeschlossene_Periode then [coc_freeze]
 				                else [coc_offen], Int64.Type),
 				            MitSzenario = Table.AddColumn(MitSzCoC, "Szenario", each s, type text),
-				            MitMetric = Table.AddColumn(MitSzenario, "MetricId", each fnCoC_ZuMetricId([FY_Offset], [cause_of_change_szenario]), Int64.Type)
+				            MitBJ = Table.AddColumn(MitSzenario, "Berichtsjahr", each BJ, Int64.Type),
+				            MitMetric = Table.AddColumn(MitBJ, "MetricId", each fnCoC_ZuMetricId([rel_offset], [cause_of_change_szenario]), Int64.Type)
 				        in
 				            MitMetric),
 				    Expandiert = Table.Combine(ProSzenario),
@@ -253,8 +272,8 @@ table Revenues
 				    // 6) Aufräumen
 				    // =========================================================
 				    OhneNullzeilen = Table.SelectRows(Expandiert, each [Betrag] <> null and [Betrag] <> 0),
-				    Auswahl = Table.SelectColumns(OhneNullzeilen, {"Werk", "Geschäftsjahr", "FY_Offset", "Buchungsperiode", "Datum", "Werttyp", "Version", "Werttyp_Version", "Szenario", "cause_of_change", "cause_of_change_szenario", "MetricId", "Betrag", "IstManuell"}),
-				    Typisiert = Table.TransformColumnTypes(Auswahl, {{"Betrag", Currency.Type}, {"Werk", Int64.Type}, {"Geschäftsjahr", Int64.Type}, {"Buchungsperiode", Int64.Type}})
+				    Auswahl = Table.SelectColumns(OhneNullzeilen, {"Werk", "Geschäftsjahr", "FY_Offset", "Berichtsjahr", "Buchungsperiode", "Datum", "Werttyp", "Version", "Werttyp_Version", "Szenario", "cause_of_change", "cause_of_change_szenario", "MetricId", "Betrag", "IstManuell"}),
+				    Typisiert = Table.TransformColumnTypes(Auswahl, {{"Betrag", Currency.Type}, {"Werk", Int64.Type}, {"Geschäftsjahr", Int64.Type}, {"Buchungsperiode", Int64.Type}, {"Berichtsjahr", Int64.Type}})
 				in
 				    Typisiert
 				```

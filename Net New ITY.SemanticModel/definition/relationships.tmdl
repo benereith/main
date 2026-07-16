@@ -30,3 +30,7 @@ relationship 35ae39be-c111-e2ff-6d54-286b4867bfa1
 relationship 2b80d1da-c56c-4146-babf-842a4833023e
 	fromColumn: Revenues.Szenario
 	toColumn: DIM_Szenario.Szenario
+
+relationship af828f1a-c8e6-4f8b-b5ca-1a8cc1ee22ae
+	fromColumn: Revenues.Berichtsjahr
+	toColumn: DIM_Berichtsjahr.Berichtsjahr

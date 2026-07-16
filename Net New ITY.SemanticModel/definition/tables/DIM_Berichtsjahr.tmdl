@@ -1,0 +1,42 @@
+/// Berichtsjahr-Dimension (Reporting Year). Ein Berichtsjahr = das
+/// Geschäftsjahr, das berichtet wird, inklusive seiner Vorjahres-Vergleichs-
+/// basis. Ermöglicht FY26 und FY27 gleichzeitig im selben Modell.
+/// Als Slicer nutzbar; ohne Auswahl zeigen die bestehenden (FY26-)Measures
+/// unverändert ihr Szenario, da deren Szenarien nur FY26-Zeilen enthalten.
+table DIM_Berichtsjahr
+	lineageTag: 2761afdb-53cf-4ba0-b5f4-99198e071621
+
+	column Berichtsjahr
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: 485021f8-3fad-4118-bb55-1ea6291e0b11
+		summarizeBy: none
+		sourceColumn: Berichtsjahr
+
+		annotation SummarizationSetBy = User
+
+	column Berichtsjahr_Label
+		dataType: string
+		lineageTag: d8c2dd96-3d9a-43b0-831b-601ecd88b526
+		summarizeBy: none
+		sourceColumn: Berichtsjahr_Label
+		sortByColumn: Berichtsjahr
+
+		changedProperty = SortByColumn
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DIM_Berichtsjahr = calculated
+		mode: import
+		source = ```
+				VAR Jahre = DISTINCT ( Revenues[Berichtsjahr] )
+				RETURN
+				    SELECTCOLUMNS (
+				        Jahre,
+				        "Berichtsjahr", Revenues[Berichtsjahr],
+				        "Berichtsjahr_Label", "FY" & FORMAT ( MOD ( Revenues[Berichtsjahr] + 1, 100 ), "00" )
+				    )
+				```
+
+	annotation PBI_Id = 3f7c9a1e5b2d4c8fa6e0d1b3c5a7e9f2
