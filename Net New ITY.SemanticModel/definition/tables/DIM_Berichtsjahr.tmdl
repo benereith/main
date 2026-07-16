@@ -1,8 +1,9 @@
 /// Berichtsjahr-Dimension (Reporting Year). Ein Berichtsjahr = das
 /// Geschäftsjahr, das berichtet wird, inklusive seiner Vorjahres-Vergleichs-
 /// basis. Ermöglicht FY26 und FY27 gleichzeitig im selben Modell.
-/// Als Slicer nutzbar; ohne Auswahl zeigen die bestehenden (FY26-)Measures
-/// unverändert ihr Szenario, da deren Szenarien nur FY26-Zeilen enthalten.
+/// Abgeleitet aus Szenario_Konfig[Berichtsjahr_Start]; Beziehung zu
+/// Revenues[Berichtsjahr]. Ohne Slicer-Auswahl bleiben die bestehenden
+/// (FY26-)Measures unverändert, da deren Szenarien nur FY26-Zeilen enthalten.
 table DIM_Berichtsjahr
 	lineageTag: 2761afdb-53cf-4ba0-b5f4-99198e071621
 
@@ -27,16 +28,16 @@ table DIM_Berichtsjahr
 
 		annotation SummarizationSetBy = Automatic
 
-	partition DIM_Berichtsjahr = calculated
+	partition DIM_Berichtsjahr = m
 		mode: import
 		source = ```
-				VAR Jahre = DISTINCT ( Revenues[Berichtsjahr] )
-				RETURN
-				    SELECTCOLUMNS (
-				        Jahre,
-				        "Berichtsjahr", Revenues[Berichtsjahr],
-				        "Berichtsjahr_Label", "FY" & FORMAT ( MOD ( Revenues[Berichtsjahr] + 1, 100 ), "00" )
-				    )
+				let
+				    Jahre = Table.Distinct(Table.SelectColumns(Szenario_Konfig, {"Berichtsjahr_Start"})),
+				    Umbenannt = Table.RenameColumns(Jahre, {{"Berichtsjahr_Start", "Berichtsjahr"}}),
+				    Typisiert = Table.TransformColumnTypes(Umbenannt, {{"Berichtsjahr", Int64.Type}}),
+				    MitLabel = Table.AddColumn(Typisiert, "Berichtsjahr_Label", each "FY" & Text.PadStart(Text.From(Number.Mod([Berichtsjahr] + 1, 100)), 2, "0"), type text)
+				in
+				    MitLabel
 				```
 
-	annotation PBI_Id = 3f7c9a1e5b2d4c8fa6e0d1b3c5a7e9f2
+	annotation PBI_ResultType = Table
