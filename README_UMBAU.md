@@ -77,20 +77,41 @@ nach. Der Kalender spannt rollierend GJ-6 … GJ+3 Jahre.
 
 ### 3.1 `Szenario_Konfig`
 
-Eine Tabelle steuert **alle** Szenarien und Forecast-Runden. Je Zeile:
+**Die einzige Stelle im Modell, an der Szenarien, Forecast-Runden und
+Berichtsjahre entstehen.** Vollständig datengetrieben: eine neue Runde, ein
+neues Geschäftsjahr, ein neuer Snapshot = **eine neue Zeile hier** – kein
+neuer Parameter, keine neue Abfrage, keine neue Funktion, kein Eingriff sonst
+irgendwo im Modell.
 
 | Spalte | Bedeutung |
 |---|---|
-| `Szenario` | Kürzel (ACT, BUD, RGF, RF, P35, R03, FC02, ARO_RGF, R01) |
-| `FY_Offset` | 0 = laufendes GJ, −1 = Vorjahr |
+| `Szenario` | Kürzel, erscheint 1:1 in `Revenues[Szenario]` / `DIM_Szenario` |
+| `Sort` | Anzeigereihenfolge in `DIM_Szenario` |
+| `Berichtsjahr_Start` | Absolutes Geschäftsjahr, auf das sich die Zeile bezieht |
+| `FY_Offset` | Offset relativ zu `Berichtsjahr_Start` (0 = dieses Jahr, −1 = dessen Vorjahr) |
 | `Werttyp_Version` | Quell-Version (z. B. `Plan_20`, `Actual_0`) |
-| `CoC_Quelle` | `live` / `live_fy` / `snapshot` – woher der Cause of Change kommt |
-| `CoC_Snapshot` | Stichtag für `snapshot` (verweist auf Parameter) |
-| `CoC_Spalte_Adjustments` | CoC-Spalte für manuelle Werke |
+| `CoC_Quelle` | `live` / `live_fy` / `live_ny` / `snapshot` – woher der Cause of Change kommt |
+| `CoC_Snapshot` | Nur bei `snapshot`: Stichtag – Parameter **oder** Literal `#date(jjjj,mm,tt)` |
+| `CoC_Snapshot_Spalte` | Nur bei `snapshot`: `"cause_of_change_fy"` (laufendes Jahr der Runde) oder `"cause_of_change_ny"` (kommendes Jahr) |
+| `CoC_Spalte_Adjustments` | CoC-Spalte für manuelle Werke (Manuelle_Adjustments.xlsx) |
 | `Perioden_Freeze` | `true` = abgeschlossene Perioden nutzen den eingefrorenen Monatsstand |
 
-**Eine neue Forecast-Runde = ein bis zwei neue Zeilen hier** (+ ggf. neuer
-Snapshot-Parameter). Kein Eingriff ins Datenmodell nötig.
+**Neue Runde/neues Berichtsjahr anlegen** – eine bis mehrere Zeilen anhängen,
+Beispiel (im Code auch als auskommentiertes Muster hinterlegt):
+
+```m
+{"BUD_FY28", 30, A + 2,  0, "Plan_20",  "snapshot", #date(2027,8,31), "cause_of_change_ny", "cause_of_change_BUD", false},
+{"BUD_FY28", 30, A + 2, -1, "Plan_RGF", "snapshot", #date(2027,8,31), "cause_of_change_ny", "cause_of_change_BUD", false},
+{"BUD_FY28", 30, A + 2, -1, "Plan_R12", "snapshot", #date(2027,8,31), "cause_of_change_ny", "cause_of_change_BUD", false}
+```
+
+Der Snapshot-Stichtag kann direkt als Literal in die Zeile geschrieben werden
+(kein neuer Parameter nötig) – oder auf einen bestehenden/neuen Parameter
+verweisen, falls du das Datum lieber über die Power-Query-Parameter-UI statt
+im Advanced Editor pflegen willst. Beides funktioniert gleichwertig.
+
+Der gesamte Mechanismus dahinter (**ein** gemeinsamer Lakehouse-Rohdaten-Zugriff
++ dynamisches Filtern pro Konfig-Zeile) steht in Abschnitt 4.
 
 ### 3.2 Cause of Change: live vs. eingefroren – die Kernlogik
 
@@ -141,26 +162,38 @@ Jede Faktenzeile bekommt je Szenario **eine** `MetricId` → Beziehung zu
 
 ---
 
-## 4. Snapshots der Stammdaten (Forecast/Budget einfrieren)
+## 4. Snapshots der Stammdaten (Forecast/Budget einfrieren) – voll modular
 
 Du wolltest „auf einfache Art Snapshots der Stammdaten, um einen gefrorenen
-Stand der Forecasts/des Budgets zu haben". Umsetzung:
+Stand der Forecasts/des Budgets zu haben" – und zwar so, dass **beliebig
+viele** dazukommen können, einfach als zusätzliche Zeile, weil der Bericht ab
+jetzt laufend gepflegt wird (jedes künftige Geschäftsjahr bringt neues Budget,
+neue Actuals, neue Forecast-Runden). Dafür ist die Snapshot-Mechanik
+komplett datengetrieben aufgebaut:
 
-- Der gefrorene Stand steckt in `exports_md` (Lakehouse), datiert per
-  `update_ts`. `fnStammdaten_Snapshot(datum)` holt den Stand zu genau diesem
-  Datum – **eine** Funktion für alle Runden (früher: `md_BUD`, `md_RGF`,
-  `md_R03` als drei fast identische Abfragen).
-- Pro Runde gibt es **einen Datums-Parameter** und **eine Blatt-Abfrage**, die
-  die Funktion mit diesem Datum aufruft:
-  - `Parameter_BUD_Stammdaten` → `Snapshot_BUD` – Budget
-  - `Parameter_RGF_Stammdaten` → `Snapshot_RGF` – RGF/ARO
-  - `Parameter_R03_Stammdaten` → `Snapshot_R03` – Forecast-Runde R03
-- Die Blatt-Abfragen sind bewusst getrennt (nur Lakehouse-Zugriff, keine
-  Referenz auf andere Abfragen), damit die **Formula-Firewall** nicht anschlägt.
-- `Stammdaten_CoC` bindet die Snapshots über die Zuordnung **`SnapshotMap`**
-  ein (Szenario-Kürzel → Blatt-Abfrage); `Szenario_Konfig` verknüpft jedes
-  Szenario per `CoC_Quelle = "snapshot"` mit dieser Logik. Ein Snapshot =
-  ein Datum. Fertig.
+- **`Stammdaten_Snapshots_Rohdaten`** – die **einzige** Abfrage im ganzen
+  Modell, die für Snapshots auf das Lakehouse zugreift (`exports_md`,
+  ungefiltert, komplett geladen). Ersetzt sowohl die früheren `md_BUD`/
+  `md_RGF`/`md_R03` als auch die späteren `Snapshot_BUD`/`Snapshot_RGF`/
+  `Snapshot_R03`/`Snapshot_BUD_FY27` – **eine** Abfrage für alle Runden,
+  aller Berichtsjahre, für immer.
+- **`fnStammdaten_Snapshot(rohdaten, datum, spalte)`** – rein funktional
+  (kein Datenquellenzugriff mehr), filtert die geladenen Rohdaten auf
+  Stichtag + CoC-Spalte. Wird pro Szenario aus `Stammdaten_CoC` aufgerufen.
+- **`Stammdaten_CoC`** liest Datum und Spalte für jedes `snapshot`-Szenario
+  **direkt aus `Szenario_Konfig`** (`CoC_Snapshot` / `CoC_Snapshot_Spalte`) –
+  keine Zuordnungstabelle, kein Umweg mehr über benannte Einzelabfragen.
+
+**Damit gilt: ein neuer Snapshot = eine neue Zeile in `Szenario_Konfig`,
+sonst nichts.** Kein neuer Parameter, keine neue Abfrage, keine Änderung an
+`Stammdaten_CoC`, `fnStammdaten_Snapshot` oder sonst irgendwo im Modell.
+Genaues Vorgehen inkl. Beispiel in Abschnitt 3.1 und 5.2.
+
+Formula-Firewall-Hinweis: `Stammdaten_Snapshots_Rohdaten` ist bewusst die
+einzige Stelle mit direktem Lakehouse-Zugriff (keine Referenz auf andere
+Abfragen); `Stammdaten_CoC` referenziert nur bereits geladene Ergebnisse
+anderer Abfragen (keinen direkten Datenquellen-Zugriff mehr) – exakt das
+Leaf/Combination-Muster, das schon bei `Stammdaten_Basis` funktioniert.
 
 ---
 
@@ -184,51 +217,38 @@ Stand der Forecasts/des Budgets zu haben". Umsetzung:
 
 ### 5.2 Neuen Snapshot / neue Forecast-Runde anlegen (z. B. R06)
 
-Alle Schritte in Power BI Desktop → **Daten transformieren** (Power-Query-Editor).
-Beispiel: neue Runde „R06" mit Version `Plan_R06`, eingefroren zum 15.06.2026.
+Alle Schritte in Power BI Desktop → **Daten transformieren** (Power-Query-Editor)
+→ Abfrage `Szenario_Konfig` → Erweiterter Editor.
+Beispiel: neue Runde „R06" mit Version `Plan_R06`, eingefroren zum 15.06.2026,
+CoC-Stand zum GJ-Ende des laufenden Jahres.
 
-**1. Snapshot-Datum als Parameter.** Neuen Parameter `Parameter_R06_Stammdaten`
-   (Typ Datum) anlegen und auf den Freeze-Stichtag setzen (den `update_ts`, zu
-   dem der Stammdaten-Export im Lakehouse eingefroren werden soll), z. B.
-   `#date(2026, 6, 15)`. Am schnellsten: bestehenden `Parameter_R03_Stammdaten`
-   duplizieren und umbenennen.
+**Einziger Schritt: Zeile(n) in `Szenario_Konfig` anhängen** (laufendes GJ +
+Vorjahres-Basis):
 
-**2. Snapshot-Blatt-Abfrage.** Neue leere Abfrage anlegen (Gruppe
-   „3. Stammdaten"), Name `Snapshot_R06`, im erweiterten Editor exakt:
-   ```m
-   fnStammdaten_Snapshot(Parameter_R06_Stammdaten)
-   ```
-   > Wichtig: genau diese eine Zeile – kein direkter Lakehouse-Zugriff hier,
-   > sonst schlägt die Firewall an.
+```m
+{"R06", 10, A,  0, "Plan_R06", "snapshot", #date(2026, 6, 15), "cause_of_change_fy", "cause_of_change_R03", true},
+{"R06", 10, A, -1, "Actual_0", "snapshot", #date(2026, 6, 15), "cause_of_change_fy", "cause_of_change_R03", true},
+```
 
-**3. In `SnapshotMap` eintragen.** In der Abfrage `Stammdaten_CoC` die Zeile
-   `SnapshotMap = [ BUD = Snapshot_BUD, ARO_RGF = Snapshot_RGF, R03 = Snapshot_R03 ],`
-   um das neue Szenario ergänzen:
-   ```m
-   SnapshotMap = [ BUD = Snapshot_BUD, ARO_RGF = Snapshot_RGF, R03 = Snapshot_R03, R06 = Snapshot_R06 ],
-   ```
+Das Datum steht hier direkt als Literal in der Zeile – kein neuer Parameter,
+keine neue Abfrage, keine Änderung an `SnapshotMap` (die gibt es nicht mehr)
+nötig. Spaltenerklärung siehe Abschnitt 3.1. Danach **Aktualisieren** – die
+Runde erscheint automatisch in `DIM_Szenario` (als Slicer) und in der
+Faktentabelle.
 
-**4. Szenario-Zeilen in `Szenario_Konfig`.** Runde (laufendes GJ + Vorjahres-
-   Basis) ergänzen:
-   ```m
-   {"R06", 10,  0, "Plan_R06", "snapshot", Parameter_R06_Stammdaten, "cause_of_change_R03", true},
-   {"R06", 10, -1, "Actual_0", "snapshot", Parameter_R06_Stammdaten, "cause_of_change_R03", true},
-   ```
-   - Spalte `CoC_Spalte_Adjustments`: nur relevant für **manuelle** Werke aus
-     `Manuelle_Adjustments.xlsx`. Reicht eine bestehende Spalte (z. B.
-     `cause_of_change_R03`), einfach diese verwenden. Braucht die Runde eine
-     **eigene** manuelle CoC-Spalte, siehe Hinweis unten.
+- Spalte `CoC_Spalte_Adjustments`: nur relevant für **manuelle** Werke aus
+  `Manuelle_Adjustments.xlsx`. Reicht eine bestehende Spalte (z. B.
+  `cause_of_change_R03`), einfach diese verwenden. Braucht die Runde eine
+  **eigene** manuelle CoC-Spalte, siehe Hinweis unten.
+- **(Optional) Measures für eigene Zahlen.** Soll die Runde eigene Werte im
+  Bericht zeigen, in `0. Measuretabelle` zwei Measures nach Muster `RGF_Value`
+  / `RGF_Periodic` anlegen – nur `Revenues[Szenario] = "R06"` als Filter
+  tauschen. Ohne eigenes Measure ist die Runde trotzdem sofort über die
+  generischen `Wert_YTD`/`Wert_Periodic` + `DIM_Szenario[Szenario]` sichtbar
+  (siehe Abschnitt 5.2a).
 
-**5. (Optional) Measures für Zahlen.** Soll die Runde eigene Werte im Bericht
-   zeigen, in `0. Measuretabelle` zwei Measures nach Muster `RGF_Value` /
-   `RGF_Periodic` anlegen – nur `Revenues[Szenario] = "R06"` als Filter tauschen.
-
-**6. Aktualisieren.** Die Runde erscheint automatisch in `DIM_Szenario` (als
-   Slicer) und in der Faktentabelle.
-
-> **Nur neu einfrieren (kein neues Szenario)?** Dann genügt Schritt 1: das
-> Datum des vorhandenen Parameters ändern und aktualisieren. Der Snapshot
-> zieht dann den Stammdaten-Stand des neuen Stichtags.
+> **Nur neu einfrieren (bestehende Runde, kein neues Szenario)?** Dann in der
+> betroffenen Zeile nur das Datum in `CoC_Snapshot` ändern und aktualisieren.
 
 > **Eigene manuelle CoC-Spalte je Runde:** Braucht die Runde in
 > `Manuelle_Adjustments.xlsx` eine eigene Spalte `cause_of_change_R06`, dann
@@ -272,15 +292,13 @@ Diese Runden tragen in `DIM_Szenario` die Spalte **`Runde`** (Budget/2+10/5+7/
 – 8+4 ist 5+7 **plus** den `Plan_R12`-Aufsatz.
 
 - Jede weitere **archivierte** Runde bekommt ein festes Szenario mit der
-  Version, auf die sie gesichert wurde, und ihrem eigenen Stammdaten-Snapshot.
-  Beispiel für eine auf `Plan_R03` gesicherte Runde, Stammdaten-Stand 15.02.2026:
+  Version, auf die sie gesichert wurde, und ihrem eigenen Stammdaten-Snapshot
+  – als **eine Zeile** in `Szenario_Konfig` (kein Parameter, keine Abfrage
+  nötig, siehe Abschnitt 4/5.2). Beispiel für eine auf `Plan_R03` gesicherte
+  Runde, Stammdaten-Stand 15.02.2026, Berichtsjahr = laufendes GJ (`A`):
   ```m
-  // Snapshot-Parameter + Blatt-Abfrage (einmalig je Runde):
-  //   Parameter_FC0804_Stamm = #date(2026,2,15)
-  //   Snapshot_FC0804        = fnStammdaten_Snapshot(Parameter_FC0804_Stamm)
-  //   SnapshotMap: ... , FC_08_04 = Snapshot_FC0804
-  {"FC_08_04", 5, 0, "Plan_R03", "snapshot", Parameter_FC0804_Stamm, "cause_of_change_fy", true},
-  {"FC_08_04", 5,-1, "Actual_0", "snapshot", Parameter_FC0804_Stamm, "cause_of_change_fy", true},
+  {"FC_08_04", 5, A, 0, "Plan_R03", "snapshot", #date(2026,2,15), "cause_of_change_fy", "cause_of_change_R03", true},
+  {"FC_08_04", 5, A,-1, "Actual_0", "snapshot", #date(2026,2,15), "cause_of_change_fy", "cause_of_change_R03", true},
   ```
   (Liegt die Runde auf mehreren Versionen, z. B. Basis + RTD, einfach mehrere
   `0`-Offset-Zeilen anlegen – sie addieren sich.)
@@ -288,10 +306,9 @@ Diese Runden tragen in `DIM_Szenario` die Spalte **`Runde`** (Budget/2+10/5+7/
 **Ablauf beim Rollen auf eine neue Runde (Register-Eintrag):**
 
 1. Notieren, auf welche Version das Quellsystem den bisherigen FC gesichert hat.
-2. Snapshot-Parameter + `Snapshot_…`-Blatt-Abfrage + `SnapshotMap`-Eintrag für
-   die Runde anlegen (Stammdaten-Stichtag der Runde).
-3. In `Szenario_Konfig` die zwei (oder mehr) Zeilen der Runde ergänzen.
-4. `RGF` auf den neuen aktuellen FC zeigen lassen (Version(en) tauschen).
+2. In `Szenario_Konfig` die zwei (oder mehr) Zeilen der Runde ergänzen – Datum
+   direkt als Literal, keine weiteren Schritte.
+3. `RGF` auf den neuen aktuellen FC zeigen lassen (Version(en) tauschen).
 
 **Vergleichsansicht bauen (ohne Measure je Runde):**
 
@@ -364,38 +381,29 @@ Die Engine ist jetzt **berichtsjahr-fähig**:
 
 #### CoC-Snapshot für Budget FY27 (eingefroren)
 
-`fnStammdaten_Snapshot` nimmt jetzt einen **zweiten, optionalen Parameter**
-für die CoC-Spalte entgegen (Default weiterhin `cause_of_change_fy`, daher
-sind `Snapshot_BUD`/`Snapshot_RGF`/`Snapshot_R03` unverändert):
+Der Snapshot-Mechanismus ist seit Abschnitt 4 vollständig datengetrieben:
+`fnStammdaten_Snapshot(rohdaten, snapshotDatum, cocSpalte)` liest die einmal
+geladenen Rohdaten (`Stammdaten_Snapshots_Rohdaten`) und filtert dynamisch.
+`cocSpalte = "cause_of_change_fy"` = Stand zum GJ-Ende des laufenden Jahres,
+`"cause_of_change_ny"` = Stand im kommenden Geschäftsjahr.
 
-```m
-fnStammdaten_Snapshot(snapshotDatum, cocSpalte)
-//   cocSpalte = "cause_of_change_fy"  -> Stand zum GJ-Ende des laufenden Jahres (Default)
-//   cocSpalte = "cause_of_change_ny"  -> Stand im kommenden Geschäftsjahr
-```
+Für Budget FY27 stehen in `Szenario_Konfig` beide `BUD_FY27`-Zeilen auf
+`CoC_Quelle = "snapshot"`, `CoC_Snapshot = Parameter_BUD_FY27_Stammdaten`,
+`CoC_Snapshot_Spalte = "cause_of_change_ny"`. **Kein `SnapshotMap`, keine
+eigene Blatt-Abfrage mehr nötig** – das ist bereits der generelle Mechanismus
+aus Abschnitt 4/5.2, hier nur mit `_ny` statt `_fy` als Spalte.
 
-Für Budget FY27 gibt es dafür:
-- **Parameter `Parameter_BUD_FY27_Stammdaten`** (Datum) – der Freeze-Stichtag
-  des FY27-Budgetprozesses. **Aktuell ein Platzhalter (`31.08.2026`, analog
-  ~1 Monat vor GJ-Beginn wie beim FY26-Budget) – auf den tatsächlichen
-  Stichtag setzen.**
-- **Blatt-Abfrage `Snapshot_BUD_FY27`** = `fnStammdaten_Snapshot(Parameter_BUD_FY27_Stammdaten, "cause_of_change_ny")`.
-- Eintrag `BUD_FY27 = Snapshot_BUD_FY27` in der `SnapshotMap` (in `Stammdaten_CoC`).
-- `Szenario_Konfig`-Zeilen für `BUD_FY27` stehen auf `CoC_Quelle = "snapshot"`
-  mit `CoC_Snapshot = Parameter_BUD_FY27_Stammdaten` (beide Zeilen: laufend
-  UND Vorjahresbasis – ein Szenario hat immer eine CoC-Quelle für alle seine
-  Zeilen).
+`Parameter_BUD_FY27_Stammdaten` ist aktuell ein **Platzhalter** (`31.08.2026`,
+analog ~1 Monat vor GJ-Beginn wie beim FY26-Budget) – auf den tatsächlichen
+Freeze-Stichtag setzen.
 
-**Neuen Snapshot für eine weitere zukünftige Berichtsjahres-Runde anlegen**
-(z. B. FY28-Budget): denselben Ablauf wiederholen – neuer Datums-Parameter,
-neue `Snapshot_…`-Blatt-Abfrage mit der passenden CoC-Spalte (`_ny` für das
-direkt kommende Jahr; für weiter entfernte Jahre ggf. eine neue Spalte in
-`exports_md`, falls das Quellsystem so weit vorausklassifiziert), Eintrag in
-`SnapshotMap`, Szenario-Zeilen auf `"snapshot"` umstellen.
-
-**Weitere FY27-Sichten hinzufügen** (Actuals FY27, FC FY27 …): analog zu
-`BUD_FY27` eine Szenario-Zeilengruppe mit `Berichtsjahr_Start = A + 1` in
-`Szenario_Konfig` ergänzen (laufend = FY27-Version, Vorjahr = FY26-Basis).
+**Weitere FY27-Sichten hinzufügen** (Actuals FY27, FC FY27 …) oder ein
+komplett neues Berichtsjahr (FY28 …): genau wie in Abschnitt 5.2 beschrieben
+– eine Szenario-Zeilengruppe mit dem passenden `Berichtsjahr_Start` anhängen
+(laufend = neues Jahr, Vorjahr = Basis-Jahr), `CoC_Snapshot_Spalte` je nach
+Distanz zum heutigen Jahr `"cause_of_change_fy"` (dieses Jahr) oder
+`"cause_of_change_ny"` (nächstes Jahr) – für weiter entfernte Jahre ggf. eine
+neue Spalte in `exports_md`, falls das Quellsystem so weit vorausklassifiziert.
 
 **Offen / zu prüfen:**
 - **Freeze-Stichtag `Parameter_BUD_FY27_Stammdaten`** ist ein Platzhalter –

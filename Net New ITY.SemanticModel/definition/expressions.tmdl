@@ -74,56 +74,98 @@ expression Aktuelles_Geschäftsjahr = Date.Year(Geschäftsjahresbeginn)
 	annotation PBI_ResultType = Number
 
 expression Szenario_Konfig = ```
+		// ============================================================
+		// EINZIGE STELLE, an der Szenarien/Runden/Berichtsjahre entstehen.
+		// Neue Runde ODER neues Berichtsjahr = einfach weitere Zeile(n) hier
+		// anhängen. Kein neuer Parameter, keine neue Abfrage, keine neue
+		// Funktion nötig – auch für Snapshots nicht (siehe CoC_Snapshot /
+		// CoC_Snapshot_Spalte unten).
+		//
+		// Spalten:
+		//   Szenario            Kürzel, erscheint 1:1 in Revenues[Szenario] /
+		//                       DIM_Szenario.
+		//   Sort                Anzeigereihenfolge in DIM_Szenario.
+		//   Berichtsjahr_Start  Absolutes Geschäftsjahr, auf das sich die Zeile
+		//                       bezieht (z. B. Aktuelles_Geschäftsjahr für FY26,
+		//                       +1 für FY27, +2 für FY28, …).
+		//   FY_Offset           Offset RELATIV zu Berichtsjahr_Start (0 =
+		//                       dieses Jahr, -1 = dessen Vorjahr). Absolutes
+		//                       Quelljahr = Berichtsjahr_Start + FY_Offset.
+		//                       Dadurch kann z. B. FY26 gleichzeitig als
+		//                       "laufend" (Berichtsjahr FY26) UND als
+		//                       "Vorjahr" (Berichtsjahr FY27) auftreten.
+		//   Werttyp_Version     Quell-Version aus SAP_Revenues (z. B. "Plan_20").
+		//   CoC_Quelle          "live"     = aktueller Stand (cause_of_change)
+		//                       "live_fy"  = Stand zum GJ-Ende des laufenden Jahres
+		//                       "live_ny"  = Stand im kommenden Geschäftsjahr
+		//                       "snapshot" = eingefroren, siehe CoC_Snapshot(_Spalte)
+		//   CoC_Snapshot        Nur bei "snapshot": Stichtag. Entweder ein
+		//                       bestehender Parameter (für die "aktuell
+		//                       laufenden" Runden, per Power-Query-UI
+		//                       editierbar) ODER einfach ein Literal
+		//                       #date(jjjj,mm,tt) für neue/künftige Runden.
+		//   CoC_Snapshot_Spalte Nur bei "snapshot": welche Spalte aus exports_md
+		//                       eingefroren wird ("cause_of_change_fy" für das
+		//                       jeweils laufende Jahr der Runde, "cause_of_change_ny"
+		//                       fürs direkt kommende Jahr).
+		//   CoC_Spalte_Adjustments  CoC-Spalte in Manuelle_Adjustments.xlsx für
+		//                       manuelle Werke dieser Runde.
+		//   Perioden_Freeze     true = abgeschlossene Perioden nutzen den zum
+		//                       Monatsabschluss eingefrorenen Stand
+		//                       (Stammdaten_Historie); false = immer der
+		//                       Snapshot-/Live-Stand (z. B. Budget).
+		// ============================================================
 		let
-		    // Spalte Berichtsjahr_Start = absolutes Geschäftsjahr, auf das sich das
-		    // Szenario bezieht. FY_Offset ist der Offset RELATIV dazu (0 = dieses
-		    // Jahr, -1 = dessen Vorjahr). Absolutes Quelljahr = Berichtsjahr_Start
-		    // + FY_Offset. So funktioniert dieselbe Engine für beliebig viele
-		    // Berichtsjahre nebeneinander (FY26, FY27, …).
 		    A = Aktuelles_Geschäftsjahr,
 		    Quelle = #table(
-		        type table [Szenario = text, Sort = Int64.Type, Berichtsjahr_Start = Int64.Type, FY_Offset = Int64.Type, Werttyp_Version = text, CoC_Quelle = text, CoC_Snapshot = nullable date, CoC_Spalte_Adjustments = text, Perioden_Freeze = logical],
+		        type table [Szenario = text, Sort = Int64.Type, Berichtsjahr_Start = Int64.Type, FY_Offset = Int64.Type, Werttyp_Version = text, CoC_Quelle = text, CoC_Snapshot = nullable date, CoC_Snapshot_Spalte = nullable text, CoC_Spalte_Adjustments = text, Perioden_Freeze = logical],
 		        {
 		            // ===== Berichtsjahr FY26 (= Aktuelles_Geschäftsjahr) =====
 		            // Actuals (Ist-Werte, CoC = aktueller Stand)
-		            {"ACT",     1, A,  0, "Actual_0", "live",     null,                     "cause_of_change",     true},
-		            {"ACT",     1, A, -1, "Actual_0", "live",     null,                     "cause_of_change",     true},
+		            {"ACT",     1, A,  0, "Actual_0", "live",     null,                      null,                    "cause_of_change",     true},
+		            {"ACT",     1, A, -1, "Actual_0", "live",     null,                      null,                    "cause_of_change",     true},
 		            // Budget (vollständig eingefroren zum Budget-Snapshot)
-		            {"BUD",     2, A,  0, "Plan_20",  "snapshot", Parameter_BUD_Stammdaten, "cause_of_change_BUD", false},
-		            {"BUD",     2, A, -1, "Plan_35",  "snapshot", Parameter_BUD_Stammdaten, "cause_of_change_BUD", false},
+		            {"BUD",     2, A,  0, "Plan_20",  "snapshot", Parameter_BUD_Stammdaten, "cause_of_change_fy",     "cause_of_change_BUD", false},
+		            {"BUD",     2, A, -1, "Plan_35",  "snapshot", Parameter_BUD_Stammdaten, "cause_of_change_fy",     "cause_of_change_BUD", false},
 		            // Rolling Forecast (RGF) = aktueller FC 8+4: Plan_RGF + R12-Aufsatz + Ist Vorjahr
-		            {"RGF",     3, A,  0, "Plan_RGF", "live_fy",  null,                     "cause_of_change_fy",  true},
-		            {"RGF",     3, A,  0, "Plan_R12", "live_fy",  null,                     "cause_of_change_fy",  true},
-		            {"RGF",     3, A, -1, "Actual_0", "live_fy",  null,                     "cause_of_change_fy",  true},
+		            {"RGF",     3, A,  0, "Plan_RGF", "live_fy",  null,                      null,                    "cause_of_change_fy",  true},
+		            {"RGF",     3, A,  0, "Plan_R12", "live_fy",  null,                      null,                    "cause_of_change_fy",  true},
+		            {"RGF",     3, A, -1, "Actual_0", "live_fy",  null,                      null,                    "cause_of_change_fy",  true},
 		            // 5+7 = Plan_RGF ohne R12-Aufsatz (Basis von 8+4) + Ist Vorjahr.
-		            {"FC57",   10, A,  0, "Plan_RGF", "live_fy",  null,                     "cause_of_change_fy",  true},
-		            {"FC57",   10, A, -1, "Actual_0", "live_fy",  null,                     "cause_of_change_fy",  true},
+		            {"FC57",   10, A,  0, "Plan_RGF", "live_fy",  null,                      null,                    "cause_of_change_fy",  true},
+		            {"FC57",   10, A, -1, "Actual_0", "live_fy",  null,                      null,                    "cause_of_change_fy",  true},
 		            // Forecast RF/RTD
-		            {"RF",      4, A,  0, "Plan_RF",  "live_fy",  null,                     "cause_of_change_fy",  true},
-		            {"RF",      4, A,  0, "Plan_RTD", "live_fy",  null,                     "cause_of_change_fy",  true},
-		            {"RF",      4, A, -1, "Actual_0", "live_fy",  null,                     "cause_of_change_fy",  true},
+		            {"RF",      4, A,  0, "Plan_RF",  "live_fy",  null,                      null,                    "cause_of_change_fy",  true},
+		            {"RF",      4, A,  0, "Plan_RTD", "live_fy",  null,                      null,                    "cause_of_change_fy",  true},
+		            {"RF",      4, A, -1, "Actual_0", "live_fy",  null,                      null,                    "cause_of_change_fy",  true},
 		            // Plan 35 + RTD (= 10+2)
-		            {"P35",     5, A,  0, "Plan_35",  "live_fy",  null,                     "cause_of_change_fy",  true},
-		            {"P35",     5, A,  0, "Plan_RTD", "live_fy",  null,                     "cause_of_change_fy",  true},
-		            {"P35",     5, A, -1, "Actual_0", "live_fy",  null,                     "cause_of_change_fy",  true},
+		            {"P35",     5, A,  0, "Plan_35",  "live_fy",  null,                      null,                    "cause_of_change_fy",  true},
+		            {"P35",     5, A,  0, "Plan_RTD", "live_fy",  null,                      null,                    "cause_of_change_fy",  true},
+		            {"P35",     5, A, -1, "Actual_0", "live_fy",  null,                      null,                    "cause_of_change_fy",  true},
 		            // Forecast-Runde R03 (= 2+10, Snapshot-Stand R03)
-		            {"R03",     6, A,  0, "Plan_R03", "snapshot", Parameter_R03_Stammdaten, "cause_of_change_R03", true},
-		            {"R03",     6, A, -1, "Plan_41",  "snapshot", Parameter_R03_Stammdaten, "cause_of_change_R03", true},
+		            {"R03",     6, A,  0, "Plan_R03", "snapshot", Parameter_R03_Stammdaten, "cause_of_change_fy",     "cause_of_change_R03", true},
+		            {"R03",     6, A, -1, "Plan_41",  "snapshot", Parameter_R03_Stammdaten, "cause_of_change_fy",     "cause_of_change_R03", true},
 		            // Forecast Plan 02 (für Adj_FC_Value)
-		            {"FC02",    7, A,  0, "Plan_02",  "live_fy",  null,                     "cause_of_change_fy",  true},
-		            {"FC02",    7, A, -1, "Actual_0", "live_fy",  null,                     "cause_of_change_fy",  true},
+		            {"FC02",    7, A,  0, "Plan_02",  "live_fy",  null,                      null,                    "cause_of_change_fy",  true},
+		            {"FC02",    7, A, -1, "Actual_0", "live_fy",  null,                      null,                    "cause_of_change_fy",  true},
 		            // ARO-Sicht auf den RGF-Snapshot (für FC_ARO)
-		            {"ARO_RGF", 8, A,  0, "Plan_RGF", "snapshot", Parameter_RGF_Stammdaten, "cause_of_change_RGF", true},
+		            {"ARO_RGF", 8, A,  0, "Plan_RGF", "snapshot", Parameter_RGF_Stammdaten, "cause_of_change_fy",     "cause_of_change_RGF", true},
 		            // Recherche: Plan 01 (nur für verstecktes Measure RECH_adj_BUD_Value)
-		            {"R01",     9, A,  0, "Plan_01",  "live",     null,                     "cause_of_change",     true},
+		            {"R01",     9, A,  0, "Plan_01",  "live",     null,                      null,                    "cause_of_change",     true},
 
 		            // ===== Berichtsjahr FY27 (= Aktuelles_Geschäftsjahr + 1) =====
 		            // Budget FY27: laufendes Jahr = Plan_20 (FY27), Vorjahres-Basis =
 		            // FY26-Forecast (RGF + R12). CoC eingefroren zum Budget-FY27-
-		            // Snapshot (cause_of_change_ny, Stichtag Parameter_BUD_FY27_Stammdaten).
-		            {"BUD_FY27", 20, A + 1,  0, "Plan_20",  "snapshot", Parameter_BUD_FY27_Stammdaten, "cause_of_change_BUD", false},
-		            {"BUD_FY27", 20, A + 1, -1, "Plan_RGF", "snapshot", Parameter_BUD_FY27_Stammdaten, "cause_of_change_BUD", false},
-		            {"BUD_FY27", 20, A + 1, -1, "Plan_R12", "snapshot", Parameter_BUD_FY27_Stammdaten, "cause_of_change_BUD", false}
+		            // Snapshot, Spalte cause_of_change_ny (kommendes Jahr).
+		            {"BUD_FY27", 20, A + 1,  0, "Plan_20",  "snapshot", Parameter_BUD_FY27_Stammdaten, "cause_of_change_ny", "cause_of_change_BUD", false},
+		            {"BUD_FY27", 20, A + 1, -1, "Plan_RGF", "snapshot", Parameter_BUD_FY27_Stammdaten, "cause_of_change_ny", "cause_of_change_BUD", false},
+		            {"BUD_FY27", 20, A + 1, -1, "Plan_R12", "snapshot", Parameter_BUD_FY27_Stammdaten, "cause_of_change_ny", "cause_of_change_BUD", false}
+
+		            // ===== Beispiel für eine künftige Runde (auskommentiert) =====
+		            // Budget FY28, eingefroren zum 31.08.2027, ohne neuen Parameter:
+		            // {"BUD_FY28", 30, A + 2,  0, "Plan_20",  "snapshot", #date(2027,8,31), "cause_of_change_ny", "cause_of_change_BUD", false},
+		            // {"BUD_FY28", 30, A + 2, -1, "Plan_RGF", "snapshot", #date(2027,8,31), "cause_of_change_ny", "cause_of_change_BUD", false},
+		            // {"BUD_FY28", 30, A + 2, -1, "Plan_R12", "snapshot", #date(2027,8,31), "cause_of_change_ny", "cause_of_change_BUD", false}
 		        }
 		    )
 		in
@@ -203,21 +245,17 @@ expression fnCoC_ZuMetricId = ```
 	annotation PBI_ResultType = Function
 
 expression fnStammdaten_Snapshot = ```
-		// Liefert den eingefrorenen Cause-of-Change-Stand aller Betriebe zu einem
-		// Snapshot-Datum aus dem Lakehouse-Export (exports_md).
-		// Ersetzt die früheren Einzelabfragen md_BUD / md_RGF / md_R03.
-		// cocSpalte wählt, welcher CoC-Stand eingefroren wird:
-		//   "cause_of_change_fy" = Stand zum GJ-Ende des LAUFENDEN Jahres (Standard, FY26)
-		//   "cause_of_change_ny" = Stand im KOMMENDEN Geschäftsjahr (z. B. FY27-Budget)
-		(snapshotDatum as date, optional cocSpalte as text) as table =>
+		// Rein funktional (KEIN Datenquellenzugriff mehr) -> beliebig oft aus
+		// Stammdaten_CoC aufrufbar, ohne die Formula-Firewall auszulösen.
+		// Filtert die bereits geladenen Rohdaten (Stammdaten_Snapshots_Rohdaten)
+		// auf einen Snapshot-Stichtag und liest die gewünschte CoC-Spalte.
+		//   cocSpalte = "cause_of_change_fy" -> Stand zum GJ-Ende des laufenden Jahres
+		//   cocSpalte = "cause_of_change_ny" -> Stand im kommenden Geschäftsjahr
+		(rohdaten as table, snapshotDatum as date, cocSpalte as text) as table =>
 		let
-		    Spalte = cocSpalte ?? "cause_of_change_fy",
-		    Quelle = Sql.Database(Lakehouse_Server, Lakehouse_Datenbank),
-		    exports_md = Quelle{[Schema = "dbo", Item = "exports_md"]}[Data],
-		    Typisiert = Table.TransformColumnTypes(exports_md, {{"update_ts", type date}}),
-		    Gefiltert = Table.SelectRows(Typisiert, each [update_ts] = snapshotDatum),
-		    Auswahl = Table.SelectColumns(Gefiltert, {"betrieb", Spalte}),
-		    Umbenannt = Table.RenameColumns(Auswahl, {{Spalte, "coc"}}),
+		    Gefiltert = Table.SelectRows(rohdaten, each [update_ts] = snapshotDatum),
+		    Auswahl = Table.SelectColumns(Gefiltert, {"betrieb", cocSpalte}),
+		    Umbenannt = Table.RenameColumns(Auswahl, {{cocSpalte, "coc"}}),
 		    Dedupliziert = Table.Distinct(Umbenannt, {"betrieb"})
 		in
 		    Dedupliziert
@@ -226,6 +264,25 @@ expression fnStammdaten_Snapshot = ```
 	queryGroup: '2. Funktionen'
 
 	annotation PBI_ResultType = Function
+
+expression Stammdaten_Snapshots_Rohdaten = ```
+		// BLATT-ABFRAGE: einziger Lakehouse-Zugriff für ALLE CoC-Snapshots
+		// (ersetzt die früheren Einzelabfragen md_BUD/md_RGF/md_R03 und die
+		// späteren Snapshot_BUD/Snapshot_RGF/Snapshot_R03/Snapshot_BUD_FY27).
+		// Wird von Stammdaten_CoC pro Szenario-Konfig-Zeile dynamisch nach
+		// Datum + Spalte gefiltert (fnStammdaten_Snapshot) -> neue Snapshots
+		// brauchen keine neue Abfrage, nur eine neue Zeile in Szenario_Konfig.
+		let
+		    Quelle = Sql.Database(Lakehouse_Server, Lakehouse_Datenbank),
+		    exports_md = Quelle{[Schema = "dbo", Item = "exports_md"]}[Data],
+		    Typisiert = Table.TransformColumnTypes(exports_md, {{"update_ts", type date}})
+		in
+		    Typisiert
+		```
+	lineageTag: 9469094b-6e0b-4514-bfb6-abf136bb2509
+	queryGroup: '3. Stammdaten'
+
+	annotation PBI_ResultType = Table
 
 expression Stammdaten_Dataflow = ```
 		// BLATT-ABFRAGE: greift ausschließlich auf den Dataflow zu (keine
@@ -303,49 +360,24 @@ expression Stammdaten_Basis = ```
 
 	annotation PBI_ResultType = Table
 
-expression Snapshot_BUD = fnStammdaten_Snapshot(Parameter_BUD_Stammdaten)
-	lineageTag: 292e9e2f-b205-4dcb-a6fc-6509223219d9
-	queryGroup: '3. Stammdaten'
-
-	annotation PBI_ResultType = Table
-
-expression Snapshot_RGF = fnStammdaten_Snapshot(Parameter_RGF_Stammdaten)
-	lineageTag: cd5ba636-3537-47ba-b0df-756ce043848f
-	queryGroup: '3. Stammdaten'
-
-	annotation PBI_ResultType = Table
-
-expression Snapshot_R03 = fnStammdaten_Snapshot(Parameter_R03_Stammdaten)
-	lineageTag: 9701f983-bd48-4340-82f6-2b509358a3a9
-	queryGroup: '3. Stammdaten'
-
-	annotation PBI_ResultType = Table
-
-/// Snapshot für Budget FY27: liest cause_of_change_ny (Stand im kommenden GJ),
-/// eingefroren zum Stichtag Parameter_BUD_FY27_Stammdaten.
-expression Snapshot_BUD_FY27 = fnStammdaten_Snapshot(Parameter_BUD_FY27_Stammdaten, "cause_of_change_ny")
-	lineageTag: 559ab8bd-257c-4360-ae02-a51de3ee0bae
-	queryGroup: '3. Stammdaten'
-
-	annotation PBI_ResultType = Table
-
 expression Stammdaten_CoC = ```
 		// KOMBINATIONS-ABFRAGE: referenziert nur andere Abfragen (keine direkte
-		// Datenquelle) -> Formula-Firewall-konform. Die Snapshot-Zugriffe liegen
-		// in den Blatt-Abfragen Snapshot_BUD / Snapshot_RGF / Snapshot_R03 /
-		// Snapshot_BUD_FY27.
+		// Datenquelle) -> Formula-Firewall-konform. Der einzige Lakehouse-Zugriff
+		// für Snapshots liegt in der Blatt-Abfrage Stammdaten_Snapshots_Rohdaten.
 		//
 		// Cause-of-Change-Stand pro Betrieb und Szenario (langes Format).
-		// Quelle je Szenario laut Szenario_Konfig: aktueller Stand ("live"/"live_fy")
-		// oder eingefrorener Snapshot ("snapshot").
+		// Quelle je Szenario laut Szenario_Konfig[CoC_Quelle]: aktueller Stand
+		// ("live"/"live_fy"/"live_ny") oder eingefrorener Snapshot ("snapshot",
+		// Datum + Spalte kommen direkt aus Szenario_Konfig[CoC_Snapshot] /
+		// [CoC_Snapshot_Spalte] – keine benannte Snapshot-Abfrage pro Runde nötig).
 		// Manuelle Werke fehlen im Lakehouse-Export und werden aus Man_Stamm ergänzt.
 		//
-		// Neue Snapshot-Runde: hier in "SnapshotMap" die neue Blatt-Abfrage
-		// unter ihrem Szenario-Kürzel ergänzen.
+		// NEUE RUNDE / NEUES BERICHTSJAHR: hier ist NICHTS anzupassen – einfach
+		// Zeile(n) in Szenario_Konfig ergänzen (siehe Kommentar dort).
 		let
-		    SnapshotMap = [ BUD = Snapshot_BUD, ARO_RGF = Snapshot_RGF, R03 = Snapshot_R03, BUD_FY27 = Snapshot_BUD_FY27 ],
+		    RohdatenBuffered = Table.Buffer(Stammdaten_Snapshots_Rohdaten),
 		    Basis = Table.Buffer(Table.SelectColumns(Stammdaten_Basis, {"betrieb", "cause_of_change", "cause_of_change_fy", "cause_of_change_ny"})),
-		    Szenarien = Table.Distinct(Table.SelectColumns(Szenario_Konfig, {"Szenario", "CoC_Quelle", "CoC_Spalte_Adjustments"})),
+		    Szenarien = Table.Distinct(Table.SelectColumns(Szenario_Konfig, {"Szenario", "CoC_Quelle", "CoC_Snapshot", "CoC_Snapshot_Spalte", "CoC_Spalte_Adjustments"})),
 		    ProSzenario = Table.AddColumn(Szenarien, "Daten", each
 		        let
 		            s = [Szenario],
@@ -359,7 +391,7 @@ expression Stammdaten_CoC = ```
 		            Ergebnis =
 		                if q = "snapshot" then
 		                    let
-		                        Snap = Record.Field(SnapshotMap, s),
+		                        Snap = fnStammdaten_Snapshot(RohdatenBuffered, [CoC_Snapshot], [CoC_Snapshot_Spalte]),
 		                        Manuelle = Table.RenameColumns(Table.SelectColumns(Man_Stamm, {"betrieb", AdjSpalte}), {{AdjSpalte, "coc"}}),
 		                        NeueManuelle = Table.SelectRows(Manuelle, (zeile) => not List.Contains(Snap[betrieb], zeile[betrieb]))
 		                    in
