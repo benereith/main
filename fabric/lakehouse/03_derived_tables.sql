@@ -1,21 +1,36 @@
 -- =====================================================================
--- Lakehouse-Views auf die historisierten Faktentabellen.
+-- Abgeleitete Tabellen fuer das Semantic Model
 --
--- Das Semantic Model laedt NICHT die volle Historie, sondern:
---   vw_opportunity_current / vw_retention_current  -> Ist-Stand, Basis der Report-Zahlen
---   vw_opportunity_changes / vw_retention_changes  -> nur Aenderungszeilen, Basis der Leading KPIs
+-- !! AUSFUEHRUNG: Fabric-NOTEBOOK, Zelle auf Spark SQL (%%sql).
+-- !! NICHT im SQL Analytics Endpoint - siehe 01_create_tables.sql.
+-- !! Laeuft taeglich NACH 02_load_snapshot.py.
+--
+-- Warum Tabellen und nicht Views:
+-- Ein Direct-Lake-Semantikmodell liest Delta-Tabellen. Views sind dort
+-- nicht nutzbar - das Modell fiele auf DirectQuery zurueck und verloere
+-- genau den Vorteil, wegen dem die Strecke auf Direct Lake ausgelegt ist.
+-- Die Ableitungen werden deshalb einmal taeglich materialisiert. Da die
+-- Quelle ohnehin nur einmal taeglich wechselt, kostet das nichts.
+--
+--   fct_opportunity_current / fct_retention_current
+--       Ist-Stand, Basis der Report-Zahlen
+--   fct_opportunity_changes / fct_retention_changes
+--       nur Aenderungszeilen, Basis der Leading KPIs
 -- =====================================================================
+
 
 
 -- ---------------------------------------------------------------------
 -- Aktueller Stand: der jeweils juengste Snapshot
 -- ---------------------------------------------------------------------
-CREATE OR REPLACE VIEW vw_opportunity_current AS
+CREATE OR REPLACE TABLE fct_opportunity_current
+USING DELTA AS
 SELECT *
 FROM fct_opportunity
 WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM fct_opportunity);
 
-CREATE OR REPLACE VIEW vw_retention_current AS
+CREATE OR REPLACE TABLE fct_retention_current
+USING DELTA AS
 SELECT *
 FROM fct_retention
 WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM fct_retention);
@@ -28,7 +43,8 @@ WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM fct_retention);
 -- Damit sind Stage-Wechsel, Wertaenderungen und Terminverschiebungen
 -- direkt auswertbar, ohne die komplette Snapshot-Historie zu scannen.
 -- ---------------------------------------------------------------------
-CREATE OR REPLACE VIEW vw_opportunity_changes AS
+CREATE OR REPLACE TABLE fct_opportunity_changes
+USING DELTA AS
 WITH ranked AS (
     SELECT
         snapshot_date,
@@ -86,7 +102,8 @@ WHERE prev_snapshot_date IS NULL
 -- ---------------------------------------------------------------------
 -- Aenderungshistorie Retention-Contracts
 -- ---------------------------------------------------------------------
-CREATE OR REPLACE VIEW vw_retention_changes AS
+CREATE OR REPLACE TABLE fct_retention_changes
+USING DELTA AS
 WITH ranked AS (
     SELECT
         snapshot_date,
@@ -135,7 +152,8 @@ WHERE prev_snapshot_date IS NULL
 -- ---------------------------------------------------------------------
 -- Aktueller Mappingstand
 -- ---------------------------------------------------------------------
-CREATE OR REPLACE VIEW vw_opportunity_unit_current AS
+CREATE OR REPLACE TABLE map_opportunity_unit_current
+USING DELTA AS
 SELECT *
 FROM map_opportunity_unit
 WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM map_opportunity_unit);

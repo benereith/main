@@ -1,5 +1,15 @@
 -- =====================================================================
 -- Lakehouse: Faktentabellen (historisiert)
+--
+-- !! AUSFUEHRUNG: Fabric-NOTEBOOK, Zelle auf Spark SQL (%%sql).
+-- !! NICHT im SQL Analytics Endpoint des Lakehouse ausfuehren.
+--
+-- Der SQL Analytics Endpoint spricht T-SQL und ist fuer das Lakehouse
+-- lesend. Dort scheitert schon "CREATE TABLE IF NOT EXISTS" (Meldung 156,
+-- T-SQL kennt kein IF NOT EXISTS in CREATE TABLE), ebenso "USING DELTA"
+-- und "PARTITIONED BY". Tabellen im Lakehouse entstehen ausschliesslich
+-- ueber Spark.
+--
 -- Nur Fakten - keine Dimensionen. Dimensionen entstehen im Semantic Model.
 --
 -- Historisierung: taeglicher Vollsnapshot, partitioniert nach snapshot_date.

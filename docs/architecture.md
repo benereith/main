@@ -31,8 +31,9 @@ Dataflow Gen2 ──► stg_opportunity / stg_retention   (Replace)
       ▼  Notebook, idempotent
 Lakehouse ──► fct_opportunity / fct_retention       (Append, partitioniert)
       │           │
-      │           ├─► vw_*_current   → Ist-Stand
-      │           └─► vw_*_changes   → Änderungshistorie
+      │           │  Notebook, Spark SQL
+      │           ├─► fct_*_current   → Ist-Stand
+      │           └─► fct_*_changes   → Änderungshistorie
       ▼
 Semantic Model (Direct Lake)
       │  ITY-Phasing + Dimensionen als DAX
@@ -65,7 +66,7 @@ ein simpler Filter. Der Speicherbedarf ist bei diesen Mengengerüsten
 unkritisch — Delta komprimiert die weitgehend identischen Tagesstände stark.
 
 Die Auswertung läuft trotzdem nicht gegen die volle Historie: die
-`vw_*_changes`-Views verdichten sie auf die Snapshots, in denen sich fachlich
+`fct_*_changes`-Tabellen verdichten sie auf die Snapshots, in denen sich fachlich
 etwas geändert hat. Das ist die Datenbasis der Leading KPIs.
 
 ### Idempotenz über Staging
@@ -184,7 +185,7 @@ Warum das mehr als Kosmetik ist: `snapshot_date` ist Partitionsschlüssel
 **und** fachlicher Schlüssel der Änderungserkennung. Ein Lauf um 00:30
 Berliner Zeit hätte in UK-Zeit den Vortag bekommen — der Snapshot wäre in die
 Vortagespartition gefallen, hätte dort den echten Vortagsstand überschrieben
-und in `vw_*_changes` einen Tag Historie ausgelöscht. Bei einem
+und in `fct_*_changes` einen Tag Historie ausgelöscht. Bei einem
 Nachtplan oder einem Retry nach Mitternacht wäre das unbemerkt passiert.
 
 M kennt keine Zeitzonendatenbank, deshalb liegt die EU-Sommerzeitregel
@@ -203,6 +204,26 @@ Grain-Check im Notebook hart auf Fehler laufen lassen.
 Das Altmodell trägt 13 `LocalDateTable_*` Tabellen, erzeugt durch
 Auto-Date/Time auf jeder Datumsspalte. Mit `dim_date` als einziger
 Datumstabelle entfallen sie.
+
+## Ausführung: was läuft wo
+
+Die SQL-Dateien sind **Spark SQL**, nicht T-SQL. Sie laufen im Fabric-Notebook
+in einer `%%sql`-Zelle — nicht im SQL Analytics Endpoint des Lakehouse.
+
+| Schritt | Datei | Umgebung | Rhythmus |
+|---|---|---|---|
+| 1 | `fabric/dataflow/*.m` | Dataflow Gen2 | täglich |
+| 2 | `01_create_tables.sql` | Notebook, `%%sql` | einmalig |
+| 3 | `02_load_snapshot.py` | Notebook, PySpark | täglich |
+| 4 | `03_derived_tables.sql` | Notebook, `%%sql` | täglich, nach Schritt 3 |
+
+Der SQL Analytics Endpoint spricht T-SQL und ist für das Lakehouse **lesend**.
+Dort scheitern die Skripte schon an `CREATE TABLE IF NOT EXISTS` (T-SQL kennt
+kein `IF NOT EXISTS` in `CREATE TABLE` → Meldung 156), ebenso an `USING
+DELTA`, `PARTITIONED BY`, dem nullsicheren Vergleich `<=>` und der
+`WINDOW`-Klausel. Tabellen im Lakehouse entstehen ausschließlich über Spark.
+Der Endpoint bleibt für Ad-hoc-Abfragen nützlich — die von Spark angelegten
+Tabellen erscheinen dort automatisch.
 
 ## Offene Punkte vor dem Bau
 
@@ -230,7 +251,7 @@ Datumstabelle entfallen sie.
 | `fabric/dataflow/fn_berlin_now.m` | Zeitstempel auf Europe/Berlin (Laden deaktivieren) |
 | `fabric/lakehouse/01_create_tables.sql` | Delta-Tabellen, partitioniert nach `snapshot_date` |
 | `fabric/lakehouse/02_load_snapshot.py` | Idempotenter Tageslauf Staging → Fakt |
-| `fabric/lakehouse/03_views.sql` | Ist-Stand- und Änderungsviews |
+| `fabric/lakehouse/03_derived_tables.sql` | Ist-Stand und Änderungshistorie als Delta-Tabellen |
 | `fabric/semantic-model/01_ity_phasing.dax` | ITY-Monatsphasierung und vereinigte Effekttabelle |
 | `fabric/semantic-model/02_calculated_columns.dax` | Klassifizierungen und abgeleitete Dimensionen |
 | `fabric/semantic-model/03_measures.dax` | Bestandsmeasures und Leading KPIs |

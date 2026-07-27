@@ -4,7 +4,7 @@
 // Teil A - Bestandsmeasures, 1:1 aus dem Altmodell uebernommen,
 //          umgehaengt auf die neuen Phasing-Tabellen.
 // Teil B - Leading KPIs. Basis sind die Aenderungsviews aus dem
-//          Lakehouse (vw_opportunity_changes / vw_retention_changes),
+//          Lakehouse (fct_opportunity_changes / fct_retention_changes),
 //          die es ohne die Historisierung nicht gaebe.
 // =====================================================================
 
@@ -79,14 +79,14 @@ DIVIDE ( [Weighted Pipeline ARO], [90_Value] )
 // Volumen der Opportunities, die im gewaehlten Zeitraum neu entstanden sind.
 Net New Pipeline =
 CALCULATE (
-    SUM ( vw_opportunity_changes[cgplc_revenuearo] ),
-    vw_opportunity_changes[is_new] = TRUE ()
+    SUM ( fct_opportunity_changes[cgplc_revenuearo] ),
+    fct_opportunity_changes[is_new] = TRUE ()
 )
 
 Net New Opportunity Count =
 CALCULATE (
-    DISTINCTCOUNT ( vw_opportunity_changes[opportunityid] ),
-    vw_opportunity_changes[is_new] = TRUE ()
+    DISTINCTCOUNT ( fct_opportunity_changes[opportunityid] ),
+    fct_opportunity_changes[is_new] = TRUE ()
 )
 
 Net New Pipeline 30d =
@@ -99,29 +99,29 @@ CALCULATE (
 // Zeigt, ob die Pipeline organisch waechst oder nachtraeglich abgewertet wird.
 Pipeline Value Movement =
 CALCULATE (
-    SUM ( vw_opportunity_changes[delta_revenuearo] ),
-    vw_opportunity_changes[is_new] = FALSE ()
+    SUM ( fct_opportunity_changes[delta_revenuearo] ),
+    fct_opportunity_changes[is_new] = FALSE ()
 )
 
 // Anzahl der Stage-Wechsel - Mass fuer die Bewegung in der Pipeline.
 Stage Movements =
 CALCULATE (
-    COUNTROWS ( vw_opportunity_changes ),
-    vw_opportunity_changes[stage_changed] = TRUE ()
+    COUNTROWS ( fct_opportunity_changes ),
+    fct_opportunity_changes[stage_changed] = TRUE ()
 )
 
 // Summe der Verschiebungen des erwarteten Abschlussdatums in Tagen.
 // Steigende Werte sind ein Fruehindikator fuer Planverfehlung.
 Close Date Slippage Days =
 CALCULATE (
-    SUM ( vw_opportunity_changes[delta_closedate_days] ),
-    vw_opportunity_changes[delta_closedate_days] > 0
+    SUM ( fct_opportunity_changes[delta_closedate_days] ),
+    fct_opportunity_changes[delta_closedate_days] > 0
 )
 
 Slipped Opportunities =
 CALCULATE (
-    DISTINCTCOUNT ( vw_opportunity_changes[opportunityid] ),
-    vw_opportunity_changes[delta_closedate_days] > 0
+    DISTINCTCOUNT ( fct_opportunity_changes[opportunityid] ),
+    fct_opportunity_changes[delta_closedate_days] > 0
 )
 
 
@@ -166,7 +166,7 @@ CALCULATE (
 // Opportunities, die seit mehr als 90 Tagen keinen Stage-Wechsel hatten.
 // Klassischer Fruehindikator fuer nicht belastbare Pipeline.
 Stale Pipeline ARO =
-VAR _letzterStand = MAX ( vw_opportunity_changes[snapshot_date] )
+VAR _letzterStand = MAX ( fct_opportunity_changes[snapshot_date] )
 RETURN
     CALCULATE (
         SUM ( fct_opportunity[cgplc_revenuearo] ),
@@ -174,7 +174,7 @@ RETURN
         FILTER (
             VALUES ( fct_opportunity[opportunityid] ),
             VAR _letzteAenderung =
-                CALCULATE ( MAX ( vw_opportunity_changes[snapshot_date] ) )
+                CALCULATE ( MAX ( fct_opportunity_changes[snapshot_date] ) )
             RETURN
                 DATEDIFF ( _letzteAenderung, _letzterStand, DAY ) > 90
         )
@@ -212,17 +212,17 @@ CALCULATE (
 Retention Probability Movement =
 CALCULATE (
     SUMX (
-        vw_retention_changes,
-        vw_retention_changes[delta_retentionprobability]
-            * vw_retention_changes[cgplc_lastfyrevenuearo]
+        fct_retention_changes,
+        fct_retention_changes[delta_retentionprobability]
+            * fct_retention_changes[cgplc_lastfyrevenuearo]
     ),
-    vw_retention_changes[is_new] = FALSE ()
+    fct_retention_changes[is_new] = FALSE ()
 )
 
 Newly At Risk ARO =
 CALCULATE (
-    SUM ( vw_retention_changes[cgplc_lastfyrevenuearo] ),
-    vw_retention_changes[delta_retentionprobability] < 0
+    SUM ( fct_retention_changes[cgplc_lastfyrevenuearo] ),
+    fct_retention_changes[delta_retentionprobability] < 0
 )
 
 
