@@ -146,3 +146,59 @@ DISTINCT (
         SELECTCOLUMNS ( fct_opportunity, "accountid", fct_opportunity[parentaccountid] )
     )
 )
+
+
+// ---------------------------------------------------------------------
+// dim_unit
+// Konforme Betriebsdimension fuer fct_budget_effect.
+//
+// Die SAP-Stammdaten kennen nur Betriebe, die es bereits gibt. Genau die
+// Units, um die es im Net-New-Budget geht, sind dort noch nicht enthalten:
+// sie sind noch nicht gewonnen und werden im Budget- und Forecast-Prozess
+// manuell gemappt. Wuerde die Dimension nur aus den SAP-Stammdaten
+// aufgebaut, fielen diese Effekte beim Schneiden nach Betrieb in die
+// Blank-Zeile - also ausgerechnet der Teil, den der Report zeigen soll.
+//
+// Deshalb: SAP-Stammdaten vereinigt mit den ausschliesslich im Mapping
+// vorkommenden Units, unterschieden ueber unit_status.
+// ---------------------------------------------------------------------
+dim_unit =
+VAR _SapKeys =
+    SELECTCOLUMNS (
+        dim_sap_master_data_unit,
+        "sap_unit", dim_sap_master_data_unit[betrieb]
+    )
+VAR _SapUnits =
+    SELECTCOLUMNS (
+        dim_sap_master_data_unit,
+        "sap_unit", dim_sap_master_data_unit[betrieb],
+        "unit_status", "In Betrieb",
+        "bezeichnung", dim_sap_master_data_unit[bezeichnung_betrieb],
+        "sektor", dim_sap_master_data_unit[sektor],
+        "bezirk", dim_sap_master_data_unit[bezeichnung_bezirk]
+    )
+VAR _MappedKeys =
+    DISTINCT (
+        SELECTCOLUMNS ( map_opportunity_unit, "sap_unit", map_opportunity_unit[sap_unit] )
+    )
+VAR _PlannedUnits =
+    ADDCOLUMNS (
+        EXCEPT ( _MappedKeys, _SapKeys ),
+        "unit_status", "Geplant",
+        "bezeichnung", "Noch nicht gewonnen",
+        "sektor", BLANK (),
+        "bezirk", BLANK ()
+    )
+RETURN
+    UNION ( _SapUnits, _PlannedUnits )
+
+
+// Sektor der Retention ueber den SAP-Betrieb erben.
+// Auf der Opportunity-Seite kommt der Sektor aus dem CRM, auf der
+// Retention-Seite gibt es ihn nur ueber die Stammdaten - damit wird der
+// Nettoeffekt auch nach Sektor schneidbar, soweit die Unit in SAP existiert.
+fct_retention[sektor] =
+LOOKUPVALUE (
+    dim_sap_master_data_unit[sektor],
+    dim_sap_master_data_unit[betrieb], fct_retention[cgplc_sapid]
+)

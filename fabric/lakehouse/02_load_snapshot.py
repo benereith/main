@@ -19,6 +19,7 @@ from delta.tables import DeltaTable
 SNAPSHOT_TABLES = [
     ("stg_opportunity", "fct_opportunity", "opportunityid"),
     ("stg_retention", "fct_retention", "cgplc_cgcontractid"),
+    ("stg_opportunity_unit", "map_opportunity_unit", "opportunityid"),
 ]
 
 

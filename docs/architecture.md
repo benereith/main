@@ -127,17 +127,43 @@ bereits über `dim_sap_master_data_unit.betrieb` (Retention direkt über
 über `Period_Date` mit `dim_date`. Die neue Struktur macht diese vorhandene
 Konformität nur explizit.
 
-Zusätzlich nutzt `fct_opp_phasing` eine CRM-eigene Ersatzbrücke: die
-Opportunity trägt in `cgplc_contractid` den Schlüssel des Retention-Contracts,
-über dessen `cgplc_sapid` sich der Betrieb auch ohne Mappingeintrag auflösen
-lässt. Das Mapping bleibt führend, die Brücke schließt Lücken.
+### Das manuelle Mapping ist strukturell notwendig
 
-**Offen:** Sektor, Territory und Owner existieren nur auf der
-Opportunity-Seite. Ein Nettoeffekt lässt sich damit nach SAP-Betrieb und
-Periode schneiden, nach Sektor aber nur für den New-Business-Anteil. Wenn die
-Retention nach Sektor auswertbar sein soll, muss sie den Sektor über den
-SAP-Betrieb erben — zu klären, ob `dim_sap_master_data_unit` diese Zuordnung
-belastbar trägt.
+`map_opportunity_unit` lässt sich **nicht** durch CRM-Daten ersetzen. Die
+Zuordnung wird im Budget- und Forecast-Prozess von Hand gepflegt, weil die
+betroffenen Units noch nicht gewonnen sind — es gibt für sie weder einen
+Vertrag im CRM noch einen Betrieb in den SAP-Stammdaten. Das Mapping trägt
+eine vorausschauende Annahme, die in keinem Quellsystem steht.
+
+Daraus folgen drei Dinge für das Modell:
+
+- **Die Mappingtabelle wird historisiert**, wie die Fakten. Sie ist ein
+  manueller Input in offizielle Budgetzahlen; ohne Snapshot ließe sich eine
+  abgeschlossene Budgetrunde nach der nächsten Pflegerunde nicht mehr
+  reproduzieren.
+- **`dim_unit` vereinigt SAP-Stammdaten mit den nur im Mapping vorkommenden
+  Units** und unterscheidet sie über `unit_status` (`In Betrieb` / `Geplant`).
+  Eine Dimension allein aus den SAP-Stammdaten würde genau die geplanten Units
+  in die Blank-Zeile fallen lassen — also den Teil, um den es im Net New Budget
+  geht. `Planned Unit Effect` macht diesen Anteil direkt sichtbar.
+- **Der Pflegestand wird messbar.** `Unmapped Effect`, `Unmapped
+  Opportunities` und `Unmapped Share` zeigen, welches Volumen noch keinem
+  Betrieb zugeordnet ist, solange eine Runde offen ist.
+
+Die CRM-eigene Brücke über `cgplc_contractid` → `cgplc_sapid` bleibt als
+Rückfallebene hinter dem Mapping. Sie greift für Opportunities, die einen
+bestehenden Vertrag betreffen (Neuausschreibung eines laufenden Objekts), und
+schließt dort Lücken — sie ersetzt das Mapping aber nicht, weil sie für echte
+Net-New-Units definitionsgemäß leer läuft.
+
+### Sektor über beide Effektarten
+
+`dim_sap_master_data_unit` trägt `sektor` und `bezeichnung_bezirk`. Die
+Retention erbt den Sektor darüber (`fct_retention[sektor]`), auf der
+Opportunity-Seite kommt er aus dem CRM. Der Nettoeffekt ist damit nach Sektor
+schneidbar, solange die Unit in SAP existiert. Für geplante Units bleibt der
+Sektor leer — falls das im Report stört, müsste die Mappingdatei eine
+Sektor-Spalte mitführen.
 
 ### Auto-Date/Time aus
 
@@ -147,12 +173,11 @@ Datumstabelle entfallen sie.
 
 ## Offene Punkte vor dem Bau
 
-- **`map_opportunity_unit`** ersetzt den Live-Join `dim_opp_mapping` als
-  eigener Dataflow (`fabric/dataflow/map_opportunity_unit.m`). Zu klären:
-  Pflegeprozess der Excel und ob die CRM-eigene Brücke über
-  `cgplc_contractid` das manuelle Mapping mittelfristig ganz ersetzen kann —
-  messbar über den Anteil der Opportunities, deren `sap_unit` erst durch den
-  Fallback aufgelöst wird.
+- **Szenario/Version in `Mapping_Planwerke.xlsx`.** Wenn Budget- und
+  Forecast-Runde unterschiedliche Zuordnungen brauchen, reicht der aktuelle
+  Grain `opportunityid → sap_unit` nicht: die eine Runde überschreibt die
+  andere. Dann braucht die Datei eine Szenariospalte und die Tabelle einen
+  entsprechend erweiterten Schlüssel.
 - **`Revenues` / `SAP_Stammdaten`** (Quelle des `90_Value`-Measures und des
   Abgleichs SAP gegen CRM) bleiben vorerst unangetastet. Wenn `Pipeline
   Coverage` produktiv gehen soll, muss geklärt sein, ob `90_Value` in

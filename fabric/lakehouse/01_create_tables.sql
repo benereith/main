@@ -72,3 +72,19 @@ CREATE TABLE IF NOT EXISTS fct_retention (
 )
 USING DELTA
 PARTITIONED BY (snapshot_date);
+
+
+-- ---------------------------------------------------------------------
+-- Mapping Opportunity -> SAP-Betrieb (manuell gepflegt, SharePoint).
+-- Historisiert, weil das Mapping ein manueller Input in offizielle
+-- Budgetzahlen ist: ohne Snapshot ist eine abgeschlossene Budgetrunde
+-- nach der naechsten Pflegerunde nicht mehr reproduzierbar.
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS map_opportunity_unit (
+    snapshot_date               DATE,
+    opportunityid               STRING,
+    sap_unit                    BIGINT,
+    loaded_at                   TIMESTAMP
+)
+USING DELTA
+PARTITIONED BY (snapshot_date);

@@ -130,3 +130,12 @@ WHERE prev_snapshot_date IS NULL
     AND cgplc_contractenddate      <=> prev_contractenddate
     AND cgplc_forecastdecisiondate <=> prev_forecastdecisiondate
    );
+
+
+-- ---------------------------------------------------------------------
+-- Aktueller Mappingstand
+-- ---------------------------------------------------------------------
+CREATE OR REPLACE VIEW vw_opportunity_unit_current AS
+SELECT *
+FROM map_opportunity_unit
+WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM map_opportunity_unit);

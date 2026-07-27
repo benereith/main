@@ -224,3 +224,32 @@ CALCULATE (
     SUM ( vw_retention_changes[cgplc_lastfyrevenuearo] ),
     vw_retention_changes[delta_retentionprobability] < 0
 )
+
+
+// --- Steuerung der manuellen Mappingpflege ---------------------------
+// Das Mapping Opportunity -> SAP-Betrieb wird im Budget- und
+// Forecast-Prozess von Hand gepflegt, weil die betroffenen Units noch
+// nicht gewonnen sind. Diese Measures machen den Pflegestand messbar,
+// damit eine Luecke vor dem Abschluss einer Runde auffaellt und nicht
+// erst, wenn Effekte ohne Betrieb in der Auswertung stehen.
+
+Unmapped Effect =
+CALCULATE (
+    [Net ITY Effect],
+    FILTER ( VALUES ( fct_budget_effect[sap_unit] ), ISBLANK ( fct_budget_effect[sap_unit] ) )
+)
+
+Unmapped Opportunities =
+CALCULATE (
+    DISTINCTCOUNT ( fct_budget_effect[entity_id] ),
+    fct_budget_effect[effect_type] = "New Business",
+    FILTER ( VALUES ( fct_budget_effect[sap_unit] ), ISBLANK ( fct_budget_effect[sap_unit] ) )
+)
+
+// Anteil des Effekts, der noch keinem Betrieb zugeordnet ist.
+Unmapped Share = DIVIDE ( ABS ( [Unmapped Effect] ), ABS ( [Net ITY Effect] ) )
+
+// Effekt auf Units, die es in SAP noch nicht gibt - der eigentliche
+// Net-New-Anteil. Kein Fehler, sondern die Kernaussage des Reports.
+Planned Unit Effect =
+CALCULATE ( [Net ITY Effect], dim_unit[unit_status] = "Geplant" )

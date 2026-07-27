@@ -10,8 +10,14 @@
 // als eigene Tabelle ist sie ueber eine Beziehung nutzbar, versionierbar
 // und blockiert nicht den Ladelauf der Fakten, wenn SharePoint klemmt.
 //
-// Keine Historisierung - das Mapping ist Stammdatencharakter, der jeweils
-// aktuelle Stand gilt fuer die gesamte Auswertung.
+// Diese Tabelle ist NICHT durch CRM-Daten ersetzbar. Sie traegt die
+// Zuordnung fuer Units, die noch nicht gewonnen sind - im Budget- und
+// Forecast-Prozess manuell gepflegt. Diese Information existiert
+// definitionsgemaess weder im CRM noch in den SAP-Stammdaten.
+//
+// Historisiert wie die Fakten: das Mapping ist ein manueller Input in
+// offizielle Budgetzahlen. Ohne Snapshot laesst sich eine abgeschlossene
+// Budgetrunde nach der naechsten Mappingpflege nicht mehr reproduzieren.
 // =====================================================================
 let
     Quelle =
@@ -63,9 +69,17 @@ let
     // im Semantic Model die Opportunity-Zeilen.
     Eindeutig = Table.Distinct(Bereinigt, {"opportunityid"}),
 
-    MitLadezeit =
+    MitSnapshot =
         Table.AddColumn(
             Eindeutig,
+            "snapshot_date",
+            each DateTime.Date(DateTimeZone.FixedLocalNow()),
+            type date
+        ),
+
+    MitLadezeit =
+        Table.AddColumn(
+            MitSnapshot,
             "loaded_at",
             each DateTimeZone.FixedUtcNow(),
             type datetimezone
