@@ -61,7 +61,21 @@ VAR _MitEckdaten =
         "@FirstFYEnd",
             DATE ( YEAR ( EDATE ( fct_opportunity[cgplc_openingdate], -9 ) ) + 1, 9, 30 ),
         "@WeightedAro", fct_opportunity[cgplc_revenuearo] * fct_opportunity[cgplc_win],
-        "@WeightedIty", fct_opportunity[cgplc_revenueity] * fct_opportunity[cgplc_win]
+        "@WeightedIty", fct_opportunity[cgplc_revenueity] * fct_opportunity[cgplc_win],
+        // Konforme Achse zur Retention: der SAP-Betrieb.
+        // Primaer die gepflegte Mappingtabelle, ersatzweise die CRM-eigene
+        // Bruecke Opportunity -> Contract -> SAP-ID.
+        "@SapUnit",
+            COALESCE (
+                LOOKUPVALUE (
+                    map_opportunity_unit[sap_unit],
+                    map_opportunity_unit[opportunityid], fct_opportunity[opportunityid]
+                ),
+                LOOKUPVALUE (
+                    fct_retention[cgplc_sapid],
+                    fct_retention[cgplc_cgcontractid], fct_opportunity[cgplc_contractid]
+                )
+            )
     )
 VAR _MitLaufzeit =
     ADDCOLUMNS (
@@ -86,6 +100,7 @@ RETURN
     SELECTCOLUMNS (
         _Expandiert,
         "opportunityid", fct_opportunity[opportunityid],
+        "sap_unit", [@SapUnit],
         "Period_Date", [Period_Date],
         "Calc_StartDate", [@StartDate],
         "Calc_FirstFYEnd", [@FirstFYEnd],
@@ -157,6 +172,7 @@ RETURN
     SELECTCOLUMNS (
         _Expandiert,
         "cgplc_cgcontractid", fct_retention[cgplc_cgcontractid],
+        "sap_unit", fct_retention[cgplc_sapid],
         "Period_Date", [Period_Date],
         "Calc_EndDate", [@EndDate],
         "Calc_FirstFYEnd", [@FirstFYEnd],
@@ -164,3 +180,38 @@ RETURN
         "weighted_ly_aro", [@WeightedLyAro],
         "Calc_ARO_Value", [@ARO_Value]
     )
+
+
+// ---------------------------------------------------------------------
+// fct_budget_effect
+// Grain: 1 Zeile je (effect_type, entity_id, Period_Date)
+//
+// Harmonisierung der beiden Phasing-Tabellen auf ihre gemeinsame Achse:
+// Periode und SAP-Betrieb. Nur hier ist die Vereinigung fachlich korrekt -
+// die Quelltabellen bleiben getrennt, weil Opportunity und Contract
+// unterschiedliche Geschaeftsobjekte mit disjunkten Attributen sind.
+//
+// Vorzeichen sind bereits in den Phasing-Tabellen gesetzt, eine Summe
+// ueber diese Tabelle ist damit direkt der Nettoeffekt.
+// ---------------------------------------------------------------------
+fct_budget_effect =
+UNION (
+    SELECTCOLUMNS (
+        fct_opp_phasing,
+        "effect_type", "New Business",
+        "entity_id", fct_opp_phasing[opportunityid],
+        "sap_unit", fct_opp_phasing[sap_unit],
+        "Period_Date", fct_opp_phasing[Period_Date],
+        "Phase", fct_opp_phasing[Phase],
+        "Budget_Value", fct_opp_phasing[Budget_Value]
+    ),
+    SELECTCOLUMNS (
+        fct_retention_phasing,
+        "effect_type", "Retention",
+        "entity_id", fct_retention_phasing[cgplc_cgcontractid],
+        "sap_unit", fct_retention_phasing[sap_unit],
+        "Period_Date", fct_retention_phasing[Period_Date],
+        "Phase", "Retention",
+        "Budget_Value", fct_retention_phasing[Calc_ARO_Value]
+    )
+)

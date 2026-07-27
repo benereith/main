@@ -13,9 +13,24 @@
 // Teil A - Bestandsmeasures
 // =====================================================================
 
-ity_effect = SUM ( fct_opp_phasing[Budget_Value] )
+// Nettoeffekt ueber beide Effektarten - eine Summe statt eines
+// Measure-Paares, weil die Vorzeichen bereits im Phasing gesetzt sind.
+Net ITY Effect = SUM ( fct_budget_effect[Budget_Value] )
 
-crm_ity = SUM ( fct_opp_phasing[Budget_Value] )
+// Die beiden Bestandteile als Filter auf derselben Tabelle.
+ity_effect =
+CALCULATE (
+    [Net ITY Effect],
+    fct_budget_effect[effect_type] = "New Business"
+)
+
+Lost ITY =
+CALCULATE (
+    [Net ITY Effect],
+    fct_budget_effect[effect_type] = "Retention"
+)
+
+crm_ity = [ity_effect]
 
 crm_ity_sply = CALCULATE ( [crm_ity], SAMEPERIODLASTYEAR ( dim_date[Datum] ) )
 
@@ -27,10 +42,6 @@ CALCULATE (
     [ity_effect],
     TREATAS ( VALUES ( dim_date[FY_Jahr] ), dim_date[FY_Jahr] )
 )
-
-Lost ITY = SUM ( fct_retention_phasing[Calc_ARO_Value] )
-
-Net ITY Effect = [ity_effect] + [Lost ITY]
 
 
 // =====================================================================

@@ -104,6 +104,41 @@ Zwei Dinge ändern sich bewusst:
 - **Keine Row-Explosion im Ladeprozess.** Der Extrakt bleibt bei einer Zeile
   je Opportunity, die Expansion passiert erst im Modell.
 
+### Harmonisierung erst auf Effektebene
+
+Opportunities und Retention-Contracts werden **nicht** zu einer Quelltabelle
+zusammengeführt. Es sind unterschiedliche Geschäftsobjekte mit fast disjunkten
+Attributen — Sales Stage, Win-%, Sektor, Territory auf der einen Seite,
+Retention-Wahrscheinlichkeit, Vertragsende, Entscheidungsdatum, SAP-ID auf der
+anderen. Ein Union daraus wäre eine breite Tabelle mit hälftig leeren Zeilen,
+die Änderungsverfolgung müsste je Typ andere Felder vergleichen, und die
+Leading KPIs sind ohnehin typspezifisch.
+
+Zusammengeführt wird dort, wo die Semantik tatsächlich konvergiert: bei der
+Budgetwirkung. `fct_budget_effect` vereinigt die beiden Phasing-Tabellen auf
+ihrer gemeinsamen Achse **Periode × SAP-Betrieb**, mit `effect_type` als
+Diskriminator. Da die Vorzeichen bereits im Phasing gesetzt sind, ist
+`SUM(Budget_Value)` unmittelbar der Nettoeffekt; New Business und Retention
+sind Filter auf derselben Tabelle statt zweier separater Measures.
+
+Diese Achse ist keine Neuerfindung — das Altmodell verknüpft beide Fakten
+bereits über `dim_sap_master_data_unit.betrieb` (Retention direkt über
+`cgplc_sapid`, Opportunities über `Mapping Unit` aus der SharePoint-Excel) und
+über `Period_Date` mit `dim_date`. Die neue Struktur macht diese vorhandene
+Konformität nur explizit.
+
+Zusätzlich nutzt `fct_opp_phasing` eine CRM-eigene Ersatzbrücke: die
+Opportunity trägt in `cgplc_contractid` den Schlüssel des Retention-Contracts,
+über dessen `cgplc_sapid` sich der Betrieb auch ohne Mappingeintrag auflösen
+lässt. Das Mapping bleibt führend, die Brücke schließt Lücken.
+
+**Offen:** Sektor, Territory und Owner existieren nur auf der
+Opportunity-Seite. Ein Nettoeffekt lässt sich damit nach SAP-Betrieb und
+Periode schneiden, nach Sektor aber nur für den New-Business-Anteil. Wenn die
+Retention nach Sektor auswertbar sein soll, muss sie den Sektor über den
+SAP-Betrieb erben — zu klären, ob `dim_sap_master_data_unit` diese Zuordnung
+belastbar trägt.
+
 ### Auto-Date/Time aus
 
 Das Altmodell trägt 13 `LocalDateTable_*` Tabellen, erzeugt durch
@@ -112,12 +147,12 @@ Datumstabelle entfallen sie.
 
 ## Offene Punkte vor dem Bau
 
-- **`dim_opp_mapping`** (SharePoint-Excel `Mapping_Planwerke.xlsx`, Spalte
-  `Mapping Unit`) ist im Altmodell in `fct_opp` hineingejoint. Als
-  Mapping-Tabelle gehört sie nicht in die Faktenstrecke — Vorschlag: eigener
-  Dataflow in eine Lakehouse-Tabelle `map_opportunity_unit`, Beziehung im
-  Semantic Model statt Join im Ladeprozess. Zu klären: Pflegeprozess und
-  Aktualisierungsfrequenz.
+- **`map_opportunity_unit`** ersetzt den Live-Join `dim_opp_mapping` als
+  eigener Dataflow (`fabric/dataflow/map_opportunity_unit.m`). Zu klären:
+  Pflegeprozess der Excel und ob die CRM-eigene Brücke über
+  `cgplc_contractid` das manuelle Mapping mittelfristig ganz ersetzen kann —
+  messbar über den Anteil der Opportunities, deren `sap_unit` erst durch den
+  Fallback aufgelöst wird.
 - **`Revenues` / `SAP_Stammdaten`** (Quelle des `90_Value`-Measures und des
   Abgleichs SAP gegen CRM) bleiben vorerst unangetastet. Wenn `Pipeline
   Coverage` produktiv gehen soll, muss geklärt sein, ob `90_Value` in
@@ -133,10 +168,11 @@ Datumstabelle entfallen sie.
 |---|---|
 | `fabric/dataflow/fct_opportunity.m` | Dataflow-Gen2-Query, Vollextrakt Opportunities |
 | `fabric/dataflow/fct_retention.m` | Dataflow-Gen2-Query, Vollextrakt Contracts |
+| `fabric/dataflow/map_opportunity_unit.m` | Mapping Opportunity → SAP-Betrieb aus SharePoint |
 | `fabric/lakehouse/01_create_tables.sql` | Delta-Tabellen, partitioniert nach `snapshot_date` |
 | `fabric/lakehouse/02_load_snapshot.py` | Idempotenter Tageslauf Staging → Fakt |
 | `fabric/lakehouse/03_views.sql` | Ist-Stand- und Änderungsviews |
-| `fabric/semantic-model/01_ity_phasing.dax` | ITY-Monatsphasierung als berechnete Tabellen |
+| `fabric/semantic-model/01_ity_phasing.dax` | ITY-Monatsphasierung und vereinigte Effekttabelle |
 | `fabric/semantic-model/02_calculated_columns.dax` | Klassifizierungen und abgeleitete Dimensionen |
 | `fabric/semantic-model/03_measures.dax` | Bestandsmeasures und Leading KPIs |
 
