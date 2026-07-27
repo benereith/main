@@ -1,0 +1,119 @@
+// =====================================================================
+// Dataflow Gen2 - Query: fct_retention
+// Quelle : Dataverse / Dynamics CRM, Entity "cgplc_cgcontract"
+// Ziel   : Lakehouse-Tabelle fct_retention (Destination: APPEND)
+// Lauf   : taeglich
+//
+// Grundsatz: VOLLEXTRAKT.
+//   - kein Statusfilter (statuscodename <> "Aktiv" wird NICHT gefiltert)
+//   - kein Datumsfilter auf cgplc_contractenddate
+//   - keine Monats-Expansion, keine Retention-Gewichtung
+// Alle abgeleiteten Groessen entstehen im Semantic Model (DAX).
+// =====================================================================
+let
+    Quelle =
+        CommonDataService.Database(
+            "cpgplc.crm.dynamics.com",
+            [CreateNavigationProperties = null]
+        ),
+
+    Contract = Quelle{[Schema = "dbo", Item = "cgplc_cgcontract"]}[Data],
+
+    // --- Nur die fachlich benoetigten Rohspalten -----------------------
+    Spalten =
+        Table.SelectColumns(
+            Contract,
+            {
+                // Schluessel & Beziehungen
+                "cgplc_cgcontractid",
+                "cgplc_sapid",
+
+                // Klassifizierung
+                "cgplc_name",
+                "statuscodename",
+                "statecodename",
+                "cgplc_reasonforriskname",
+
+                // Datumsfelder
+                "cgplc_contractenddate",
+                "cgplc_decisiondate",
+                "cgplc_forecastdecisiondate",
+                "cgplc_operationstartdate",
+
+                // Kennzahlen
+                "cgplc_revenuearo",
+                "cgplc_currentrevenuearo",
+                "cgplc_lastfyrevenuearo",
+                "cgplc_retentionprobability",
+
+                // CRM-Audit (fuer Change Tracking im Lakehouse)
+                "createdon",
+                "modifiedon"
+            },
+            MissingField.UseNull
+        ),
+
+    // --- Nur Typisierung, keine Fachlogik ------------------------------
+    Typen =
+        Table.TransformColumnTypes(
+            Spalten,
+            {
+                {"cgplc_cgcontractid", type text},
+                {"cgplc_sapid", Int64.Type},
+                {"cgplc_name", type text},
+                {"statuscodename", type text},
+                {"statecodename", type text},
+                {"cgplc_reasonforriskname", type text},
+                {"cgplc_contractenddate", type date},
+                {"cgplc_decisiondate", type date},
+                {"cgplc_forecastdecisiondate", type date},
+                {"cgplc_operationstartdate", type datetime},
+                {"cgplc_revenuearo", Currency.Type},
+                {"cgplc_currentrevenuearo", Currency.Type},
+                {"cgplc_lastfyrevenuearo", Currency.Type},
+                {"cgplc_retentionprobability", type number},
+                {"createdon", type datetime},
+                {"modifiedon", type datetime}
+            }
+        ),
+
+    // --- Fehlerhafte Datumswerte neutralisieren statt Zeilen zu loeschen
+    // Das alte Modell warf Zeilen per Table.RemoveRowsWithErrors weg.
+    // Im Vollextrakt wollen wir die Zeile behalten und nur das Feld leeren.
+    DatumBereinigt =
+        Table.ReplaceErrorValues(
+            Typen,
+            {
+                {"cgplc_contractenddate", null},
+                {"cgplc_decisiondate", null},
+                {"cgplc_forecastdecisiondate", null},
+                {"cgplc_operationstartdate", null}
+            }
+        ),
+
+    // --- retentionprobability auf Dezimalquote normalisieren -----------
+    // CRM liefert 0..100, das Modell rechnet mit 0..1.
+    RetQuote =
+        Table.TransformColumns(
+            DatumBereinigt,
+            {{"cgplc_retentionprobability", each if _ = null then null else _ / 100, type number}}
+        ),
+
+    // --- Snapshot-Stempel fuer die Historisierung ----------------------
+    MitSnapshot =
+        Table.AddColumn(
+            RetQuote,
+            "snapshot_date",
+            each DateTime.Date(DateTimeZone.FixedLocalNow()),
+            type date
+        ),
+
+    MitLadezeit =
+        Table.AddColumn(
+            MitSnapshot,
+            "loaded_at",
+            each DateTimeZone.FixedUtcNow(),
+            type datetimezone
+        )
+in
+    MitLadezeit

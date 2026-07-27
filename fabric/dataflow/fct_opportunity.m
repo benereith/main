@@ -1,0 +1,126 @@
+// =====================================================================
+// Dataflow Gen2 - Query: fct_opportunity
+// Quelle : Dataverse / Dynamics CRM, Entity "opportunity"
+// Ziel   : Lakehouse-Tabelle fct_opportunity (Destination: APPEND)
+// Lauf   : taeglich
+//
+// Grundsatz: VOLLEXTRAKT.
+//   - kein Statusfilter (auch Verloren / Nobid / Turndown / Universe)
+//   - kein Datumsfilter (kein Est_Close_Date_A / _E)
+//   - keine Monats-Expansion, keine ITY-Berechnung, kein SharePoint-Join
+// Alle abgeleiteten Groessen entstehen im Semantic Model (DAX).
+// =====================================================================
+let
+    Quelle =
+        CommonDataService.Database(
+            "cpgplc.crm.dynamics.com",
+            [CreateNavigationProperties = null]
+        ),
+
+    Opportunity = Quelle{[Schema = "dbo", Item = "opportunity"]}[Data],
+
+    // --- Nur die fachlich benoetigten Rohspalten -----------------------
+    // statecodename / statuscodename bleiben drin: sie sind der Grund,
+    // warum wir vollextrahieren (Statuswechsel nachvollziehbar machen).
+    Spalten =
+        Table.SelectColumns(
+            Opportunity,
+            {
+                // Schluessel & Beziehungen
+                "opportunityid",
+                "accountid",
+                "parentaccountid",
+                "ownerid",
+                "cgplc_territoryid",
+                "cgplc_contractid",
+
+                // Klassifizierung
+                "name",
+                "statecodename",
+                "statuscodename",
+                "cgplc_salesstagename",
+                "cgplc_contracttypelookup",
+                "cgplc_sectorlookup",
+                "cgplc_subsector",
+                "cgplc_currentsupplier",
+
+                // Datumsfelder
+                "estimatedclosedate",
+                "cgplc_openingdate",
+                "cgplc_wondate",
+
+                // Kennzahlen
+                "cgplc_revenuearo",
+                "cgplc_revenuearo_base",
+                "cgplc_revenueity",
+                "cgplc_revenueity_base",
+                "cgplc_win",
+                "cgplc_bgpercent",
+
+                // CRM-Audit (fuer Change Tracking im Lakehouse)
+                "createdon",
+                "modifiedon"
+            },
+            MissingField.UseNull
+        ),
+
+    // --- Nur Typisierung, keine Fachlogik ------------------------------
+    Typen =
+        Table.TransformColumnTypes(
+            Spalten,
+            {
+                {"opportunityid", type text},
+                {"accountid", type text},
+                {"parentaccountid", type text},
+                {"ownerid", type text},
+                {"cgplc_territoryid", type text},
+                {"cgplc_contractid", type text},
+                {"name", type text},
+                {"statecodename", type text},
+                {"statuscodename", type text},
+                {"cgplc_salesstagename", type text},
+                {"cgplc_contracttypelookup", type text},
+                {"cgplc_sectorlookup", type text},
+                {"cgplc_subsector", type text},
+                {"cgplc_currentsupplier", type text},
+                {"estimatedclosedate", type date},
+                {"cgplc_openingdate", type date},
+                {"cgplc_wondate", type date},
+                {"cgplc_revenuearo", Currency.Type},
+                {"cgplc_revenuearo_base", Currency.Type},
+                {"cgplc_revenueity", Currency.Type},
+                {"cgplc_revenueity_base", Currency.Type},
+                {"cgplc_win", type number},
+                {"cgplc_bgpercent", type number},
+                {"createdon", type datetime},
+                {"modifiedon", type datetime}
+            }
+        ),
+
+    // --- cgplc_win auf Dezimalquote normalisieren ----------------------
+    // CRM liefert 0..100, das Modell rechnet mit 0..1.
+    // Einzige verbleibende Transformation: rein technisch, nicht fachlich.
+    WinQuote =
+        Table.TransformColumns(
+            Typen,
+            {{"cgplc_win", each if _ = null then null else _ / 100, type number}}
+        ),
+
+    // --- Snapshot-Stempel fuer die Historisierung ----------------------
+    MitSnapshot =
+        Table.AddColumn(
+            WinQuote,
+            "snapshot_date",
+            each DateTime.Date(DateTimeZone.FixedLocalNow()),
+            type date
+        ),
+
+    MitLadezeit =
+        Table.AddColumn(
+            MitSnapshot,
+            "loaded_at",
+            each DateTimeZone.FixedUtcNow(),
+            type datetimezone
+        )
+in
+    MitLadezeit

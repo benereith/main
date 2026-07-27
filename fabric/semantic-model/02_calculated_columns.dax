@@ -1,0 +1,148 @@
+// =====================================================================
+// Berechnete Spalten und Dimensionen im Semantic Model
+//
+// Ersetzt die Klassifizierungs- und Textspalten, die bisher in Power
+// Query erzeugt wurden (win_status, Ret_Status, ity_cluster,
+// LY_ARO_Status, Info) sowie die separaten dim_* Queries gegen das CRM.
+// Damit bleibt der Dataflow der einzige Kontaktpunkt zum CRM.
+// =====================================================================
+
+
+// ---------------------------------------------------------------------
+// Berechnete Spalten auf fct_opportunity
+// ---------------------------------------------------------------------
+
+fct_opportunity[win_status] =
+SWITCH (
+    TRUE (),
+    ISBLANK ( fct_opportunity[cgplc_win] ), "Ohne Wahrscheinlichkeit",
+    fct_opportunity[cgplc_win] < 0.80, "Pipeline",
+    fct_opportunity[cgplc_win] < 1, "Expected Win",
+    "Won"
+)
+
+fct_opportunity[weighted_aro] =
+fct_opportunity[cgplc_revenuearo] * fct_opportunity[cgplc_win]
+
+fct_opportunity[weighted_ity] =
+fct_opportunity[cgplc_revenueity] * fct_opportunity[cgplc_win]
+
+// Ordnet die Opportunity dem Geschaeftsjahr ihres erwarteten Abschlusses zu.
+fct_opportunity[close_fy] =
+VAR _d = fct_opportunity[estimatedclosedate]
+VAR _start = IF ( MONTH ( _d ) >= 10, YEAR ( _d ), YEAR ( _d ) - 1 )
+RETURN
+    IF (
+        ISBLANK ( _d ),
+        BLANK (),
+        "FY" & _start & "/" & RIGHT ( _start + 1, 2 )
+    )
+
+// Dauer von Opening bis erwartetem Abschluss - Basis fuer den Sales Cycle.
+fct_opportunity[sales_cycle_days] =
+DATEDIFF (
+    fct_opportunity[cgplc_openingdate],
+    fct_opportunity[estimatedclosedate],
+    DAY
+)
+
+// Ersetzt die alte Info-Textspalte aus Power Query.
+fct_opportunity[Info] =
+FORMAT ( fct_opportunity[cgplc_win], "0.00 %" ) & " - "
+    & FORMAT ( fct_opportunity[cgplc_revenuearo], "#,##0 €" ) & " - "
+    & FORMAT ( fct_opportunity[estimatedclosedate], "dd.MM.yyyy" ) & " - "
+    & FORMAT ( fct_opportunity[cgplc_openingdate], "dd.MM.yyyy" )
+
+
+// ---------------------------------------------------------------------
+// Berechnete Spalten auf fct_retention
+// ---------------------------------------------------------------------
+
+fct_retention[Ret_Status] =
+SWITCH (
+    TRUE (),
+    ISBLANK ( fct_retention[cgplc_retentionprobability] ), "No %",
+    fct_retention[cgplc_retentionprobability] = 0, "Lost",
+    fct_retention[cgplc_retentionprobability] <= 0.2, "Expected Loss",
+    fct_retention[cgplc_retentionprobability] < 1, "At Risk",
+    "No Risk"
+)
+
+fct_retention[LY_ARO_Status] =
+IF (
+    ISBLANK ( fct_retention[cgplc_lastfyrevenuearo] ),
+    "No ARO in CRM",
+    "ARO in CRM"
+)
+
+// Effektives Vertragsende inkl. Ersatzlogik ueber das Entscheidungsdatum.
+fct_retention[effective_enddate] =
+COALESCE (
+    fct_retention[cgplc_contractenddate],
+    EDATE ( fct_retention[cgplc_decisiondate], 3 )
+)
+
+fct_retention[days_to_decision] =
+DATEDIFF (
+    TODAY (),
+    COALESCE (
+        fct_retention[cgplc_forecastdecisiondate],
+        fct_retention[cgplc_decisiondate]
+    ),
+    DAY
+)
+
+
+// ---------------------------------------------------------------------
+// Dimensionen aus den Fakten ableiten
+// Ersetzt dim_opp_owner, dim_opp_sector, dim_opp_subsector,
+// dim_opp_territory, dim_opp_contracttype, dim_opp_currentsupplier,
+// dim_opp_account, dim_opp_parent, dim_opp_name, dim_opp_contractid,
+// dim_opp_sapid - alle bisher als eigene CRM-Abfragen.
+// ---------------------------------------------------------------------
+
+dim_owner =
+DISTINCT (
+    SELECTCOLUMNS ( fct_opportunity, "ownerid", fct_opportunity[ownerid] )
+)
+
+dim_sector =
+DISTINCT (
+    SELECTCOLUMNS (
+        fct_opportunity,
+        "sector", fct_opportunity[cgplc_sectorlookup],
+        "subsector", fct_opportunity[cgplc_subsector]
+    )
+)
+
+dim_territory =
+DISTINCT (
+    SELECTCOLUMNS (
+        fct_opportunity,
+        "territoryid", fct_opportunity[cgplc_territoryid]
+    )
+)
+
+dim_contracttype =
+DISTINCT (
+    SELECTCOLUMNS (
+        fct_opportunity,
+        "contracttype", fct_opportunity[cgplc_contracttypelookup]
+    )
+)
+
+dim_currentsupplier =
+DISTINCT (
+    SELECTCOLUMNS (
+        fct_opportunity,
+        "currentsupplier", fct_opportunity[cgplc_currentsupplier]
+    )
+)
+
+dim_account =
+DISTINCT (
+    UNION (
+        SELECTCOLUMNS ( fct_opportunity, "accountid", fct_opportunity[accountid] ),
+        SELECTCOLUMNS ( fct_opportunity, "accountid", fct_opportunity[parentaccountid] )
+    )
+)

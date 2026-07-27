@@ -1,0 +1,215 @@
+// =====================================================================
+// Measures
+//
+// Teil A - Bestandsmeasures, 1:1 aus dem Altmodell uebernommen,
+//          umgehaengt auf die neuen Phasing-Tabellen.
+// Teil B - Leading KPIs. Basis sind die Aenderungsviews aus dem
+//          Lakehouse (vw_opportunity_changes / vw_retention_changes),
+//          die es ohne die Historisierung nicht gaebe.
+// =====================================================================
+
+
+// =====================================================================
+// Teil A - Bestandsmeasures
+// =====================================================================
+
+ity_effect = SUM ( fct_opp_phasing[Budget_Value] )
+
+crm_ity = SUM ( fct_opp_phasing[Budget_Value] )
+
+crm_ity_sply = CALCULATE ( [crm_ity], SAMEPERIODLASTYEAR ( dim_date[Datum] ) )
+
+crm_ity_delta = [crm_ity] - [crm_ity_sply]
+
+// Geschaeftsjahre nicht mehr hart codiert, sondern ueber den Filterkontext.
+ity_effect_fy =
+CALCULATE (
+    [ity_effect],
+    TREATAS ( VALUES ( dim_date[FY_Jahr] ), dim_date[FY_Jahr] )
+)
+
+Lost ITY = SUM ( fct_retention_phasing[Calc_ARO_Value] )
+
+Net ITY Effect = [ity_effect] + [Lost ITY]
+
+
+// =====================================================================
+// Teil B - Leading KPIs
+// =====================================================================
+
+// --- Pipeline-Bestand ------------------------------------------------
+
+Pipeline ARO =
+CALCULATE (
+    SUM ( fct_opportunity[cgplc_revenuearo] ),
+    fct_opportunity[statecodename] = "Offen"
+)
+
+Weighted Pipeline ARO =
+CALCULATE (
+    SUM ( fct_opportunity[weighted_aro] ),
+    fct_opportunity[statecodename] = "Offen"
+)
+
+Opportunity Count =
+CALCULATE (
+    DISTINCTCOUNT ( fct_opportunity[opportunityid] ),
+    fct_opportunity[statecodename] = "Offen"
+)
+
+// Deckungsgrad der gewichteten Pipeline gegen den Planwert.
+// Werte deutlich unter 1 zeigen eine Zielluecke, bevor sie im Ist sichtbar wird.
+Pipeline Coverage =
+DIVIDE ( [Weighted Pipeline ARO], [90_Value] )
+
+
+// --- Pipeline-Bewegung (nur mit Historisierung moeglich) -------------
+
+// Volumen der Opportunities, die im gewaehlten Zeitraum neu entstanden sind.
+Net New Pipeline =
+CALCULATE (
+    SUM ( vw_opportunity_changes[cgplc_revenuearo] ),
+    vw_opportunity_changes[is_new] = TRUE ()
+)
+
+Net New Opportunity Count =
+CALCULATE (
+    DISTINCTCOUNT ( vw_opportunity_changes[opportunityid] ),
+    vw_opportunity_changes[is_new] = TRUE ()
+)
+
+Net New Pipeline 30d =
+CALCULATE (
+    [Net New Pipeline],
+    DATESINPERIOD ( dim_date[Datum], MAX ( dim_date[Datum] ), -30, DAY )
+)
+
+// Summe aller Wertveraenderungen an bestehenden Opportunities.
+// Zeigt, ob die Pipeline organisch waechst oder nachtraeglich abgewertet wird.
+Pipeline Value Movement =
+CALCULATE (
+    SUM ( vw_opportunity_changes[delta_revenuearo] ),
+    vw_opportunity_changes[is_new] = FALSE ()
+)
+
+// Anzahl der Stage-Wechsel - Mass fuer die Bewegung in der Pipeline.
+Stage Movements =
+CALCULATE (
+    COUNTROWS ( vw_opportunity_changes ),
+    vw_opportunity_changes[stage_changed] = TRUE ()
+)
+
+// Summe der Verschiebungen des erwarteten Abschlussdatums in Tagen.
+// Steigende Werte sind ein Fruehindikator fuer Planverfehlung.
+Close Date Slippage Days =
+CALCULATE (
+    SUM ( vw_opportunity_changes[delta_closedate_days] ),
+    vw_opportunity_changes[delta_closedate_days] > 0
+)
+
+Slipped Opportunities =
+CALCULATE (
+    DISTINCTCOUNT ( vw_opportunity_changes[opportunityid] ),
+    vw_opportunity_changes[delta_closedate_days] > 0
+)
+
+
+// --- Qualitaet und Geschwindigkeit -----------------------------------
+
+Won ARO =
+CALCULATE (
+    SUM ( fct_opportunity[cgplc_revenuearo] ),
+    fct_opportunity[win_status] = "Won"
+)
+
+Lost ARO =
+CALCULATE (
+    SUM ( fct_opportunity[cgplc_revenuearo] ),
+    fct_opportunity[statecodename] = "Verloren"
+)
+
+// Wertbasierte Win Rate. Der Vollextrakt macht sie erst moeglich -
+// im Altmodell waren verlorene Opportunities herausgefiltert.
+Win Rate Value = DIVIDE ( [Won ARO], [Won ARO] + [Lost ARO] )
+
+Win Rate Count =
+VAR _won =
+    CALCULATE (
+        DISTINCTCOUNT ( fct_opportunity[opportunityid] ),
+        fct_opportunity[win_status] = "Won"
+    )
+VAR _lost =
+    CALCULATE (
+        DISTINCTCOUNT ( fct_opportunity[opportunityid] ),
+        fct_opportunity[statecodename] = "Verloren"
+    )
+RETURN
+    DIVIDE ( _won, _won + _lost )
+
+Avg Sales Cycle Days =
+CALCULATE (
+    AVERAGE ( fct_opportunity[sales_cycle_days] ),
+    fct_opportunity[win_status] = "Won"
+)
+
+// Opportunities, die seit mehr als 90 Tagen keinen Stage-Wechsel hatten.
+// Klassischer Fruehindikator fuer nicht belastbare Pipeline.
+Stale Pipeline ARO =
+VAR _letzterStand = MAX ( vw_opportunity_changes[snapshot_date] )
+RETURN
+    CALCULATE (
+        SUM ( fct_opportunity[cgplc_revenuearo] ),
+        fct_opportunity[statecodename] = "Offen",
+        FILTER (
+            VALUES ( fct_opportunity[opportunityid] ),
+            VAR _letzteAenderung =
+                CALCULATE ( MAX ( vw_opportunity_changes[snapshot_date] ) )
+            RETURN
+                DATEDIFF ( _letzteAenderung, _letzterStand, DAY ) > 90
+        )
+    )
+
+
+// --- Retention als Fruehindikator ------------------------------------
+
+Retention Exposure ARO =
+CALCULATE (
+    SUM ( fct_retention[cgplc_lastfyrevenuearo] ),
+    fct_retention[statuscodename] = "Aktiv"
+)
+
+At Risk ARO =
+CALCULATE (
+    SUM ( fct_retention[cgplc_lastfyrevenuearo] ),
+    fct_retention[statuscodename] = "Aktiv",
+    fct_retention[Ret_Status] IN { "At Risk", "Expected Loss", "Lost" }
+)
+
+At Risk Share = DIVIDE ( [At Risk ARO], [Retention Exposure ARO] )
+
+// Vertraege mit anstehender Entscheidung - der operative Handlungsbedarf.
+Decisions Due 90d =
+CALCULATE (
+    SUM ( fct_retention[cgplc_lastfyrevenuearo] ),
+    fct_retention[statuscodename] = "Aktiv",
+    fct_retention[days_to_decision] >= 0,
+    fct_retention[days_to_decision] <= 90
+)
+
+// Veraenderung der Retention-Wahrscheinlichkeiten im Zeitraum.
+// Negativ bedeutet: die Einschaetzung im CRM verschlechtert sich.
+Retention Probability Movement =
+CALCULATE (
+    SUMX (
+        vw_retention_changes,
+        vw_retention_changes[delta_retentionprobability]
+            * vw_retention_changes[cgplc_lastfyrevenuearo]
+    ),
+    vw_retention_changes[is_new] = FALSE ()
+)
+
+Newly At Risk ARO =
+CALCULATE (
+    SUM ( vw_retention_changes[cgplc_lastfyrevenuearo] ),
+    vw_retention_changes[delta_retentionprobability] < 0
+)
