@@ -165,6 +165,39 @@ schneidbar, solange die Unit in SAP existiert. Für geplante Units bleibt der
 Sektor leer — falls das im Report stört, müsste die Mappingdatei eine
 Sektor-Spalte mitführen.
 
+### Zeitzone: alles auf Europe/Berlin
+
+Die Fabric-Kapazität der Gruppe läuft in UK-Zeit, `TODAY()`/`NOW()` im Power
+BI Service laufen in UTC. Berlin liegt gegenüber UK durchgehend eine Stunde,
+gegenüber UTC je nach Sommerzeit ein bis zwei Stunden vorn. Alle Zeitstempel
+werden deshalb explizit auf Berlin gerechnet:
+
+| Stelle | Vorher | Jetzt |
+|---|---|---|
+| `snapshot_date` (3 Dataflow-Queries) | `DateTimeZone.FixedLocalNow()` → UK | `fn_berlin_now()` |
+| `loaded_at` (3 Dataflow-Queries) | `DateTimeZone.FixedUtcNow()` → UTC | `fn_berlin_now()`, mit Versatz gespeichert |
+| Lakehouse-Notebook | Session-Zeitzone der Kapazität | `spark.sql.session.timeZone = Europe/Berlin` |
+| `days_to_decision` | `TODAY()` → UTC | Berliner Stichtag inline |
+| Report-Stichtag | – | Measure `Heute Berlin` |
+
+Warum das mehr als Kosmetik ist: `snapshot_date` ist Partitionsschlüssel
+**und** fachlicher Schlüssel der Änderungserkennung. Ein Lauf um 00:30
+Berliner Zeit hätte in UK-Zeit den Vortag bekommen — der Snapshot wäre in die
+Vortagespartition gefallen, hätte dort den echten Vortagsstand überschrieben
+und in `vw_*_changes` einen Tag Historie ausgelöscht. Bei einem
+Nachtplan oder einem Retry nach Mitternacht wäre das unbemerkt passiert.
+
+M kennt keine Zeitzonendatenbank, deshalb liegt die EU-Sommerzeitregel
+explizit in `fn_berlin_now` (letzter Sonntag im März 01:00 UTC bis letzter
+Sonntag im Oktober 01:00 UTC), in DAX dieselbe Regel noch einmal. Beide
+Varianten wurden stundenweise über 2024–2035 gegen die IANA-Zeitzonendaten
+geprüft — keine Abweichung.
+
+Zusätzlich werden `snapshot_date` und `loaded_at` jetzt **einmal je Lauf**
+ausgewertet statt je Zeile. Vorher hätte ein Ladelauf über Mitternacht zwei
+verschiedene `snapshot_date` in einer Staging-Tabelle erzeugt und den
+Grain-Check im Notebook hart auf Fehler laufen lassen.
+
 ### Auto-Date/Time aus
 
 Das Altmodell trägt 13 `LocalDateTable_*` Tabellen, erzeugt durch
@@ -194,6 +227,7 @@ Datumstabelle entfallen sie.
 | `fabric/dataflow/fct_opportunity.m` | Dataflow-Gen2-Query, Vollextrakt Opportunities |
 | `fabric/dataflow/fct_retention.m` | Dataflow-Gen2-Query, Vollextrakt Contracts |
 | `fabric/dataflow/map_opportunity_unit.m` | Mapping Opportunity → SAP-Betrieb aus SharePoint |
+| `fabric/dataflow/fn_berlin_now.m` | Zeitstempel auf Europe/Berlin (Laden deaktivieren) |
 | `fabric/lakehouse/01_create_tables.sql` | Delta-Tabellen, partitioniert nach `snapshot_date` |
 | `fabric/lakehouse/02_load_snapshot.py` | Idempotenter Tageslauf Staging → Fakt |
 | `fabric/lakehouse/03_views.sql` | Ist-Stand- und Änderungsviews |

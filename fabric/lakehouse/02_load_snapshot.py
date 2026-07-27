@@ -16,6 +16,13 @@ der Tageslauf ist damit beliebig oft wiederholbar.
 from pyspark.sql import functions as F
 from delta.tables import DeltaTable
 
+# Die Fabric-Kapazitaet laeuft in der Zeitzone der Gruppe (UK). Ohne diese
+# Einstellung interpretiert und zeigt Spark alle TIMESTAMP-Werte in UK-Zeit,
+# loaded_at laege im Winter eine und im Sommer zwei Stunden daneben.
+# Betrifft nur die Darstellung und das Casting - der gespeicherte Zeitpunkt
+# ist davon unabhaengig -, aber genau darueber wird geprueft und gelesen.
+spark.conf.set("spark.sql.session.timeZone", "Europe/Berlin")
+
 SNAPSHOT_TABLES = [
     ("stg_opportunity", "fct_opportunity", "opportunityid"),
     ("stg_retention", "fct_retention", "cgplc_cgcontractid"),

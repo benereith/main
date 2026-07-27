@@ -100,20 +100,16 @@ let
         ),
 
     // --- Snapshot-Stempel fuer die Historisierung ----------------------
+    // Einmal je Lauf auswerten, nicht je Zeile: ein Ladelauf, der ueber
+    // Mitternacht laeuft, wuerde sonst zwei verschiedene snapshot_date
+    // erzeugen und den Grain der Snapshot-Partition zerreissen.
+    Ladezeit = fn_berlin_now(),
+    Snapshot = DateTime.Date(DateTime.From(Ladezeit)),
+
     MitSnapshot =
-        Table.AddColumn(
-            RetQuote,
-            "snapshot_date",
-            each DateTime.Date(DateTimeZone.FixedLocalNow()),
-            type date
-        ),
+        Table.AddColumn(RetQuote, "snapshot_date", each Snapshot, type date),
 
     MitLadezeit =
-        Table.AddColumn(
-            MitSnapshot,
-            "loaded_at",
-            each DateTimeZone.FixedUtcNow(),
-            type datetimezone
-        )
+        Table.AddColumn(MitSnapshot, "loaded_at", each Ladezeit, type datetimezone)
 in
     MitLadezeit

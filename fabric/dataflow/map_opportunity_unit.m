@@ -69,20 +69,14 @@ let
     // im Semantic Model die Opportunity-Zeilen.
     Eindeutig = Table.Distinct(Bereinigt, {"opportunityid"}),
 
+    // Einmal je Lauf auswerten, nicht je Zeile - siehe fn_berlin_now.
+    Ladezeit = fn_berlin_now(),
+    Snapshot = DateTime.Date(DateTime.From(Ladezeit)),
+
     MitSnapshot =
-        Table.AddColumn(
-            Eindeutig,
-            "snapshot_date",
-            each DateTime.Date(DateTimeZone.FixedLocalNow()),
-            type date
-        ),
+        Table.AddColumn(Eindeutig, "snapshot_date", each Snapshot, type date),
 
     MitLadezeit =
-        Table.AddColumn(
-            MitSnapshot,
-            "loaded_at",
-            each DateTimeZone.FixedUtcNow(),
-            type datetimezone
-        )
+        Table.AddColumn(MitSnapshot, "loaded_at", each Ladezeit, type datetimezone)
 in
     MitLadezeit

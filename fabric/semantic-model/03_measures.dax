@@ -253,3 +253,27 @@ Unmapped Share = DIVIDE ( ABS ( [Unmapped Effect] ), ABS ( [Net ITY Effect] ) )
 // Net-New-Anteil. Kein Fehler, sondern die Kernaussage des Reports.
 Planned Unit Effect =
 CALCULATE ( [Net ITY Effect], dim_unit[unit_status] = "Geplant" )
+
+
+// --- Zeitbezug -------------------------------------------------------
+// Fuer Stichtagsanzeigen und Titel im Report. TODAY() waere hier UTC und
+// zwischen Mitternacht und 02:00 Berliner Zeit einen Tag zu frueh.
+
+Heute Berlin =
+VAR _UtcJetzt = UTCNOW ()
+VAR _Jahr = YEAR ( _UtcJetzt )
+VAR _MaerzEnde = DATE ( _Jahr, 3, 31 )
+VAR _OktoberEnde = DATE ( _Jahr, 10, 31 )
+VAR _SommerzeitBeginn =
+    _MaerzEnde - ( WEEKDAY ( _MaerzEnde, 1 ) - 1 ) + TIME ( 1, 0, 0 )
+VAR _SommerzeitEnde =
+    _OktoberEnde - ( WEEKDAY ( _OktoberEnde, 1 ) - 1 ) + TIME ( 1, 0, 0 )
+VAR _Versatz =
+    IF ( _UtcJetzt >= _SommerzeitBeginn && _UtcJetzt < _SommerzeitEnde, 2, 1 )
+VAR _BerlinJetzt = _UtcJetzt + _Versatz / 24
+RETURN
+    DATE ( YEAR ( _BerlinJetzt ), MONTH ( _BerlinJetzt ), DAY ( _BerlinJetzt ) )
+
+// Stand der Daten: juengster Snapshot, nicht der Zeitpunkt des Aufrufs.
+Datenstand =
+FORMAT ( MAX ( fct_opportunity[snapshot_date] ), "dd.MM.yyyy" )
