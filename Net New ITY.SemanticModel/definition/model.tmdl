@@ -24,7 +24,7 @@ queryGroup '4. Revenue-Quellen'
 
 annotation __PBI_TimeIntelligenceEnabled = 0
 
-annotation PBI_QueryOrder = ["Geschäftsjahresbeginn","Abgeschlossene_Periode","Parameter_BUD_Stammdaten","Parameter_RGF_Stammdaten","Parameter_R03_Stammdaten","Lakehouse_Server","Lakehouse_Datenbank","Reporting_Server","Reporting_Datenbank","FY_Startmonat","Aktuelles_Geschäftsjahr","Szenario_Konfig","fnFiscal_DatumZuPeriode","fnFiscal_DatumZuGJ","fnFiscal_PeriodeZuDatum","fnCoC_ZuMetricId","fnStammdaten_Snapshot","Stammdaten_Dataflow","Stammdaten_Basis","Snapshot_BUD","Snapshot_RGF","Snapshot_R03","Stammdaten_CoC","Stammdaten_Historie","SAP_Stammdaten","SAP_Revenues","Man_Rev","Man_Stamm","Revenues","DIM_DATE","DIM_Szenario","DIM_Berichtsjahr","DIM_Struktur","0. Measuretabelle","Retention_ITY_CRM","Sales_Pipeline_ITY","Zeitfilter"]
+annotation PBI_QueryOrder = ["Geschäftsjahresbeginn","Abgeschlossene_Periode","Parameter_BUD_Stammdaten","Parameter_RGF_Stammdaten","Parameter_R03_Stammdaten","Parameter_BUD_FY27_Stammdaten","Lakehouse_Server","Lakehouse_Datenbank","Reporting_Server","Reporting_Datenbank","FY_Startmonat","Aktuelles_Geschäftsjahr","Szenario_Konfig","fnFiscal_DatumZuPeriode","fnFiscal_DatumZuGJ","fnFiscal_PeriodeZuDatum","fnCoC_ZuMetricId","fnStammdaten_Snapshot","Stammdaten_Dataflow","Stammdaten_Basis","Snapshot_BUD","Snapshot_RGF","Snapshot_R03","Snapshot_BUD_FY27","Stammdaten_CoC","Stammdaten_Historie","SAP_Stammdaten","SAP_Revenues","Man_Rev","Man_Stamm","Revenues","DIM_DATE","DIM_Szenario","DIM_Berichtsjahr","DIM_Struktur","0. Measuretabelle","Retention_ITY_CRM","Sales_Pipeline_ITY","Zeitfilter"]
 
 annotation PBI_ProTooling = ["WebModelingEdit","CopilotTooling","DevMode"]
 

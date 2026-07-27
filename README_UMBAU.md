@@ -353,18 +353,53 @@ Die Engine ist jetzt **berichtsjahr-fähig**:
 - **`MetricId`** wird aus dem **relativen** Offset zum Berichtsjahr gebildet –
   die Net-New-Zerlegung stimmt damit je Berichtsjahr.
 - **CoC-Kennzeichen je Jahr:** FY26 nutzt `cause_of_change_fy` (`live_fy`),
-  FY27 als kommendes Jahr `cause_of_change_ny` (neue Option `live_ny`).
+  FY27 als kommendes Jahr `cause_of_change_ny` (Option `live_ny` bzw. für
+  eingefrorene Snapshots die Spalte an `fnStammdaten_Snapshot` übergeben,
+  siehe unten).
 - **`DIM_Berichtsjahr`** (FY26/FY27) als Slicer; **`SAP_Revenues`** zieht alle
   Jahre ab Vorjahr (`Fiscal_Year >= Aktuelles_Geschäftsjahr - 1`).
 - **FY26-Measures bleiben unverändert**, weil ihre Szenarien (BUD/ACT/RGF …)
   nur FY26-Zeilen enthalten. **FY27 = Szenario `BUD_FY27`** (Runde „Budget FY27"),
   sichtbar über die generischen `Wert_YTD`/`Wert_Periodic` + `DIM_Szenario[Runde]`.
 
+#### CoC-Snapshot für Budget FY27 (eingefroren)
+
+`fnStammdaten_Snapshot` nimmt jetzt einen **zweiten, optionalen Parameter**
+für die CoC-Spalte entgegen (Default weiterhin `cause_of_change_fy`, daher
+sind `Snapshot_BUD`/`Snapshot_RGF`/`Snapshot_R03` unverändert):
+
+```m
+fnStammdaten_Snapshot(snapshotDatum, cocSpalte)
+//   cocSpalte = "cause_of_change_fy"  -> Stand zum GJ-Ende des laufenden Jahres (Default)
+//   cocSpalte = "cause_of_change_ny"  -> Stand im kommenden Geschäftsjahr
+```
+
+Für Budget FY27 gibt es dafür:
+- **Parameter `Parameter_BUD_FY27_Stammdaten`** (Datum) – der Freeze-Stichtag
+  des FY27-Budgetprozesses. **Aktuell ein Platzhalter (`31.08.2026`, analog
+  ~1 Monat vor GJ-Beginn wie beim FY26-Budget) – auf den tatsächlichen
+  Stichtag setzen.**
+- **Blatt-Abfrage `Snapshot_BUD_FY27`** = `fnStammdaten_Snapshot(Parameter_BUD_FY27_Stammdaten, "cause_of_change_ny")`.
+- Eintrag `BUD_FY27 = Snapshot_BUD_FY27` in der `SnapshotMap` (in `Stammdaten_CoC`).
+- `Szenario_Konfig`-Zeilen für `BUD_FY27` stehen auf `CoC_Quelle = "snapshot"`
+  mit `CoC_Snapshot = Parameter_BUD_FY27_Stammdaten` (beide Zeilen: laufend
+  UND Vorjahresbasis – ein Szenario hat immer eine CoC-Quelle für alle seine
+  Zeilen).
+
+**Neuen Snapshot für eine weitere zukünftige Berichtsjahres-Runde anlegen**
+(z. B. FY28-Budget): denselben Ablauf wiederholen – neuer Datums-Parameter,
+neue `Snapshot_…`-Blatt-Abfrage mit der passenden CoC-Spalte (`_ny` für das
+direkt kommende Jahr; für weiter entfernte Jahre ggf. eine neue Spalte in
+`exports_md`, falls das Quellsystem so weit vorausklassifiziert), Eintrag in
+`SnapshotMap`, Szenario-Zeilen auf `"snapshot"` umstellen.
+
 **Weitere FY27-Sichten hinzufügen** (Actuals FY27, FC FY27 …): analog zu
 `BUD_FY27` eine Szenario-Zeilengruppe mit `Berichtsjahr_Start = A + 1` in
 `Szenario_Konfig` ergänzen (laufend = FY27-Version, Vorjahr = FY26-Basis).
 
 **Offen / zu prüfen:**
+- **Freeze-Stichtag `Parameter_BUD_FY27_Stammdaten`** ist ein Platzhalter –
+  auf den echten Termin setzen (siehe oben).
 - **FY27-Budget-Version** als `Plan_20` angenommen – bitte bestätigen.
 - **Net New % für FY27**: `Vorjahresumsatz` ist aktuell FY26-fix (Plan_35). Für
   FY27 ist die Basis RGF+R12 (steckt bereits in `BUD_FY27`s Vorjahres-Zeilen);
