@@ -1,8 +1,18 @@
 // =====================================================================
 // Dataflow Gen2 - Query: fct_opportunity
 // Quelle : Dataverse / Dynamics CRM, Entity "opportunity"
-// Ziel   : Lakehouse-Tabelle fct_opportunity (Destination: APPEND)
+// Ziel   : Lakehouse-Tabelle stg_opportunity (Destination: REPLACE)
 // Lauf   : taeglich
+//
+// NICHT direkt nach fct_opportunity schreiben. Die Historisierung uebernimmt
+// 02_load_snapshot.py, das die Tagespartition vorher loescht und den Lauf
+// damit wiederholbar macht. Ein Append aus dem Dataflow wuerde bei jedem
+// Retry einen zweiten Snapshot desselben Tages anhaengen und alle Summen
+// verdoppeln.
+//
+// Die Staging-Tabelle muss nicht vorab angelegt werden - das Ziel eines
+// Dataflows entsteht beim ersten Lauf. Nur die Zieltabellen der
+// Historisierung sind in 01_create_tables.sql explizit typisiert.
 //
 // Grundsatz: VOLLEXTRAKT.
 //   - kein Statusfilter (auch Verloren / Nobid / Turndown / Universe)

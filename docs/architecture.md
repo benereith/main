@@ -27,6 +27,7 @@ Dataverse (Dynamics CRM)
       │  täglich, Vollextrakt ohne Filter
       ▼
 Dataflow Gen2 ──► stg_opportunity / stg_retention   (Replace)
+      │              stg_opportunity_unit               vom Dataflow angelegt
       │
       ▼  Notebook, idempotent
 Lakehouse ──► fct_opportunity / fct_retention       (Append, partitioniert)
@@ -80,6 +81,11 @@ Tag zweimal — Retry nach Timeout, manueller Refresh — stehen zwei Snapshots
 mit identischem `snapshot_date` in der Tabelle und jede Summe verdoppelt sich,
 ohne dass es auffällt. Der Umweg über Staging macht den Tageslauf beliebig
 wiederholbar.
+
+Die `stg_*`-Tabellen werden **nicht** vorab angelegt. Sie sind das Ziel der
+Dataflow-Queries und entstehen beim ersten Lauf; jeder weitere Lauf
+überschreibt sie vollständig. Nur die historientragenden Tabellen stehen in
+`01_create_tables.sql`, weil deren Schema über Jahre stabil bleiben muss.
 
 ### Keine Dimensionen im Lakehouse
 

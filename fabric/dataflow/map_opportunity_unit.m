@@ -1,8 +1,18 @@
 // =====================================================================
 // Dataflow Gen2 - Query: map_opportunity_unit
 // Quelle : SharePoint, Mapping_Planwerke.xlsx (Group Controlling)
-// Ziel   : Lakehouse-Tabelle map_opportunity_unit (Destination: REPLACE)
+// Ziel   : Lakehouse-Tabelle stg_opportunity_unit (Destination: REPLACE)
 // Lauf   : taeglich, gemeinsam mit den Faktenqueries
+//
+// NICHT direkt nach map_opportunity_unit schreiben. Die Historisierung uebernimmt
+// 02_load_snapshot.py, das die Tagespartition vorher loescht und den Lauf
+// damit wiederholbar macht. Ein Append aus dem Dataflow wuerde bei jedem
+// Retry einen zweiten Snapshot desselben Tages anhaengen und alle Summen
+// verdoppeln.
+//
+// Die Staging-Tabelle muss nicht vorab angelegt werden - das Ziel eines
+// Dataflows entsteht beim ersten Lauf. Nur die Zieltabellen der
+// Historisierung sind in 01_create_tables.sql explizit typisiert.
 //
 // Ersetzt den Live-Join dim_opp_mapping, der bisher innerhalb von fct_opp
 // ausgefuehrt wurde. Die Zuordnung Opportunity -> SAP-Betrieb ist eine

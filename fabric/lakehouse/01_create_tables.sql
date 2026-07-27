@@ -12,6 +12,14 @@
 --
 -- Nur Fakten - keine Dimensionen. Dimensionen entstehen im Semantic Model.
 --
+-- Die Staging-Tabellen stg_opportunity, stg_retention und
+-- stg_opportunity_unit fehlen hier bewusst: sie sind das Ziel der
+-- Dataflow-Gen2-Queries und entstehen bei deren erstem Lauf automatisch.
+-- Sie sind transient - jeder Lauf ueberschreibt sie vollstaendig (Replace),
+-- ihr Schema darf der Dataflow bestimmen. Explizit typisiert werden nur die
+-- Tabellen hier, weil sie die Historie tragen und ueber Jahre stabil
+-- bleiben muessen.
+--
 -- Historisierung: taeglicher Vollsnapshot, partitioniert nach snapshot_date.
 -- Grain fct_opportunity : 1 Zeile je (snapshot_date, opportunityid)
 -- Grain fct_retention   : 1 Zeile je (snapshot_date, cgplc_cgcontractid)
