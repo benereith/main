@@ -1,0 +1,60 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.8.0/schema.json",
+  "name": "d97b9a4b90e757fd8c6a",
+  "position": {
+    "x": 961.0,
+    "y": 64,
+    "z": 3,
+    "height": 104,
+    "width": 303.0,
+    "tabOrder": 3
+  },
+  "visual": {
+    "visualType": "card",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Planned Unit Effect"
+                }
+              },
+              "queryRef": "_Measures.Planned Unit Effect",
+              "nativeQueryRef": "Planned Unit Effect"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true,
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'davon geplante Units'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

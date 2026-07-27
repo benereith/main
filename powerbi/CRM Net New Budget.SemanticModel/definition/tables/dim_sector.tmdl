@@ -1,0 +1,17 @@
+table dim_sector
+	lineageTag: 1ae9bee8-bf38-5846-ba71-9f61dc3795b2
+
+	column sector
+		dataType: string
+		lineageTag: f10b59c3-8bfa-5d2a-8742-572716ad7880
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [sector]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_sector = calculated
+		mode: import
+		source = DISTINCT ( SELECTCOLUMNS ( fct_opportunity, "sector", fct_opportunity[cgplc_sectorlookup] ) )
+
+	annotation PBI_ResultType = Table

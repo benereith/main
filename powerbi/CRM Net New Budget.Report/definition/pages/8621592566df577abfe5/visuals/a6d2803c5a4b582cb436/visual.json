@@ -1,0 +1,110 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.8.0/schema.json",
+  "name": "a6d2803c5a4b582cb436",
+  "position": {
+    "x": 16,
+    "y": 460,
+    "z": 12,
+    "height": 244,
+    "width": 1248,
+    "tabOrder": 12
+  },
+  "visual": {
+    "visualType": "pivotTable",
+    "query": {
+      "queryState": {
+        "Rows": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dim_unit"
+                    }
+                  },
+                  "Property": "unit_status"
+                }
+              },
+              "queryRef": "dim_unit.unit_status",
+              "nativeQueryRef": "unit_status"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dim_unit"
+                    }
+                  },
+                  "Property": "bezeichnung"
+                }
+              },
+              "queryRef": "dim_unit.bezeichnung",
+              "nativeQueryRef": "bezeichnung"
+            }
+          ]
+        },
+        "Columns": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dim_date"
+                    }
+                  },
+                  "Property": "FY_Jahr"
+                }
+              },
+              "queryRef": "dim_date.FY_Jahr",
+              "nativeQueryRef": "FY_Jahr"
+            }
+          ]
+        },
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Net ITY Effect"
+                }
+              },
+              "queryRef": "_Measures.Net ITY Effect",
+              "nativeQueryRef": "Net ITY Effect"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true,
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Nettoeffekt je Betrieb'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

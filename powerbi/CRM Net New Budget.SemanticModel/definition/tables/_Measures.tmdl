@@ -1,0 +1,310 @@
+table _Measures
+	lineageTag: 828f5323-66b9-5fe3-89e0-b0c014596280
+
+	measure 'Net ITY Effect' = SUM ( fct_budget_effect[Budget_Value] )
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: 68361a5f-5560-5550-b6b8-884312f5c038
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	measure ity_effect = CALCULATE ( [Net ITY Effect], fct_budget_effect[effect_type] = "New Business" )
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: 469390f6-04a2-59ef-851a-904b0fb211a3
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	measure 'Lost ITY' = CALCULATE ( [Net ITY Effect], fct_budget_effect[effect_type] = "Retention" )
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: 358f5e59-46bf-5979-a10d-912a49b58661
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	measure crm_ity = [ity_effect]
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: 4be2c1e4-7836-5d03-8339-e67488d03e5d
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	measure crm_ity_sply = CALCULATE ( [crm_ity], SAMEPERIODLASTYEAR ( dim_date[Datum] ) )
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: fd45a56d-4ce5-5546-b7ba-e1db63a1d7c9
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	measure crm_ity_delta = [crm_ity] - [crm_ity_sply]
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: 8135700c-aea4-5c19-8164-c60fe80e93fd
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	measure 'Pipeline ARO' = ```
+			CALCULATE (
+			    SUM ( fct_opportunity[cgplc_revenuearo] ),
+			    fct_opportunity[statecodename] = "Offen"
+			)
+			```
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: a6afc09b-c065-513a-a8d9-eb899bdc1f2c
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	measure 'Weighted Pipeline ARO' = ```
+			CALCULATE (
+			    SUM ( fct_opportunity[weighted_aro] ),
+			    fct_opportunity[statecodename] = "Offen"
+			)
+			```
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: 68d077a2-8e9c-5f31-97a7-f8dcf1f0a129
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	measure 'Opportunity Count' = ```
+			CALCULATE (
+			    DISTINCTCOUNT ( fct_opportunity[opportunityid] ),
+			    fct_opportunity[statecodename] = "Offen"
+			)
+			```
+		formatString: 0
+		lineageTag: 06dfa97c-5d4d-5847-9598-289939f1a1b9
+
+	measure 'Net New Pipeline' = ```
+			CALCULATE (
+			    SUM ( fct_opportunity_changes[cgplc_revenuearo] ),
+			    fct_opportunity_changes[is_new] = TRUE ()
+			)
+			```
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: 9ff0b2be-5919-5cd8-b311-5e068d02a3aa
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	measure 'Net New Opportunity Count' = ```
+			CALCULATE (
+			    DISTINCTCOUNT ( fct_opportunity_changes[opportunityid] ),
+			    fct_opportunity_changes[is_new] = TRUE ()
+			)
+			```
+		formatString: 0
+		lineageTag: 8e17b47a-bfdc-5fed-b911-d4f87d68b335
+
+	measure 'Net New Pipeline 30d' = ```
+			CALCULATE (
+			    [Net New Pipeline],
+			    DATESINPERIOD ( dim_date[Datum], MAX ( dim_date[Datum] ), -30, DAY )
+			)
+			```
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: 21a9c56d-0bf0-5547-ba60-b3621af7e340
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	measure 'Pipeline Value Movement' = ```
+			CALCULATE (
+			    SUM ( fct_opportunity_changes[delta_revenuearo] ),
+			    fct_opportunity_changes[is_new] = FALSE ()
+			)
+			```
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: fd4883e5-c4ea-5ff7-a31b-03dfa47895b5
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	measure 'Stage Movements' = ```
+			CALCULATE (
+			    COUNTROWS ( fct_opportunity_changes ),
+			    fct_opportunity_changes[stage_changed] = TRUE ()
+			)
+			```
+		formatString: 0
+		lineageTag: 813161b2-cca0-55ca-842b-4975a59d8e26
+
+	measure 'Close Date Slippage Days' = ```
+			CALCULATE (
+			    SUM ( fct_opportunity_changes[delta_closedate_days] ),
+			    fct_opportunity_changes[delta_closedate_days] > 0
+			)
+			```
+		formatString: 0
+		lineageTag: 16c7e2e4-8b71-58d8-a242-e2a8fa685e25
+
+	measure 'Slipped Opportunities' = ```
+			CALCULATE (
+			    DISTINCTCOUNT ( fct_opportunity_changes[opportunityid] ),
+			    fct_opportunity_changes[delta_closedate_days] > 0
+			)
+			```
+		formatString: 0
+		lineageTag: dcb78bb7-1ca1-5ede-bf93-fb225ed9053b
+
+	measure 'Won ARO' = ```
+			CALCULATE (
+			    SUM ( fct_opportunity[cgplc_revenuearo] ),
+			    fct_opportunity[win_status] = "Won"
+			)
+			```
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: 81cb9347-07ed-592f-95d8-9a3a63d04e43
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	measure 'Lost ARO' = ```
+			CALCULATE (
+			    SUM ( fct_opportunity[cgplc_revenuearo] ),
+			    fct_opportunity[statecodename] = "Verloren"
+			)
+			```
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: b83add98-96bc-56b9-b398-d53c7a664456
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	measure 'Win Rate Value' = DIVIDE ( [Won ARO], [Won ARO] + [Lost ARO] )
+		formatString: 0.00\ %;-0.00\ %;0.00\ %
+		lineageTag: 78368089-76e9-507e-917c-4abf22120325
+
+	measure 'Win Rate Count' = ```
+			VAR _won =
+			    CALCULATE (
+			        DISTINCTCOUNT ( fct_opportunity[opportunityid] ),
+			        fct_opportunity[win_status] = "Won"
+			    )
+			VAR _lost =
+			    CALCULATE (
+			        DISTINCTCOUNT ( fct_opportunity[opportunityid] ),
+			        fct_opportunity[statecodename] = "Verloren"
+			    )
+			RETURN
+			    DIVIDE ( _won, _won + _lost )
+			```
+		formatString: 0.00\ %;-0.00\ %;0.00\ %
+		lineageTag: 331f0d8f-8ee3-573a-b63b-3c9bbaf843ee
+
+	measure 'Avg Sales Cycle Days' = ```
+			CALCULATE (
+			    AVERAGE ( fct_opportunity[sales_cycle_days] ),
+			    fct_opportunity[win_status] = "Won"
+			)
+			```
+		formatString: 0
+		lineageTag: a2b49c82-7ccd-5349-92c9-bf5d785d7a0c
+
+	measure 'Retention Exposure ARO' = ```
+			CALCULATE (
+			    SUM ( fct_retention[cgplc_lastfyrevenuearo] ),
+			    fct_retention[statuscodename] = "Aktiv"
+			)
+			```
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: 8366f2cc-f5b7-58d8-a5ce-5b4ba5f9e4bb
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	measure 'At Risk ARO' = ```
+			CALCULATE (
+			    SUM ( fct_retention[cgplc_lastfyrevenuearo] ),
+			    fct_retention[statuscodename] = "Aktiv",
+			    fct_retention[Ret_Status] IN { "At Risk", "Expected Loss", "Lost" }
+			)
+			```
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: a493b88b-c64a-5810-9ac8-c0e13f0e2c8a
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	measure 'At Risk Share' = DIVIDE ( [At Risk ARO], [Retention Exposure ARO] )
+		formatString: 0.00\ %;-0.00\ %;0.00\ %
+		lineageTag: 26c41222-af16-599e-8791-6d0d72a13edb
+
+	measure 'Decisions Due 90d' = ```
+			CALCULATE (
+			    SUM ( fct_retention[cgplc_lastfyrevenuearo] ),
+			    fct_retention[statuscodename] = "Aktiv",
+			    fct_retention[days_to_decision] >= 0,
+			    fct_retention[days_to_decision] <= 90
+			)
+			```
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: 6ad95110-8117-588d-b84b-7462c161317b
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	measure 'Retention Probability Movement' = ```
+			CALCULATE (
+			    SUMX (
+			        fct_retention_changes,
+			        fct_retention_changes[delta_retentionprobability]
+			            * fct_retention_changes[cgplc_lastfyrevenuearo]
+			    ),
+			    fct_retention_changes[is_new] = FALSE ()
+			)
+			```
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: 26570368-1151-584b-bafc-ef5ad1a04e51
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	measure 'Newly At Risk ARO' = ```
+			CALCULATE (
+			    SUM ( fct_retention_changes[cgplc_lastfyrevenuearo] ),
+			    fct_retention_changes[delta_retentionprobability] < 0
+			)
+			```
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: 6d948510-25c5-5485-8157-fff04ab2021f
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	measure 'Unmapped Effect' = ```
+			CALCULATE (
+			    [Net ITY Effect],
+			    FILTER ( VALUES ( fct_budget_effect[sap_unit] ), ISBLANK ( fct_budget_effect[sap_unit] ) )
+			)
+			```
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: 5474acae-2098-5a28-9832-ce08e34959e4
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	measure 'Unmapped Opportunities' = ```
+			CALCULATE (
+			    DISTINCTCOUNT ( fct_budget_effect[entity_id] ),
+			    fct_budget_effect[effect_type] = "New Business",
+			    FILTER ( VALUES ( fct_budget_effect[sap_unit] ), ISBLANK ( fct_budget_effect[sap_unit] ) )
+			)
+			```
+		formatString: 0
+		lineageTag: 4d424966-14cd-53c5-a146-c63af3c4991c
+
+	measure 'Unmapped Share' = DIVIDE ( ABS ( [Unmapped Effect] ), ABS ( [Net ITY Effect] ) )
+		formatString: 0.00\ %;-0.00\ %;0.00\ %
+		lineageTag: ce3ff55b-c492-5d7f-baf1-171069ec94b7
+
+	measure 'Planned Unit Effect' = CALCULATE ( [Net ITY Effect], dim_unit[unit_status] = "Geplant" )
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: b484fa1a-74c7-513f-8254-953b349e4e97
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	measure Datenstand = FORMAT ( MAX ( fct_opportunity[snapshot_date] ), "dd.MM.yyyy" )
+		lineageTag: d27aed0e-dbb7-5fe0-b1d2-957ec9b75f91
+
+	column Platzhalter
+		dataType: string
+		isHidden
+		lineageTag: cbebce43-2fe2-559f-b9b1-893daba73058
+		summarizeBy: none
+		sourceColumn: Platzhalter
+
+		annotation SummarizationSetBy = Automatic
+
+	partition _Measures = m
+		mode: import
+		source = ```
+				let
+				  Quelle = Table.FromRows({}, type table [Platzhalter = text])
+				in
+				  Quelle
+				```
+
+	annotation PBI_ResultType = Table

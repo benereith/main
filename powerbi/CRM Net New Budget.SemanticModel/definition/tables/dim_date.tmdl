@@ -1,0 +1,124 @@
+table dim_date
+	lineageTag: 6710682a-d67d-5448-8f49-f858b8b3ae7f
+
+	column Datum
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: b5e88e07-2bc2-55d1-874c-30b635726484
+		summarizeBy: none
+		sourceColumn: Datum
+
+		annotation SummarizationSetBy = Automatic
+
+	column Jahr
+		dataType: int64
+		formatString: 0
+		lineageTag: f1137bd7-dc83-57f3-a665-d27ec60ce676
+		summarizeBy: none
+		sourceColumn: Jahr
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Monat Nummer'
+		dataType: int64
+		formatString: 0
+		lineageTag: 700dfce8-0951-54a3-a94b-896752b4ef3c
+		summarizeBy: none
+		sourceColumn: Monat Nummer
+
+		annotation SummarizationSetBy = Automatic
+
+	column Monat
+		dataType: string
+		lineageTag: 59c8795c-283d-5ac2-acda-19bab4e9a659
+		summarizeBy: none
+		sourceColumn: Monat
+
+		annotation SummarizationSetBy = Automatic
+
+	column Quartal
+		dataType: string
+		lineageTag: 32fb7e59-98cd-56c2-a267-bd362a8692a6
+		summarizeBy: none
+		sourceColumn: Quartal
+
+		annotation SummarizationSetBy = Automatic
+
+	column FY_Jahr
+		dataType: string
+		lineageTag: 96a4bb6b-d57b-5707-97cf-e2449398497c
+		summarizeBy: none
+		sourceColumn: FY_Jahr
+
+		annotation SummarizationSetBy = Automatic
+
+	column FY_MonatNr
+		dataType: int64
+		formatString: 0
+		lineageTag: 8493b1b9-c9f0-5e43-ac47-a7ecd43388c6
+		summarizeBy: none
+		sourceColumn: FY_MonatNr
+
+		annotation SummarizationSetBy = Automatic
+
+	column FY_Monat
+		dataType: string
+		lineageTag: bfd73d4b-4183-5114-8fc3-0b048127b7d0
+		summarizeBy: none
+		sourceColumn: FY_Monat
+
+		annotation SummarizationSetBy = Automatic
+
+	column FY_Quartal
+		dataType: string
+		lineageTag: c5fd8f67-ed5b-5311-a877-854527a51bb0
+		summarizeBy: none
+		sourceColumn: FY_Quartal
+
+		annotation SummarizationSetBy = Automatic
+
+	column FY_JahrMonat
+		dataType: string
+		lineageTag: bf164776-ada5-5d1b-89cb-a9f0ef537667
+		summarizeBy: none
+		sourceColumn: FY_JahrMonat
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_date = m
+		mode: import
+		source = ```
+				let
+				  // Betrachtungszeitraum - die einzige Stelle, an der er gepflegt wird.
+				  Startdatum = FY_Start,
+				  Enddatum = FY_Ende,
+
+				  DatumsListe = List.Dates(Startdatum, Duration.Days(Enddatum - Startdatum) + 1, #duration(1, 0, 0, 0)),
+				  DatumsTabelle = Table.FromList(DatumsListe, Splitter.SplitByNothing(), {"Datum"}),
+				  Typisiert = Table.TransformColumnTypes(DatumsTabelle, {{"Datum", type date}}),
+
+				  MitJahr = Table.AddColumn(Typisiert, "Jahr", each Date.Year([Datum]), Int64.Type),
+				  MitMonatNr = Table.AddColumn(MitJahr, "Monat Nummer", each Date.Month([Datum]), Int64.Type),
+				  MitMonat = Table.AddColumn(MitMonatNr, "Monat", each Date.MonthName([Datum], "de-DE"), type text),
+				  MitQuartal = Table.AddColumn(MitMonat, "Quartal", each "Q" & Text.From(Date.QuarterOfYear([Datum])), type text),
+
+				  // Geschaeftsjahr 1. Oktober bis 30. September
+				  MitFYStart = Table.AddColumn(MitQuartal, "FY_StartJahr",
+				      each if Date.Month([Datum]) >= 10 then Date.Year([Datum]) else Date.Year([Datum]) - 1, Int64.Type),
+				  MitFYJahr = Table.AddColumn(MitFYStart, "FY_Jahr",
+				      each "FY" & Text.From([FY_StartJahr]) & "/" & Text.End(Text.From([FY_StartJahr] + 1), 2), type text),
+				  MitFYMonatNr = Table.AddColumn(MitFYJahr, "FY_MonatNr",
+				      each Number.Mod(Date.Month([Datum]) + 2, 12) + 1, Int64.Type),
+				  MitFYMonat = Table.AddColumn(MitFYMonatNr, "FY_Monat",
+				      each Text.PadStart(Text.From([FY_MonatNr]), 2, "0") & " " & Date.MonthName([Datum], "de-DE"), type text),
+				  MitFYQuartal = Table.AddColumn(MitFYMonat, "FY_Quartal",
+				      each "Q" & Text.From(Number.RoundUp([FY_MonatNr] / 3)), type text),
+				  MitFYJahrMonat = Table.AddColumn(MitFYQuartal, "FY_JahrMonat",
+				      each [FY_Jahr] & " " & Text.PadStart(Text.From([FY_MonatNr]), 2, "0"), type text),
+
+				  Aufgeraeumt = Table.RemoveColumns(MitFYJahrMonat, {"FY_StartJahr"})
+				in
+				  Aufgeraeumt
+				```
+
+	annotation PBI_ResultType = Table

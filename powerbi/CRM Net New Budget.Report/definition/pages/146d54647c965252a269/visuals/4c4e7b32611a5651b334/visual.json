@@ -1,0 +1,78 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.8.0/schema.json",
+  "name": "4c4e7b32611a5651b334",
+  "position": {
+    "x": 824,
+    "y": 184,
+    "z": 12,
+    "height": 300,
+    "width": 440,
+    "tabOrder": 12
+  },
+  "visual": {
+    "visualType": "clusteredColumnChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dim_date"
+                    }
+                  },
+                  "Property": "FY_Monat"
+                }
+              },
+              "queryRef": "dim_date.FY_Monat",
+              "nativeQueryRef": "FY_Monat"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Net New Pipeline"
+                }
+              },
+              "queryRef": "_Measures.Net New Pipeline",
+              "nativeQueryRef": "Net New Pipeline"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true,
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Neu entstandene Pipeline'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

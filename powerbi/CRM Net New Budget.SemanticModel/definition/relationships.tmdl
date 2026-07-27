@@ -1,0 +1,47 @@
+relationship 290b4101-f70e-5ccd-b479-aab7ff6d1974
+	fromColumn: fct_budget_effect.Period_Date
+	toColumn: dim_date.Datum
+
+relationship ee92a1b3-109c-5048-8187-1aeda73f1957
+	fromColumn: fct_budget_effect.sap_unit
+	toColumn: dim_unit.sap_unit
+
+relationship 3c978d6e-925e-5e70-bda5-63a411aa183a
+	fromColumn: fct_opportunity.ownerid
+	toColumn: dim_owner.ownerid
+
+relationship 61ee3338-5071-5d47-b1b2-0f151a62255a
+	fromColumn: fct_opportunity.cgplc_sectorlookup
+	toColumn: dim_sector.sector
+
+relationship 31dbb72c-f772-5ae4-9d8d-06b2d3f3da6a
+	fromColumn: fct_opportunity.cgplc_subsector
+	toColumn: dim_subsector.subsector
+
+relationship d419fb21-ee69-5aa0-b6e0-0d02e4a90a1e
+	fromColumn: fct_opportunity.cgplc_territoryid
+	toColumn: dim_territory.territoryid
+
+relationship 5dca2daf-184e-533c-9616-f2bc431ef01e
+	fromColumn: fct_opportunity.cgplc_contracttypelookup
+	toColumn: dim_contracttype.contracttype
+
+relationship ed3c9b9e-b4f2-5bc7-b3d8-18b1ce895924
+	fromColumn: fct_opportunity.cgplc_currentsupplier
+	toColumn: dim_currentsupplier.currentsupplier
+
+relationship 2da729c9-f6f0-51f6-9124-42094b9e13dd
+	fromColumn: fct_opportunity.accountid
+	toColumn: dim_account.accountid
+
+relationship b67db953-1dad-5977-be9c-5667a92bbc19
+	fromColumn: fct_retention.cgplc_sapid
+	toColumn: dim_unit.sap_unit
+
+relationship ff963cd5-b054-5d19-98fd-83e69769713b
+	fromColumn: fct_opportunity_changes.snapshot_date
+	toColumn: dim_date.Datum
+
+relationship c5b0d0bf-0069-528e-8302-8d8259a0d23b
+	fromColumn: fct_retention_changes.snapshot_date
+	toColumn: dim_date.Datum

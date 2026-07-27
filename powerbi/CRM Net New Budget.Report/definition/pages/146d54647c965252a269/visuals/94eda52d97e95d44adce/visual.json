@@ -1,0 +1,78 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.8.0/schema.json",
+  "name": "94eda52d97e95d44adce",
+  "position": {
+    "x": 16,
+    "y": 500,
+    "z": 13,
+    "height": 204,
+    "width": 616,
+    "tabOrder": 13
+  },
+  "visual": {
+    "visualType": "clusteredBarChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_opportunity"
+                    }
+                  },
+                  "Property": "cgplc_salesstagename"
+                }
+              },
+              "queryRef": "fct_opportunity.cgplc_salesstagename",
+              "nativeQueryRef": "cgplc_salesstagename"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Weighted Pipeline ARO"
+                }
+              },
+              "queryRef": "_Measures.Weighted Pipeline ARO",
+              "nativeQueryRef": "Weighted Pipeline ARO"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true,
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Gewichtete Pipeline je Sales Stage'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

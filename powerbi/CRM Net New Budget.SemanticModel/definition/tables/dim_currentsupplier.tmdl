@@ -1,0 +1,17 @@
+table dim_currentsupplier
+	lineageTag: bc3ec156-7fdd-50e3-9291-5862fdcc25a0
+
+	column currentsupplier
+		dataType: string
+		lineageTag: a1d5a81e-209d-588a-b37a-8fab2509aaae
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [currentsupplier]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_currentsupplier = calculated
+		mode: import
+		source = DISTINCT ( SELECTCOLUMNS ( fct_opportunity, "currentsupplier", fct_opportunity[cgplc_currentsupplier] ) )
+
+	annotation PBI_ResultType = Table

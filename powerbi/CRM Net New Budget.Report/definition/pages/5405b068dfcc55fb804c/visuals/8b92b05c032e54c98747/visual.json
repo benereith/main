@@ -1,0 +1,78 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.8.0/schema.json",
+  "name": "8b92b05c032e54c98747",
+  "position": {
+    "x": 648,
+    "y": 184,
+    "z": 11,
+    "height": 250,
+    "width": 616,
+    "tabOrder": 11
+  },
+  "visual": {
+    "visualType": "clusteredBarChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_retention"
+                    }
+                  },
+                  "Property": "LY_ARO_Status"
+                }
+              },
+              "queryRef": "fct_retention.LY_ARO_Status",
+              "nativeQueryRef": "LY_ARO_Status"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Retention Exposure ARO"
+                }
+              },
+              "queryRef": "_Measures.Retention Exposure ARO",
+              "nativeQueryRef": "Retention Exposure ARO"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true,
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Retention mit und ohne ARO im CRM'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

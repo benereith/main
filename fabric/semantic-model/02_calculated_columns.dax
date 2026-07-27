@@ -126,13 +126,16 @@ DISTINCT (
     SELECTCOLUMNS ( fct_opportunity, "ownerid", fct_opportunity[ownerid] )
 )
 
+// Sektor und Subsektor getrennt: DISTINCT ueber beide Spalten waere auf
+// dem Sektor allein nicht eindeutig und damit als Beziehungsziel unbrauchbar.
 dim_sector =
 DISTINCT (
-    SELECTCOLUMNS (
-        fct_opportunity,
-        "sector", fct_opportunity[cgplc_sectorlookup],
-        "subsector", fct_opportunity[cgplc_subsector]
-    )
+    SELECTCOLUMNS ( fct_opportunity, "sector", fct_opportunity[cgplc_sectorlookup] )
+)
+
+dim_subsector =
+DISTINCT (
+    SELECTCOLUMNS ( fct_opportunity, "subsector", fct_opportunity[cgplc_subsector] )
 )
 
 dim_territory =

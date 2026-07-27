@@ -1,0 +1,78 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.8.0/schema.json",
+  "name": "e394d63505cb55f69c58",
+  "position": {
+    "x": 16,
+    "y": 184,
+    "z": 10,
+    "height": 250,
+    "width": 616,
+    "tabOrder": 10
+  },
+  "visual": {
+    "visualType": "clusteredBarChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_retention"
+                    }
+                  },
+                  "Property": "cgplc_reasonforriskname"
+                }
+              },
+              "queryRef": "fct_retention.cgplc_reasonforriskname",
+              "nativeQueryRef": "cgplc_reasonforriskname"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "At Risk ARO"
+                }
+              },
+              "queryRef": "_Measures.At Risk ARO",
+              "nativeQueryRef": "At Risk ARO"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true,
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Gefährdetes Volumen je Risikogrund'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

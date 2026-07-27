@@ -35,7 +35,7 @@ Lakehouse ──► fct_opportunity / fct_retention       (Append, partitioniert
       │           ├─► fct_*_current   → Ist-Stand
       │           └─► fct_*_changes   → Änderungshistorie
       ▼
-Semantic Model (Direct Lake)
+Semantic Model (Import, PBIP)
       │  ITY-Phasing + Dimensionen als DAX
       ▼
 Report + Leading KPIs
@@ -166,6 +166,29 @@ schneidbar, solange die Unit in SAP existiert. Für geplante Units bleibt der
 Sektor leer — falls das im Report stört, müsste die Mappingdatei eine
 Sektor-Spalte mitführen.
 
+### Import statt Direct Lake
+
+Das Zielbild sah zunächst Direct Lake vor. Ausgeliefert ist ein
+**Import**-Modell, und zwar aus einem harten Grund: Direct Lake unterstützt
+keine berechneten Spalten und keine berechneten Tabellen auf
+Direct-Lake-Tabellen. Genau darauf beruht dieses Modell — die ITY-Phasierung,
+`fct_budget_effect`, `dim_unit` und alle abgeleiteten Dimensionen sind
+DAX-Tabellen, dazu Spalten wie `win_status`, `Ret_Status`, `days_to_decision`.
+
+Fachlich ist Import hier unkritisch: die Quelle wechselt genau einmal täglich,
+ein Refresh nach dem Notebook-Lauf genügt. Der Preis ist ein Refresh-Schritt
+mehr und Speicher im Modell statt im Lakehouse.
+
+Der Weg zu Direct Lake bleibt offen und ist eine eigene Ausbaustufe: Phasierung
+und `fct_budget_effect` müssten als Delta-Tabellen in `03_derived_tables.sql`
+entstehen, die Dimensionen ebenso. Das Modell enthielte dann nur noch physische
+Tabellen und Measures. Das ist der sauberere Endzustand — er verlangt aber,
+die Phasierungslogik von DAX nach Spark SQL zu übersetzen und gegenzurechnen.
+
+Die Materialisierung der Ableitungen (`fct_*_current`, `fct_*_changes`) bleibt
+davon unberührt sinnvoll: sie hält die Modellabfragen schlank und ist die
+Voraussetzung für einen späteren Wechsel auf Direct Lake.
+
 ### Zeitzone: alles auf Europe/Berlin
 
 Die Fabric-Kapazität der Gruppe läuft in UK-Zeit, `TODAY()`/`NOW()` im Power
@@ -216,6 +239,7 @@ in einer `%%sql`-Zelle — nicht im SQL Analytics Endpoint des Lakehouse.
 | 2 | `01_create_tables.sql` | Notebook, `%%sql` | einmalig |
 | 3 | `02_load_snapshot.py` | Notebook, PySpark | täglich |
 | 4 | `03_derived_tables.sql` | Notebook, `%%sql` | täglich, nach Schritt 3 |
+| 5 | `powerbi/CRM Net New Budget.pbip` | Power BI Desktop | Refresh nach Schritt 4 |
 
 Der SQL Analytics Endpoint spricht T-SQL und ist für das Lakehouse **lesend**.
 Dort scheitern die Skripte schon an `CREATE TABLE IF NOT EXISTS` (T-SQL kennt
@@ -252,6 +276,8 @@ Tabellen erscheinen dort automatisch.
 | `fabric/lakehouse/01_create_tables.sql` | Delta-Tabellen, partitioniert nach `snapshot_date` |
 | `fabric/lakehouse/02_load_snapshot.py` | Idempotenter Tageslauf Staging → Fakt |
 | `fabric/lakehouse/03_derived_tables.sql` | Ist-Stand und Änderungshistorie als Delta-Tabellen |
+| `powerbi/CRM Net New Budget.pbip` | PBIP-Projekt: Semantic Model + Bericht |
+| `powerbi/README.md` | Parameter, Voraussetzungen, Speichermodus |
 | `fabric/semantic-model/01_ity_phasing.dax` | ITY-Monatsphasierung und vereinigte Effekttabelle |
 | `fabric/semantic-model/02_calculated_columns.dax` | Klassifizierungen und abgeleitete Dimensionen |
 | `fabric/semantic-model/03_measures.dax` | Bestandsmeasures und Leading KPIs |

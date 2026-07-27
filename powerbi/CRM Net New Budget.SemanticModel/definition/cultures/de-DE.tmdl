@@ -1,0 +1,9 @@
+cultureInfo de-DE
+
+	linguisticMetadata = ```
+			{
+			  "Version": "1.0.0",
+			  "Language": "de-DE"
+			}
+			```
+		contentType: json

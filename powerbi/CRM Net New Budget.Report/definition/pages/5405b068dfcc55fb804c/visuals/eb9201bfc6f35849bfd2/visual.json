@@ -1,0 +1,130 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.8.0/schema.json",
+  "name": "eb9201bfc6f35849bfd2",
+  "position": {
+    "x": 16,
+    "y": 450,
+    "z": 12,
+    "height": 254,
+    "width": 1248,
+    "tabOrder": 12
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_opportunity"
+                    }
+                  },
+                  "Property": "name"
+                }
+              },
+              "queryRef": "fct_opportunity.name",
+              "nativeQueryRef": "name"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_opportunity"
+                    }
+                  },
+                  "Property": "opportunityid"
+                }
+              },
+              "queryRef": "fct_opportunity.opportunityid",
+              "nativeQueryRef": "opportunityid"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_opportunity"
+                    }
+                  },
+                  "Property": "close_fy"
+                }
+              },
+              "queryRef": "fct_opportunity.close_fy",
+              "nativeQueryRef": "close_fy"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_opportunity"
+                    }
+                  },
+                  "Property": "cgplc_salesstagename"
+                }
+              },
+              "queryRef": "fct_opportunity.cgplc_salesstagename",
+              "nativeQueryRef": "cgplc_salesstagename"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_opportunity"
+                    }
+                  },
+                  "Property": "cgplc_revenuearo"
+                }
+              },
+              "queryRef": "fct_opportunity.cgplc_revenuearo",
+              "nativeQueryRef": "cgplc_revenuearo"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_opportunity"
+                    }
+                  },
+                  "Property": "Info"
+                }
+              },
+              "queryRef": "fct_opportunity.Info",
+              "nativeQueryRef": "Info"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true,
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Opportunities - Mappingpflege'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

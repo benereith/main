@@ -1,0 +1,54 @@
+table dim_sap_master_data_unit
+	lineageTag: 752f8c41-3717-5a90-93e0-7d10dbb3dcb9
+
+	column betrieb
+		dataType: int64
+		formatString: 0
+		lineageTag: f7388283-7c9b-5577-a039-1e173bee0e70
+		summarizeBy: none
+		sourceColumn: betrieb
+
+		annotation SummarizationSetBy = Automatic
+
+	column bezeichnung_betrieb
+		dataType: string
+		lineageTag: 0e16ddc8-1128-5161-a948-7b90eb2f3927
+		summarizeBy: none
+		sourceColumn: bezeichnung_betrieb
+
+		annotation SummarizationSetBy = Automatic
+
+	column sektor
+		dataType: string
+		lineageTag: d6d7d8a6-de33-55b5-823b-66724b852582
+		summarizeBy: none
+		sourceColumn: sektor
+
+		annotation SummarizationSetBy = Automatic
+
+	column bezeichnung_bezirk
+		dataType: string
+		lineageTag: 85ca6082-09fc-5b2b-9c36-05ae2212b0b5
+		summarizeBy: none
+		sourceColumn: bezeichnung_bezirk
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_sap_master_data_unit = m
+		mode: import
+		source = ```
+				let
+				  // SAP-Stammdaten aus dem bestehenden Dataflow der Gruppe.
+				  // Liefert Sektor und Bezirk fuer dim_unit und fct_retention[sektor].
+				  Quelle = PowerPlatform.Dataflows(null),
+				  Workspaces = Quelle{[Id = "Workspaces"]}[Data],
+				  Arbeitsbereich = Workspaces{[workspaceId = "ddc66bda-5a20-49f0-be6e-b68e17a1cc90"]}[Data],
+				  Dataflow = Arbeitsbereich{[dataflowId = "a65e47b1-6a8b-4cf2-8131-c90e55bf14c7"]}[Data],
+				  Entitaet = Dataflow{[entity = "sap_master_data_unit", version = ""]}[Data],
+				  Spalten = Table.SelectColumns(Entitaet, {"betrieb", "bezeichnung_betrieb", "sektor", "bezeichnung_bezirk"}),
+				  Eindeutig = Table.Distinct(Spalten, {"betrieb"})
+				in
+				  Eindeutig
+				```
+
+	annotation PBI_ResultType = Table

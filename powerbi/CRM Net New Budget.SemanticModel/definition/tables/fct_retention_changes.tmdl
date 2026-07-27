@@ -1,0 +1,237 @@
+table fct_retention_changes
+	lineageTag: e15768a4-8313-53ae-aefa-352376162d1b
+
+	column snapshot_date
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: e988a526-55dd-5f76-8927-b1f8f30fd35d
+		summarizeBy: none
+		sourceColumn: snapshot_date
+
+		annotation SummarizationSetBy = Automatic
+
+	column cgplc_cgcontractid
+		dataType: string
+		lineageTag: 6a831a33-1d85-5c68-9680-f2f2856b9fda
+		summarizeBy: none
+		sourceColumn: cgplc_cgcontractid
+
+		annotation SummarizationSetBy = Automatic
+
+	column cgplc_name
+		dataType: string
+		lineageTag: da1c990d-c173-5da6-81a9-c17138882ec8
+		summarizeBy: none
+		sourceColumn: cgplc_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column cgplc_sapid
+		dataType: int64
+		formatString: 0
+		lineageTag: 2b7d42a2-f0f8-56f2-816b-02449e7db533
+		summarizeBy: none
+		sourceColumn: cgplc_sapid
+
+		annotation SummarizationSetBy = Automatic
+
+	column statuscodename
+		dataType: string
+		lineageTag: df527e46-da62-5137-bea3-3a3c401ea018
+		summarizeBy: none
+		sourceColumn: statuscodename
+
+		annotation SummarizationSetBy = Automatic
+
+	column statecodename
+		dataType: string
+		lineageTag: 49d681ee-46e1-55f6-a506-6a1f9d51eaa4
+		summarizeBy: none
+		sourceColumn: statecodename
+
+		annotation SummarizationSetBy = Automatic
+
+	column cgplc_reasonforriskname
+		dataType: string
+		lineageTag: 83beb3db-6dce-53ba-bd8c-50b8d06f00f8
+		summarizeBy: none
+		sourceColumn: cgplc_reasonforriskname
+
+		annotation SummarizationSetBy = Automatic
+
+	column cgplc_retentionprobability
+		dataType: double
+		formatString: 0.00\ %;-0.00\ %;0.00\ %
+		lineageTag: b4274570-6be1-581b-9c6a-317f560f4833
+		summarizeBy: none
+		sourceColumn: cgplc_retentionprobability
+
+		annotation SummarizationSetBy = Automatic
+
+	column cgplc_lastfyrevenuearo
+		dataType: decimal
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: de6b15df-504b-5332-b2ba-cf1cdfed88a8
+		summarizeBy: none
+		sourceColumn: cgplc_lastfyrevenuearo
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	column cgplc_revenuearo
+		dataType: decimal
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: 3e717926-7d77-5ba2-9e9c-3961b4f37b6f
+		summarizeBy: none
+		sourceColumn: cgplc_revenuearo
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	column cgplc_contractenddate
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: f2ebe217-67da-5695-afdf-2fea5e7e54a9
+		summarizeBy: none
+		sourceColumn: cgplc_contractenddate
+
+		annotation SummarizationSetBy = Automatic
+
+	column cgplc_decisiondate
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: 47dc88c4-5606-5005-a922-620c7bb31815
+		summarizeBy: none
+		sourceColumn: cgplc_decisiondate
+
+		annotation SummarizationSetBy = Automatic
+
+	column cgplc_forecastdecisiondate
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: 1fc62fd7-3440-5828-941b-2a0400d45e0a
+		summarizeBy: none
+		sourceColumn: cgplc_forecastdecisiondate
+
+		annotation SummarizationSetBy = Automatic
+
+	column prev_statuscodename
+		dataType: string
+		isHidden
+		lineageTag: 0d16dd54-d61e-5da6-ae12-283dcd2163da
+		summarizeBy: none
+		sourceColumn: prev_statuscodename
+
+		annotation SummarizationSetBy = Automatic
+
+	column prev_reasonforriskname
+		dataType: string
+		isHidden
+		lineageTag: d9378e8f-3824-5839-8a49-048701ecc95f
+		summarizeBy: none
+		sourceColumn: prev_reasonforriskname
+
+		annotation SummarizationSetBy = Automatic
+
+	column prev_retentionprobability
+		dataType: double
+		isHidden
+		formatString: 0.00\ %;-0.00\ %;0.00\ %
+		lineageTag: 16edaccd-a73a-5ac2-a5f4-712ecd0ef865
+		summarizeBy: none
+		sourceColumn: prev_retentionprobability
+
+		annotation SummarizationSetBy = Automatic
+
+	column prev_lastfyrevenuearo
+		dataType: decimal
+		isHidden
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: d56d1e2f-3325-5bd5-86d0-15cd0b1552de
+		summarizeBy: none
+		sourceColumn: prev_lastfyrevenuearo
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	column prev_contractenddate
+		dataType: dateTime
+		isHidden
+		formatString: Short Date
+		lineageTag: a46f3b02-b938-5aa4-8c67-509e8e1b9360
+		summarizeBy: none
+		sourceColumn: prev_contractenddate
+
+		annotation SummarizationSetBy = Automatic
+
+	column prev_forecastdecisiondate
+		dataType: dateTime
+		isHidden
+		formatString: Short Date
+		lineageTag: e7767e62-3831-5ef0-b8e4-79c1e20536d5
+		summarizeBy: none
+		sourceColumn: prev_forecastdecisiondate
+
+		annotation SummarizationSetBy = Automatic
+
+	column prev_snapshot_date
+		dataType: dateTime
+		isHidden
+		formatString: Short Date
+		lineageTag: 1d24d33c-8eed-5f4e-bcae-fda8b8b2da1f
+		summarizeBy: none
+		sourceColumn: prev_snapshot_date
+
+		annotation SummarizationSetBy = Automatic
+
+	column is_new
+		dataType: boolean
+		lineageTag: 82962209-4046-555a-9d78-92e78e5bb481
+		summarizeBy: none
+		sourceColumn: is_new
+
+		annotation SummarizationSetBy = Automatic
+
+	column delta_retentionprobability
+		dataType: double
+		formatString: 0.00\ %;-0.00\ %;0.00\ %
+		lineageTag: 375fd3c3-533c-51fb-8f75-5e3c086f5ad3
+		summarizeBy: none
+		sourceColumn: delta_retentionprobability
+
+		annotation SummarizationSetBy = Automatic
+
+	column delta_lastfyrevenuearo
+		dataType: decimal
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: 96aebaa2-837c-5575-aa77-a3d31a6dfcae
+		summarizeBy: none
+		sourceColumn: delta_lastfyrevenuearo
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	column delta_contractenddate_days
+		dataType: int64
+		formatString: 0
+		lineageTag: 6163ac1f-2044-5246-b6cd-d23ac49a4166
+		summarizeBy: none
+		sourceColumn: delta_contractenddate_days
+
+		annotation SummarizationSetBy = Automatic
+
+	partition fct_retention_changes = m
+		mode: import
+		source = ```
+				let
+				  Quelle = FabricSql,
+				  Daten = Quelle{[Schema = "dbo", Item = "fct_retention_changes"]}[Data]
+				in
+				  Daten
+				```
+
+	annotation PBI_ResultType = Table

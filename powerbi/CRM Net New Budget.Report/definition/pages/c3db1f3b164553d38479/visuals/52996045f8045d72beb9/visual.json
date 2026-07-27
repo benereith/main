@@ -1,0 +1,130 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.8.0/schema.json",
+  "name": "52996045f8045d72beb9",
+  "position": {
+    "x": 16,
+    "y": 450,
+    "z": 11,
+    "height": 254,
+    "width": 1248,
+    "tabOrder": 11
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_opportunity_changes"
+                    }
+                  },
+                  "Property": "snapshot_date"
+                }
+              },
+              "queryRef": "fct_opportunity_changes.snapshot_date",
+              "nativeQueryRef": "snapshot_date"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_opportunity_changes"
+                    }
+                  },
+                  "Property": "name"
+                }
+              },
+              "queryRef": "fct_opportunity_changes.name",
+              "nativeQueryRef": "name"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_opportunity_changes"
+                    }
+                  },
+                  "Property": "prev_salesstagename"
+                }
+              },
+              "queryRef": "fct_opportunity_changes.prev_salesstagename",
+              "nativeQueryRef": "prev_salesstagename"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_opportunity_changes"
+                    }
+                  },
+                  "Property": "cgplc_salesstagename"
+                }
+              },
+              "queryRef": "fct_opportunity_changes.cgplc_salesstagename",
+              "nativeQueryRef": "cgplc_salesstagename"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_opportunity_changes"
+                    }
+                  },
+                  "Property": "delta_revenuearo"
+                }
+              },
+              "queryRef": "fct_opportunity_changes.delta_revenuearo",
+              "nativeQueryRef": "delta_revenuearo"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_opportunity_changes"
+                    }
+                  },
+                  "Property": "delta_closedate_days"
+                }
+              },
+              "queryRef": "fct_opportunity_changes.delta_closedate_days",
+              "nativeQueryRef": "delta_closedate_days"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true,
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Änderungen im Detail'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

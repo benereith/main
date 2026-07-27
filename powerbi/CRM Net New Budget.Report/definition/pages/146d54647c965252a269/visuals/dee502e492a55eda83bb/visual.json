@@ -1,0 +1,106 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.8.0/schema.json",
+  "name": "dee502e492a55eda83bb",
+  "position": {
+    "x": 16,
+    "y": 184,
+    "z": 11,
+    "height": 300,
+    "width": 792,
+    "tabOrder": 11
+  },
+  "visual": {
+    "visualType": "lineChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dim_date"
+                    }
+                  },
+                  "Property": "FY_JahrMonat"
+                }
+              },
+              "queryRef": "dim_date.FY_JahrMonat",
+              "nativeQueryRef": "FY_JahrMonat"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Net ITY Effect"
+                }
+              },
+              "queryRef": "_Measures.Net ITY Effect",
+              "nativeQueryRef": "Net ITY Effect"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "ity_effect"
+                }
+              },
+              "queryRef": "_Measures.ity_effect",
+              "nativeQueryRef": "ity_effect"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Lost ITY"
+                }
+              },
+              "queryRef": "_Measures.Lost ITY",
+              "nativeQueryRef": "Lost ITY"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true,
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Nettoeffekt je Periode'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

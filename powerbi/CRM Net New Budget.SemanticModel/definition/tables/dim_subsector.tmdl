@@ -1,0 +1,17 @@
+table dim_subsector
+	lineageTag: 6686388b-76f1-548a-a5b0-199ee062fb89
+
+	column subsector
+		dataType: string
+		lineageTag: 90d297bb-1f06-537c-8490-c64d0031b803
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [subsector]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_subsector = calculated
+		mode: import
+		source = DISTINCT ( SELECTCOLUMNS ( fct_opportunity, "subsector", fct_opportunity[cgplc_subsector] ) )
+
+	annotation PBI_ResultType = Table

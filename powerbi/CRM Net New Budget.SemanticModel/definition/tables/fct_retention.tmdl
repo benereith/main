@@ -1,0 +1,259 @@
+table fct_retention
+	lineageTag: c9f2dbb1-db56-54ab-907b-19c1c841f78a
+
+	column snapshot_date
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: 6340afda-93be-5d01-8661-5f1d60ceb9d7
+		summarizeBy: none
+		sourceColumn: snapshot_date
+
+		annotation SummarizationSetBy = Automatic
+
+	column cgplc_cgcontractid
+		dataType: string
+		lineageTag: 3d5c0e16-1d58-54fa-8e39-ec5fc232c450
+		summarizeBy: none
+		sourceColumn: cgplc_cgcontractid
+
+		annotation SummarizationSetBy = Automatic
+
+	column cgplc_sapid
+		dataType: int64
+		formatString: 0
+		lineageTag: 97a659e6-819f-574c-8efd-ef87fa6deeb9
+		summarizeBy: none
+		sourceColumn: cgplc_sapid
+
+		annotation SummarizationSetBy = Automatic
+
+	column cgplc_name
+		dataType: string
+		lineageTag: 9190619f-5f03-5b06-a014-c955e82be5b3
+		summarizeBy: none
+		sourceColumn: cgplc_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column statuscodename
+		dataType: string
+		lineageTag: e0143d3e-74b0-5c57-b098-ebe25f996221
+		summarizeBy: none
+		sourceColumn: statuscodename
+
+		annotation SummarizationSetBy = Automatic
+
+	column statecodename
+		dataType: string
+		lineageTag: acb22cec-9d71-509f-9d9b-c37f0330f504
+		summarizeBy: none
+		sourceColumn: statecodename
+
+		annotation SummarizationSetBy = Automatic
+
+	column cgplc_reasonforriskname
+		dataType: string
+		lineageTag: 461568bd-ad56-595f-9e8d-07a9b0bb6a1c
+		summarizeBy: none
+		sourceColumn: cgplc_reasonforriskname
+
+		annotation SummarizationSetBy = Automatic
+
+	column cgplc_contractenddate
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: fd50a5ff-cf5e-52f4-87a7-f8fa06ce8888
+		summarizeBy: none
+		sourceColumn: cgplc_contractenddate
+
+		annotation SummarizationSetBy = Automatic
+
+	column cgplc_decisiondate
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: 63be85ce-148a-5b22-b147-11223c6f45dd
+		summarizeBy: none
+		sourceColumn: cgplc_decisiondate
+
+		annotation SummarizationSetBy = Automatic
+
+	column cgplc_forecastdecisiondate
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: 1a20ebc6-f6b2-5556-a4f0-4a0778d0bfb9
+		summarizeBy: none
+		sourceColumn: cgplc_forecastdecisiondate
+
+		annotation SummarizationSetBy = Automatic
+
+	column cgplc_operationstartdate
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: 5bb1e03f-9e47-55e8-80a1-6a0018b70de6
+		summarizeBy: none
+		sourceColumn: cgplc_operationstartdate
+
+		annotation SummarizationSetBy = Automatic
+
+	column cgplc_revenuearo
+		dataType: decimal
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: c667ed44-e7b1-5ba9-80a2-b7f37357296b
+		summarizeBy: none
+		sourceColumn: cgplc_revenuearo
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	column cgplc_currentrevenuearo
+		dataType: decimal
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: e1d0656c-322e-54e3-a522-a9c248e63d3c
+		summarizeBy: none
+		sourceColumn: cgplc_currentrevenuearo
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	column cgplc_lastfyrevenuearo
+		dataType: decimal
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: 03eeb6b1-72f1-511c-8398-c914a538c65e
+		summarizeBy: none
+		sourceColumn: cgplc_lastfyrevenuearo
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	column cgplc_retentionprobability
+		dataType: double
+		formatString: 0.00\ %;-0.00\ %;0.00\ %
+		lineageTag: 5c9b2a04-962c-522b-99f9-4003ed344130
+		summarizeBy: none
+		sourceColumn: cgplc_retentionprobability
+
+		annotation SummarizationSetBy = Automatic
+
+	column createdon
+		dataType: dateTime
+		isHidden
+		formatString: Short Date
+		lineageTag: 89ee9933-e40d-5931-bbeb-3a390f11b6b8
+		summarizeBy: none
+		sourceColumn: createdon
+
+		annotation SummarizationSetBy = Automatic
+
+	column modifiedon
+		dataType: dateTime
+		isHidden
+		formatString: Short Date
+		lineageTag: c029ac8b-7b59-5cd0-8bdd-3eebc7056f0d
+		summarizeBy: none
+		sourceColumn: modifiedon
+
+		annotation SummarizationSetBy = Automatic
+
+	column loaded_at
+		dataType: dateTime
+		isHidden
+		formatString: General Date
+		lineageTag: 4f6e065b-a0de-5598-bea4-682421dfe91d
+		summarizeBy: none
+		sourceColumn: loaded_at
+
+		annotation SummarizationSetBy = Automatic
+
+	column Ret_Status = ```
+			SWITCH (
+			    TRUE (),
+			    ISBLANK ( fct_retention[cgplc_retentionprobability] ), "No %",
+			    fct_retention[cgplc_retentionprobability] = 0, "Lost",
+			    fct_retention[cgplc_retentionprobability] <= 0.2, "Expected Loss",
+			    fct_retention[cgplc_retentionprobability] < 1, "At Risk",
+			    "No Risk"
+			)
+			```
+		dataType: string
+		lineageTag: 1b21823b-b560-5a50-9e73-6764bd29c556
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	column LY_ARO_Status = IF ( ISBLANK ( fct_retention[cgplc_lastfyrevenuearo] ), "No ARO in CRM", "ARO in CRM" )
+		dataType: string
+		lineageTag: 360eb9cc-a0a9-5f04-8f92-af355d2a4b4d
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	column effective_enddate = ```
+			COALESCE (
+			    fct_retention[cgplc_contractenddate],
+			    EDATE ( fct_retention[cgplc_decisiondate], 3 )
+			)
+			```
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: 33fa7c72-9d7f-5b82-90e1-b0967f3576b8
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	column days_to_decision = ```
+			VAR _UtcJetzt = UTCNOW ()
+			VAR _Jahr = YEAR ( _UtcJetzt )
+			VAR _MaerzEnde = DATE ( _Jahr, 3, 31 )
+			VAR _OktoberEnde = DATE ( _Jahr, 10, 31 )
+			VAR _SommerzeitBeginn =
+			    _MaerzEnde - ( WEEKDAY ( _MaerzEnde, 1 ) - 1 ) + TIME ( 1, 0, 0 )
+			VAR _SommerzeitEnde =
+			    _OktoberEnde - ( WEEKDAY ( _OktoberEnde, 1 ) - 1 ) + TIME ( 1, 0, 0 )
+			VAR _Versatz =
+			    IF ( _UtcJetzt >= _SommerzeitBeginn && _UtcJetzt < _SommerzeitEnde, 2, 1 )
+			VAR _BerlinJetzt = _UtcJetzt + _Versatz / 24
+			VAR _HeuteBerlin =
+			    DATE ( YEAR ( _BerlinJetzt ), MONTH ( _BerlinJetzt ), DAY ( _BerlinJetzt ) )
+			RETURN
+			    DATEDIFF (
+			        _HeuteBerlin,
+			        COALESCE (
+			            fct_retention[cgplc_forecastdecisiondate],
+			            fct_retention[cgplc_decisiondate]
+			        ),
+			        DAY
+			    )
+			```
+		dataType: int64
+		formatString: 0
+		lineageTag: 60bfa6a1-b7f6-59e6-bb1c-de47c53d4969
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	column sektor = ```
+			LOOKUPVALUE (
+			    dim_sap_master_data_unit[sektor],
+			    dim_sap_master_data_unit[betrieb], fct_retention[cgplc_sapid]
+			)
+			```
+		dataType: string
+		lineageTag: 0da17037-84b2-575f-9ab1-dcce61cc0ead
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	partition fct_retention = m
+		mode: import
+		source = ```
+				let
+				  Quelle = FabricSql,
+				  Daten = Quelle{[Schema = "dbo", Item = "fct_retention_current"]}[Data]
+				in
+				  Daten
+				```
+
+	annotation PBI_ResultType = Table

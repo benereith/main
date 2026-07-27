@@ -1,0 +1,51 @@
+table map_opportunity_unit
+	lineageTag: 6cb8ef47-d8c0-563b-a865-4a381d0b72a8
+
+	column snapshot_date
+		dataType: dateTime
+		isHidden
+		formatString: Short Date
+		lineageTag: 5fcbc0a3-6483-5ec4-9229-f51b0cf57026
+		summarizeBy: none
+		sourceColumn: snapshot_date
+
+		annotation SummarizationSetBy = Automatic
+
+	column opportunityid
+		dataType: string
+		lineageTag: fb2d9211-73bb-52c4-b851-615b06280efd
+		summarizeBy: none
+		sourceColumn: opportunityid
+
+		annotation SummarizationSetBy = Automatic
+
+	column sap_unit
+		dataType: int64
+		formatString: 0
+		lineageTag: 04959328-875e-54c4-9175-f939c68d6adf
+		summarizeBy: none
+		sourceColumn: sap_unit
+
+		annotation SummarizationSetBy = Automatic
+
+	column loaded_at
+		dataType: dateTime
+		isHidden
+		formatString: General Date
+		lineageTag: a7626003-6a2f-5f58-bcc2-1008a8b78d24
+		summarizeBy: none
+		sourceColumn: loaded_at
+
+		annotation SummarizationSetBy = Automatic
+
+	partition map_opportunity_unit = m
+		mode: import
+		source = ```
+				let
+				  Quelle = FabricSql,
+				  Daten = Quelle{[Schema = "dbo", Item = "map_opportunity_unit_current"]}[Data]
+				in
+				  Daten
+				```
+
+	annotation PBI_ResultType = Table

@@ -1,0 +1,78 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.8.0/schema.json",
+  "name": "13c59c06f125590b95bc",
+  "position": {
+    "x": 648,
+    "y": 500,
+    "z": 14,
+    "height": 204,
+    "width": 616,
+    "tabOrder": 14
+  },
+  "visual": {
+    "visualType": "clusteredBarChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_retention"
+                    }
+                  },
+                  "Property": "Ret_Status"
+                }
+              },
+              "queryRef": "fct_retention.Ret_Status",
+              "nativeQueryRef": "Ret_Status"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Retention Exposure ARO"
+                }
+              },
+              "queryRef": "_Measures.Retention Exposure ARO",
+              "nativeQueryRef": "Retention Exposure ARO"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true,
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Retention-Exposure je Risikostatus'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

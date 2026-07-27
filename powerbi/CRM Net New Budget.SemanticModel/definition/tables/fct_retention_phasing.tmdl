@@ -1,0 +1,149 @@
+table fct_retention_phasing
+	lineageTag: 4d997d02-9dc7-54fe-a243-06151a8615c6
+
+	column cgplc_cgcontractid
+		dataType: string
+		lineageTag: 9befd6ee-dfc6-59e7-9e1c-be8d611b5e77
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [cgplc_cgcontractid]
+
+		annotation SummarizationSetBy = Automatic
+
+	column sap_unit
+		dataType: int64
+		formatString: 0
+		lineageTag: 3ffc31c3-c651-5305-ae3f-9473050c4fef
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [sap_unit]
+
+		annotation SummarizationSetBy = Automatic
+
+	column Period_Date
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: c78ee1b1-f718-5cdb-b71a-8730a1bb1d09
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Period_Date]
+
+		annotation SummarizationSetBy = Automatic
+
+	column Calc_EndDate
+		dataType: dateTime
+		isHidden
+		formatString: Short Date
+		lineageTag: 0a02fa86-4854-5a16-8544-16f74eb181aa
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Calc_EndDate]
+
+		annotation SummarizationSetBy = Automatic
+
+	column Calc_FirstFYEnd
+		dataType: dateTime
+		isHidden
+		formatString: Short Date
+		lineageTag: 456897ad-75fc-5c8b-9027-629a30ccd667
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Calc_FirstFYEnd]
+
+		annotation SummarizationSetBy = Automatic
+
+	column Calc_ITY_Months
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 896c7bad-9b54-512e-b906-af0a6c421da8
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Calc_ITY_Months]
+
+		annotation SummarizationSetBy = Automatic
+
+	column weighted_ly_aro
+		dataType: decimal
+		isHidden
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: 8ba6ed52-95dd-5eeb-ad35-adb9688e75b2
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [weighted_ly_aro]
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	column Calc_ARO_Value
+		dataType: decimal
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: a7eeee94-4eaf-5127-bcd0-9dc6e201e787
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Calc_ARO_Value]
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	partition fct_retention_phasing = calculated
+		mode: import
+		source = ```
+				VAR _Horizont =
+				    DISTINCT (
+				        SELECTCOLUMNS (
+				            dim_date,
+				            "Period_Date", DATE ( YEAR ( dim_date[Datum] ), MONTH ( dim_date[Datum] ), 1 )
+				        )
+				    )
+				VAR _Basis =
+				    ADDCOLUMNS (
+				        FILTER ( fct_retention, fct_retention[statuscodename] = "Aktiv" ),
+				        "@EndDateRaw",
+				            IF (
+				                NOT ISBLANK ( fct_retention[cgplc_contractenddate] ),
+				                fct_retention[cgplc_contractenddate],
+				                EDATE ( fct_retention[cgplc_decisiondate], 3 )
+				            )
+				    )
+				VAR _MitEckdaten =
+				    ADDCOLUMNS (
+				        FILTER ( _Basis, NOT ISBLANK ( [@EndDateRaw] ) ),
+				        "@EndDate",
+				            EDATE ( DATE ( YEAR ( [@EndDateRaw] ), MONTH ( [@EndDateRaw] ), 1 ), 1 ),
+				        "@FirstFYEnd", DATE ( YEAR ( EDATE ( [@EndDateRaw], -9 ) ) + 1, 9, 30 ),
+				        "@WeightedLyAro",
+				            fct_retention[cgplc_lastfyrevenuearo]
+				                * ( 1 - COALESCE ( fct_retention[cgplc_retentionprobability], 0 ) )
+				    )
+				VAR _MitLaufzeit =
+				    ADDCOLUMNS (
+				        _MitEckdaten,
+				        "@ITY_Months",
+				            ( YEAR ( [@FirstFYEnd] ) - YEAR ( [@EndDate] ) ) * 12
+				                + MONTH ( [@FirstFYEnd] ) - MONTH ( [@EndDate] ) + 1
+				    )
+				VAR _MitWerten =
+				    ADDCOLUMNS ( _MitLaufzeit, "@ARO_Value", DIVIDE ( [@WeightedLyAro], 12, 0 ) * -1 )
+				VAR _Expandiert =
+				    FILTER (
+				        GENERATE ( _MitWerten, _Horizont ),
+				        [Period_Date] >= [@EndDate] && [Period_Date] <= EDATE ( [@EndDate], 11 )
+				    )
+				RETURN
+				    SELECTCOLUMNS (
+				        _Expandiert,
+				        "cgplc_cgcontractid", fct_retention[cgplc_cgcontractid],
+				        "sap_unit", fct_retention[cgplc_sapid],
+				        "Period_Date", [Period_Date],
+				        "Calc_EndDate", [@EndDate],
+				        "Calc_FirstFYEnd", [@FirstFYEnd],
+				        "Calc_ITY_Months", [@ITY_Months],
+				        "weighted_ly_aro", [@WeightedLyAro],
+				        "Calc_ARO_Value", [@ARO_Value]
+				    )
+				```
+
+	annotation PBI_ResultType = Table

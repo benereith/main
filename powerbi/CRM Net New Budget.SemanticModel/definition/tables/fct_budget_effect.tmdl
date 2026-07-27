@@ -1,0 +1,88 @@
+table fct_budget_effect
+	lineageTag: 83c9a5a7-977a-547b-a3f2-b57cb7e82f75
+
+	column effect_type
+		dataType: string
+		lineageTag: 008a685e-c863-5385-83c7-0f5fd9970139
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [effect_type]
+
+		annotation SummarizationSetBy = Automatic
+
+	column entity_id
+		dataType: string
+		lineageTag: 416bae14-90c5-517b-adc9-89994e11382f
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [entity_id]
+
+		annotation SummarizationSetBy = Automatic
+
+	column sap_unit
+		dataType: int64
+		formatString: 0
+		lineageTag: 74079bef-164a-5a3a-a4ec-c10f110413f1
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [sap_unit]
+
+		annotation SummarizationSetBy = Automatic
+
+	column Period_Date
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: 3df5eddf-ff10-539b-a01f-833627be996f
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Period_Date]
+
+		annotation SummarizationSetBy = Automatic
+
+	column Phase
+		dataType: string
+		lineageTag: 86366941-667b-54e3-abca-7dad9e28c01e
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Phase]
+
+		annotation SummarizationSetBy = Automatic
+
+	column Budget_Value
+		dataType: double
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: 229d9116-3190-5571-9d25-f6bee520f5fd
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Budget_Value]
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	partition fct_budget_effect = calculated
+		mode: import
+		source = ```
+				UNION (
+				    SELECTCOLUMNS (
+				        fct_opp_phasing,
+				        "effect_type", "New Business",
+				        "entity_id", fct_opp_phasing[opportunityid],
+				        "sap_unit", fct_opp_phasing[sap_unit],
+				        "Period_Date", fct_opp_phasing[Period_Date],
+				        "Phase", fct_opp_phasing[Phase],
+				        "Budget_Value", fct_opp_phasing[Budget_Value]
+				    ),
+				    SELECTCOLUMNS (
+				        fct_retention_phasing,
+				        "effect_type", "Retention",
+				        "entity_id", fct_retention_phasing[cgplc_cgcontractid],
+				        "sap_unit", fct_retention_phasing[sap_unit],
+				        "Period_Date", fct_retention_phasing[Period_Date],
+				        "Phase", "Retention",
+				        "Budget_Value", CONVERT ( fct_retention_phasing[Calc_ARO_Value], DOUBLE )
+				    )
+				)
+				```
+
+	annotation PBI_ResultType = Table

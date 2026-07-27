@@ -1,0 +1,17 @@
+table dim_contracttype
+	lineageTag: 0987017d-3db7-50f0-8db6-f35f161ea237
+
+	column contracttype
+		dataType: string
+		lineageTag: 759c4c51-d5c0-56ca-8b6b-84ed1e41bb21
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [contracttype]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_contracttype = calculated
+		mode: import
+		source = DISTINCT ( SELECTCOLUMNS ( fct_opportunity, "contracttype", fct_opportunity[cgplc_contracttypelookup] ) )
+
+	annotation PBI_ResultType = Table

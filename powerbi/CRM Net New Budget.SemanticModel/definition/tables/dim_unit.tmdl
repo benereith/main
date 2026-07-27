@@ -1,0 +1,78 @@
+table dim_unit
+	lineageTag: a0f83259-c257-5cbc-b43a-75ddedf2fe14
+
+	column sap_unit
+		dataType: int64
+		formatString: 0
+		lineageTag: 320f120e-d26a-5f0e-b060-add1f4498553
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [sap_unit]
+
+		annotation SummarizationSetBy = Automatic
+
+	column unit_status
+		dataType: string
+		lineageTag: 580ae3c5-e56e-5f9e-b557-910c3083b962
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [unit_status]
+
+		annotation SummarizationSetBy = Automatic
+
+	column bezeichnung
+		dataType: string
+		lineageTag: b315511e-9edb-501c-a65c-6b910e46dbac
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [bezeichnung]
+
+		annotation SummarizationSetBy = Automatic
+
+	column sektor
+		dataType: string
+		lineageTag: 26b926ad-5de7-5657-a396-5d066637ddd8
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [sektor]
+
+		annotation SummarizationSetBy = Automatic
+
+	column bezirk
+		dataType: string
+		lineageTag: f519619f-3245-50c1-b170-53b583552d8b
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [bezirk]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_unit = calculated
+		mode: import
+		source = ```
+				VAR _SapKeys =
+				    SELECTCOLUMNS ( dim_sap_master_data_unit, "sap_unit", dim_sap_master_data_unit[betrieb] )
+				VAR _SapUnits =
+				    SELECTCOLUMNS (
+				        dim_sap_master_data_unit,
+				        "sap_unit", dim_sap_master_data_unit[betrieb],
+				        "unit_status", "In Betrieb",
+				        "bezeichnung", dim_sap_master_data_unit[bezeichnung_betrieb],
+				        "sektor", dim_sap_master_data_unit[sektor],
+				        "bezirk", dim_sap_master_data_unit[bezeichnung_bezirk]
+				    )
+				VAR _MappedKeys =
+				    DISTINCT ( SELECTCOLUMNS ( map_opportunity_unit, "sap_unit", map_opportunity_unit[sap_unit] ) )
+				VAR _PlannedUnits =
+				    ADDCOLUMNS (
+				        EXCEPT ( _MappedKeys, _SapKeys ),
+				        "unit_status", "Geplant",
+				        "bezeichnung", "Noch nicht gewonnen",
+				        "sektor", BLANK (),
+				        "bezirk", BLANK ()
+				    )
+				RETURN
+				    UNION ( _SapUnits, _PlannedUnits )
+				```
+
+	annotation PBI_ResultType = Table

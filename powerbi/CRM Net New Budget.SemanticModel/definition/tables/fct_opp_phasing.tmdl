@@ -1,0 +1,192 @@
+table fct_opp_phasing
+	lineageTag: 787335ba-d59e-5441-aa87-caf4f32a80c7
+
+	column opportunityid
+		dataType: string
+		lineageTag: 7906d7da-e6f4-56cd-b28b-482918f89307
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [opportunityid]
+
+		annotation SummarizationSetBy = Automatic
+
+	column sap_unit
+		dataType: int64
+		formatString: 0
+		lineageTag: 135882a7-448c-5b91-8196-5ab7c7292f5c
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [sap_unit]
+
+		annotation SummarizationSetBy = Automatic
+
+	column Period_Date
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: b9671b5e-f8db-5d35-8d41-25083d3ea936
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Period_Date]
+
+		annotation SummarizationSetBy = Automatic
+
+	column Calc_StartDate
+		dataType: dateTime
+		isHidden
+		formatString: Short Date
+		lineageTag: 3c26f37a-3b8c-571a-99c0-9bfd4fa0e0cb
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Calc_StartDate]
+
+		annotation SummarizationSetBy = Automatic
+
+	column Calc_FirstFYEnd
+		dataType: dateTime
+		isHidden
+		formatString: Short Date
+		lineageTag: 174cba87-5f24-589b-b64f-7f6e2881a2b8
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Calc_FirstFYEnd]
+
+		annotation SummarizationSetBy = Automatic
+
+	column Calc_ITY_Months
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: f0ba50c4-fc3a-528d-b91d-d9d395cff69e
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Calc_ITY_Months]
+
+		annotation SummarizationSetBy = Automatic
+
+	column Calc_ITY_Value
+		dataType: double
+		isHidden
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: 99a9896c-0a91-524e-bb57-f9ca1be80a04
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Calc_ITY_Value]
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	column Calc_ARO_Value
+		dataType: double
+		isHidden
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: 82675678-7148-5a7a-bd01-77f504523e17
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Calc_ARO_Value]
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	column Budget_Value
+		dataType: double
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: 73275f7b-f529-55c1-bb40-8e430151e9fa
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Budget_Value]
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	column Phase
+		dataType: string
+		lineageTag: c4a61861-f3dd-53f9-85ce-82fdf33ad6d3
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Phase]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition fct_opp_phasing = calculated
+		mode: import
+		source = ```
+				VAR _Horizont =
+				    DISTINCT (
+				        SELECTCOLUMNS (
+				            dim_date,
+				            "Period_Date", DATE ( YEAR ( dim_date[Datum] ), MONTH ( dim_date[Datum] ), 1 )
+				        )
+				    )
+				VAR _ITY_Cutoff =
+				    DATE ( YEAR ( EDATE ( MIN ( dim_date[Datum] ), -9 ) ) + 1, 9, 30 )
+				VAR _Basis =
+				    FILTER (
+				        fct_opportunity,
+				        NOT ISBLANK ( fct_opportunity[cgplc_openingdate] )
+				            && fct_opportunity[statecodename] <> "Verloren"
+				            && NOT (
+				                fct_opportunity[cgplc_salesstagename]
+				                    IN { "Nobid", "Turndown/Lost", "Universe" }
+				            )
+				    )
+				VAR _MitEckdaten =
+				    ADDCOLUMNS (
+				        _Basis,
+				        "@StartDate",
+				            DATE (
+				                YEAR ( fct_opportunity[cgplc_openingdate] ),
+				                MONTH ( fct_opportunity[cgplc_openingdate] ),
+				                1
+				            ),
+				        "@FirstFYEnd",
+				            DATE ( YEAR ( EDATE ( fct_opportunity[cgplc_openingdate], -9 ) ) + 1, 9, 30 ),
+				        "@WeightedAro", fct_opportunity[cgplc_revenuearo] * fct_opportunity[cgplc_win],
+				        "@WeightedIty", fct_opportunity[cgplc_revenueity] * fct_opportunity[cgplc_win],
+				        "@SapUnit",
+				            COALESCE (
+				                LOOKUPVALUE (
+				                    map_opportunity_unit[sap_unit],
+				                    map_opportunity_unit[opportunityid], fct_opportunity[opportunityid]
+				                ),
+				                LOOKUPVALUE (
+				                    fct_retention[cgplc_sapid],
+				                    fct_retention[cgplc_cgcontractid], fct_opportunity[cgplc_contractid]
+				                )
+				            )
+				    )
+				VAR _MitLaufzeit =
+				    ADDCOLUMNS (
+				        _MitEckdaten,
+				        "@ITY_Months",
+				            ( YEAR ( [@FirstFYEnd] ) - YEAR ( [@StartDate] ) ) * 12
+				                + MONTH ( [@FirstFYEnd] ) - MONTH ( [@StartDate] ) + 1
+				    )
+				VAR _MitWerten =
+				    ADDCOLUMNS (
+				        _MitLaufzeit,
+				        "@ITY_Value", DIVIDE ( [@WeightedIty], [@ITY_Months], 0 ),
+				        "@ARO_Value", DIVIDE ( [@WeightedAro], 12, 0 )
+				    )
+				VAR _Expandiert =
+				    FILTER ( GENERATE ( _MitWerten, _Horizont ), [Period_Date] >= [@StartDate] )
+				RETURN
+				    SELECTCOLUMNS (
+				        _Expandiert,
+				        "opportunityid", fct_opportunity[opportunityid],
+				        "sap_unit", [@SapUnit],
+				        "Period_Date", [Period_Date],
+				        "Calc_StartDate", [@StartDate],
+				        "Calc_FirstFYEnd", [@FirstFYEnd],
+				        "Calc_ITY_Months", [@ITY_Months],
+				        "Calc_ITY_Value", [@ITY_Value],
+				        "Calc_ARO_Value", [@ARO_Value],
+				        "Budget_Value",
+				            IF ( [Period_Date] <= _ITY_Cutoff, [@ITY_Value] * -1, [@ARO_Value] ),
+				        "Phase", IF ( [Period_Date] <= _ITY_Cutoff, "ITY", "ARO" )
+				    )
+				```
+
+	annotation PBI_ResultType = Table

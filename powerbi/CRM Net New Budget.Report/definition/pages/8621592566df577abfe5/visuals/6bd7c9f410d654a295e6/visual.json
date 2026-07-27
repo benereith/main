@@ -1,0 +1,96 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.8.0/schema.json",
+  "name": "6bd7c9f410d654a295e6",
+  "position": {
+    "x": 16,
+    "y": 184,
+    "z": 11,
+    "height": 260,
+    "width": 1248,
+    "tabOrder": 11
+  },
+  "visual": {
+    "visualType": "clusteredColumnChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dim_date"
+                    }
+                  },
+                  "Property": "FY_JahrMonat"
+                }
+              },
+              "queryRef": "dim_date.FY_JahrMonat",
+              "nativeQueryRef": "FY_JahrMonat"
+            }
+          ]
+        },
+        "Series": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_budget_effect"
+                    }
+                  },
+                  "Property": "effect_type"
+                }
+              },
+              "queryRef": "fct_budget_effect.effect_type",
+              "nativeQueryRef": "effect_type"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Net ITY Effect"
+                }
+              },
+              "queryRef": "_Measures.Net ITY Effect",
+              "nativeQueryRef": "Net ITY Effect"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true,
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Budgetwirkung je Periode und Effektart'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,326 @@
+table fct_opportunity
+	lineageTag: c885fedd-b75a-56a5-8678-99f89a8b3163
+
+	column snapshot_date
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: 7d90b9b2-521c-5b6c-9001-5c4249e33a19
+		summarizeBy: none
+		sourceColumn: snapshot_date
+
+		annotation SummarizationSetBy = Automatic
+
+	column opportunityid
+		dataType: string
+		lineageTag: 6e53761d-cbb5-5d84-9d0f-ac1d9305456f
+		summarizeBy: none
+		sourceColumn: opportunityid
+
+		annotation SummarizationSetBy = Automatic
+
+	column accountid
+		dataType: string
+		lineageTag: f573f6e3-189e-5c87-8a64-476ce22de9eb
+		summarizeBy: none
+		sourceColumn: accountid
+
+		annotation SummarizationSetBy = Automatic
+
+	column parentaccountid
+		dataType: string
+		lineageTag: 937dccde-1354-5bca-ba5a-b28fe33a1c51
+		summarizeBy: none
+		sourceColumn: parentaccountid
+
+		annotation SummarizationSetBy = Automatic
+
+	column ownerid
+		dataType: string
+		lineageTag: e8daa3a4-f9bd-5021-888d-952f2fc06bdb
+		summarizeBy: none
+		sourceColumn: ownerid
+
+		annotation SummarizationSetBy = Automatic
+
+	column cgplc_territoryid
+		dataType: string
+		lineageTag: 6f619950-17f6-5894-9042-c82595340117
+		summarizeBy: none
+		sourceColumn: cgplc_territoryid
+
+		annotation SummarizationSetBy = Automatic
+
+	column cgplc_contractid
+		dataType: string
+		lineageTag: b536fee2-b54a-536c-94c0-a64581b03964
+		summarizeBy: none
+		sourceColumn: cgplc_contractid
+
+		annotation SummarizationSetBy = Automatic
+
+	column name
+		dataType: string
+		lineageTag: 68ae130c-e8ac-5796-a90d-88735f6faf6b
+		summarizeBy: none
+		sourceColumn: name
+
+		annotation SummarizationSetBy = Automatic
+
+	column statecodename
+		dataType: string
+		lineageTag: 632a13c1-14b1-5e40-8e55-8c1c54457fc7
+		summarizeBy: none
+		sourceColumn: statecodename
+
+		annotation SummarizationSetBy = Automatic
+
+	column statuscodename
+		dataType: string
+		lineageTag: e6cc6a3c-840d-5408-bedd-d8110bb088a3
+		summarizeBy: none
+		sourceColumn: statuscodename
+
+		annotation SummarizationSetBy = Automatic
+
+	column cgplc_salesstagename
+		dataType: string
+		lineageTag: cbb35fa8-3916-5a8f-98b5-d3ad1c9f20b0
+		summarizeBy: none
+		sourceColumn: cgplc_salesstagename
+
+		annotation SummarizationSetBy = Automatic
+
+	column cgplc_contracttypelookup
+		dataType: string
+		lineageTag: dace0f2d-a76e-5868-9282-cebedbb6041a
+		summarizeBy: none
+		sourceColumn: cgplc_contracttypelookup
+
+		annotation SummarizationSetBy = Automatic
+
+	column cgplc_sectorlookup
+		dataType: string
+		lineageTag: 80f1cb0a-f6d1-5561-be73-32435ccaa3e4
+		summarizeBy: none
+		sourceColumn: cgplc_sectorlookup
+
+		annotation SummarizationSetBy = Automatic
+
+	column cgplc_subsector
+		dataType: string
+		lineageTag: 440fab09-0fa9-5282-a652-9a306a3bb9d2
+		summarizeBy: none
+		sourceColumn: cgplc_subsector
+
+		annotation SummarizationSetBy = Automatic
+
+	column cgplc_currentsupplier
+		dataType: string
+		lineageTag: ef80689e-cdfe-596b-a2d3-cc660aa106b2
+		summarizeBy: none
+		sourceColumn: cgplc_currentsupplier
+
+		annotation SummarizationSetBy = Automatic
+
+	column estimatedclosedate
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: 4ab20d62-0aae-5545-9c8a-c8d5e0b18cb4
+		summarizeBy: none
+		sourceColumn: estimatedclosedate
+
+		annotation SummarizationSetBy = Automatic
+
+	column cgplc_openingdate
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: 4e2f01ae-c20d-5f02-af7f-32778b5d3ef5
+		summarizeBy: none
+		sourceColumn: cgplc_openingdate
+
+		annotation SummarizationSetBy = Automatic
+
+	column cgplc_wondate
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: e2dc0657-8ae9-568a-af2f-9f5cfe784b2e
+		summarizeBy: none
+		sourceColumn: cgplc_wondate
+
+		annotation SummarizationSetBy = Automatic
+
+	column cgplc_revenuearo
+		dataType: decimal
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: 192c673f-773f-52eb-9d36-c4aa32fbf441
+		summarizeBy: none
+		sourceColumn: cgplc_revenuearo
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	column cgplc_revenuearo_base
+		dataType: decimal
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: 9e8cb31d-e66f-5118-8a07-a868a5ce3884
+		summarizeBy: none
+		sourceColumn: cgplc_revenuearo_base
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	column cgplc_revenueity
+		dataType: decimal
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: a4101a35-ffc6-531d-8313-59d62652ec36
+		summarizeBy: none
+		sourceColumn: cgplc_revenueity
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	column cgplc_revenueity_base
+		dataType: decimal
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: 715d6936-7e3e-5018-8114-57e7f6d0ee5c
+		summarizeBy: none
+		sourceColumn: cgplc_revenueity_base
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	column cgplc_win
+		dataType: double
+		formatString: 0.00\ %;-0.00\ %;0.00\ %
+		lineageTag: 8876decd-27d1-511f-adc5-376e03bc5319
+		summarizeBy: none
+		sourceColumn: cgplc_win
+
+		annotation SummarizationSetBy = Automatic
+
+	column cgplc_bgpercent
+		dataType: double
+		lineageTag: 2c833f05-e6b6-58ce-a70d-400c85064e21
+		summarizeBy: none
+		sourceColumn: cgplc_bgpercent
+
+		annotation SummarizationSetBy = Automatic
+
+	column createdon
+		dataType: dateTime
+		isHidden
+		formatString: Short Date
+		lineageTag: 0c12c8d9-5755-51a9-8a79-82ee385512cb
+		summarizeBy: none
+		sourceColumn: createdon
+
+		annotation SummarizationSetBy = Automatic
+
+	column modifiedon
+		dataType: dateTime
+		isHidden
+		formatString: Short Date
+		lineageTag: 3433bd77-5c93-5b92-8272-17cf35585b1d
+		summarizeBy: none
+		sourceColumn: modifiedon
+
+		annotation SummarizationSetBy = Automatic
+
+	column loaded_at
+		dataType: dateTime
+		isHidden
+		formatString: General Date
+		lineageTag: 910affbc-f515-59aa-9ef2-8053b3581a37
+		summarizeBy: none
+		sourceColumn: loaded_at
+
+		annotation SummarizationSetBy = Automatic
+
+	column win_status = ```
+			SWITCH (
+			    TRUE (),
+			    ISBLANK ( fct_opportunity[cgplc_win] ), "Ohne Wahrscheinlichkeit",
+			    fct_opportunity[cgplc_win] < 0.80, "Pipeline",
+			    fct_opportunity[cgplc_win] < 1, "Expected Win",
+			    "Won"
+			)
+			```
+		dataType: string
+		lineageTag: d825acce-9cbe-54f3-aa2c-bc47afe964bf
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	column weighted_aro = fct_opportunity[cgplc_revenuearo] * fct_opportunity[cgplc_win]
+		dataType: decimal
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: 5d28030b-017f-557f-a8f3-8ddd939b0e1d
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	column weighted_ity = fct_opportunity[cgplc_revenueity] * fct_opportunity[cgplc_win]
+		dataType: decimal
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: 7cae8d6f-fccd-5a62-a1ce-60c388db6b9a
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	column close_fy = ```
+			VAR _d = fct_opportunity[estimatedclosedate]
+			VAR _start = IF ( MONTH ( _d ) >= 10, YEAR ( _d ), YEAR ( _d ) - 1 )
+			RETURN
+			    IF ( ISBLANK ( _d ), BLANK (), "FY" & _start & "/" & RIGHT ( _start + 1, 2 ) )
+			```
+		dataType: string
+		lineageTag: 948bc536-f4bb-5f6f-bd5e-296493d3d2ff
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	column sales_cycle_days = ```
+			DATEDIFF (
+			    fct_opportunity[cgplc_openingdate],
+			    fct_opportunity[estimatedclosedate],
+			    DAY
+			)
+			```
+		dataType: int64
+		formatString: 0
+		lineageTag: ef735ace-b259-54e9-bc72-75c28a04b986
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	column Info = ```
+			FORMAT ( fct_opportunity[cgplc_win], "0.00 %" ) & " - "
+			    & FORMAT ( fct_opportunity[cgplc_revenuearo], "#,##0 €" ) & " - "
+			    & FORMAT ( fct_opportunity[estimatedclosedate], "dd.MM.yyyy" ) & " - "
+			    & FORMAT ( fct_opportunity[cgplc_openingdate], "dd.MM.yyyy" )
+			```
+		dataType: string
+		lineageTag: f506e65a-022d-5a33-8e88-2026b16521a3
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	partition fct_opportunity = m
+		mode: import
+		source = ```
+				let
+				  Quelle = FabricSql,
+				  Daten = Quelle{[Schema = "dbo", Item = "fct_opportunity_current"]}[Data]
+				in
+				  Daten
+				```
+
+	annotation PBI_ResultType = Table

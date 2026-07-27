@@ -1,0 +1,60 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.8.0/schema.json",
+  "name": "9a00b0a280255ac89e99",
+  "position": {
+    "x": 16.0,
+    "y": 64,
+    "z": 0,
+    "height": 104,
+    "width": 198.0,
+    "tabOrder": 0
+  },
+  "visual": {
+    "visualType": "card",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Net ITY Effect"
+                }
+              },
+              "queryRef": "_Measures.Net ITY Effect",
+              "nativeQueryRef": "Net ITY Effect"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true,
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Net ITY Effect'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

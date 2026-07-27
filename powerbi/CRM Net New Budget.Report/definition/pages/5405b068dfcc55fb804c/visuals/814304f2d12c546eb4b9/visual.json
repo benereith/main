@@ -1,0 +1,60 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.8.0/schema.json",
+  "name": "814304f2d12c546eb4b9",
+  "position": {
+    "x": 16.0,
+    "y": 64,
+    "z": 0,
+    "height": 104,
+    "width": 303.0,
+    "tabOrder": 0
+  },
+  "visual": {
+    "visualType": "card",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Unmapped Effect"
+                }
+              },
+              "queryRef": "_Measures.Unmapped Effect",
+              "nativeQueryRef": "Unmapped Effect"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true,
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Effekt ohne Betrieb'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

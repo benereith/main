@@ -1,0 +1,78 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.8.0/schema.json",
+  "name": "4acfc53c3d97587f8805",
+  "position": {
+    "x": 648,
+    "y": 184,
+    "z": 11,
+    "height": 250,
+    "width": 616,
+    "tabOrder": 11
+  },
+  "visual": {
+    "visualType": "clusteredColumnChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dim_date"
+                    }
+                  },
+                  "Property": "FY_Monat"
+                }
+              },
+              "queryRef": "dim_date.FY_Monat",
+              "nativeQueryRef": "FY_Monat"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Retention Probability Movement"
+                }
+              },
+              "queryRef": "_Measures.Retention Probability Movement",
+              "nativeQueryRef": "Retention Probability Movement"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true,
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Bewegung der Retention-Einschätzung'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -212,6 +212,9 @@ UNION (
         "sap_unit", fct_retention_phasing[sap_unit],
         "Period_Date", fct_retention_phasing[Period_Date],
         "Phase", "Retention",
-        "Budget_Value", fct_retention_phasing[Calc_ARO_Value]
+        // Explizit auf DOUBLE: die Opportunity-Seite liefert das Ergebnis
+        // von DIVIDE, die Retention-Seite einen Waehrungswert. UNION
+        // verlangt vergleichbare Typen je Position.
+        "Budget_Value", CONVERT ( fct_retention_phasing[Calc_ARO_Value], DOUBLE )
     )
 )

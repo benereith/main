@@ -1,0 +1,29 @@
+expression SqlEndpoint = "3w3wftkijo6ujehh4fb2eleovu-sdjibi3hrggujev7dt4yjznhu4.datawarehouse.fabric.microsoft.com" meta [IsParameterQuery = true, Type = "Text", IsParameterQueryRequired = true]
+	lineageTag: c3c8f36f-b69e-55b1-9e4c-584f04956bfc
+
+	annotation PBI_ResultType = Text
+
+expression WarehouseName = "BITTE_EINTRAGEN" meta [IsParameterQuery = true, Type = "Text", IsParameterQueryRequired = true]
+	lineageTag: 82b45174-3ef7-5382-bd8a-6d049900ae85
+
+	annotation PBI_ResultType = Text
+
+expression FY_Start = #date(2025, 10, 1) meta [IsParameterQuery = true, Type = type date, IsParameterQueryRequired = true]
+	lineageTag: d3ae8e7f-11d4-544d-b3f9-b37663a2fdbf
+
+	annotation PBI_ResultType = Date
+
+expression FY_Ende = #date(2027, 9, 30) meta [IsParameterQuery = true, Type = type date, IsParameterQueryRequired = true]
+	lineageTag: 088917b0-a6c1-502e-9062-67c52da7330e
+
+	annotation PBI_ResultType = Date
+
+expression FabricSql = ```
+		let
+		  Datenbank = Sql.Database(SqlEndpoint, WarehouseName)
+		in
+		  Datenbank
+		```
+	lineageTag: 8e1209c8-6229-5c05-ae04-e350696380ff
+
+	annotation PBI_ResultType = Table

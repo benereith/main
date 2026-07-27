@@ -1,0 +1,144 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.8.0/schema.json",
+  "name": "8779b74a304c5e1b9783",
+  "position": {
+    "x": 16,
+    "y": 450,
+    "z": 12,
+    "height": 254,
+    "width": 1248,
+    "tabOrder": 12
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_retention"
+                    }
+                  },
+                  "Property": "cgplc_name"
+                }
+              },
+              "queryRef": "fct_retention.cgplc_name",
+              "nativeQueryRef": "cgplc_name"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_retention"
+                    }
+                  },
+                  "Property": "sektor"
+                }
+              },
+              "queryRef": "fct_retention.sektor",
+              "nativeQueryRef": "sektor"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_retention"
+                    }
+                  },
+                  "Property": "cgplc_contractenddate"
+                }
+              },
+              "queryRef": "fct_retention.cgplc_contractenddate",
+              "nativeQueryRef": "cgplc_contractenddate"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_retention"
+                    }
+                  },
+                  "Property": "cgplc_retentionprobability"
+                }
+              },
+              "queryRef": "fct_retention.cgplc_retentionprobability",
+              "nativeQueryRef": "cgplc_retentionprobability"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_retention"
+                    }
+                  },
+                  "Property": "days_to_decision"
+                }
+              },
+              "queryRef": "fct_retention.days_to_decision",
+              "nativeQueryRef": "days_to_decision"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_retention"
+                    }
+                  },
+                  "Property": "cgplc_lastfyrevenuearo"
+                }
+              },
+              "queryRef": "fct_retention.cgplc_lastfyrevenuearo",
+              "nativeQueryRef": "cgplc_lastfyrevenuearo"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fct_retention"
+                    }
+                  },
+                  "Property": "Ret_Status"
+                }
+              },
+              "queryRef": "fct_retention.Ret_Status",
+              "nativeQueryRef": "Ret_Status"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true,
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Verträge mit anstehender Entscheidung'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

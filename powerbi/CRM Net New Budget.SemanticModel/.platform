@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "CRM Net New Budget"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "eec3104f-b1b9-526b-bd72-f4cc0e45d1a4"
+  }
+}

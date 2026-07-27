@@ -1,0 +1,272 @@
+table fct_opportunity_changes
+	lineageTag: 00596984-b035-5726-a504-7e5bca43c98b
+
+	column snapshot_date
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: 158ada7e-2b75-5b2d-b05c-318ed92adeb6
+		summarizeBy: none
+		sourceColumn: snapshot_date
+
+		annotation SummarizationSetBy = Automatic
+
+	column opportunityid
+		dataType: string
+		lineageTag: c7e338f9-d9e0-5642-a10c-ae5f194f1537
+		summarizeBy: none
+		sourceColumn: opportunityid
+
+		annotation SummarizationSetBy = Automatic
+
+	column name
+		dataType: string
+		lineageTag: f60a4933-f5fb-5615-9a2f-8ea699e9819d
+		summarizeBy: none
+		sourceColumn: name
+
+		annotation SummarizationSetBy = Automatic
+
+	column ownerid
+		dataType: string
+		lineageTag: 4d8e0961-6862-516f-b538-04e531e33da8
+		summarizeBy: none
+		sourceColumn: ownerid
+
+		annotation SummarizationSetBy = Automatic
+
+	column cgplc_sectorlookup
+		dataType: string
+		lineageTag: 4bbfc3bf-904a-5717-ab82-fad2ef0f4fff
+		summarizeBy: none
+		sourceColumn: cgplc_sectorlookup
+
+		annotation SummarizationSetBy = Automatic
+
+	column cgplc_territoryid
+		dataType: string
+		lineageTag: 874e8088-31e7-5f6a-a1ae-21b8d17d11aa
+		summarizeBy: none
+		sourceColumn: cgplc_territoryid
+
+		annotation SummarizationSetBy = Automatic
+
+	column statecodename
+		dataType: string
+		lineageTag: 6f445c66-5835-5e6b-95b8-253bd6d18044
+		summarizeBy: none
+		sourceColumn: statecodename
+
+		annotation SummarizationSetBy = Automatic
+
+	column statuscodename
+		dataType: string
+		lineageTag: cbc330e4-03a1-5a48-b92f-fc2bc4c8b047
+		summarizeBy: none
+		sourceColumn: statuscodename
+
+		annotation SummarizationSetBy = Automatic
+
+	column cgplc_salesstagename
+		dataType: string
+		lineageTag: 0e99a7d2-9b46-59e1-a3ac-1207bcdc7809
+		summarizeBy: none
+		sourceColumn: cgplc_salesstagename
+
+		annotation SummarizationSetBy = Automatic
+
+	column cgplc_win
+		dataType: double
+		formatString: 0.00\ %;-0.00\ %;0.00\ %
+		lineageTag: 05a40df8-c33d-56d1-8b92-bd51b4dd59ae
+		summarizeBy: none
+		sourceColumn: cgplc_win
+
+		annotation SummarizationSetBy = Automatic
+
+	column cgplc_revenuearo
+		dataType: decimal
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: 8f21aba2-96eb-5ff9-92b9-c545936e5726
+		summarizeBy: none
+		sourceColumn: cgplc_revenuearo
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	column cgplc_revenueity
+		dataType: decimal
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: aa821653-cd98-5ef1-a67e-9a88245afc0e
+		summarizeBy: none
+		sourceColumn: cgplc_revenueity
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	column estimatedclosedate
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: 33d34040-e883-51d4-bd68-bd45912ba123
+		summarizeBy: none
+		sourceColumn: estimatedclosedate
+
+		annotation SummarizationSetBy = Automatic
+
+	column cgplc_openingdate
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: fe7f8e61-ad93-5799-b01f-8cbf9777d25e
+		summarizeBy: none
+		sourceColumn: cgplc_openingdate
+
+		annotation SummarizationSetBy = Automatic
+
+	column prev_statecodename
+		dataType: string
+		isHidden
+		lineageTag: 0222ee4e-f8c2-5873-b0c8-26cc62eb44c0
+		summarizeBy: none
+		sourceColumn: prev_statecodename
+
+		annotation SummarizationSetBy = Automatic
+
+	column prev_statuscodename
+		dataType: string
+		isHidden
+		lineageTag: 1206782e-adee-551c-9ad7-75a08f317597
+		summarizeBy: none
+		sourceColumn: prev_statuscodename
+
+		annotation SummarizationSetBy = Automatic
+
+	column prev_salesstagename
+		dataType: string
+		lineageTag: 8f7e8295-13c8-59ef-8d69-09b9a3fd2925
+		summarizeBy: none
+		sourceColumn: prev_salesstagename
+
+		annotation SummarizationSetBy = Automatic
+
+	column prev_win
+		dataType: double
+		isHidden
+		formatString: 0.00\ %;-0.00\ %;0.00\ %
+		lineageTag: 68c5aefb-ebec-52b3-bf9d-df8d13f2dbc2
+		summarizeBy: none
+		sourceColumn: prev_win
+
+		annotation SummarizationSetBy = Automatic
+
+	column prev_revenuearo
+		dataType: decimal
+		isHidden
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: d0d47ab8-3a2f-5354-93f2-ff9e117da046
+		summarizeBy: none
+		sourceColumn: prev_revenuearo
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	column prev_revenueity
+		dataType: decimal
+		isHidden
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: 0138c8fc-8ce8-5a74-94b5-1997e59c479b
+		summarizeBy: none
+		sourceColumn: prev_revenueity
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	column prev_estimatedclosedate
+		dataType: dateTime
+		isHidden
+		formatString: Short Date
+		lineageTag: 26381435-47b5-5aaf-87a2-5adc03722f94
+		summarizeBy: none
+		sourceColumn: prev_estimatedclosedate
+
+		annotation SummarizationSetBy = Automatic
+
+	column prev_snapshot_date
+		dataType: dateTime
+		isHidden
+		formatString: Short Date
+		lineageTag: 767ba036-24be-5803-ba43-e741509ede59
+		summarizeBy: none
+		sourceColumn: prev_snapshot_date
+
+		annotation SummarizationSetBy = Automatic
+
+	column is_new
+		dataType: boolean
+		lineageTag: 2cdbc56e-2c2e-5e45-9185-5e5926821a87
+		summarizeBy: none
+		sourceColumn: is_new
+
+		annotation SummarizationSetBy = Automatic
+
+	column stage_changed
+		dataType: boolean
+		lineageTag: 90f7c0b4-c8ff-546d-8a43-5234da02d16a
+		summarizeBy: none
+		sourceColumn: stage_changed
+
+		annotation SummarizationSetBy = Automatic
+
+	column delta_revenuearo
+		dataType: decimal
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: a0757aa4-19e5-55d3-b0e4-660ef9420b9d
+		summarizeBy: none
+		sourceColumn: delta_revenuearo
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	column delta_revenueity
+		dataType: decimal
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: 5cf07598-0c56-5fe1-8d1d-f16d3ebff7b0
+		summarizeBy: none
+		sourceColumn: delta_revenueity
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	column delta_win
+		dataType: double
+		formatString: 0.00\ %;-0.00\ %;0.00\ %
+		lineageTag: 504c4799-7318-56d9-b77c-faa89f1c00ad
+		summarizeBy: none
+		sourceColumn: delta_win
+
+		annotation SummarizationSetBy = Automatic
+
+	column delta_closedate_days
+		dataType: int64
+		formatString: 0
+		lineageTag: d158e1a3-1c3d-59eb-a4eb-b095db2c32ea
+		summarizeBy: none
+		sourceColumn: delta_closedate_days
+
+		annotation SummarizationSetBy = Automatic
+
+	partition fct_opportunity_changes = m
+		mode: import
+		source = ```
+				let
+				  Quelle = FabricSql,
+				  Daten = Quelle{[Schema = "dbo", Item = "fct_opportunity_changes"]}[Data]
+				in
+				  Daten
+				```
+
+	annotation PBI_ResultType = Table

@@ -1,0 +1,92 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.8.0/schema.json",
+  "name": "904524ddc1745c77aa89",
+  "position": {
+    "x": 16,
+    "y": 184,
+    "z": 10,
+    "height": 250,
+    "width": 1248,
+    "tabOrder": 10
+  },
+  "visual": {
+    "visualType": "lineChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dim_date"
+                    }
+                  },
+                  "Property": "Datum"
+                }
+              },
+              "queryRef": "dim_date.Datum",
+              "nativeQueryRef": "Datum"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Net New Pipeline"
+                }
+              },
+              "queryRef": "_Measures.Net New Pipeline",
+              "nativeQueryRef": "Net New Pipeline"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Pipeline Value Movement"
+                }
+              },
+              "queryRef": "_Measures.Pipeline Value Movement",
+              "nativeQueryRef": "Pipeline Value Movement"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true,
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Pipeline-Zugang und Wertbewegung im Zeitverlauf'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
