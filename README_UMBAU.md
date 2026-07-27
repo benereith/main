@@ -35,8 +35,8 @@ Faktentabelle), nicht länger dupliziertes DAX/Power-Query.
 ```
 
 Zusätzliche, bewusst **entkoppelte** Tabellen (Slicer/Steuerung):
-`Snapshot_Timestamp_R/S` (Vergleichszeitpunkte CRM), `Zeitfilter` (MTD/YTD),
-`Granularität`, `Zeitansicht`, `KPI`, `Abgeschlossene Periode`, `Comments`.
+`Vergleichszeitpunkt` (Vergleichszeitpunkte Sales/Retention), `Zeitfilter`
+(MTD/YTD), `Granularität`, `Zeitansicht`, `KPI`, `Abgeschlossene Periode`.
 
 ### Was war vorher das Problem?
 

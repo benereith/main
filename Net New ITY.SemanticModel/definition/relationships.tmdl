@@ -10,11 +10,6 @@ relationship ac51f2de-7070-d783-dcc5-73f66d52b023
 	fromColumn: Sales_Pipeline_ITY.Datum
 	toColumn: DIM_DATE.Datum
 
-relationship AutoDetected_72613004-b46b-42db-b9ae-4626f40ead33
-	crossFilteringBehavior: bothDirections
-	fromColumn: Comments.'Werk - Bezeichnung'
-	toColumn: SAP_Stammdaten.'Werk - Bezeichnung'
-
 relationship 6182d8fb-7051-a263-8752-a0b8f79a2133
 	fromColumn: Revenues.Datum
 	toColumn: DIM_DATE.Datum

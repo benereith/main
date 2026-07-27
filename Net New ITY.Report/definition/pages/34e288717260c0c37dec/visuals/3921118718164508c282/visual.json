@@ -5,8 +5,8 @@
     "x": 6.9890795631825275,
     "y": 4.99219968798752,
     "z": 0,
-    "height": 704.89859594383779,
-    "width": 1044.3681747269891,
+    "height": 704.8985959438378,
+    "width": 1044.368174726989,
     "tabOrder": 0
   },
   "visual": {
@@ -1037,27 +1037,6 @@
           }
         },
         "type": "Advanced"
-      },
-      {
-        "name": "0b3b848236076a0ace6d",
-        "ordinal": 14,
-        "field": {
-          "Aggregation": {
-            "Expression": {
-              "Column": {
-                "Expression": {
-                  "SourceRef": {
-                    "Entity": "Comments"
-                  }
-                },
-                "Property": "Comment"
-              }
-            },
-            "Function": 3
-          }
-        },
-        "type": "Advanced",
-        "howCreated": "User"
       },
       {
         "name": "840defd07540a0e73b19",
