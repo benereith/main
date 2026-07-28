@@ -20,13 +20,13 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "DIM Opportunity"
+                      "Entity": "FCT Net New ITY"
                     }
                   },
                   "Property": "Sektor"
                 }
               },
-              "queryRef": "DIM Opportunity.Sektor",
+              "queryRef": "FCT Net New ITY.Sektor",
               "nativeQueryRef": "Sektor",
               "active": true
             }
@@ -129,6 +129,11 @@
         }
       ]
     },
-    "drillFilterOtherVisuals": true
+    "drillFilterOtherVisuals": true,
+    "syncGroup": {
+      "groupName": "sektor_konform",
+      "fieldChanges": false,
+      "filterChanges": true
+    }
   }
 }

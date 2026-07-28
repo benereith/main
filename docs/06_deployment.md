@@ -26,18 +26,28 @@ Power BI Desktop: unter *Datei → Optionen → Vorschaufunktionen* müssen
 Im Fabric-Arbeitsbereich drei Dataflows Gen2 erstellen und den M-Code aus
 `dataflows/` einfügen:
 
-| Dataflow | Datei | Ziel |
-|---|---|---|
-| `df_crm_opportunity` | `dataflows/df_crm_opportunity.m` | `bronze_crm_opportunity` |
-| `df_crm_contract` | `dataflows/df_crm_contract.m` | `bronze_crm_contract` |
-| `df_crm_lookups` | `dataflows/df_crm_lookups.m` | `bronze_crm_account`, `bronze_crm_systemuser`, `bronze_crm_territory`, `bronze_crm_stagehistory` |
+| Dataflow | Datei | Ziel | Modus |
+|---|---|---|---|
+| `df_crm_opportunity` | `dataflows/df_crm_opportunity.m` | `bronze_crm_opportunity` | Anfügen |
+| `df_crm_contract` | `dataflows/df_crm_contract.m` | `bronze_crm_contract` | Anfügen |
+| `df_crm_lookups` | `dataflows/df_crm_lookups.m` | `bronze_crm_account`, `bronze_crm_territory` | Anfügen |
+| `df_map_unit_assignment` | `dataflows/df_map_unit_assignment.m` | `bronze_map_unit_assignment` | **Ersetzen** |
 
-In `df_crm_lookups` ist nur die erste Abfrage aktiv; die übrigen drei stehen
-auskommentiert in derselben Datei und sind als eigene Abfragen anzulegen. Die
-gemeinsame Quellfunktion `fnDataverse` steht am Dateianfang.
+In `df_crm_lookups` ist nur die erste Abfrage aktiv; `territory` steht
+auskommentiert in derselben Datei und wird als eigene Abfrage angelegt. Die
+gemeinsame Quellfunktion `fnDataverse` steht am Dateianfang. Die Entitäten
+`systemuser` und `audit` werden bewusst **nicht** extrahiert – beide sind im
+Mandanten nicht verfügbar (Begründung und Konsequenzen:
+`docs/04_crm_feldkatalog.md`, Abschnitt „Bewusst nicht extrahiert").
 
-Ziel jeweils: Lakehouse `lakehouse_group_controlling`, Aktualisierungsmethode
-**Anfügen** (nicht Ersetzen) – die Snapshot-Historie hängt daran.
+`df_map_unit_assignment` lädt die vom Controlling gepflegte Datei
+`Mapping_Planwerke.xlsx` (SharePoint, `08_Budget`). Sie steuert die
+Werk-Zuordnung der CRM-Vorgänge über Sektor/Subsektor – Aufbau und
+Auflösungskette: `docs/04_crm_feldkatalog.md`, Abschnitt „Werk-Zuordnung".
+Als Stammdatum wird sie ersetzt, nicht angefügt.
+
+Für die CRM-Extrakte gilt Aktualisierungsmethode **Anfügen** – die
+Snapshot-Historie hängt daran.
 
 SAP-Seite: `bronze_sap_revenue` aus `V_SAP_EXPORTS_cleansed` und
 `bronze_sap_unit` aus dem bestehenden Dataflow `sap_master_data_unit`. Das

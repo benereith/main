@@ -155,6 +155,17 @@ Beschreibung hat. Das ist beabsichtigt.
   ab, und protokolliert sie in `_fehlende_felder`.
 * **Abnahme gegen die Altberichte.** Der Parallelbetrieb steht noch aus; das
   Vorgehen beschreibt `docs/07_migration_mapping.md`, Abschnitt 5.
-* **Audit-Entität.** Ist `audit` für `opportunity` im Mandanten nicht
-  aktiviert, arbeitet die Bewegungsanalyse mit Tagessnapshots statt mit der
-  feineren CRM-Änderungshistorie.
+* **Mapping-Tabelle befüllen.** Die Werk-Zuordnung der CRM-Vorgänge läuft über
+  `Mapping_Planwerke.xlsx` (Sektor/Subsektor → Planbetrieb). Fehlende
+  Kombinationen listet Regel DQ-MAP-002 als Arbeitsliste; bis dahin fallen
+  nicht zuordenbare Vorgänge in Organisationssichten in die Leerzeile –
+  erkennbar an `Werk Zuordnung = "Nicht zugeordnet"`.
+
+## Bekannte Einschränkungen des Mandanten
+
+* **`audit` ist nicht aktiviert.** Die Bewegungsanalyse arbeitet mit
+  Tagessnapshots: Änderungen sind auf Tagesgranularität sichtbar, der
+  Bearbeiter einer Änderung wird nicht erfasst.
+* **`systemuser` ist nicht abrufbar.** Der Name des Verantwortlichen kommt aus
+  `owneridname` am Vorgang; Verantwortliche ohne offenen Vorgang sind nicht
+  listbar. Verschmerzbar.

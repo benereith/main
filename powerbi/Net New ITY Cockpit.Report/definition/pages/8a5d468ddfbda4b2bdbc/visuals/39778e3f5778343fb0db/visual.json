@@ -1,13 +1,13 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.8.0/schema.json",
-  "name": "df13da50428f47eea6ee",
+  "name": "39778e3f5778343fb0db",
   "position": {
-    "x": 401,
-    "y": 100,
-    "z": 1040,
+    "x": 840,
+    "y": 26,
+    "z": 344,
     "height": 56,
-    "width": 209,
-    "tabOrder": 1040
+    "width": 208,
+    "tabOrder": 344
   },
   "visual": {
     "visualType": "slicer",
@@ -20,14 +20,14 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "DIM Vertrag"
+                      "Entity": "FCT Net New ITY"
                     }
                   },
-                  "Property": "Risikogrund"
+                  "Property": "Sektor"
                 }
               },
-              "queryRef": "DIM Vertrag.Risikogrund",
-              "nativeQueryRef": "Risikogrund",
+              "queryRef": "FCT Net New ITY.Sektor",
+              "nativeQueryRef": "Sektor",
               "active": true
             }
           ]
@@ -96,7 +96,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Risikogrund'"
+                  "Value": "'Sektor'"
                 }
               }
             },
@@ -129,6 +129,11 @@
         }
       ]
     },
-    "drillFilterOtherVisuals": true
+    "drillFilterOtherVisuals": true,
+    "syncGroup": {
+      "groupName": "sektor_konform",
+      "fieldChanges": false,
+      "filterChanges": true
+    }
   }
 }

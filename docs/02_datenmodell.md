@@ -15,10 +15,10 @@
 | `DIM HFM-Struktur` | Dimension | 10 | 0 | `gold_dim_hfm_struktur` |
 | `DIM Opportunity` | Dimension | 19 | 0 | `gold_dim_opportunity` |
 | `DIM Status` | Dimension | 7 | 0 | `gold_dim_status` |
-| `DIM Vertrag` | Dimension | 14 | 0 | `gold_dim_contract` |
+| `DIM Vertrag` | Dimension | 18 | 0 | `gold_dim_contract` |
 | `DQ Prüfungen` | Prüfung | 6 | 0 | `gold_dq_checks` |
 | `FCT CRM-Bewegung` | Fakt | 14 | 0 | `gold_fct_crm_movement` |
-| `FCT Net New ITY` | Fakt | 28 | 0 | `gold_fct_net_new_ity` |
+| `FCT Net New ITY` | Fakt | 30 | 0 | `gold_fct_net_new_ity` |
 | `FCT Umsatz` | Fakt | 14 | 0 | `gold_fct_revenue` |
 | `Szenario Anlauf` | Szenario-Parameter | 2 | 0 | berechnet (DATATABLE) |
 | `Szenario Anlaufdauer` | Szenario-Parameter | 2 | 0 | berechnet (DATATABLE) |
@@ -171,6 +171,10 @@ Bestandsverträge aus dem CRM (Retention-Sicht). Quelle: gold_dim_contract.
 | `Betriebsbeginn` | dateTime | `operation_start_date` | – |
 | `Vertragsende (bereinigt)` | dateTime | `adj_end_date` | Bereinigtes Vertragsende: Vertragsende laut CRM, ersatzweise Entscheidungsdatum plus drei Monate (übliche Kündigungsfrist bis zur Demobilisierung). Viele Evergreen-Verträge haben kein Enddatum. |
 | `ITY Cluster` | string | `ity_cluster` | – |
+| `Sektor` | string | `sector` | Sektor des Vertrags. Spiegelbild zu 'DIM Opportunity'[Sektor], damit die Lost-Seite nach denselben Merkmalen auswertbar ist wie die New-Seite. Für Datenschnitte, die BEIDE Geschäftsarten treffen sollen, stattdessen 'FCT Net New ITY'[Sektor] verwenden – diese Spalte hier filtert nur Verträge. |
+| `Subsektor` | string | `subsector` | Subsektor des Vertrags. Siehe Hinweis bei Sektor. |
+| `Vertragsart` | string | `contract_type` | – |
+| `Verantwortlicher` | string | `owner_name` | – |
 | `Retention %` | double | `retention_probability` | Haltewahrscheinlichkeit. Achtung Leserichtung: 100 % = kein Risiko. Die Verlustwahrscheinlichkeit ist 1 − Retention-%. |
 | `ARO Umsatz` | decimal | `revenue_aro` | – |
 | `Vorjahres-ARO` | decimal | `last_fy_revenue_aro` | Vorjahres-ARO – Bemessungsgrundlage für HFM MAP136 (Lost ARO). |
@@ -251,11 +255,13 @@ VORZEICHENKONVENTION – der wichtigste Unterschied zu den Altmodellen: New Busi
 | `Entscheidungsdatum` | dateTime | `decision_date` | Entscheidungsdatum laut CRM. Laut Group Guidance (S. 2) maßgeblich für die Zuordnung zu "current year" bzw. "prior year" – NICHT das Mobilisierungs- oder Schließungsdatum. |
 | `Ende 1. GJ` _(technisch)_ | dateTime | `calc_first_fy_end` | Ende des ersten Geschäftsjahres der Entität. Grenze zwischen ITY- und ARO-Phase. |
 | `ITY Monate` | int64 | `calc_ity_months` | Anzahl Monate der ITY-Phase. Teiler bei der Verteilung des ITY-Werts. |
-| `Sektor` | string | `sector` | – |
-| `Vertragsart` | string | `contract_type` | – |
-| `Kunde` | string | `account_name` | – |
-| `Verantwortlicher` | string | `owner_name` | – |
-| `Werk` _(technisch)_ | int64 | `sap_id` | SAP-Betriebsnummer, sofern zuordenbar. Verbindung zu DIM Betrieb. |
+| `Sektor` | string | `sector` | KONFORME ATTRIBUTE (Sektor bis Verantwortlicher) Diese fünf Merkmale liegen bewusst auf dem Fakt und nicht nur in den Dimensionen, weil sie für BEIDE Geschäftsarten gefüllt sind. Grund: 'DIM Opportunity' und 'DIM Vertrag' sind getrennte Dimensionen. Ein Datenschnitt auf 'DIM Opportunity'[Sektor] filtert nur die New-Zeilen – die Lost-Zeilen hängen an dieser Dimension gar nicht und laufen unverändert durch. Das Ergebnis wäre ein "Net New ITY im Sektor Healthcare", das das gesamte Lost Business aller Sektoren enthält: falsch, ohne Fehlermeldung. Für seitenübergreifende Datenschnitte deshalb IMMER diese Spalten verwenden, nicht die gleichnamigen der Dimensionen. Die Dimensionsspalten bleiben für Detailsichten innerhalb einer Geschäftsart. |
+| `Subsektor` | string | `subsector` | Subsektor. Konform über beide Geschäftsarten – siehe Sektor. |
+| `Vertragsart` | string | `contract_type` | Vertragsart. Konform über beide Geschäftsarten – siehe Sektor. |
+| `Kunde` | string | `account_name` | Kunde. Konform über beide Geschäftsarten – siehe Sektor. Auf der Lost-Seite über cgplc_accountid aus dem Konto nachgeschlagen. |
+| `Verantwortlicher` | string | `owner_name` | Verantwortlicher. Konform über beide Geschäftsarten – siehe Sektor. |
+| `Werk` _(technisch)_ | int64 | `sap_id` | SAP-Betriebsnummer. Verbindung zu DIM Betrieb und damit zu Region, Management und Verantwortungsbereich. Aufgelöst über eine vierstufige Kette (nb_20_gold, Abschnitt 5d): 1. Einzelfall-Ausnahme aus der Mapping-Tabelle 2. cgplc_sapid am Vorgang selbst 3. Mapping über Sektor UND Subsektor 4. Mapping über Sektor allein Die Mapping-Tabelle (Mapping_Planwerke.xlsx) pflegt das Controlling – dort steht, welcher Sektor/Subsektor auf welchem Planbetrieb geplant wird. Die SAP-Nummer des Kontos wird bewusst nicht verwendet: sie ist ein Debitor, kein Betrieb. Welche Stufe gegriffen hat, zeigt 'Werk Zuordnung'. Lücken zählt Regel DQ-MAP-001, fehlende Mapping-Zeilen listet DQ-MAP-002. |
+| `Werk Zuordnung` | string | `werk_zuordnung` | Herkunft der Werk-Zuordnung: Ausnahme (Mapping) / CRM direkt / Mapping Sektor/Subsektor / Mapping Sektor / Nicht zugeordnet. Macht je Vorgang sichtbar, ob eine Zahl auf gepflegten CRM-Daten oder auf der Mapping-Tabelle beruht – und priorisiert damit die Nachpflege: "Nicht zugeordnet" ist die Arbeitsliste. |
 | `Stichtag` _(technisch)_ | dateTime | `snapshot_date` | Stichtag des Ladelaufs. Ermöglicht Snapshot-Vergleiche. |
 
 ### `FCT Umsatz`

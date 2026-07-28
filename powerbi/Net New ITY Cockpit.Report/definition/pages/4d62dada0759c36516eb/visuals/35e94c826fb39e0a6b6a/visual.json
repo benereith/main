@@ -1,13 +1,13 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.8.0/schema.json",
-  "name": "df13da50428f47eea6ee",
+  "name": "35e94c826fb39e0a6b6a",
   "position": {
-    "x": 401,
+    "x": 184,
     "y": 100,
-    "z": 1040,
+    "z": 1018,
     "height": 56,
-    "width": 209,
-    "tabOrder": 1040
+    "width": 354,
+    "tabOrder": 1018
   },
   "visual": {
     "visualType": "slicer",
@@ -20,14 +20,14 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "DIM Vertrag"
+                      "Entity": "FCT Net New ITY"
                     }
                   },
-                  "Property": "Risikogrund"
+                  "Property": "Werk Zuordnung"
                 }
               },
-              "queryRef": "DIM Vertrag.Risikogrund",
-              "nativeQueryRef": "Risikogrund",
+              "queryRef": "FCT Net New ITY.Werk Zuordnung",
+              "nativeQueryRef": "Werk Zuordnung",
               "active": true
             }
           ]
@@ -96,7 +96,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Risikogrund'"
+                  "Value": "'Herkunft der Werk-Zuordnung'"
                 }
               }
             },

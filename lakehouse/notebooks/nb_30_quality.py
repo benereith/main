@@ -217,14 +217,97 @@ check(
 )
 
 # ---------------------------------------------------------------------------
-# DQ-MAP-001  Opportunity ohne Zuordnung zu einem SAP-Betrieb
+# DQ-FCT-004  Konforme Attribute nur einseitig befuellt
 # ---------------------------------------------------------------------------
-# Ersetzt das SharePoint-Mapping dim_opp_mapping (Mapping_Planwerke.xlsx).
+# Diese Regel adressiert eine ganze FEHLERKLASSE, nicht einen Einzelfall.
+#
+# Sektor, Subsektor, Vertragsart, Kunde, Verantwortlicher und die
+# Betriebsnummer liegen auf dem Fakt, weil sie fuer BEIDE Geschaeftsarten
+# gelten sollen. Ist eine dieser Spalten auf einer Seite systematisch leer,
+# filtert ein Datenschnitt darauf nur die andere Haelfte - und liefert eine
+# falsche Zahl ohne jedes Fehlerbild. Genau dieser Fall lag vor, als
+# gold_dim_contract Sektor und Subsektor nicht selektierte und der Fakt
+# sap_id nur fuer Vertraege fuehrte.
+#
+# Schwelle: Eine Seite gilt als "systematisch leer", wenn dort ueber 95 % der
+# Werte fehlen, waehrend die andere Seite zu mindestens 50 % gefuellt ist.
+# Einzelne Luecken sind normal und werden bewusst nicht gemeldet.
+KONFORME_ATTRIBUTE = [
+    ("sector", "Sektor"),
+    ("subsector", "Subsektor"),
+    ("contract_type", "Vertragsart"),
+    ("account_name", "Kunde"),
+    ("owner_name", "Verantwortlicher"),
+    ("sap_id", "Werk"),
+]
+
+fuellgrad = (
+    fct.groupBy("business_type")
+    .agg(*[
+        (F.count(F.col(spalte)) / F.count(F.lit(1))).alias(spalte)
+        for spalte, _ in KONFORME_ATTRIBUTE
+    ])
+    .collect()
+)
+grade = {zeile["business_type"]: zeile.asDict() for zeile in fuellgrad}
+
+einseitig = []
+for spalte, anzeige in KONFORME_ATTRIBUTE:
+    neu = grade.get("NEW", {}).get(spalte)
+    verloren = grade.get("LOST", {}).get(spalte)
+    if neu is None or verloren is None:
+        continue
+    if (neu < 0.05 and verloren >= 0.5) or (verloren < 0.05 and neu >= 0.5):
+        leere_seite = "NEW" if neu < 0.05 else "LOST"
+        einseitig.append(
+            (spalte, anzeige, leere_seite, round(neu * 100, 1), round(verloren * 100, 1))
+        )
+
 check(
-    "DQ-MAP-001", "INFO",
-    "Opportunity ohne Zuordnung zu einem Planbetrieb",
-    opp.filter(F.col("account_sap_id").isNull()),
-    "Zuordnung im CRM (cgplc_sapid) oder in der Mapping-Tabelle ergaenzen.",
+    "DQ-FCT-004", "ERROR",
+    "Konformes Attribut nur fuer eine Geschaeftsart befuellt",
+    spark.createDataFrame(
+        einseitig,
+        "spalte string, attribut string, leere_seite string, fuellgrad_new double, "
+        "fuellgrad_lost double",
+    ) if einseitig else spark.createDataFrame([], "spalte string"),
+    "nb_20_gold pruefen: das Attribut fehlt in opp_base bzw. con_base. "
+    "Ein Datenschnitt darauf wuerde nur eine Haelfte der Net-New-Rechnung filtern.",
+)
+if einseitig:
+    for spalte, anzeige, seite, fn, fl in einseitig:
+        print(f"       -> {anzeige} ({spalte}): NEW {fn} %, LOST {fl} % - leer auf {seite}")
+
+# ---------------------------------------------------------------------------
+# DQ-MAP-001  Vorgang ohne Zuordnung zu einem SAP-Betrieb
+# ---------------------------------------------------------------------------
+# Die Werk-Zuordnung laeuft ueber die Kette Ausnahme -> cgplc_sapid ->
+# Mapping (Sektor/Subsektor) -> Mapping (Sektor). Greift keine Stufe, faellt
+# der Vorgang in Auswertungen nach Region oder Management in die Leerzeile.
+# Die Auswertung nach Sektor funktioniert weiterhin, weil der Sektor direkt
+# am Vorgang haengt.
+check(
+    "DQ-MAP-001", "WARNING",
+    "Vorgang ohne Zuordnung zu einem SAP-Betrieb (werk_zuordnung = Nicht zugeordnet)",
+    fct.filter(F.col("sap_id").isNull()).select("entity_id").distinct(),
+    "Sektor/Subsektor-Kombination in Mapping_Planwerke.xlsx ergaenzen "
+    "(df_map_unit_assignment) oder cgplc_sapid am Vorgang pflegen.",
+)
+
+# ---------------------------------------------------------------------------
+# DQ-MAP-002  Sektor/Subsektor-Kombination ohne Mapping-Zeile
+# ---------------------------------------------------------------------------
+# Aggregierte Sicht auf dieselbe Luecke: WELCHE Kombinationen fehlen in der
+# Mapping-Tabelle? Eine Zeile je Kombination - das ist die Arbeitsliste fuer
+# die Pflege von Mapping_Planwerke.xlsx, waehrend DQ-MAP-001 die betroffenen
+# Vorgaenge zaehlt.
+check(
+    "DQ-MAP-002", "INFO",
+    "Sektor/Subsektor-Kombination ohne Zeile in der Mapping-Tabelle",
+    fct.filter(F.col("sap_id").isNull() & F.col("sector").isNotNull())
+    .select("sector", "subsector").distinct(),
+    "Fuer jede gelistete Kombination eine Zeile in Mapping_Planwerke.xlsx anlegen "
+    "(sektor, subsektor, werk).",
 )
 
 # ---------------------------------------------------------------------------

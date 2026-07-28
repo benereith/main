@@ -1,13 +1,13 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.8.0/schema.json",
-  "name": "df13da50428f47eea6ee",
+  "name": "17c643aae305437b5caa",
   "position": {
-    "x": 401,
-    "y": 100,
-    "z": 1040,
+    "x": 1056,
+    "y": 26,
+    "z": 365,
     "height": 56,
-    "width": 209,
-    "tabOrder": 1040
+    "width": 208,
+    "tabOrder": 365
   },
   "visual": {
     "visualType": "slicer",
@@ -20,14 +20,14 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "DIM Vertrag"
+                      "Entity": "DIM Datum"
                     }
                   },
-                  "Property": "Risikogrund"
+                  "Property": "GJ Bezeichnung"
                 }
               },
-              "queryRef": "DIM Vertrag.Risikogrund",
-              "nativeQueryRef": "Risikogrund",
+              "queryRef": "DIM Datum.GJ Bezeichnung",
+              "nativeQueryRef": "GJ Bezeichnung",
               "active": true
             }
           ]
@@ -96,7 +96,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Risikogrund'"
+                  "Value": "'Geschäftsjahr'"
                 }
               }
             },
@@ -129,6 +129,11 @@
         }
       ]
     },
-    "drillFilterOtherVisuals": true
+    "drillFilterOtherVisuals": true,
+    "syncGroup": {
+      "groupName": "geschaeftsjahr",
+      "fieldChanges": false,
+      "filterChanges": true
+    }
   }
 }

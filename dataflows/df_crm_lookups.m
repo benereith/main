@@ -1,8 +1,6 @@
 // ===========================================================================
 // Dataflow Gen2  ·  df_crm_lookups  ->  bronze_crm_account
-//                                       bronze_crm_systemuser
 //                                       bronze_crm_territory
-//                                       bronze_crm_stagehistory
 // ===========================================================================
 // Zweck : Die Nachschlagetabellen, die im Altmodell als dim_opp_* aus dem
 //         Fakt heraus per "Duplikate entfernen" erzeugt wurden. Das war
@@ -10,7 +8,19 @@
 //         vorkommen, fehlten in der Dimension, und Attribute wurden aus dem
 //         Fakt statt aus der Quelle gelesen.
 //
-// Dieses Skript enthaelt vier Abfragen. In Dataflow Gen2 werden sie als vier
+// BEWUSST NICHT EXTRAHIERT:
+//   systemuser  Im Mandanten nicht abrufbar. Verzichtbar: der Klarname des
+//               Verantwortlichen kommt als owneridname direkt an der
+//               Opportunity bzw. am Vertrag mit.
+//   audit       Die Audit-Entitaet ist im Mandanten fuer opportunity nicht
+//               aktiviert. Die Bewegungsanalyse (gold_fct_crm_movement)
+//               arbeitet deshalb ausschliesslich mit den Tagessnapshots aus
+//               silver_*_history - das ist der tragende Mechanismus, nicht
+//               ein Notbehelf. Sollte Audit spaeter aktiviert werden, laesst
+//               sich die feinere Historie ergaenzen, ohne dass sich am
+//               Datenmodell etwas aendert.
+//
+// Dieses Skript enthaelt zwei Abfragen. In Dataflow Gen2 werden sie als zwei
 // getrennte Abfragen angelegt; der gemeinsame Quell-Schritt wird als
 // Funktion referenziert.
 // ===========================================================================
@@ -40,7 +50,9 @@ let
         "accountid",                 // Primaerschluessel
         "name",                      // Kundenname
         "parentaccountid",           // Konzernstruktur
-        "cgplc_sapid",               // SAP-Debitor / Betriebsnummer
+        "cgplc_sapid",               // SAP-Debitor (Debitor, KEIN Betrieb -
+                                     // deshalb nicht fuer die Werk-Zuordnung
+                                     // verwendet, siehe df_map_unit_assignment)
         "cgplc_sectorlookup",        // Sektor
         "cgplc_subsector",           // Subsektor
         "cgplc_territoryid",         // Vertriebsgebiet
@@ -62,55 +74,13 @@ in
 
 
 // ---------------------------------------------------------------------------
-// Abfrage 2: bronze_crm_systemuser
-// ---------------------------------------------------------------------------
-// let
-//     usr = fnDataverse("systemuser"),
-//     Gewuenscht = {
-//         "systemuserid", "fullname", "internalemailaddress", "title",
-//         "businessunitid", "territoryid", "isdisabled"
-//     },
-//     Auswahl = List.Intersect({Gewuenscht, Table.ColumnNames(usr)}),
-//     Selektiert = Table.SelectColumns(usr, Auswahl),
-//     MitSnapshot = Table.AddColumn(Selektiert, "snapshot_date", each Date.From(DateTime.FixedLocalNow()), type date)
-// in
-//     MitSnapshot
-
-
-// ---------------------------------------------------------------------------
-// Abfrage 3: bronze_crm_territory
+// Abfrage 2: bronze_crm_territory
 // ---------------------------------------------------------------------------
 // let
 //     terr = fnDataverse("territory"),
 //     Gewuenscht = { "territoryid", "name", "parentterritoryid", "managerid" },
 //     Auswahl = List.Intersect({Gewuenscht, Table.ColumnNames(terr)}),
 //     Selektiert = Table.SelectColumns(terr, Auswahl),
-//     MitSnapshot = Table.AddColumn(Selektiert, "snapshot_date", each Date.From(DateTime.FixedLocalNow()), type date)
-// in
-//     MitSnapshot
-
-
-// ---------------------------------------------------------------------------
-// Abfrage 4: bronze_crm_stagehistory
-// ---------------------------------------------------------------------------
-// Die Audit-Entitaet liefert die tatsaechliche Stage-Historie einer
-// Opportunity. Damit laesst sich beantworten, wie lange eine Opportunity in
-// welcher Phase lag und wie sich die Win-% ueber die Zeit entwickelt hat -
-// unabhaengig von unseren eigenen Tagessnapshots.
-//
-// HINWEIS: Die Entitaet "audit" muss im Mandanten fuer opportunity aktiviert
-// sein. Ist sie es nicht, liefert diese Abfrage eine leere Tabelle; die
-// Bewegungsanalyse faellt dann auf silver_*_history (Tagessnapshots) zurueck.
-//
-// let
-//     audit = fnDataverse("audit"),
-//     NurOpportunity = Table.SelectRows(audit, each [objecttypecode] = "opportunity"),
-//     Gewuenscht = {
-//         "auditid", "objectid", "objecttypecode", "createdon", "userid",
-//         "operation", "attributemask", "changedata"
-//     },
-//     Auswahl = List.Intersect({Gewuenscht, Table.ColumnNames(NurOpportunity)}),
-//     Selektiert = Table.SelectColumns(NurOpportunity, Auswahl),
 //     MitSnapshot = Table.AddColumn(Selektiert, "snapshot_date", each Date.From(DateTime.FixedLocalNow()), type date)
 // in
 //     MitSnapshot

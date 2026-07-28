@@ -167,6 +167,21 @@ def months_between_inclusive(start_col, end_col):
     ).cast("int")
 
 
+def spalte_oder_null(df, name: str, typ: str = "string"):
+    """Liefert die Spalte, falls vorhanden - sonst eine typisierte NULL-Spalte.
+
+    WARUM: Ein Teil der CRM-Felder ist kundenspezifisch (cgplc_-Praefix) und im
+    Mandanten nicht garantiert vorhanden - siehe docs/04_crm_feldkatalog.md,
+    Kennzeichen [C]. Der Dataflow ueberspringt fehlende Felder bereits per
+    SafeSelect; ohne dieses Gegenstueck wuerde das Notebook trotzdem mit
+    AnalysisException abbrechen, sobald es eine dieser Spalten anfasst.
+
+    So degradiert der Ladelauf stattdessen: das Attribut ist leer, die Kennzahl
+    stimmt weiterhin.
+    """
+    return F.col(name).cast(typ) if name in df.columns else F.lit(None).cast(typ)
+
+
 def write_delta(df, table_name: str, mode: str = "overwrite", partition_by=None):
     """Einheitlicher Schreibpfad mit Schema-Evolution."""
     writer = (

@@ -20,13 +20,13 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "DIM Opportunity"
+                      "Entity": "FCT Net New ITY"
                     }
                   },
                   "Property": "Verantwortlicher"
                 }
               },
-              "queryRef": "DIM Opportunity.Verantwortlicher",
+              "queryRef": "FCT Net New ITY.Verantwortlicher",
               "nativeQueryRef": "Verantwortlicher",
               "active": true
             }

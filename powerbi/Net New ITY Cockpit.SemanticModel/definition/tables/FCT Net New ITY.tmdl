@@ -218,31 +218,72 @@ table 'FCT Net New ITY'
 		summarizeBy: none
 		sourceColumn: calc_ity_months
 
+	/// KONFORME ATTRIBUTE (Sektor bis Verantwortlicher)
+	///
+	/// Diese fünf Merkmale liegen bewusst auf dem Fakt und nicht nur in den
+	/// Dimensionen, weil sie für BEIDE Geschäftsarten gefüllt sind.
+	///
+	/// Grund: 'DIM Opportunity' und 'DIM Vertrag' sind getrennte Dimensionen.
+	/// Ein Datenschnitt auf 'DIM Opportunity'[Sektor] filtert nur die
+	/// New-Zeilen – die Lost-Zeilen hängen an dieser Dimension gar nicht und
+	/// laufen unverändert durch. Das Ergebnis wäre ein "Net New ITY im Sektor
+	/// Healthcare", das das gesamte Lost Business aller Sektoren enthält:
+	/// falsch, ohne Fehlermeldung.
+	///
+	/// Für seitenübergreifende Datenschnitte deshalb IMMER diese Spalten
+	/// verwenden, nicht die gleichnamigen der Dimensionen. Die
+	/// Dimensionsspalten bleiben für Detailsichten innerhalb einer
+	/// Geschäftsart.
 	column Sektor
 		dataType: string
 		lineageTag: c1000000-0000-4000-8000-000000000122
 		summarizeBy: none
 		sourceColumn: sector
 
+	/// Subsektor. Konform über beide Geschäftsarten – siehe Sektor.
+	column Subsektor
+		dataType: string
+		lineageTag: c1000000-0000-4000-8000-000000000129
+		summarizeBy: none
+		sourceColumn: subsector
+
+	/// Vertragsart. Konform über beide Geschäftsarten – siehe Sektor.
 	column Vertragsart
 		dataType: string
 		lineageTag: c1000000-0000-4000-8000-000000000123
 		summarizeBy: none
 		sourceColumn: contract_type
 
+	/// Kunde. Konform über beide Geschäftsarten – siehe Sektor.
+	/// Auf der Lost-Seite über cgplc_accountid aus dem Konto nachgeschlagen.
 	column Kunde
 		dataType: string
 		lineageTag: c1000000-0000-4000-8000-000000000124
 		summarizeBy: none
 		sourceColumn: account_name
 
+	/// Verantwortlicher. Konform über beide Geschäftsarten – siehe Sektor.
 	column Verantwortlicher
 		dataType: string
 		lineageTag: c1000000-0000-4000-8000-000000000125
 		summarizeBy: none
 		sourceColumn: owner_name
 
-	/// SAP-Betriebsnummer, sofern zuordenbar. Verbindung zu DIM Betrieb.
+	/// SAP-Betriebsnummer. Verbindung zu DIM Betrieb und damit zu Region,
+	/// Management und Verantwortungsbereich.
+	///
+	/// Aufgelöst über eine vierstufige Kette (nb_20_gold, Abschnitt 5d):
+	///   1. Einzelfall-Ausnahme aus der Mapping-Tabelle
+	///   2. cgplc_sapid am Vorgang selbst
+	///   3. Mapping über Sektor UND Subsektor
+	///   4. Mapping über Sektor allein
+	/// Die Mapping-Tabelle (Mapping_Planwerke.xlsx) pflegt das Controlling –
+	/// dort steht, welcher Sektor/Subsektor auf welchem Planbetrieb geplant
+	/// wird. Die SAP-Nummer des Kontos wird bewusst nicht verwendet: sie ist
+	/// ein Debitor, kein Betrieb.
+	///
+	/// Welche Stufe gegriffen hat, zeigt 'Werk Zuordnung'. Lücken zählt
+	/// Regel DQ-MAP-001, fehlende Mapping-Zeilen listet DQ-MAP-002.
 	column 'Werk'
 		dataType: int64
 		formatString: 0
@@ -250,6 +291,18 @@ table 'FCT Net New ITY'
 		lineageTag: c1000000-0000-4000-8000-000000000126
 		summarizeBy: none
 		sourceColumn: sap_id
+
+	/// Herkunft der Werk-Zuordnung: Ausnahme (Mapping) / CRM direkt /
+	/// Mapping Sektor/Subsektor / Mapping Sektor / Nicht zugeordnet.
+	///
+	/// Macht je Vorgang sichtbar, ob eine Zahl auf gepflegten CRM-Daten oder
+	/// auf der Mapping-Tabelle beruht – und priorisiert damit die Nachpflege:
+	/// "Nicht zugeordnet" ist die Arbeitsliste.
+	column 'Werk Zuordnung'
+		dataType: string
+		lineageTag: c1000000-0000-4000-8000-000000000130
+		summarizeBy: none
+		sourceColumn: werk_zuordnung
 
 	/// Stichtag des Ladelaufs. Ermöglicht Snapshot-Vergleiche.
 	column Stichtag

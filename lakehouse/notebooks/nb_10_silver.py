@@ -129,14 +129,13 @@ opp_silver = (
 )
 
 # --- Lookups anreichern ----------------------------------------------------
+# KEIN Join gegen systemuser: die Entitaet ist im Mandanten nicht abrufbar.
+# Der Klarname des Verantwortlichen kommt als owneridname direkt an der
+# Opportunity mit - das genuegt fuer Filter und Anzeige.
 acct = spark.table("bronze_crm_account").select(
     F.col("accountid"),
     F.col("name").alias("account_name"),
     F.col("cgplc_sapid").alias("account_sap_id"),
-)
-usr = spark.table("bronze_crm_systemuser").select(
-    F.col("systemuserid").alias("ownerid"),
-    F.col("fullname").alias("owner_name"),
 )
 terr = spark.table("bronze_crm_territory").select(
     F.col("territoryid").alias("cgplc_territoryid"),
@@ -145,8 +144,8 @@ terr = spark.table("bronze_crm_territory").select(
 
 opp_silver = (
     opp_silver.join(acct, "accountid", "left")
-    .join(usr, "ownerid", "left")
     .join(terr, "cgplc_territoryid", "left")
+    .withColumn("owner_name", spalte_oder_null(opp_silver, "owneridname"))
 )
 
 write_delta(opp_silver, "silver_opportunity", mode="overwrite")

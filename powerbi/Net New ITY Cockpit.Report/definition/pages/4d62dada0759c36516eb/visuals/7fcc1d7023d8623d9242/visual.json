@@ -1,54 +1,78 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.8.0/schema.json",
-  "name": "41677f9fda9336549316",
+  "name": "7fcc1d7023d8623d9242",
   "position": {
     "x": 184,
-    "y": 100,
-    "z": 1018,
-    "height": 56,
-    "width": 209,
-    "tabOrder": 1018
+    "y": 680,
+    "z": 8100,
+    "height": 24,
+    "width": 1080,
+    "tabOrder": 8100
   },
   "visual": {
-    "visualType": "slicer",
+    "visualType": "cardVisual",
     "query": {
       "queryState": {
-        "Values": {
+        "Data": {
           "projections": [
             {
               "field": {
-                "Column": {
+                "Measure": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "DIM Status"
+                      "Entity": "_Kennzahlen"
                     }
                   },
-                  "Property": "Status"
+                  "Property": "Stand der Daten"
                 }
               },
-              "queryRef": "DIM Status.Status",
-              "nativeQueryRef": "Status",
-              "active": true
+              "queryRef": "_Kennzahlen.Stand der Daten",
+              "nativeQueryRef": "Stand der Daten"
             }
           ]
         }
       }
     },
     "objects": {
-      "data": [
+      "callout": [
         {
           "properties": {
-            "mode": {
+            "show": {
               "expr": {
                 "Literal": {
-                  "Value": "'Dropdown'"
+                  "Value": "true"
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "9.0D"
+                }
+              }
+            },
+            "color": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#898781'"
+                    }
+                  }
+                }
+              }
+            },
+            "horizontalAlignment": {
+              "expr": {
+                "Literal": {
+                  "Value": "'left'"
                 }
               }
             }
           }
         }
       ],
-      "header": [
+      "label": [
         {
           "properties": {
             "show": {
@@ -61,17 +85,23 @@
           }
         }
       ],
-      "selection": [
+      "background": [
         {
           "properties": {
-            "selectAllCheckboxEnabled": {
+            "show": {
               "expr": {
                 "Literal": {
-                  "Value": "true"
+                  "Value": "false"
                 }
               }
-            },
-            "singleSelect": {
+            }
+          }
+        }
+      ],
+      "border": [
+        {
+          "properties": {
+            "show": {
               "expr": {
                 "Literal": {
                   "Value": "false"
@@ -89,39 +119,7 @@
             "show": {
               "expr": {
                 "Literal": {
-                  "Value": "true"
-                }
-              }
-            },
-            "text": {
-              "expr": {
-                "Literal": {
-                  "Value": "'Risikostufe'"
-                }
-              }
-            },
-            "titleWrap": {
-              "expr": {
-                "Literal": {
-                  "Value": "true"
-                }
-              }
-            },
-            "fontColor": {
-              "solid": {
-                "color": {
-                  "expr": {
-                    "Literal": {
-                      "Value": "'#0B0B0B'"
-                    }
-                  }
-                }
-              }
-            },
-            "alignment": {
-              "expr": {
-                "Literal": {
-                  "Value": "'left'"
+                  "Value": "false"
                 }
               }
             }

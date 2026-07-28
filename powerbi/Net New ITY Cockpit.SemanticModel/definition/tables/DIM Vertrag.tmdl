@@ -73,6 +73,37 @@ table 'DIM Vertrag'
 		summarizeBy: none
 		sourceColumn: ity_cluster
 
+	/// Sektor des Vertrags. Spiegelbild zu 'DIM Opportunity'[Sektor], damit die
+	/// Lost-Seite nach denselben Merkmalen auswertbar ist wie die New-Seite.
+	///
+	/// Für Datenschnitte, die BEIDE Geschäftsarten treffen sollen, stattdessen
+	/// 'FCT Net New ITY'[Sektor] verwenden – diese Spalte hier filtert nur
+	/// Verträge.
+	column Sektor
+		dataType: string
+		lineageTag: b5000000-0000-4000-8000-000000000115
+		summarizeBy: none
+		sourceColumn: sector
+
+	/// Subsektor des Vertrags. Siehe Hinweis bei Sektor.
+	column Subsektor
+		dataType: string
+		lineageTag: b5000000-0000-4000-8000-000000000116
+		summarizeBy: none
+		sourceColumn: subsector
+
+	column Vertragsart
+		dataType: string
+		lineageTag: b5000000-0000-4000-8000-000000000117
+		summarizeBy: none
+		sourceColumn: contract_type
+
+	column Verantwortlicher
+		dataType: string
+		lineageTag: b5000000-0000-4000-8000-000000000118
+		summarizeBy: none
+		sourceColumn: owner_name
+
 	/// Haltewahrscheinlichkeit. Achtung Leserichtung: 100 % = kein Risiko.
 	/// Die Verlustwahrscheinlichkeit ist 1 − Retention-%.
 	column 'Retention %'

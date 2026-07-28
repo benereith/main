@@ -2,12 +2,12 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.8.0/schema.json",
   "name": "863e66f7dc971b2497f1",
   "position": {
-    "x": 1000,
+    "x": 835,
     "y": 100,
-    "z": 1100,
+    "z": 1083,
     "height": 56,
-    "width": 264,
-    "tabOrder": 1100
+    "width": 209,
+    "tabOrder": 1083
   },
   "visual": {
     "visualType": "slicer",
@@ -20,14 +20,14 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "DIM Betrieb"
+                      "Entity": "FCT Net New ITY"
                     }
                   },
-                  "Property": "Region"
+                  "Property": "Sektor"
                 }
               },
-              "queryRef": "DIM Betrieb.Region",
-              "nativeQueryRef": "Region",
+              "queryRef": "FCT Net New ITY.Sektor",
+              "nativeQueryRef": "Sektor",
               "active": true
             }
           ]
@@ -96,7 +96,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Region'"
+                  "Value": "'Sektor'"
                 }
               }
             },
@@ -129,6 +129,11 @@
         }
       ]
     },
-    "drillFilterOtherVisuals": true
+    "drillFilterOtherVisuals": true,
+    "syncGroup": {
+      "groupName": "sektor_konform",
+      "fieldChanges": false,
+      "filterChanges": true
+    }
   }
 }

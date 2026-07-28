@@ -144,6 +144,32 @@ Net-New-Summe im Bericht falsch ist.
 
 **Zuständig:** BI-Entwicklung
 
+#### DQ-FCT-004 · Konformes Attribut nur einseitig befüllt · ERROR
+
+Diese Regel adressiert eine **Fehlerklasse**, nicht einen Einzelfall.
+
+Sektor, Subsektor, Vertragsart, Kunde, Verantwortlicher und die Betriebsnummer
+liegen auf der Faktentabelle, weil sie für **beide** Geschäftsarten gelten
+sollen. Ist eine dieser Spalten auf einer Seite systematisch leer, filtert ein
+Datenschnitt darauf nur die andere Hälfte – und liefert eine falsche Zahl ohne
+jedes Fehlerbild.
+
+Ein Beispiel: Fehlt der Sektor auf der Lost-Seite, zeigt ein „Net New ITY im
+Sektor Healthcare" das New Business dieses Sektors, aber das Lost Business
+**aller** Sektoren. Die Zahl sieht plausibel aus und ist falsch.
+
+Genau dieser Fall lag im ersten Entwurf vor: `gold_dim_contract` selektierte
+Sektor und Subsektor nicht, und die Betriebsnummer wurde nur für Verträge
+geführt – wodurch jede Auswertung nach Region das gesamte New Business in der
+Leerzeile gezeigt hätte.
+
+Schwelle: Eine Seite gilt als systematisch leer, wenn dort über 95 % der Werte
+fehlen, während die andere zu mindestens 50 % gefüllt ist. Einzelne Lücken sind
+normal und werden bewusst nicht gemeldet.
+
+**Zuständig:** BI-Entwicklung
+**Behebung:** `nb_20_gold.py` – das Attribut fehlt in `opp_base` oder `con_base`
+
 #### DQ-FCT-003 · Rekonstruktion des ITY-Gesamtwerts · ERROR
 
 Die Summe der monatlichen ITY-Werte einer Opportunity im ersten Geschäftsjahr
@@ -157,18 +183,41 @@ oder die Abgrenzung zwischen ITY- und ARO-Phase.
 
 ### Zuordnung
 
-#### DQ-MAP-001 · Opportunity ohne Betriebszuordnung · INFO
+#### DQ-MAP-001 · Vorgang ohne Betriebszuordnung · WARNING
 
-Ohne Zuordnung zu einem SAP-Betrieb lässt sich die Opportunity nicht gegen
-gebuchte Umsätze stellen. Die Auswertung nach Sektor und Vertriebsgebiet
-funktioniert trotzdem.
+Ohne Zuordnung zu einem SAP-Betrieb lässt sich der Vorgang nicht gegen gebuchte
+Umsätze stellen, und er fällt in Auswertungen nach Region oder Management in die
+Leerzeile. Die Auswertung nach Sektor funktioniert trotzdem, weil der Sektor
+direkt am Vorgang hängt.
 
-Diese Regel ersetzt die SharePoint-Datei `Mapping_Planwerke.xlsx` der
-Altmodelle: Statt einer manuell gepflegten Zuordnungsliste außerhalb des
-Systems zeigt der Bericht, wo die Zuordnung fehlt.
+Die Betriebsnummer wird über eine vierstufige Kette aufgelöst
+(`nb_20_gold.py`, Abschnitt 5d):
+
+1. `entity_id`-Ausnahme in der Mapping-Tabelle
+2. `cgplc_sapid` am Vorgang selbst
+3. Mapping-Zeile mit Sektor **und** Subsektor
+4. Mapping-Zeile mit Sektor allein
+
+Die Mapping-Tabelle ist `Mapping_Planwerke.xlsx` (SharePoint), geladen über
+`df_map_unit_assignment` – dieselbe Datei wie im Altmodell, aber jetzt mit
+protokollierter Auflösung: die Faktenspalte `Werk Zuordnung` zeigt je Vorgang,
+welche Stufe gegriffen hat. Die SAP-Nummer des Kontos wird bewusst **nicht**
+als Ersatz verwendet – sie ist ein Debitor, kein Betrieb.
 
 **Zuständig:** Controlling
-**Behebung:** `cgplc_sapid` im CRM pflegen
+**Behebung:** Mapping-Zeile in `Mapping_Planwerke.xlsx` ergänzen oder
+`cgplc_sapid` am Vorgang pflegen
+
+#### DQ-MAP-002 · Sektor/Subsektor-Kombination ohne Mapping-Zeile · INFO
+
+Die aggregierte Sicht auf dieselbe Lücke: **welche** Kombinationen fehlen in
+der Mapping-Tabelle? Eine Zeile je Kombination – das ist die Arbeitsliste für
+die Pflege von `Mapping_Planwerke.xlsx`, während DQ-MAP-001 die betroffenen
+Vorgänge zählt.
+
+**Zuständig:** Controlling
+**Behebung:** Je gelisteter Kombination eine Zeile (`sektor`, `subsektor`,
+`werk`) in der Excel-Datei anlegen
 
 ---
 

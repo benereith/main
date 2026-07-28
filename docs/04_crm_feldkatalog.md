@@ -153,24 +153,83 @@ wachsen, ohne dass jemand vorher jede Spalte in Dataverse verifizieren muss.
 
 | Entität | Zweck | Ersetzt |
 |---|---|---|
-| `account` | Kundenname, Konzernstruktur, SAP-Debitor, Branche, Region | `dim_opp_account`, `dim_opp_parent` |
-| `systemuser` | Klarname des Verantwortlichen | `dim_opp_owner` |
+| `account` | Kundenname, Konzernstruktur, Branche, Region | `dim_opp_account`, `dim_opp_parent` |
 | `territory` | Vertriebsgebiete inkl. Hierarchie | `dim_opp_territory` |
-| `audit` | Änderungshistorie der Opportunities | – (neu) |
 
-Die vier `dim_opp_*`-Tabellen des Altmodells entstanden per "Duplikate
-entfernen" aus dem Fakt. Das hatte zwei Folgen: Stammdaten ohne offene
-Opportunity fehlten in der Dimension, und Attribute stammten aus dem Fakt statt
-aus der Quelle. Beides ist mit echten Entitätsextrakten behoben.
+Die `dim_opp_*`-Tabellen des Altmodells entstanden per "Duplikate entfernen"
+aus dem Fakt. Das hatte zwei Folgen: Stammdaten ohne offene Opportunity
+fehlten in der Dimension, und Attribute stammten aus dem Fakt statt aus der
+Quelle. Beides ist mit echten Entitätsextrakten behoben.
 
-### Zur Audit-Entität
+### Bewusst nicht extrahiert
 
-`audit` liefert die tatsächliche Änderungshistorie mitsamt Zeitstempel und
-Bearbeiter – deutlich feiner als unsere Tagessnapshots. Die Entität muss im
-Mandanten für `opportunity` aktiviert sein. Ist sie es nicht, liefert die
-Abfrage eine leere Tabelle, und die Bewegungsanalyse arbeitet mit den
-Tagessnapshots aus `silver_opportunity_history` weiter. Beide Wege füttern
-dieselbe Gold-Tabelle `gold_fct_crm_movement`.
+**`systemuser`** ist im Mandanten nicht abrufbar. Das ist verschmerzbar: der
+Klarname des Verantwortlichen kommt als `owneridname` direkt an der
+Opportunity bzw. am Vertrag mit – genau daraus speist sich `owner_name` in
+Silver. Es entfällt lediglich die Möglichkeit, Verantwortliche ohne einen
+einzigen offenen Vorgang zu listen.
+
+**`audit`** ist im Mandanten für `opportunity` **nicht aktiviert**. Die
+Bewegungsanalyse (`gold_fct_crm_movement`) arbeitet deshalb ausschließlich mit
+den Tagessnapshots aus `silver_opportunity_history` /
+`silver_contract_history` – das ist der tragende Mechanismus, kein Notbehelf.
+Konsequenz: Änderungen sind auf Tagesgranularität sichtbar (mehrere Änderungen
+am selben Tag erscheinen als eine), und der Bearbeiter der Änderung ist nicht
+erfasst. Sollte Audit später aktiviert werden, lässt sich die feinere Historie
+ergänzen, ohne dass sich am Datenmodell etwas ändert.
+
+---
+
+## Konforme Attribute
+
+Sechs Merkmale gelten für **beide** Geschäftsarten und liegen deshalb nicht nur
+in den Dimensionen, sondern auch auf der Faktentabelle:
+
+| Attribut | Quelle New Business | Quelle Lost Business |
+|---|---|---|
+| Sektor | `opportunity.cgplc_sectorlookup` | `cgplc_cgcontract.cgplc_sectorlookup` |
+| Subsektor | `opportunity.cgplc_subsector` | `cgplc_cgcontract.cgplc_subsector` |
+| Vertragsart | `opportunity.cgplc_contracttypelookup` | `cgplc_cgcontract.cgplc_contracttypelookup` |
+| Kunde | `account.name` über `accountid` | `account.name` über `cgplc_accountid` |
+| Verantwortlicher | `opportunity.owneridname` | `cgplc_cgcontract.owneridname` |
+| Werk | Auflösungskette, siehe unten | Auflösungskette, siehe unten |
+
+### Werk-Zuordnung über die Mapping-Tabelle
+
+`cgplc_sapid` ist am Vorgang nur lückenhaft gepflegt, und die SAP-Nummer am
+Konto ist ein **Debitor, kein Betrieb** – sie taugt nicht als Ersatz. Die
+fachliche Information, wohin ein Vorgang gehört, hängt am **Sektor und
+Subsektor** und wird vom Controlling in `Mapping_Planwerke.xlsx` gepflegt
+(geladen über `dataflows/df_map_unit_assignment.m` nach
+`bronze_map_unit_assignment`).
+
+Auflösungskette, erster Treffer gewinnt:
+
+| Stufe | Quelle | `Werk Zuordnung` im Fakt |
+|---|---|---|
+| 1 | `entity_id`-Ausnahme in der Mapping-Tabelle | `Ausnahme (Mapping)` |
+| 2 | `cgplc_sapid` am Vorgang selbst | `CRM direkt` |
+| 3 | Mapping-Zeile mit Sektor **und** Subsektor | `Mapping Sektor/Subsektor` |
+| 4 | Mapping-Zeile mit Sektor allein (Subsektor leer) | `Mapping Sektor` |
+| 5 | – | `Nicht zugeordnet` → DQ-MAP-001 |
+
+Die Spalte `Werk Zuordnung` steht auf der Faktentabelle: je Vorgang ist
+sichtbar, welche Stufe gegriffen hat. Fehlende Mapping-Zeilen listet Regel
+**DQ-MAP-002** als Arbeitsliste für die Pflege der Excel-Datei.
+
+**Warum auf dem Fakt und nicht nur in den Dimensionen:** `DIM Opportunity` und
+`DIM Vertrag` sind getrennte Dimensionen. Ein Datenschnitt auf
+`DIM Opportunity[Sektor]` filtert nur die New-Zeilen; die Lost-Zeilen hängen an
+dieser Dimension gar nicht und laufen unverändert durch. Das Ergebnis wäre ein
+„Net New ITY im Sektor Healthcare", das das gesamte Lost Business aller
+Sektoren enthält – falsch, ohne Fehlermeldung.
+
+**Regel für den Berichtsbau:** Datenschnitte, die beide Geschäftsarten treffen
+sollen, verwenden die Spalten der Faktentabelle. Die gleichnamigen
+Dimensionsspalten bleiben für Detailsichten innerhalb einer Geschäftsart.
+
+Regel **DQ-FCT-004** überwacht, dass keines dieser Attribute einseitig leer
+läuft, und blockiert die Aktualisierung, wenn doch.
 
 ---
 
@@ -182,8 +241,8 @@ Was mit dem erweiterten Feldkatalog beantwortbar wird und vorher nicht war:
 |---|---|
 | Gegen welche Wettbewerber verlieren wir am meisten Volumen? | `cgplc_currentsupplier`, `cgplc_competitorid` |
 | Aus welchen Gründen verlieren wir? | `cgplc_reasonforlossname`, `cgplc_reasonforriskname` |
-| Wie lange liegt eine Opportunity schon in derselben Phase? | `createdon`, `modifiedon`, `salesstage`, `audit` |
-| Wie oft verschiebt sich ein Entscheidungsdatum, bevor es hält? | `estimatedclosedate` über `audit` bzw. Snapshot-Historie |
+| Wie lange liegt eine Opportunity schon in derselben Phase? | `createdon`, `modifiedon`, `salesstage` + Snapshot-Historie |
+| Wie oft verschiebt sich ein Entscheidungsdatum, bevor es hält? | `estimatedclosedate` über die Snapshot-Historie (Tagesgranularität) |
 | Wie sieht Net New nach Marge statt nach Umsatz aus? | `cgplc_bgpercent`, `cgplc_ebitpercent` |
 | Welche Verluste sind mit Maßnahmen hinterlegt? | `cgplc_retentionactionplan` |
 | Welche Bestandsverträge laufen aus, ohne dass eine Ausschreibung terminiert ist? | `cgplc_contractenddate`, `cgplc_retenderdate` |

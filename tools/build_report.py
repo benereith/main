@@ -292,6 +292,25 @@ def kpi(x, y, w, h, measures, titel=None, untertitel=None):
     )
 
 
+def filterzeile(y, eintraege, x=None, breite_gesamt=None, h=None):
+    """Legt n Datenschnitte gleichmäßig auf eine Zeile.
+
+    Filter gehören in eine Reihe oben, nicht verstreut an den Rand: dort werden
+    sie als zusammengehörige Steuerung gelesen.
+    """
+    x = CONTENT_X if x is None else x
+    breite_gesamt = CONTENT_W if breite_gesamt is None else breite_gesamt
+    h = FILTER_H if h is None else h
+    n = len(eintraege)
+    breite = (breite_gesamt - (n - 1) * 8) // n
+    return [
+        slicer(x + i * (breite + 8), y, breite, h, tab, feld, titel,
+               syncgruppe=sync)
+        for i, (tab, feld, titel, *rest) in enumerate(eintraege)
+        for sync in [rest[0] if rest else None]
+    ]
+
+
 def slicer(x, y, w, h, tabelle, feld, titel, modus="Dropdown", syncgruppe=None):
     v = visual(
         "slicer", x, y, w, h,
@@ -357,8 +376,37 @@ INHALT_Y = MARGIN + HEADER_H + 8
 
 
 def seite_cockpit():
+    y = MARGIN
+    # Kopfbereich geteilt: links die Kernaussage, rechts die zwei
+    # Datenschnitte, die auf dieser Seite am häufigsten gebraucht werden.
+    # Beide filtern über die KONFORMEN Spalten der Faktentabelle, damit sie
+    # New und Lost gleichermaßen treffen.
+    aussage_w = int(CONTENT_W * 0.60)
+    vis = [
+        visual(
+            "cardVisual", CONTENT_X, y, aussage_w, HEADER_H,
+            roles={"Data": [measure("Aussage Net New")]},
+            z=8000,
+            objects={
+                "callout": props(show=lit(True), fontSize=lit(19.0),
+                                 fontFamily=lit("Segoe UI Semibold"),
+                                 color=farbe(C["tinte"]), horizontalAlignment=lit("left")),
+                "label": props(show=lit(False)),
+                "background": props(show=lit(True), color=farbe(C["flaeche"])),
+                "border": props(show=lit(False)),
+            },
+        )
+    ]
+    vis += filterzeile(
+        y + (HEADER_H - FILTER_H) // 2,
+        [
+            ("FCT Net New ITY", "Sektor", "Sektor", "sektor_konform"),
+            ("DIM Datum", "GJ Bezeichnung", "Geschäftsjahr", "geschaeftsjahr"),
+        ],
+        x=CONTENT_X + aussage_w + 8,
+        breite_gesamt=CONTENT_W - aussage_w - 8,
+    )
     y = INHALT_Y
-    vis = kopf()
 
     # Kennzahlenzeile
     vis.append(
@@ -634,15 +682,16 @@ def seite_new_business():
     y = INHALT_Y
     vis = kopf()
 
-    filterzeile = [
+    # Sektor und Verantwortlicher kommen aus der Faktentabelle, nicht aus
+    # 'DIM Opportunity': nur so wirken sie auch dann korrekt, wenn der
+    # Datenschnitt über die Synchronisierungsgruppe auf Seiten mitwandert,
+    # die beide Geschäftsarten zeigen.
+    vis += filterzeile(y, [
         ("DIM Opportunity", "Vertriebsphase", "Vertriebsphase"),
         ("DIM Status", "Status", "Status"),
-        ("DIM Opportunity", "Sektor", "Sektor"),
-        ("DIM Opportunity", "Verantwortlicher", "Verantwortlicher"),
-    ]
-    breite = (CONTENT_W - 3 * 8) // 4
-    for i, (tab, feld, titel) in enumerate(filterzeile):
-        vis.append(slicer(CONTENT_X + i * (breite + 8), y, breite, FILTER_H, tab, feld, titel))
+        ("FCT Net New ITY", "Sektor", "Sektor", "sektor_konform"),
+        ("FCT Net New ITY", "Verantwortlicher", "Verantwortlicher"),
+    ])
     y += FILTER_H + 8
 
     h_oben = 200
@@ -718,15 +767,13 @@ def seite_lost_business():
     y = INHALT_Y
     vis = kopf()
 
-    filterzeile = [
+    vis += filterzeile(y, [
         ("DIM Status", "Status", "Risikostufe"),
         ("DIM Vertrag", "Risikogrund", "Risikogrund"),
         ("DIM Vertrag", "ARO-Status", "Datenlage Vorjahres-ARO"),
+        ("FCT Net New ITY", "Sektor", "Sektor", "sektor_konform"),
         ("DIM Betrieb", "Region", "Region"),
-    ]
-    breite = (CONTENT_W - 3 * 8) // 4
-    for i, (tab, feld, titel) in enumerate(filterzeile):
-        vis.append(slicer(CONTENT_X + i * (breite + 8), y, breite, FILTER_H, tab, feld, titel))
+    ])
     y += FILTER_H + 8
 
     h_oben = 200
@@ -893,6 +940,17 @@ def seite_bewegung():
 def seite_abstimmung():
     y = INHALT_Y
     vis = kopf(aussage_measure="Stand der Daten")
+
+    # Herkunft der Werk-Zuordnung als Filter: damit lässt sich mit einem
+    # Klick prüfen, welcher Anteil der Zahlen auf gepflegten CRM-Daten und
+    # welcher auf der Mapping-Tabelle beruht - und "Nicht zugeordnet" ist die
+    # Arbeitsliste für die Pflege von Mapping_Planwerke.xlsx.
+    vis += filterzeile(y, [
+        ("FCT Net New ITY", "Werk Zuordnung", "Herkunft der Werk-Zuordnung"),
+        ("FCT Net New ITY", "Sektor", "Sektor", "sektor_konform"),
+        ("DIM Datum", "GJ Bezeichnung", "Geschäftsjahr", "geschaeftsjahr"),
+    ])
+    y += FILTER_H + 8
 
     h_oben = 240
     vis.append(

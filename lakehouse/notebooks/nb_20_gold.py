@@ -180,6 +180,14 @@ write_delta(
         F.col("cgplc_decisiondate").alias("decision_date"),
         F.col("cgplc_forecastdecisiondate").alias("forecast_decision_date"),
         F.col("cgplc_operationstartdate").alias("operation_start_date"),
+        # Sektor und Subsektor MUESSEN hier stehen, damit die Lost-Seite nach
+        # denselben Merkmalen auswertbar ist wie die New-Seite. Fehlen sie,
+        # wirkt ein Sektorfilter nur auf die Haelfte der Net-New-Rechnung -
+        # und zwar ohne Fehlerbild, nur mit falscher Zahl.
+        spalte_oder_null(con, "cgplc_sectorlookup").alias("sector"),
+        spalte_oder_null(con, "cgplc_subsector").alias("subsector"),
+        spalte_oder_null(con, "cgplc_contracttypelookup").alias("contract_type"),
+        spalte_oder_null(con, "owneridname").alias("owner_name"),
         "adj_end_date", "ity_cluster", "status_code", "ly_aro_status",
         "retention_probability", "revenue_aro", "last_fy_revenue_aro",
         "calc_ity_months",
@@ -206,12 +214,27 @@ months = spark.sql(
     f"SELECT explode(sequence(to_date('{CY_START}'), to_date('{FANOUT_END}'), interval 1 month)) AS period_date"
 )
 
+# --- Konforme Attribute ----------------------------------------------------
+# Diese fuenf Merkmale werden fuer BEIDE Geschaeftsarten befuellt und liegen
+# deshalb auf dem Fakt, nicht nur in den Dimensionen.
+#
+# Grund: 'DIM Opportunity' und 'DIM Vertrag' sind getrennte Dimensionen. Ein
+# Datenschnitt auf 'DIM Opportunity'[Sektor] filtert nur die New-Zeilen; die
+# Lost-Zeilen laufen unverandert durch, weil sie an dieser Dimension gar nicht
+# haengen. Das Ergebnis waere ein "Net New ITY im Sektor Healthcare", das das
+# gesamte Lost Business aller Sektoren enthaelt - falsch, ohne Fehlermeldung.
+#
+# Mit den Attributen auf dem Fakt wirkt ein Datenschnitt auf beide Haelften.
+# Die Dimensionen behalten dieselben Felder fuer die Detailsichten.
+KONFORME_ATTRIBUTE = ["sector", "subsector", "contract_type", "account_name", "owner_name"]
+
 # --- 5a. New Business ------------------------------------------------------
 # Monatsraten:
 #   ity_rate = weighted_ity / calc_ity_months   (Wirkung im ERSTEN GJ)
 #   aro_rate = weighted_aro / 12                (Dauerzustand ab 2. GJ)
 # Ab dem Monat nach calc_first_fy_end greift die ARO-Rate, davor die ITY-Rate.
-opp_base = spark.table("silver_opportunity").select(
+silver_opp = spark.table("silver_opportunity")
+opp_base = silver_opp.select(
     F.col("opportunityid").alias("entity_id"),
     F.col("name").alias("entity_name"),
     F.lit("OPPORTUNITY").alias("entity_type"),
@@ -223,9 +246,16 @@ opp_base = spark.table("silver_opportunity").select(
     "calc_first_fy_end", "calc_ity_months",
     F.col("cgplc_openingdate").alias("driver_date"),
     F.col("estimatedclosedate").alias("decision_date"),
-    F.col("cgplc_sectorlookup").alias("sector"),
-    F.col("cgplc_contracttypelookup").alias("contract_type"),
+    spalte_oder_null(silver_opp, "cgplc_sectorlookup").alias("sector"),
+    spalte_oder_null(silver_opp, "cgplc_subsector").alias("subsector"),
+    spalte_oder_null(silver_opp, "cgplc_contracttypelookup").alias("contract_type"),
     "account_name", "owner_name",
+    # Betriebsnummer, sofern direkt am Vorgang gepflegt. Das ist nur Stufe 2
+    # der Aufloesungskette - die eigentliche Zuordnung passiert in Abschnitt
+    # 5d ueber die Mapping-Tabelle (Sektor/Subsektor -> Planbetrieb).
+    # Die SAP-Nummer des Kontos wird bewusst NICHT als Ersatz verwendet:
+    # sie ist ein Debitor, kein Betrieb.
+    spalte_oder_null(silver_opp, "cgplc_sapid", "int").alias("sap_id_crm"),
 )
 
 fct_new = (
@@ -273,7 +303,25 @@ fct_new = (
 # Monatsrate = weighted_ly_aro / 12. Maximal 12 Perioden ab calc_end_date -
 # danach ist der Vertrag vollstaendig aus der Basis heraus und wird zu
 # "Like for Like" (Guidance S. 5: keine Doppelzaehlung ueber 12 Monate hinaus).
-con_base = spark.table("silver_contract").select(
+silver_con = spark.table("silver_contract")
+
+# Kundenname des Vertrags, sofern die Verknuepfung zum Konto gepflegt ist.
+# Der Vertrag traegt den Kunden nur als Fremdschluessel; ohne diesen Join
+# bliebe 'Kunde' auf der Lost-Seite leer, waehrend er auf der New-Seite
+# gefuellt ist - genau die Halb-Befuellung, die zu falschen Filtern fuehrt.
+if "cgplc_accountid" in silver_con.columns:
+    silver_con = silver_con.join(
+        spark.table("bronze_crm_account")
+        .select(
+            F.col("accountid").alias("cgplc_accountid"),
+            F.col("name").alias("account_name"),
+        )
+        .dropDuplicates(["cgplc_accountid"]),
+        "cgplc_accountid",
+        "left",
+    )
+
+con_base = silver_con.select(
     F.col("cgplc_cgcontractid").alias("entity_id"),
     F.col("cgplc_name").alias("entity_name"),
     F.lit("CONTRACT").alias("entity_type"),
@@ -288,7 +336,13 @@ con_base = spark.table("silver_contract").select(
     "calc_first_fy_end", "calc_ity_months",
     F.col("adj_end_date").alias("driver_date"),
     F.col("cgplc_decisiondate").alias("decision_date"),
-    F.col("cgplc_sapid").alias("sap_id"),
+    F.col("cgplc_sapid").alias("sap_id_crm"),
+    # Dieselben konformen Attribute wie auf der New-Seite.
+    spalte_oder_null(silver_con, "cgplc_sectorlookup").alias("sector"),
+    spalte_oder_null(silver_con, "cgplc_subsector").alias("subsector"),
+    spalte_oder_null(silver_con, "cgplc_contracttypelookup").alias("contract_type"),
+    spalte_oder_null(silver_con, "account_name").alias("account_name"),
+    spalte_oder_null(silver_con, "owneridname").alias("owner_name"),
 )
 
 fct_lost = (
@@ -324,22 +378,101 @@ COMMON = [
     "decision_date", "calc_first_fy_end", "calc_ity_months",
 ]
 
-fct_new_sel = (
-    fct_new.withColumn(
-        "period_index", months_between_inclusive(F.col("event_month"), F.col("period_date"))
-    )
-    .select(*COMMON, "period_index", "sector", "contract_type", "account_name", "owner_name")
-    .withColumn("sap_id", F.lit(None).cast("int"))
-)
-fct_lost_sel = (
-    fct_lost.select(*COMMON, "period_index", "sap_id")
-    .withColumn("sector", F.lit(None).cast("string"))
-    .withColumn("contract_type", F.lit(None).cast("string"))
-    .withColumn("account_name", F.lit(None).cast("string"))
-    .withColumn("owner_name", F.lit(None).cast("string"))
-)
+# Beide Seiten liefern jetzt denselben Spaltensatz. Es gibt keine Spalte mehr,
+# die nur fuer eine Geschaeftsart gefuellt ist - halb befuellte Attribute sind
+# schlimmer als fehlende, weil sie zum Filtern einladen und dabei still die
+# jeweils andere Haelfte durchlassen.
+FAKT_SPALTEN = COMMON + ["period_index", "sap_id_crm"] + KONFORME_ATTRIBUTE
+
+fct_new_sel = fct_new.withColumn(
+    "period_index", months_between_inclusive(F.col("event_month"), F.col("period_date"))
+).select(*FAKT_SPALTEN)
+
+fct_lost_sel = fct_lost.select(*FAKT_SPALTEN)
 
 fct = fct_new_sel.unionByName(fct_lost_sel)
+
+# --- 5d. Werk-Zuordnung ueber die Mapping-Tabelle --------------------------
+# cgplc_sapid ist am Vorgang nur lueckenhaft gepflegt. Die fachliche
+# Information, WOHIN ein Vorgang gehoert, haengt am Sektor und Subsektor und
+# wird vom Controlling in bronze_map_unit_assignment gepflegt (Quelle:
+# Mapping_Planwerke.xlsx, siehe dataflows/df_map_unit_assignment.m).
+#
+# Aufloesungskette, erste Treffer gewinnt:
+#   1. AUSNAHME     entity_id-Zeile der Mapping-Tabelle (Einzelfall schlaegt
+#                   alles - dafuer ist eine Ausnahme da)
+#   2. CRM          cgplc_sapid am Vorgang selbst
+#   3. MAPPING S+S  Mapping-Zeile mit passendem Sektor UND Subsektor
+#   4. MAPPING S    Mapping-Zeile mit passendem Sektor, subsektor leer
+#   5. NULL         -> Regel DQ-MAP-001
+#
+# Die Herkunft wird als werk_zuordnung mitgefuehrt. Damit ist im Bericht je
+# Vorgang sichtbar, ob eine Zahl auf gepflegten CRM-Daten oder auf dem
+# Mapping beruht - und die Nachpflege laesst sich priorisieren.
+if spark.catalog.tableExists("bronze_map_unit_assignment"):
+    mapping = spark.table("bronze_map_unit_assignment")
+
+    map_entity = (
+        mapping.filter(F.col("entity_id").isNotNull())
+        .select(F.col("entity_id"), F.col("werk").alias("werk_ausnahme"))
+        .dropDuplicates(["entity_id"])
+    )
+    map_subsektor = (
+        mapping.filter(F.col("entity_id").isNull() & F.col("subsektor").isNotNull())
+        .select(
+            F.col("sektor").alias("m2_sektor"),
+            F.col("subsektor").alias("m2_subsektor"),
+            F.col("werk").alias("werk_subsektor"),
+        )
+        .dropDuplicates(["m2_sektor", "m2_subsektor"])
+    )
+    map_sektor = (
+        mapping.filter(F.col("entity_id").isNull() & F.col("subsektor").isNull())
+        .select(F.col("sektor").alias("m3_sektor"), F.col("werk").alias("werk_sektor"))
+        .dropDuplicates(["m3_sektor"])
+    )
+
+    fct = (
+        fct.join(map_entity, "entity_id", "left")
+        .join(
+            map_subsektor,
+            (F.col("sector") == F.col("m2_sektor"))
+            & (F.col("subsector") == F.col("m2_subsektor")),
+            "left",
+        )
+        .join(map_sektor, F.col("sector") == F.col("m3_sektor"), "left")
+    )
+else:
+    # Mapping-Tabelle (noch) nicht geladen: Kette degradiert auf Stufe 2.
+    # Kein Abbruch - die Luecken werden von DQ-MAP-001 gezaehlt.
+    print("  ! bronze_map_unit_assignment fehlt - Werk-Zuordnung nur aus cgplc_sapid")
+    fct = (
+        fct.withColumn("werk_ausnahme", F.lit(None).cast("int"))
+        .withColumn("werk_subsektor", F.lit(None).cast("int"))
+        .withColumn("werk_sektor", F.lit(None).cast("int"))
+    )
+
+fct = (
+    fct.withColumn(
+        "sap_id",
+        F.coalesce(
+            F.col("werk_ausnahme"),
+            F.col("sap_id_crm").cast("int"),
+            F.col("werk_subsektor"),
+            F.col("werk_sektor"),
+        ),
+    )
+    .withColumn(
+        "werk_zuordnung",
+        F.when(F.col("werk_ausnahme").isNotNull(), F.lit("Ausnahme (Mapping)"))
+        .when(F.col("sap_id_crm").isNotNull(), F.lit("CRM direkt"))
+        .when(F.col("werk_subsektor").isNotNull(), F.lit("Mapping Sektor/Subsektor"))
+        .when(F.col("werk_sektor").isNotNull(), F.lit("Mapping Sektor"))
+        .otherwise(F.lit("Nicht zugeordnet")),
+    )
+    .drop("werk_ausnahme", "werk_subsektor", "werk_sektor",
+          "m2_sektor", "m2_subsektor", "m3_sektor", "sap_id_crm")
+)
 
 fct = add_fiscal_columns(fct, "period_date")
 fct = (
