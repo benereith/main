@@ -106,3 +106,21 @@ CREATE TABLE IF NOT EXISTS map_opportunity_unit (
 )
 USING DELTA
 PARTITIONED BY (snapshot_date);
+
+
+-- ---------------------------------------------------------------------
+-- Betrachtungszeitraum. Die einzige Stelle, an der der Horizont steht -
+-- er steuert die Phasierung in 03_derived_tables.sql.
+--
+-- Ersetzt die vier Est_*-Parameter des Altmodells. Nach einer Aenderung
+-- 03_derived_tables.sql neu laufen lassen.
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS cfg_horizont (
+    fy_start                    DATE,
+    fy_ende                     DATE
+)
+USING DELTA;
+
+-- Einmalig befuellen (und nur so aendern - kein zweiter Datensatz):
+-- TRUNCATE TABLE cfg_horizont;
+-- INSERT INTO cfg_horizont VALUES (DATE'2025-10-01', DATE'2027-09-30');

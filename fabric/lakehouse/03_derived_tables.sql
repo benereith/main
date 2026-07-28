@@ -157,3 +157,212 @@ USING DELTA AS
 SELECT *
 FROM map_opportunity_unit
 WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM map_opportunity_unit);
+
+
+-- =====================================================================
+-- ITY-PHASIERUNG
+--
+-- Loest eine Zeile je Opportunity bzw. Contract in Monatsperioden auf.
+-- Lag bis hierher als berechnete DAX-Tabelle im Semantic Model. Drei
+-- Gruende fuer den Umzug nach Spark:
+--
+--   1. Direct Lake vertraegt keine berechneten Tabellen. Solange die
+--      Phasierung in DAX liegt, ist das Modell auf Import festgelegt.
+--   2. Als Delta-Tabelle ist das Ergebnis pruefbar - man kann eine
+--      einzelne Opportunity herausgreifen und ihre Monatszeilen gegen
+--      den Altbericht rechnen. In DAX ist zwischen Rohdaten und Measure
+--      nichts einsehbar.
+--   3. Einmal taeglich statt bei jedem Modell-Refresh.
+--
+-- VORZEICHEN: Diese Tabellen speichern ausschliesslich POSITIVE
+-- Betraege. Ob der ITY-Anteil negativ in den Nettoeffekt eingeht, ist
+-- eine Darstellungskonvention und bleibt im Measure.
+--
+-- Geschaeftsjahr: 1. Oktober bis 30. September.
+-- Horizont: cfg_horizont, eine Zeile.
+-- =====================================================================
+
+
+-- ---------------------------------------------------------------------
+-- fct_opp_phasing
+-- Grain: 1 Zeile je (opportunityid, period_date)
+--
+-- Filter wie im Altmodell. Achtung auf die NULL-Semantik: Zeilen ohne
+-- statecodename oder ohne cgplc_salesstagename fallen heraus, weil ein
+-- Vergleich mit NULL nicht wahr wird. Das entspricht Power Query - die
+-- zwischenzeitliche DAX-Fassung hat sie faelschlich behalten.
+-- ---------------------------------------------------------------------
+CREATE OR REPLACE TABLE fct_opp_phasing
+USING DELTA AS
+WITH h AS (
+    SELECT fy_start, fy_ende FROM cfg_horizont LIMIT 1
+),
+perioden AS (
+    SELECT explode(
+               sequence(trunc(h.fy_start, 'MM'), trunc(h.fy_ende, 'MM'), INTERVAL 1 MONTH)
+           ) AS period_date
+    FROM h
+),
+basis AS (
+    SELECT
+        o.opportunityid,
+        o.cgplc_contractid,
+        o.estimatedclosedate,
+        trunc(o.cgplc_openingdate, 'MM')                                  AS start_date,
+        make_date(year(add_months(o.cgplc_openingdate, -9)) + 1, 9, 30)   AS phasenwechsel,
+        o.cgplc_revenuearo * o.cgplc_win                                  AS weighted_aro,
+        o.cgplc_revenueity * o.cgplc_win                                  AS weighted_ity
+    FROM fct_opportunity_current o
+    CROSS JOIN h
+    WHERE o.cgplc_openingdate  IS NOT NULL
+      AND o.estimatedclosedate IS NOT NULL
+      AND o.cgplc_openingdate  >= h.fy_start
+      AND o.estimatedclosedate >= h.fy_start
+      AND o.statecodename        <> 'Verloren'
+      AND o.cgplc_salesstagename NOT IN ('Nobid', 'Turndown/Lost', 'Universe')
+),
+mit_laufzeit AS (
+    SELECT
+        b.*,
+        (year(b.phasenwechsel) - year(b.start_date)) * 12
+            + month(b.phasenwechsel) - month(b.start_date) + 1            AS calc_ity_months
+    FROM basis b
+),
+mit_werten AS (
+    SELECT
+        m.*,
+        -- Der ITY-Betrag verteilt sich auf die Monate bis zum ersten
+        -- Geschaeftsjahresende, der ARO-Betrag immer auf zwoelf.
+        CASE WHEN m.weighted_ity IS NULL OR m.weighted_ity = 0 OR m.calc_ity_months <= 0
+             THEN 0 ELSE m.weighted_ity / m.calc_ity_months END           AS ity_value,
+        CASE WHEN m.weighted_aro IS NULL OR m.weighted_aro = 0
+             THEN 0 ELSE m.weighted_aro / 12 END                          AS aro_value
+    FROM mit_laufzeit m
+)
+SELECT
+    w.opportunityid,
+    COALESCE(mu.sap_unit, r.cgplc_sapid)                                  AS sap_unit,
+    p.period_date,
+    w.estimatedclosedate                                                  AS referenzdatum,
+    CASE
+        WHEN w.estimatedclosedate <= make_date(year(add_months(h.fy_start, -9)) + 1, 9, 30)
+            THEN 'Roll'
+        WHEN w.estimatedclosedate <= make_date(year(add_months(h.fy_start, -9)) + 2, 9, 30)
+            THEN 'ITY'
+    END                                                                   AS ity_cluster,
+    w.calc_ity_months,
+    w.phasenwechsel,
+    CAST(w.ity_value AS DOUBLE)                                           AS ity_value,
+    CAST(w.aro_value AS DOUBLE)                                           AS aro_value
+FROM mit_werten w
+CROSS JOIN h
+JOIN perioden p
+  ON p.period_date >= w.start_date
+LEFT JOIN map_opportunity_unit_current mu
+  ON mu.opportunityid = w.opportunityid
+LEFT JOIN fct_retention_current r
+  ON r.cgplc_cgcontractid = w.cgplc_contractid;
+
+
+-- ---------------------------------------------------------------------
+-- fct_retention_phasing
+-- Grain: 1 Zeile je (cgplc_cgcontractid, period_date), maximal 12
+-- Perioden ab dem Monat nach Vertragsende.
+--
+-- Die Retention kennt keine ITY/ARO-Trennung - ein verlorener Vertrag
+-- wirkt in jeder Periode gleich. Beide Wertspalten tragen deshalb
+-- denselben Betrag.
+-- ---------------------------------------------------------------------
+CREATE OR REPLACE TABLE fct_retention_phasing
+USING DELTA AS
+WITH h AS (
+    SELECT fy_start, fy_ende FROM cfg_horizont LIMIT 1
+),
+perioden AS (
+    SELECT explode(
+               sequence(trunc(h.fy_start, 'MM'), trunc(h.fy_ende, 'MM'), INTERVAL 1 MONTH)
+           ) AS period_date
+    FROM h
+),
+basis AS (
+    SELECT
+        c.cgplc_cgcontractid,
+        c.cgplc_sapid,
+        -- Ersatzlogik aus dem Altmodell: fehlt das Vertragsende, gilt
+        -- das Entscheidungsdatum plus drei Monate.
+        COALESCE(c.cgplc_contractenddate, add_months(c.cgplc_decisiondate, 3)) AS end_date_raw,
+        c.cgplc_lastfyrevenuearo * (1 - c.cgplc_retentionprobability)          AS weighted_ly_aro
+    FROM fct_retention_current c
+    WHERE c.statuscodename = 'Aktiv'
+),
+gefiltert AS (
+    SELECT b.*, h.fy_start, h.fy_ende
+    FROM basis b
+    CROSS JOIN h
+    WHERE b.end_date_raw IS NOT NULL
+      AND b.end_date_raw >= h.fy_start
+      AND b.end_date_raw <= h.fy_ende
+),
+mit_eckdaten AS (
+    SELECT
+        g.*,
+        add_months(trunc(g.end_date_raw, 'MM'), 1)                            AS calc_end_date,
+        make_date(year(add_months(g.end_date_raw, -9)) + 1, 9, 30)            AS phasenwechsel,
+        CASE WHEN g.weighted_ly_aro IS NULL OR g.weighted_ly_aro = 0
+             THEN 0 ELSE g.weighted_ly_aro / 12 END                           AS monatswert
+    FROM gefiltert g
+)
+SELECT
+    e.cgplc_cgcontractid,
+    e.cgplc_sapid                                                             AS sap_unit,
+    p.period_date,
+    e.end_date_raw                                                            AS referenzdatum,
+    CASE
+        WHEN e.end_date_raw <= make_date(year(add_months(e.fy_start, -9)) + 1, 9, 30)
+            THEN 'Roll'
+        WHEN e.end_date_raw <= make_date(year(add_months(e.fy_start, -9)) + 2, 9, 30)
+            THEN 'ITY'
+    END                                                                       AS ity_cluster,
+    CAST(12 AS INT)                                                           AS calc_ity_months,
+    e.phasenwechsel,
+    CAST(e.monatswert AS DOUBLE)                                              AS ity_value,
+    CAST(e.monatswert AS DOUBLE)                                              AS aro_value
+FROM mit_eckdaten e
+JOIN perioden p
+  ON p.period_date >= e.calc_end_date
+ AND p.period_date <= add_months(e.calc_end_date, 11);
+
+
+-- ---------------------------------------------------------------------
+-- fct_budget_effect
+-- Grain: 1 Zeile je (effect_type, entity_id, period_date)
+--
+-- Harmonisierung auf die gemeinsame Achse Periode x SAP-Betrieb. Die
+-- Quelltabellen bleiben getrennt - Opportunity und Contract sind
+-- unterschiedliche Geschaeftsobjekte mit disjunkten Attributen.
+-- ---------------------------------------------------------------------
+CREATE OR REPLACE TABLE fct_budget_effect
+USING DELTA AS
+SELECT
+    'New Business'      AS effect_type,
+    opportunityid       AS entity_id,
+    sap_unit,
+    period_date,
+    referenzdatum,
+    ity_cluster,
+    phasenwechsel,
+    ity_value,
+    aro_value
+FROM fct_opp_phasing
+UNION ALL
+SELECT
+    'Retention'         AS effect_type,
+    cgplc_cgcontractid  AS entity_id,
+    sap_unit,
+    period_date,
+    referenzdatum,
+    ity_cluster,
+    phasenwechsel,
+    ity_value,
+    aro_value
+FROM fct_retention_phasing;

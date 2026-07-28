@@ -5,8 +5,7 @@ table fct_opp_phasing
 		dataType: string
 		lineageTag: 7906d7da-e6f4-56cd-b28b-482918f89307
 		summarizeBy: none
-		isNameInferred
-		sourceColumn: [opportunityid]
+		sourceColumn: opportunityid
 
 		annotation SummarizationSetBy = Automatic
 
@@ -15,8 +14,7 @@ table fct_opp_phasing
 		formatString: 0
 		lineageTag: 135882a7-448c-5b91-8196-5ab7c7292f5c
 		summarizeBy: none
-		isNameInferred
-		sourceColumn: [sap_unit]
+		sourceColumn: sap_unit
 
 		annotation SummarizationSetBy = Automatic
 
@@ -25,8 +23,7 @@ table fct_opp_phasing
 		formatString: Short Date
 		lineageTag: b9671b5e-f8db-5d35-8d41-25083d3ea936
 		summarizeBy: none
-		isNameInferred
-		sourceColumn: [Period_Date]
+		sourceColumn: Period_Date
 
 		annotation SummarizationSetBy = Automatic
 
@@ -35,8 +32,7 @@ table fct_opp_phasing
 		formatString: Short Date
 		lineageTag: 60ad3152-0841-5b23-85f1-3e8b1f579ccd
 		summarizeBy: none
-		isNameInferred
-		sourceColumn: [Referenzdatum]
+		sourceColumn: Referenzdatum
 
 		annotation SummarizationSetBy = Automatic
 
@@ -44,8 +40,7 @@ table fct_opp_phasing
 		dataType: string
 		lineageTag: 5c225777-ea4c-528b-bf5f-9d1763dc36e6
 		summarizeBy: none
-		isNameInferred
-		sourceColumn: [ity_cluster]
+		sourceColumn: ity_cluster
 
 		annotation SummarizationSetBy = Automatic
 
@@ -54,8 +49,7 @@ table fct_opp_phasing
 		formatString: 0
 		lineageTag: f0ba50c4-fc3a-528d-b91d-d9d395cff69e
 		summarizeBy: none
-		isNameInferred
-		sourceColumn: [Calc_ITY_Months]
+		sourceColumn: Calc_ITY_Months
 
 		annotation SummarizationSetBy = Automatic
 
@@ -64,8 +58,7 @@ table fct_opp_phasing
 		formatString: Short Date
 		lineageTag: c341cc86-d850-5700-ac89-bdfe7107fdf9
 		summarizeBy: none
-		isNameInferred
-		sourceColumn: [Phasenwechsel]
+		sourceColumn: Phasenwechsel
 
 		annotation SummarizationSetBy = Automatic
 
@@ -74,8 +67,7 @@ table fct_opp_phasing
 		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
 		lineageTag: 15754438-d813-5f82-ab2e-768fafd5c236
 		summarizeBy: none
-		isNameInferred
-		sourceColumn: [ITY_Value]
+		sourceColumn: ITY_Value
 
 		annotation SummarizationSetBy = Automatic
 
@@ -86,110 +78,22 @@ table fct_opp_phasing
 		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
 		lineageTag: e2d30515-da21-5856-9506-74560241f1ac
 		summarizeBy: none
-		isNameInferred
-		sourceColumn: [ARO_Value]
+		sourceColumn: ARO_Value
 
 		annotation SummarizationSetBy = Automatic
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
-	partition fct_opp_phasing = calculated
+	partition fct_opp_phasing = m
 		mode: import
 		source = ```
-				VAR _Horizont =
-				    DISTINCT (
-				        SELECTCOLUMNS (
-				            dim_date,
-				            "Period_Date", DATE ( YEAR ( dim_date[Datum] ), MONTH ( dim_date[Datum] ), 1 )
-				        )
-				    )
-				VAR _Fenster_Ab = MIN ( dim_date[Datum] )
-				VAR _BasisFY_Ende = DATE ( YEAR ( EDATE ( _Fenster_Ab, -9 ) ) + 1, 9, 30 )
-				VAR _FolgeFY_Ende = DATE ( YEAR ( _BasisFY_Ende ) + 1, 9, 30 )
-				VAR _Basis =
-				    FILTER (
-				        fct_opportunity,
-				        NOT ISBLANK ( fct_opportunity[cgplc_openingdate] )
-				            && NOT ISBLANK ( fct_opportunity[estimatedclosedate] )
-				            && fct_opportunity[cgplc_openingdate] >= _Fenster_Ab
-				            && fct_opportunity[estimatedclosedate] >= _Fenster_Ab
-				            && fct_opportunity[statecodename] <> "Verloren"
-				            && NOT (
-				                fct_opportunity[cgplc_salesstagename]
-				                    IN { "Nobid", "Turndown/Lost", "Universe" }
-				            )
-				    )
-				VAR _MitEckdaten =
-				    ADDCOLUMNS (
-				        _Basis,
-				        // Start = 1. des Monats des Opening Date
-				        "@StartDate",
-				            DATE (
-				                YEAR ( fct_opportunity[cgplc_openingdate] ),
-				                MONTH ( fct_opportunity[cgplc_openingdate] ),
-				                1
-				            ),
-				        // Ende des ersten Geschaeftsjahres dieser Opportunity
-				        "@FirstFYEnd",
-				            DATE ( YEAR ( EDATE ( fct_opportunity[cgplc_openingdate], -9 ) ) + 1, 9, 30 ),
-				        "@WeightedAro", fct_opportunity[cgplc_revenuearo] * fct_opportunity[cgplc_win],
-				        "@WeightedIty", fct_opportunity[cgplc_revenueity] * fct_opportunity[cgplc_win],
-				        // Konforme Achse zur Retention: der SAP-Betrieb.
-				        "@SapUnit",
-				            COALESCE (
-				                LOOKUPVALUE (
-				                    map_opportunity_unit[sap_unit],
-				                    map_opportunity_unit[opportunityid], fct_opportunity[opportunityid]
-				                ),
-				                LOOKUPVALUE (
-				                    fct_retention[cgplc_sapid],
-				                    fct_retention[cgplc_cgcontractid], fct_opportunity[cgplc_contractid]
-				                )
-				            )
-				    )
-				VAR _MitLaufzeit =
-				    ADDCOLUMNS (
-				        _MitEckdaten,
-				        // Laenge der ITY-Phase in Monaten, inklusive Start- und Endmonat
-				        "@ITY_Months",
-				            ( YEAR ( [@FirstFYEnd] ) - YEAR ( [@StartDate] ) ) * 12
-				                + MONTH ( [@FirstFYEnd] ) - MONTH ( [@StartDate] ) + 1
-				    )
-				VAR _MitWerten =
-				    ADDCOLUMNS (
-				        _MitLaufzeit,
-				        "@ITY_Value", DIVIDE ( [@WeightedIty], [@ITY_Months], 0 ),
-				        "@ARO_Value", DIVIDE ( [@WeightedAro], 12, 0 )
-				    )
-				VAR _Expandiert =
-				    FILTER ( GENERATE ( _MitWerten, _Horizont ), [Period_Date] >= [@StartDate] )
-				RETURN
-				    SELECTCOLUMNS (
-				        _Expandiert,
-				        "opportunityid", fct_opportunity[opportunityid],
-				        "sap_unit", [@SapUnit],
-				        "Period_Date", [Period_Date],
-				        // Stichtag der Clusterung: wann die Opportunity abschliesst.
-				        "Referenzdatum", fct_opportunity[estimatedclosedate],
-				        // Roll  = schliesst im Basisjahr, wirkt als Rolleffekt ins Folgejahr
-				        // ITY   = schliesst im Folgejahr, wirkt dort unterjaehrig
-				        "ity_cluster",
-				            SWITCH (
-				                TRUE (),
-				                fct_opportunity[estimatedclosedate] <= _BasisFY_Ende, "Roll",
-				                fct_opportunity[estimatedclosedate] <= _FolgeFY_Ende, "ITY",
-				                BLANK ()
-				            ),
-				        "Calc_ITY_Months", [@ITY_Months],
-				        // Grenze zwischen ITY- und ARO-Phase DIESER Opportunity.
-				        // Bewusst zeilenbezogen und nicht aus dem Filterkontext: sonst
-				        // wird jedes gefilterte Jahr komplett zur ITY-Phase und damit
-				        // durchgaengig negativ.
-				        "Phasenwechsel", [@FirstFYEnd],
-				        // Beide Betraege vorzeichenlos - das Measure entscheidet.
-				        "ITY_Value", [@ITY_Value],
-				        "ARO_Value", [@ARO_Value]
-				    )
+				let
+				  Quelle = FabricSql,
+				  Daten = Quelle{[Schema = "dbo", Item = "fct_opp_phasing"]}[Data],
+				  // Lakehouse folgt SQL-Konvention, das Modell seiner eigenen.
+				  Umbenannt = Table.RenameColumns(Daten, {{"period_date", "Period_Date"}, {"referenzdatum", "Referenzdatum"}, {"calc_ity_months", "Calc_ITY_Months"}, {"phasenwechsel", "Phasenwechsel"}, {"ity_value", "ITY_Value"}, {"aro_value", "ARO_Value"}})
+				in
+				  Umbenannt
 				```
 
 	annotation PBI_ResultType = Table

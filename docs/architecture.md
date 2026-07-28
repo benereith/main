@@ -101,12 +101,33 @@ sind als `DISTINCT`-Ableitungen aus den Fakten vollständig ersetzbar
 (`02_calculated_columns.dax`). Der Dataflow bleibt damit der einzige
 Kontaktpunkt zum CRM.
 
-### ITY-Logik im Semantic Model
+### ITY-Logik im Lakehouse, nicht im Modell
 
-Die Monatsphasierung liegt in `fct_opp_phasing` und `fct_retention_phasing`
-(`01_ity_phasing.dax`) und bildet die Power-Query-Logik fachlich unverändert
-ab, inklusive Vorzeichenkonvention: ITY-Phase negativ, ARO-Phase positiv,
-Retention durchgängig negativ.
+Die Monatsphasierung liegt in `fct_opp_phasing`, `fct_retention_phasing` und
+`fct_budget_effect` — als Delta-Tabellen, erzeugt von
+`03_derived_tables.sql`. Sie lag zunächst als berechnete DAX-Tabelle im
+Semantic Model; der Umzug nach Spark hat drei Gründe:
+
+- **Direct Lake verträgt keine berechneten Tabellen.** Solange die Phasierung
+  in DAX liegt, ist das Modell auf Import festgelegt.
+- **Prüfbarkeit.** Als Delta-Tabelle lässt sich eine einzelne Opportunity
+  herausgreifen und ihre Monatszeilen gegen den Altbericht rechnen
+  (`04_pruefung.sql`). In DAX war zwischen Rohdaten und Measure nichts
+  einsehbar — genau das hat die Fehlersuche an den New-Business-Werten
+  unnötig teuer gemacht.
+- **Einmal täglich** statt bei jedem Modell-Refresh.
+
+Der Betrachtungszeitraum steht in `cfg_horizont`, einer einzeiligen Tabelle.
+Sie ersetzt die vier `Est_*`-Parameter des Altmodells.
+
+**Vorzeichen bleiben im Measure.** Die Tabellen führen ausschließlich
+positive Beträge; ob der ITY-Anteil negativ in den Nettoeffekt eingeht, ist
+Darstellungskonvention und steht in `Netto Budgeteffekt`.
+
+**Eine Abweichung zur DAX-Fassung:** Opportunities ohne `statecodename` oder
+ohne `cgplc_salesstagename` fallen jetzt heraus. SQL und Power Query behandeln
+den Vergleich mit `NULL` gleich — die zwischenzeitliche DAX-Fassung hat sie
+fälschlich behalten, weil `BLANK() IN {…}` in DAX `FALSE` ergibt.
 
 Zwei Dinge ändern sich bewusst:
 
