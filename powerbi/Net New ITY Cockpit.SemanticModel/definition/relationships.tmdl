@@ -1,0 +1,68 @@
+/// Beziehungen des Modells.
+///
+/// Grundregeln, die in den Altmodellen verletzt waren:
+///   1. Nur EINE Richtung. Die Altmodelle hatten elf beidseitig filternde
+///      Beziehungen (dim_opp_* zu fct_opp), was Filterpfade unvorhersehbar
+///      und Measures nicht mehr lokal nachvollziehbar macht.
+///   2. Keine Auto-Datumstabellen. Die Altmodelle trugen 12 bis 19
+///      LocalDateTable_*-Tabellen mit sich.
+///   3. Ein Kalender für alle Fakten, verbunden über den Monatsbeginn.
+
+/// Wirkungsperiode des Net New ITY.
+/// Der Fakt liegt auf Monatsebene, deshalb Verbindung auf den Monatsbeginn.
+relationship FCT_NetNewITY__DIM_Datum
+	fromColumn: 'FCT Net New ITY'.Periode
+	toColumn: 'DIM Datum'.Datum
+
+/// Statusdimension. Filtert die Zerlegung nach Sicherheitsgrad.
+relationship FCT_NetNewITY__DIM_Status
+	fromColumn: 'FCT Net New ITY'.'Status Code'
+	toColumn: 'DIM Status'.'Status Code'
+
+/// Opportunity-Stammdaten. Nur New-Business-Zeilen finden einen Treffer;
+/// Lost-Business-Zeilen laufen ins Leere, was fachlich korrekt ist.
+relationship FCT_NetNewITY__DIM_Opportunity
+	fromColumn: 'FCT Net New ITY'.'Entität ID'
+	toColumn: 'DIM Opportunity'.'Opportunity ID'
+
+/// Vertragsstammdaten. Spiegelbild der Opportunity-Beziehung: nur
+/// Lost-Business-Zeilen treffen. Deshalb INAKTIV – zwei aktive Beziehungen
+/// vom selben Schlüssel auf zwei Dimensionen wären ein mehrdeutiger Pfad.
+/// Aktiviert wird sie in den Vertragsvisualisierungen über USERELATIONSHIP.
+relationship FCT_NetNewITY__DIM_Vertrag
+	isActive: false
+	fromColumn: 'FCT Net New ITY'.'Entität ID'
+	toColumn: 'DIM Vertrag'.'Vertrag ID'
+
+/// Betriebszuordnung, soweit im CRM gepflegt (cgplc_sapid).
+relationship FCT_NetNewITY__DIM_Betrieb
+	fromColumn: 'FCT Net New ITY'.Werk
+	toColumn: 'DIM Betrieb'.Werk
+
+/// SAP-Umsätze an denselben Kalender.
+relationship FCT_Umsatz__DIM_Datum
+	fromColumn: 'FCT Umsatz'.Periode
+	toColumn: 'DIM Datum'.Datum
+
+/// SAP-Umsätze an die Betriebsdimension.
+relationship FCT_Umsatz__DIM_Betrieb
+	fromColumn: 'FCT Umsatz'.Werk
+	toColumn: 'DIM Betrieb'.Werk
+
+/// SAP-Umsätze an die Net-New-Hierarchie über das Cause-of-Change-Mapping.
+relationship FCT_Umsatz__DIM_HFM
+	fromColumn: 'FCT Umsatz'.'Metric ID'
+	toColumn: 'DIM HFM-Struktur'.'Metric ID'
+
+/// Bewegungsdaten an die Opportunity-Stammdaten, damit in der
+/// Bewegungsanalyse Kunde, Sektor und Verantwortlicher verfügbar sind.
+relationship FCT_Bewegung__DIM_Opportunity
+	fromColumn: 'FCT CRM-Bewegung'.'Entität ID'
+	toColumn: 'DIM Opportunity'.'Opportunity ID'
+
+/// Bewegungsdaten an die Vertragsstammdaten. Inaktiv aus demselben Grund
+/// wie bei der Faktentabelle.
+relationship FCT_Bewegung__DIM_Vertrag
+	isActive: false
+	fromColumn: 'FCT CRM-Bewegung'.'Entität ID'
+	toColumn: 'DIM Vertrag'.'Vertrag ID'

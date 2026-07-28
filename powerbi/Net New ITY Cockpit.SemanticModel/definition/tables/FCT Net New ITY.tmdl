@@ -1,0 +1,267 @@
+/// Zentrale Faktentabelle: Perioden-Fanout aus CRM-Opportunities (New Business)
+/// und CRM-Bestandsverträgen (Lost Business).
+///
+/// Granularität: eine Zeile je Entität und Monat.
+/// Quelle: gold_fct_net_new_ity (siehe lakehouse/notebooks/nb_20_gold.py).
+///
+/// VORZEICHENKONVENTION – der wichtigste Unterschied zu den Altmodellen:
+///   New Business  -> Betrag positiv
+///   Lost Business -> Betrag negativ
+/// Damit ist Net New ITY = SUM('Betrag gewichtet (vorzeichenbehaftet)').
+/// In den Altmodellen wurde das Vorzeichen an mindestens fünf Stellen
+/// unterschiedlich gedreht (M: *-1 in fct_opp/fct_retention; DAX: *-1 in
+/// Retention_ITY, LY_REV, ARO_LY). Hier passiert es genau einmal, im Lakehouse.
+table 'FCT Net New ITY'
+	lineageTag: c1000000-0000-4000-8000-000000000001
+
+	/// Schlüssel der Opportunity (opportunityid) bzw. des Vertrags
+	/// (cgplc_cgcontractid).
+	column 'Entität ID'
+		dataType: string
+		isHidden
+		lineageTag: c1000000-0000-4000-8000-000000000101
+		summarizeBy: none
+		sourceColumn: entity_id
+
+	/// Bezeichnung der Opportunity bzw. des Vertrags.
+	column 'Entität'
+		dataType: string
+		lineageTag: c1000000-0000-4000-8000-000000000102
+		summarizeBy: none
+		sourceColumn: entity_name
+
+	/// OPPORTUNITY oder CONTRACT.
+	column 'Entitätstyp'
+		dataType: string
+		lineageTag: c1000000-0000-4000-8000-000000000103
+		summarizeBy: none
+		sourceColumn: entity_type
+
+	/// NEW oder LOST. Steuert Vorzeichen und HFM-Kontenzuordnung.
+	column Geschäftsart
+		dataType: string
+		lineageTag: c1000000-0000-4000-8000-000000000104
+		summarizeBy: none
+		sourceColumn: business_type
+
+	/// Verknüpfung zu DIM Status (Won / Expected Win / Pipeline / …).
+	column 'Status Code'
+		dataType: string
+		isHidden
+		lineageTag: c1000000-0000-4000-8000-000000000105
+		summarizeBy: none
+		sourceColumn: status_code
+
+	/// "unknown ITY" oder "unknown Roll" – in welchem Geschäftsjahr die
+	/// Wirkung entsteht. Bezeichner aus den Altmodellen beibehalten, damit
+	/// Abstimmungen gegen die Altreports möglich bleiben.
+	column 'ITY Cluster'
+		dataType: string
+		lineageTag: c1000000-0000-4000-8000-000000000106
+		summarizeBy: none
+		sourceColumn: ity_cluster
+
+	/// Gewinn- bzw. Verlustwahrscheinlichkeit als Dezimalzahl (0–1).
+	/// New Business  : Win-% aus dem CRM.
+	/// Lost Business : 1 − Retention-%.
+	column Wahrscheinlichkeit
+		dataType: double
+		formatString: 0.0\ %;-0.0\ %;0.0\ %
+		lineageTag: c1000000-0000-4000-8000-000000000107
+		summarizeBy: none
+		sourceColumn: probability
+
+	/// Erster Tag des Wirkungsmonats. Verbindung zu DIM Datum.
+	column Periode
+		dataType: dateTime
+		formatString: dd.mm.yyyy
+		isHidden
+		lineageTag: c1000000-0000-4000-8000-000000000108
+		summarizeBy: none
+		sourceColumn: period_date
+
+	column 'GJ Jahr'
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: c1000000-0000-4000-8000-000000000109
+		summarizeBy: none
+		sourceColumn: fy_year
+
+	column 'GJ Periode Nr'
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: c1000000-0000-4000-8000-000000000110
+		summarizeBy: none
+		sourceColumn: fy_period
+
+	/// Linearer Monatsindex, deckungsgleich mit 'DIM Datum'[Monatsindex].
+	/// Zielspalte der Szenario-Verschiebung.
+	column Monatsindex
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: c1000000-0000-4000-8000-000000000111
+		summarizeBy: none
+		sourceColumn: monat_index
+
+	/// Laufende Nummer des Monats seit dem auslösenden Ereignis
+	/// (Mobilisierung bzw. Vertragsende), beginnend bei 1.
+	/// Niedrigkardinal (1–24) – deshalb kann die Anlaufkurve in DAX ohne
+	/// Performance-Verlust über diese Spalte iterieren.
+	column Periodenindex
+		dataType: int64
+		formatString: 0
+		lineageTag: c1000000-0000-4000-8000-000000000112
+		summarizeBy: none
+		sourceColumn: period_index
+
+	/// ITY  = Wirkung im ersten Geschäftsjahr (HFM MAP141a / MAP141c)
+	/// ARO  = Dauerzustand ab dem zweiten Geschäftsjahr (MAP131 / MAP136)
+	column Wertebene
+		dataType: string
+		lineageTag: c1000000-0000-4000-8000-000000000113
+		summarizeBy: none
+		sourceColumn: value_layer
+
+	/// HFM-Konto laut Group Guidance (Feb 2025, S. 3).
+	column 'HFM Konto'
+		dataType: string
+		lineageTag: c1000000-0000-4000-8000-000000000114
+		summarizeBy: none
+		sourceColumn: hfm_account
+
+	/// Monatswert × Wahrscheinlichkeit, immer positiv.
+	column 'Betrag gewichtet'
+		dataType: decimal
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		isHidden
+		lineageTag: c1000000-0000-4000-8000-000000000115
+		summarizeBy: sum
+		sourceColumn: amount_weighted
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Monatswert ohne Wahrscheinlichkeitsgewichtung (Vollwert).
+	/// Antwortet auf "Was wäre, wenn alles eintritt?".
+	column 'Betrag ungewichtet'
+		dataType: decimal
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		isHidden
+		lineageTag: c1000000-0000-4000-8000-000000000116
+		summarizeBy: sum
+		sourceColumn: amount_unweighted
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Gewichteter Monatswert mit Vorzeichen: NEW positiv, LOST negativ.
+	/// Basis fast aller Measures.
+	column 'Betrag'
+		dataType: decimal
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		isHidden
+		lineageTag: c1000000-0000-4000-8000-000000000117
+		summarizeBy: sum
+		sourceColumn: amount_signed
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Ungewichteter Monatswert mit Vorzeichen. Basis der Bewertungsbasis
+	/// "Vollwert" – als eigene Spalte materialisiert, damit auch diese Sicht
+	/// eine einfache Summe bleibt.
+	column 'Betrag ungewichtet (vorzeichenbehaftet)'
+		dataType: decimal
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		isHidden
+		lineageTag: c1000000-0000-4000-8000-000000000128
+		summarizeBy: sum
+		sourceColumn: amount_unweighted_signed
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Auslösendes Datum: Mobilisierung (New) bzw. bereinigtes Vertragsende
+	/// (Lost). Bereinigt heißt: Vertragsende, ersatzweise Entscheidungsdatum
+	/// plus drei Monate.
+	column 'Auslösendes Datum'
+		dataType: dateTime
+		formatString: dd.mm.yyyy
+		lineageTag: c1000000-0000-4000-8000-000000000118
+		summarizeBy: none
+		sourceColumn: driver_date
+
+	/// Entscheidungsdatum laut CRM. Laut Group Guidance (S. 2) maßgeblich für
+	/// die Zuordnung zu "current year" bzw. "prior year" – NICHT das
+	/// Mobilisierungs- oder Schließungsdatum.
+	column Entscheidungsdatum
+		dataType: dateTime
+		formatString: dd.mm.yyyy
+		lineageTag: c1000000-0000-4000-8000-000000000119
+		summarizeBy: none
+		sourceColumn: decision_date
+
+	/// Ende des ersten Geschäftsjahres der Entität. Grenze zwischen ITY- und
+	/// ARO-Phase.
+	column 'Ende 1. GJ'
+		dataType: dateTime
+		formatString: dd.mm.yyyy
+		isHidden
+		lineageTag: c1000000-0000-4000-8000-000000000120
+		summarizeBy: none
+		sourceColumn: calc_first_fy_end
+
+	/// Anzahl Monate der ITY-Phase. Teiler bei der Verteilung des ITY-Werts.
+	column 'ITY Monate'
+		dataType: int64
+		formatString: 0
+		lineageTag: c1000000-0000-4000-8000-000000000121
+		summarizeBy: none
+		sourceColumn: calc_ity_months
+
+	column Sektor
+		dataType: string
+		lineageTag: c1000000-0000-4000-8000-000000000122
+		summarizeBy: none
+		sourceColumn: sector
+
+	column Vertragsart
+		dataType: string
+		lineageTag: c1000000-0000-4000-8000-000000000123
+		summarizeBy: none
+		sourceColumn: contract_type
+
+	column Kunde
+		dataType: string
+		lineageTag: c1000000-0000-4000-8000-000000000124
+		summarizeBy: none
+		sourceColumn: account_name
+
+	column Verantwortlicher
+		dataType: string
+		lineageTag: c1000000-0000-4000-8000-000000000125
+		summarizeBy: none
+		sourceColumn: owner_name
+
+	/// SAP-Betriebsnummer, sofern zuordenbar. Verbindung zu DIM Betrieb.
+	column 'Werk'
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: c1000000-0000-4000-8000-000000000126
+		summarizeBy: none
+		sourceColumn: sap_id
+
+	/// Stichtag des Ladelaufs. Ermöglicht Snapshot-Vergleiche.
+	column Stichtag
+		dataType: dateTime
+		formatString: dd.mm.yyyy
+		isHidden
+		lineageTag: c1000000-0000-4000-8000-000000000127
+		summarizeBy: none
+		sourceColumn: snapshot_date
+
+	partition 'FCT Net New ITY' = m
+		mode: import
+		source = fnLakehouse("gold_fct_net_new_ity")
+
+	annotation PBI_ResultType = Table

@@ -1,0 +1,44 @@
+/// Verbindungsparameter und geteilte Ausdrücke.
+///
+/// ALLE Stichtage stehen genau hier. In den Altmodellen lagen sie als
+/// Est_Close_Date_A/E, Est_Opening_Date_A/E und Geschäftsjahresbeginn parallel
+/// in drei Modellen und konnten auseinanderlaufen.
+
+/// SQL-Endpunkt des Lakehouse. Für Deployment über Umgebungen als
+/// Verbindungsparameter im Fabric-Arbeitsbereich überschreiben.
+expression LakehouseServer = "3w3wftkijo6ujehh4fb2eleovu-sdjibi3hrggujev7dt4yjznhu4.datawarehouse.fabric.microsoft.com" meta [IsParameterQuery = true, IsParameterQueryRequired = true, Type = type text]
+	lineageTag: 8a1f0001-0000-4000-8000-000000000001
+
+	annotation PBI_ResultType = Text
+
+/// Name der Lakehouse-Datenbank.
+expression LakehouseDatabase = "lakehouse_group_controlling" meta [IsParameterQuery = true, IsParameterQueryRequired = true, Type = type text]
+	lineageTag: 8a1f0002-0000-4000-8000-000000000002
+
+	annotation PBI_ResultType = Text
+
+/// Laufendes Geschäftsjahr (CY im Sinne der Group Guidance).
+/// Konvention: Kalenderjahr, in dem das Geschäftsjahr BEGINNT.
+/// 2025 = FY2025/26 = 01.10.2025 – 30.09.2026.
+/// Muss mit CURRENT_FY in lakehouse/notebooks/nb_00_config.py übereinstimmen.
+expression AktuellesGeschaeftsjahr = 2025 meta [IsParameterQuery = true, IsParameterQueryRequired = true, Type = type number]
+	lineageTag: 8a1f0003-0000-4000-8000-000000000003
+
+	annotation PBI_ResultType = Number
+
+/// Gemeinsamer Quell-Schritt. Jede Tabelle referenziert diese Funktion, statt
+/// die Verbindung zu duplizieren – damit hängt ein Umgebungswechsel an genau
+/// einer Stelle.
+expression fnLakehouse =
+		let
+		    fn = (tabelle as text) as table =>
+		        let
+		            Quelle = Sql.Database(LakehouseServer, LakehouseDatabase),
+		            Daten = Quelle{[Schema = "dbo", Item = tabelle]}[Data]
+		        in
+		            Daten
+		in
+		    fn
+	lineageTag: 8a1f0004-0000-4000-8000-000000000004
+
+	annotation PBI_ResultType = Function

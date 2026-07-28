@@ -1,0 +1,138 @@
+/// Gebuchte und geplante Umsätze aus SAP. Quelle: gold_fct_revenue.
+/// Granularität: Werk × Geschäftsjahr × Periode × Werttyp/Version.
+///
+/// Ersetzt die Tabelle Revenues der Altmodelle. Zwei Dinge sind bereinigt:
+///   1. Das Vorzeichen wird einmal im Lakehouse gedreht (SAP liefert Erträge
+///      negativ), nicht mehr in jedem zweiten Measure.
+///   2. Das Cause-of-Change-Mapping auf die Net-New-Hierarchie ist eine
+///      Funktion im Lakehouse statt dreier identischer M-Kaskaden.
+table 'FCT Umsatz'
+	lineageTag: c3000000-0000-4000-8000-000000000001
+
+	column Werk
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: c3000000-0000-4000-8000-000000000101
+		summarizeBy: none
+		sourceColumn: werk
+
+	column 'GJ Jahr'
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: c3000000-0000-4000-8000-000000000102
+		summarizeBy: none
+		sourceColumn: fy_year
+
+	column 'GJ Periode Nr'
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: c3000000-0000-4000-8000-000000000103
+		summarizeBy: none
+		sourceColumn: fy_period
+
+	column Monatsindex
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: c3000000-0000-4000-8000-000000000104
+		summarizeBy: none
+		sourceColumn: monat_index
+
+	column Periode
+		dataType: dateTime
+		formatString: dd.mm.yyyy
+		isHidden
+		lineageTag: c3000000-0000-4000-8000-000000000105
+		summarizeBy: none
+		sourceColumn: period_date
+
+	/// Actual oder Plan.
+	column Werttyp
+		dataType: string
+		lineageTag: c3000000-0000-4000-8000-000000000106
+		summarizeBy: none
+		sourceColumn: werttyp
+
+	/// SAP-Version. 0 = Ist, 20 = Budget, RGF/R12 = Forecast, 90 = Planung
+	/// unknown ITY, 35/RFC = Vorjahresforecast.
+	column Version
+		dataType: string
+		lineageTag: c3000000-0000-4000-8000-000000000107
+		summarizeBy: none
+		sourceColumn: version
+
+	/// Kombination Werttyp_Version, z. B. "Actual_0", "Plan_20", "Plan_RGF".
+	/// Der Schlüssel, über den in den Measures die Szenarien der Planung
+	/// auseinandergehalten werden.
+	column 'Werttyp Version'
+		dataType: string
+		lineageTag: c3000000-0000-4000-8000-000000000108
+		summarizeBy: none
+		sourceColumn: werttyp_version
+
+	/// Monatswert (nicht kumuliert), Vorzeichen bereits gedreht: Ertrag positiv.
+	column Monatswert
+		dataType: decimal
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		isHidden
+		lineageTag: c3000000-0000-4000-8000-000000000109
+		summarizeBy: sum
+		sourceColumn: betrag_monat
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Kumulierter Wert seit Periode 1 des Geschäftsjahres. Im Lakehouse per
+	/// Fensterfunktion berechnet, nicht in DAX – das spart bei jedem
+	/// YTD-Visual eine Kontexttransition.
+	column 'Wert kumuliert'
+		dataType: decimal
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		isHidden
+		lineageTag: c3000000-0000-4000-8000-000000000110
+		summarizeBy: sum
+		sourceColumn: betrag_ytd
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// MetricId der Net-New-Hierarchie – aus Cause of Change abgeleitet.
+	/// Verbindung zu DIM HFM-Struktur.
+	column 'Metric ID'
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: c3000000-0000-4000-8000-000000000111
+		summarizeBy: none
+		sourceColumn: metric_id
+
+	/// Variante des Mappings auf Basis cause_of_change_fy (Forecast-Sicht).
+	column 'Metric ID FY'
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: c3000000-0000-4000-8000-000000000112
+		summarizeBy: none
+		sourceColumn: metric_id_fy
+
+	/// Variante des Mappings auf Basis cause_of_change_ny (Planjahressicht).
+	column 'Metric ID NY'
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: c3000000-0000-4000-8000-000000000113
+		summarizeBy: none
+		sourceColumn: metric_id_ny
+
+	column Betriebstyp
+		dataType: string
+		lineageTag: c3000000-0000-4000-8000-000000000114
+		summarizeBy: none
+		sourceColumn: betriebstyp
+
+	partition 'FCT Umsatz' = m
+		mode: import
+		source = fnLakehouse("gold_fct_revenue")
+
+	annotation PBI_ResultType = Table

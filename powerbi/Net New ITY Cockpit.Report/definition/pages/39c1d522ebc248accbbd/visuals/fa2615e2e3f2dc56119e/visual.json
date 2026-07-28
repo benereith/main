@@ -1,0 +1,173 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.8.0/schema.json",
+  "name": "fa2615e2e3f2dc56119e",
+  "position": {
+    "x": 184,
+    "y": 132,
+    "z": 1338,
+    "height": 88,
+    "width": 1080,
+    "tabOrder": 1338
+  },
+  "visual": {
+    "visualType": "cardVisual",
+    "query": {
+      "queryState": {
+        "Data": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Kennzahlen"
+                    }
+                  },
+                  "Property": "Net New ITY"
+                }
+              },
+              "queryRef": "_Kennzahlen.Net New ITY",
+              "nativeQueryRef": "Net New ITY"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Kennzahlen"
+                    }
+                  },
+                  "Property": "Net New ITY (Szenario)"
+                }
+              },
+              "queryRef": "_Kennzahlen.Net New ITY (Szenario)",
+              "nativeQueryRef": "Net New ITY (Szenario)"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Kennzahlen"
+                    }
+                  },
+                  "Property": "Δ Szenario zu Basis"
+                }
+              },
+              "queryRef": "_Kennzahlen.Δ Szenario zu Basis",
+              "nativeQueryRef": "Δ Szenario zu Basis"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Kennzahlen"
+                    }
+                  },
+                  "Property": "Unknown ITY Budget"
+                }
+              },
+              "queryRef": "_Kennzahlen.Unknown ITY Budget",
+              "nativeQueryRef": "Unknown ITY Budget"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Kennzahlen"
+                    }
+                  },
+                  "Property": "Zielerreichung"
+                }
+              },
+              "queryRef": "_Kennzahlen.Zielerreichung",
+              "nativeQueryRef": "Zielerreichung"
+            }
+          ]
+        }
+      }
+    },
+    "objects": {
+      "callout": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "22.0D"
+                }
+              }
+            },
+            "color": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#0B0B0B'"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "label": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "9.0D"
+                }
+              }
+            },
+            "color": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#52514E'"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

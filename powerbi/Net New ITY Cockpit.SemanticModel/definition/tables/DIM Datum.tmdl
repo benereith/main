@@ -1,0 +1,146 @@
+/// Fiskalkalender der Gruppe (1. Oktober – 30. September).
+/// Quelle: gold_dim_date. Ersetzt drei identische M-Kalender der Altmodelle
+/// und alle Auto-Datumstabellen (LocalDateTable_*).
+table 'DIM Datum'
+	lineageTag: b1000000-0000-4000-8000-000000000001
+	dataCategory: Time
+
+	/// Kalendertag. Schlüsselspalte der Datumstabelle.
+	column Datum
+		dataType: dateTime
+		isKey
+		formatString: dd.mm.yyyy
+		lineageTag: b1000000-0000-4000-8000-000000000101
+		summarizeBy: none
+		sourceColumn: datum
+
+		annotation SummarizationSetBy = User
+
+	/// Kalenderjahr.
+	column Kalenderjahr
+		dataType: int64
+		formatString: 0
+		lineageTag: b1000000-0000-4000-8000-000000000102
+		summarizeBy: none
+		sourceColumn: jahr
+
+	/// Erster Tag des Monats. Verbindungsschlüssel zu den Faktentabellen,
+	/// die auf Monatsebene liegen.
+	column Monatsbeginn
+		dataType: dateTime
+		formatString: dd.mm.yyyy
+		lineageTag: b1000000-0000-4000-8000-000000000103
+		summarizeBy: none
+		sourceColumn: monat_erster
+
+	/// Geschäftsjahr als Zahl = Kalenderjahr des FY-Beginns.
+	/// 2025 bedeutet FY2025/26.
+	column 'GJ Jahr'
+		dataType: int64
+		formatString: 0
+		lineageTag: b1000000-0000-4000-8000-000000000104
+		summarizeBy: none
+		sourceColumn: fy_year
+
+	/// Geschäftsjahr als Beschriftung, z. B. "FY2025/26".
+	column 'GJ Bezeichnung'
+		dataType: string
+		lineageTag: b1000000-0000-4000-8000-000000000105
+		summarizeBy: none
+		sourceColumn: fy_label
+		sortByColumn: 'GJ Jahr'
+
+	/// Geschäftsperiode 1–12. P01 = Oktober, P12 = September.
+	column 'GJ Periode Nr'
+		dataType: int64
+		formatString: 0
+		lineageTag: b1000000-0000-4000-8000-000000000106
+		summarizeBy: none
+		sourceColumn: fy_period
+
+	/// Periodenkürzel "P01" … "P12".
+	column 'GJ Periode'
+		dataType: string
+		lineageTag: b1000000-0000-4000-8000-000000000107
+		summarizeBy: none
+		sourceColumn: fy_periode
+		sortByColumn: 'GJ Periode Nr'
+
+	/// Achsenbeschriftung "Okt 25". Kurz genug, um ohne Drehung zu lesen –
+	/// gedrehte Achsenbeschriftungen kosten Lesezeit (Storytelling with Data,
+	/// Kapitel 3: Clutter).
+	column 'Periode Label'
+		dataType: string
+		lineageTag: b1000000-0000-4000-8000-000000000108
+		summarizeBy: none
+		sourceColumn: fy_periode_label
+		sortByColumn: Monatsindex
+
+	/// Geschäftsquartal FQ1–FQ4.
+	column 'GJ Quartal'
+		dataType: string
+		lineageTag: b1000000-0000-4000-8000-000000000109
+		summarizeBy: none
+		sourceColumn: fy_quartal
+		sortByColumn: 'GJ Quartal Nr'
+
+	column 'GJ Quartal Nr'
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: b1000000-0000-4000-8000-000000000110
+		summarizeBy: none
+		sourceColumn: fy_quartal_nr
+
+	/// LINEARER Monatsindex = GJ-Jahr × 12 + GJ-Periode.
+	/// Grundlage der Szenario-Verschiebung: "n Monate später" ist damit eine
+	/// einfache Subtraktion. Ein Schlüssel aus Jahr × 100 + Periode wäre an
+	/// der Jahresgrenze nicht linear (202512 → 202601) und würde die
+	/// Verschiebung im Dezember zerreißen.
+	column Monatsindex
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: b1000000-0000-4000-8000-000000000111
+		summarizeBy: none
+		sourceColumn: monat_index
+
+	/// Sortierschlüssel GJ-Jahr × 100 + Periode. Nur für Sortierung, nicht
+	/// für Arithmetik verwenden (siehe Monatsindex).
+	column 'GJ Sortierung'
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: b1000000-0000-4000-8000-000000000112
+		summarizeBy: none
+		sourceColumn: fy_sort
+
+	/// Wahr für alle Tage vor dem heutigen. Trennt im Bericht Ist von Plan,
+	/// ohne dass jede Visualisierung eine eigene Datumsbedingung braucht.
+	column 'Ist Vergangenheit'
+		dataType: boolean
+		formatString: """Ja"";""Ja"";""Nein"""
+		lineageTag: b1000000-0000-4000-8000-000000000113
+		summarizeBy: none
+		sourceColumn: ist_vergangenheit
+
+	hierarchy 'Geschäftsjahr'
+		lineageTag: b1000000-0000-4000-8000-000000000201
+
+		level 'GJ Bezeichnung'
+			lineageTag: b1000000-0000-4000-8000-000000000202
+			column: 'GJ Bezeichnung'
+
+		level 'GJ Quartal'
+			lineageTag: b1000000-0000-4000-8000-000000000203
+			column: 'GJ Quartal'
+
+		level 'GJ Periode'
+			lineageTag: b1000000-0000-4000-8000-000000000204
+			column: 'GJ Periode'
+
+	partition 'DIM Datum' = m
+		mode: import
+		source = fnLakehouse("gold_dim_date")
+
+	annotation PBI_ResultType = Table

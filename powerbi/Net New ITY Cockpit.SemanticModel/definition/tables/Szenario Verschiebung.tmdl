@@ -1,0 +1,68 @@
+/// SZENARIO-PARAMETER 1 von 4 · Zeitliche Verschiebung
+///
+/// Beantwortet: "Was passiert mit dem Net New ITY, wenn sich alle
+/// Mobilisierungen bzw. Vertragsenden um n Monate verschieben?"
+///
+/// WARUM DAS HIER STEHT UND NICHT IM LAKEHOUSE
+/// Im Altmodell war die Verschiebung eine Power-Query-Spalte
+/// (Revenues[Verschiebung +1]) mit fest verdrahtetem +1. Jede Änderung des
+/// Verschiebungsbetrags erforderte eine Modelländerung und einen vollen
+/// Refresh. Materialisieren wäre auch keine Lösung: Die zehn Stufen mal fünf
+/// Anlauffaktoren mal sieben Anlaufdauern ergäben 350 Faktenvarianten.
+///
+/// Die DAX-Variante iteriert über 'DIM Datum'[Monatsindex] – zwölf bis
+/// vierundzwanzig Werte im Filterkontext. Der Aufwand ist vernachlässigbar.
+///
+/// Diese Tabelle ist bewusst NICHT mit dem Modell verbunden (disconnected):
+/// sie filtert nichts, sie liefert nur einen Skalar an die Measures.
+table 'Szenario Verschiebung'
+	lineageTag: d1000000-0000-4000-8000-000000000001
+
+	/// Verschiebung in Monaten. Negativ = früher, positiv = später.
+	/// Vorbelegung 0 = keine Verschiebung (Basisfall).
+	column Monate
+		dataType: int64
+		formatString: +0;-0;0
+		lineageTag: d1000000-0000-4000-8000-000000000101
+		summarizeBy: none
+		sourceColumn: [Value1]
+		sortByColumn: Sortierung
+
+	/// Beschriftung für den Datenschnitt, z. B. "+2 Monate später".
+	column Bezeichnung
+		dataType: string
+		lineageTag: d1000000-0000-4000-8000-000000000102
+		summarizeBy: none
+		sourceColumn: [Value2]
+		sortByColumn: Sortierung
+
+	column Sortierung
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: d1000000-0000-4000-8000-000000000103
+		summarizeBy: none
+		sourceColumn: [Value3]
+
+	partition 'Szenario Verschiebung' = calculated
+		mode: import
+		source =
+				DATATABLE (
+				    "Monate", INTEGER,
+				    "Bezeichnung", STRING,
+				    "Sortierung", INTEGER,
+				    {
+				        { -3, "3 Monate früher", 1 },
+				        { -2, "2 Monate früher", 2 },
+				        { -1, "1 Monat früher", 3 },
+				        {  0, "Keine Verschiebung", 4 },
+				        {  1, "1 Monat später", 5 },
+				        {  2, "2 Monate später", 6 },
+				        {  3, "3 Monate später", 7 },
+				        {  4, "4 Monate später", 8 },
+				        {  5, "5 Monate später", 9 },
+				        {  6, "6 Monate später", 10 }
+				    }
+				)
+
+	annotation PBI_Id = SzenarioVerschiebung

@@ -1,0 +1,274 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.8.0/schema.json",
+  "name": "0713f286a64a66c5f466",
+  "position": {
+    "x": 184,
+    "y": 458,
+    "z": 4598,
+    "height": 214,
+    "width": 1080,
+    "tabOrder": 4598
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "FCT CRM-Bewegung"
+                    }
+                  },
+                  "Property": "Stichtag"
+                }
+              },
+              "queryRef": "FCT CRM-Bewegung.Stichtag",
+              "nativeQueryRef": "Stichtag"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "DIM Opportunity"
+                    }
+                  },
+                  "Property": "Opportunity"
+                }
+              },
+              "queryRef": "DIM Opportunity.Opportunity",
+              "nativeQueryRef": "Opportunity"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "FCT CRM-Bewegung"
+                    }
+                  },
+                  "Property": "Änderungsart"
+                }
+              },
+              "queryRef": "FCT CRM-Bewegung.Änderungsart",
+              "nativeQueryRef": "Änderungsart"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "FCT CRM-Bewegung"
+                    }
+                  },
+                  "Property": "Status alt"
+                }
+              },
+              "queryRef": "FCT CRM-Bewegung.Status alt",
+              "nativeQueryRef": "Status alt"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "FCT CRM-Bewegung"
+                    }
+                  },
+                  "Property": "Status neu"
+                }
+              },
+              "queryRef": "FCT CRM-Bewegung.Status neu",
+              "nativeQueryRef": "Status neu"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "FCT CRM-Bewegung"
+                    }
+                  },
+                  "Property": "Wahrscheinlichkeit alt"
+                }
+              },
+              "queryRef": "FCT CRM-Bewegung.Wahrscheinlichkeit alt",
+              "nativeQueryRef": "Wahrscheinlichkeit alt"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "FCT CRM-Bewegung"
+                    }
+                  },
+                  "Property": "Wahrscheinlichkeit neu"
+                }
+              },
+              "queryRef": "FCT CRM-Bewegung.Wahrscheinlichkeit neu",
+              "nativeQueryRef": "Wahrscheinlichkeit neu"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "FCT CRM-Bewegung"
+                    }
+                  },
+                  "Property": "Wert alt"
+                }
+              },
+              "queryRef": "FCT CRM-Bewegung.Wert alt",
+              "nativeQueryRef": "Wert alt"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "FCT CRM-Bewegung"
+                    }
+                  },
+                  "Property": "Wert neu"
+                }
+              },
+              "queryRef": "FCT CRM-Bewegung.Wert neu",
+              "nativeQueryRef": "Wert neu"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Kennzahlen"
+                    }
+                  },
+                  "Property": "Bewegung Wert"
+                }
+              },
+              "queryRef": "_Kennzahlen.Bewegung Wert",
+              "nativeQueryRef": "Bewegung Wert"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "_Kennzahlen"
+                  }
+                },
+                "Property": "Bewegung Wert"
+              }
+            },
+            "direction": "Descending"
+          }
+        ],
+        "isDefaultSort": true
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Jede Änderung im Klartext'"
+                }
+              }
+            },
+            "titleWrap": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "fontColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#0B0B0B'"
+                    }
+                  }
+                }
+              }
+            },
+            "alignment": {
+              "expr": {
+                "Literal": {
+                  "Value": "'left'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "subTitle": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Vorher und nachher nebeneinander – die Grundlage für die Nachfrage im Call'"
+                }
+              }
+            },
+            "titleWrap": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "fontColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#52514E'"
+                    }
+                  }
+                }
+              }
+            },
+            "alignment": {
+              "expr": {
+                "Literal": {
+                  "Value": "'left'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

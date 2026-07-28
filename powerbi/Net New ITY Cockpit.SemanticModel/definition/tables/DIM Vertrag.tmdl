@@ -1,0 +1,123 @@
+/// Bestandsverträge aus dem CRM (Retention-Sicht). Quelle: gold_dim_contract.
+table 'DIM Vertrag'
+	lineageTag: b5000000-0000-4000-8000-000000000001
+
+	column 'Vertrag ID'
+		dataType: string
+		isKey
+		isHidden
+		lineageTag: b5000000-0000-4000-8000-000000000101
+		summarizeBy: none
+		sourceColumn: contract_key
+
+	column Vertrag
+		dataType: string
+		lineageTag: b5000000-0000-4000-8000-000000000102
+		summarizeBy: none
+		sourceColumn: contract_name
+
+	/// SAP-Betriebsnummer – Verbindung zur Betriebsdimension und damit zu den
+	/// tatsächlich gebuchten Umsätzen.
+	column 'SAP ID'
+		dataType: int64
+		formatString: 0
+		lineageTag: b5000000-0000-4000-8000-000000000103
+		summarizeBy: none
+		sourceColumn: sap_id
+
+	/// Risikogrund laut CRM (cgplc_reasonforriskname). Trägt die Erklärung
+	/// hinter jedem gefährdeten Vertrag – im Altbericht nur als Rohspalte
+	/// vorhanden, nie visualisiert.
+	column Risikogrund
+		dataType: string
+		lineageTag: b5000000-0000-4000-8000-000000000104
+		summarizeBy: none
+		sourceColumn: risk_reason
+
+	/// Entscheidungsdatum. Laut Group Guidance (S. 2) maßgeblich für die
+	/// Zuordnung eines Verlusts zu "current year" oder "prior year".
+	column Entscheidungsdatum
+		dataType: dateTime
+		formatString: dd.mm.yyyy
+		lineageTag: b5000000-0000-4000-8000-000000000105
+		summarizeBy: none
+		sourceColumn: decision_date
+
+	column 'Erwartetes Entscheidungsdatum'
+		dataType: dateTime
+		formatString: dd.mm.yyyy
+		lineageTag: b5000000-0000-4000-8000-000000000106
+		summarizeBy: none
+		sourceColumn: forecast_decision_date
+
+	column Betriebsbeginn
+		dataType: dateTime
+		formatString: dd.mm.yyyy
+		lineageTag: b5000000-0000-4000-8000-000000000107
+		summarizeBy: none
+		sourceColumn: operation_start_date
+
+	/// Bereinigtes Vertragsende: Vertragsende laut CRM, ersatzweise
+	/// Entscheidungsdatum plus drei Monate (übliche Kündigungsfrist bis zur
+	/// Demobilisierung). Viele Evergreen-Verträge haben kein Enddatum.
+	column 'Vertragsende (bereinigt)'
+		dataType: dateTime
+		formatString: dd.mm.yyyy
+		lineageTag: b5000000-0000-4000-8000-000000000108
+		summarizeBy: none
+		sourceColumn: adj_end_date
+
+	column 'ITY Cluster'
+		dataType: string
+		lineageTag: b5000000-0000-4000-8000-000000000109
+		summarizeBy: none
+		sourceColumn: ity_cluster
+
+	/// Haltewahrscheinlichkeit. Achtung Leserichtung: 100 % = kein Risiko.
+	/// Die Verlustwahrscheinlichkeit ist 1 − Retention-%.
+	column 'Retention %'
+		dataType: double
+		formatString: 0.0\ %;-0.0\ %;0.0\ %
+		lineageTag: b5000000-0000-4000-8000-000000000110
+		summarizeBy: none
+		sourceColumn: retention_probability
+
+	column 'ARO Umsatz'
+		dataType: decimal
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		lineageTag: b5000000-0000-4000-8000-000000000111
+		summarizeBy: sum
+		sourceColumn: revenue_aro
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Vorjahres-ARO – Bemessungsgrundlage für HFM MAP136 (Lost ARO).
+	column 'Vorjahres-ARO'
+		dataType: decimal
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		lineageTag: b5000000-0000-4000-8000-000000000112
+		summarizeBy: sum
+		sourceColumn: last_fy_revenue_aro
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// "ARO im CRM" / "Kein ARO im CRM". Ohne Vorjahres-ARO wird der Verlust
+	/// mit 0 € bewertet – dieser Marker macht die Lücke sichtbar.
+	column 'ARO-Status'
+		dataType: string
+		lineageTag: b5000000-0000-4000-8000-000000000113
+		summarizeBy: none
+		sourceColumn: ly_aro_status
+
+	column 'ITY Monate'
+		dataType: int64
+		formatString: 0
+		lineageTag: b5000000-0000-4000-8000-000000000114
+		summarizeBy: none
+		sourceColumn: calc_ity_months
+
+	partition 'DIM Vertrag' = m
+		mode: import
+		source = fnLakehouse("gold_dim_contract")
+
+	annotation PBI_ResultType = Table

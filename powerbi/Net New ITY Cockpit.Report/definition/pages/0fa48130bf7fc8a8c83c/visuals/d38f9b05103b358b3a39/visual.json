@@ -1,0 +1,260 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.8.0/schema.json",
+  "name": "d38f9b05103b358b3a39",
+  "position": {
+    "x": 184,
+    "y": 372,
+    "z": 3738,
+    "height": 300,
+    "width": 1080,
+    "tabOrder": 3738
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "DIM Vertrag"
+                    }
+                  },
+                  "Property": "Vertrag"
+                }
+              },
+              "queryRef": "DIM Vertrag.Vertrag",
+              "nativeQueryRef": "Vertrag"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "DIM Vertrag"
+                    }
+                  },
+                  "Property": "SAP ID"
+                }
+              },
+              "queryRef": "DIM Vertrag.SAP ID",
+              "nativeQueryRef": "SAP ID"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "DIM Status"
+                    }
+                  },
+                  "Property": "Status"
+                }
+              },
+              "queryRef": "DIM Status.Status",
+              "nativeQueryRef": "Status"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "DIM Vertrag"
+                    }
+                  },
+                  "Property": "Retention %"
+                }
+              },
+              "queryRef": "DIM Vertrag.Retention %",
+              "nativeQueryRef": "Retention %"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "DIM Vertrag"
+                    }
+                  },
+                  "Property": "Vorjahres-ARO"
+                }
+              },
+              "queryRef": "DIM Vertrag.Vorjahres-ARO",
+              "nativeQueryRef": "Vorjahres-ARO"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "DIM Vertrag"
+                    }
+                  },
+                  "Property": "Vertragsende (bereinigt)"
+                }
+              },
+              "queryRef": "DIM Vertrag.Vertragsende (bereinigt)",
+              "nativeQueryRef": "Vertragsende (bereinigt)"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "DIM Vertrag"
+                    }
+                  },
+                  "Property": "Entscheidungsdatum"
+                }
+              },
+              "queryRef": "DIM Vertrag.Entscheidungsdatum",
+              "nativeQueryRef": "Entscheidungsdatum"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "DIM Vertrag"
+                    }
+                  },
+                  "Property": "Risikogrund"
+                }
+              },
+              "queryRef": "DIM Vertrag.Risikogrund",
+              "nativeQueryRef": "Risikogrund"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Kennzahlen"
+                    }
+                  },
+                  "Property": "Lost Business ITY"
+                }
+              },
+              "queryRef": "_Kennzahlen.Lost Business ITY",
+              "nativeQueryRef": "Lost Business ITY"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "_Kennzahlen"
+                  }
+                },
+                "Property": "Lost Business ITY"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ],
+        "isDefaultSort": true
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Risikoverträge im Detail'"
+                }
+              }
+            },
+            "titleWrap": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "fontColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#0B0B0B'"
+                    }
+                  }
+                }
+              }
+            },
+            "alignment": {
+              "expr": {
+                "Literal": {
+                  "Value": "'left'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "subTitle": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Sortiert nach ITY-Wirkung. Verträge ohne Vorjahres-ARO werden mit 0 € bewertet – siehe Spalte Datenlage.'"
+                }
+              }
+            },
+            "titleWrap": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "fontColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#52514E'"
+                    }
+                  }
+                }
+              }
+            },
+            "alignment": {
+              "expr": {
+                "Literal": {
+                  "Value": "'left'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

@@ -1,0 +1,260 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.8.0/schema.json",
+  "name": "f56070938b961ce8a369",
+  "position": {
+    "x": 184,
+    "y": 372,
+    "z": 3738,
+    "height": 300,
+    "width": 1080,
+    "tabOrder": 3738
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "DIM Opportunity"
+                    }
+                  },
+                  "Property": "Opportunity"
+                }
+              },
+              "queryRef": "DIM Opportunity.Opportunity",
+              "nativeQueryRef": "Opportunity"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "DIM Opportunity"
+                    }
+                  },
+                  "Property": "Kunde"
+                }
+              },
+              "queryRef": "DIM Opportunity.Kunde",
+              "nativeQueryRef": "Kunde"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "DIM Status"
+                    }
+                  },
+                  "Property": "Status"
+                }
+              },
+              "queryRef": "DIM Status.Status",
+              "nativeQueryRef": "Status"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "DIM Opportunity"
+                    }
+                  },
+                  "Property": "Win %"
+                }
+              },
+              "queryRef": "DIM Opportunity.Win %",
+              "nativeQueryRef": "Win %"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "DIM Opportunity"
+                    }
+                  },
+                  "Property": "ARO Umsatz"
+                }
+              },
+              "queryRef": "DIM Opportunity.ARO Umsatz",
+              "nativeQueryRef": "ARO Umsatz"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "DIM Opportunity"
+                    }
+                  },
+                  "Property": "ITY Umsatz"
+                }
+              },
+              "queryRef": "DIM Opportunity.ITY Umsatz",
+              "nativeQueryRef": "ITY Umsatz"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "DIM Opportunity"
+                    }
+                  },
+                  "Property": "Entscheidungsdatum"
+                }
+              },
+              "queryRef": "DIM Opportunity.Entscheidungsdatum",
+              "nativeQueryRef": "Entscheidungsdatum"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "DIM Opportunity"
+                    }
+                  },
+                  "Property": "Mobilisierung"
+                }
+              },
+              "queryRef": "DIM Opportunity.Mobilisierung",
+              "nativeQueryRef": "Mobilisierung"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Kennzahlen"
+                    }
+                  },
+                  "Property": "New Business ITY"
+                }
+              },
+              "queryRef": "_Kennzahlen.New Business ITY",
+              "nativeQueryRef": "New Business ITY"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "_Kennzahlen"
+                  }
+                },
+                "Property": "New Business ITY"
+              }
+            },
+            "direction": "Descending"
+          }
+        ],
+        "isDefaultSort": true
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Opportunities im Detail'"
+                }
+              }
+            },
+            "titleWrap": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "fontColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#0B0B0B'"
+                    }
+                  }
+                }
+              }
+            },
+            "alignment": {
+              "expr": {
+                "Literal": {
+                  "Value": "'left'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "subTitle": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Sortiert nach ITY-Wirkung. Rechtsklick auf eine Zeile öffnet die Detailseite.'"
+                }
+              }
+            },
+            "titleWrap": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "fontColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#52514E'"
+                    }
+                  }
+                }
+              }
+            },
+            "alignment": {
+              "expr": {
+                "Literal": {
+                  "Value": "'left'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

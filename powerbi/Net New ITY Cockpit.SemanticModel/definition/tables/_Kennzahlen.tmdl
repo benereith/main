@@ -1,0 +1,781 @@
+/// Zentrale Measure-Tabelle. Enthält keine Daten, nur Kennzahlen.
+/// Jede Kennzahl trägt eine Beschreibung, die in Power BI als QuickInfo
+/// erscheint, und – wo einschlägig – den Verweis auf das HFM-Konto.
+/// Die ausführliche Herleitung steht in docs/03_berechnungslogik.md.
+table _Kennzahlen
+	lineageTag: a0000000-0000-4000-8000-000000000001
+
+	// =======================================================================
+	// 01 BASIS
+	// =======================================================================
+
+	/// Net New ITY = New Business ITY minus Lost Business ITY, im Filterkontext.
+	///
+	/// Die Bewertungsbasis wird über den Datenschnitt 'Szenario Bewertung'
+	/// gesteuert:
+	///   CRM-gewichtet  Umsatz × Eintrittswahrscheinlichkeit (Standard)
+	///   Vollwert       Umsatz ohne Gewichtung – Obergrenze
+	///   Nur gesichert  nur Won und Lost, ungewichtet – Untergrenze
+	///
+	/// Vorzeichen: New positiv, Lost negativ. Die Umkehr passiert einmalig
+	/// im Lakehouse (amount_signed), nicht in dieser Kennzahl.
+	/// HFM: MAP141a minus MAP141c (ITY-Ebene).
+	measure 'Net New ITY' = ```
+			VAR _Basis = SELECTEDVALUE ( 'Szenario Bewertung'[Bewertungsbasis], "CRM-gewichtet" )
+			RETURN
+			SWITCH (
+			    _Basis,
+			    "CRM-gewichtet", SUM ( 'FCT Net New ITY'[Betrag] ),
+			    "Vollwert",      SUM ( 'FCT Net New ITY'[Betrag ungewichtet (vorzeichenbehaftet)] ),
+			    "Nur gesichert",
+			        CALCULATE (
+			            SUM ( 'FCT Net New ITY'[Betrag ungewichtet (vorzeichenbehaftet)] ),
+			            KEEPFILTERS ( 'DIM Status'[Status Code] IN { "WON", "LOST" } )
+			        ),
+			    SUM ( 'FCT Net New ITY'[Betrag] )
+			)
+			```
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 01 Basis
+		lineageTag: a0000000-0000-4000-8000-000000000101
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// New Business ITY – In-the-year-Wirkung neu gewonnener Verträge.
+	/// Filtert die Faktentabelle auf Geschäftsart NEW und Wertebene ITY.
+	/// HFM: MAP141a.
+	///
+	/// Wertebene ITY bedeutet: nur Monate innerhalb des ersten
+	/// Geschäftsjahres der Opportunity. Danach greift MAP131 (ARO).
+	measure 'New Business ITY' = ```
+			CALCULATE (
+			    [Net New ITY],
+			    KEEPFILTERS ( 'FCT Net New ITY'[Geschäftsart] = "NEW" ),
+			    KEEPFILTERS ( 'FCT Net New ITY'[Wertebene] = "ITY" )
+			)
+			```
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 01 Basis
+		lineageTag: a0000000-0000-4000-8000-000000000102
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Lost Business ITY – In-the-year-Wirkung gekündigter Verträge.
+	/// Ergebnis ist NEGATIV (Vorzeichenkonvention).
+	/// HFM: MAP141c.
+	measure 'Lost Business ITY' = ```
+			CALCULATE (
+			    [Net New ITY],
+			    KEEPFILTERS ( 'FCT Net New ITY'[Geschäftsart] = "LOST" ),
+			    KEEPFILTERS ( 'FCT Net New ITY'[Wertebene] = "ITY" )
+			)
+			```
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 01 Basis
+		lineageTag: a0000000-0000-4000-8000-000000000103
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// New Business ARO – annualisierte Umsatzrate der ersten zwölf Monate
+	/// gewonnener Verträge, ab dem zweiten Geschäftsjahr.
+	/// Vorlaufindikator: zeigt das Volumen, das im Folgejahr voll wirkt.
+	/// HFM: MAP131.
+	measure 'New Business ARO' = ```
+			CALCULATE (
+			    [Net New ITY],
+			    KEEPFILTERS ( 'FCT Net New ITY'[Geschäftsart] = "NEW" ),
+			    KEEPFILTERS ( 'FCT Net New ITY'[Wertebene] = "ARO" )
+			)
+			```
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 01 Basis
+		lineageTag: a0000000-0000-4000-8000-000000000104
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Lost Business ARO – annualisierte Umsatzrate der letzten zwölf Monate
+	/// gekündigter Verträge. Negativ.
+	/// HFM: MAP136.
+	measure 'Lost Business ARO' = ```
+			CALCULATE (
+			    [Net New ITY],
+			    KEEPFILTERS ( 'FCT Net New ITY'[Geschäftsart] = "LOST" ),
+			    KEEPFILTERS ( 'FCT Net New ITY'[Wertebene] = "ARO" )
+			)
+			```
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 01 Basis
+		lineageTag: a0000000-0000-4000-8000-000000000105
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Net New ARO = New Business ARO plus Lost Business ARO.
+	/// Die Addition genügt, weil Lost bereits negativ ist.
+	measure 'Net New ARO' = [New Business ARO] + [Lost Business ARO]
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 01 Basis
+		lineageTag: a0000000-0000-4000-8000-000000000106
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Anzahl der Opportunities mit Wirkung im Filterkontext.
+	/// Zählt Entitäten, nicht Zeilen – eine Opportunity über zwölf Monate ist
+	/// eine Opportunity.
+	measure 'Anzahl Opportunities' = ```
+			CALCULATE (
+			    DISTINCTCOUNT ( 'FCT Net New ITY'[Entität ID] ),
+			    KEEPFILTERS ( 'FCT Net New ITY'[Geschäftsart] = "NEW" )
+			)
+			```
+		formatString: #,0
+		displayFolder: 01 Basis
+		lineageTag: a0000000-0000-4000-8000-000000000107
+
+	/// Anzahl der Bestandsverträge mit Verlustrisiko im Filterkontext.
+	measure 'Anzahl Risikoverträge' = ```
+			CALCULATE (
+			    DISTINCTCOUNT ( 'FCT Net New ITY'[Entität ID] ),
+			    KEEPFILTERS ( 'FCT Net New ITY'[Geschäftsart] = "LOST" )
+			)
+			```
+		formatString: #,0
+		displayFolder: 01 Basis
+		lineageTag: a0000000-0000-4000-8000-000000000108
+
+	/// Durchschnittliche Gewinnwahrscheinlichkeit, gewichtet mit dem
+	/// ARO-Volumen der Opportunity.
+	///
+	/// Bewusst volumengewichtet: der ungewichtete Mittelwert (so im Altmodell
+	/// [Win%]) lässt eine 5-Mio-Opportunity mit 30 Prozent genauso schwer
+	/// wiegen wie eine 50-Tsd-Opportunity mit 90 Prozent und ist als
+	/// Steuerungsgröße irreführend.
+	measure 'Ø Win-% (volumengewichtet)' = ```
+			VAR _Volumen =
+			    CALCULATE (
+			        SUM ( 'FCT Net New ITY'[Betrag ungewichtet (vorzeichenbehaftet)] ),
+			        KEEPFILTERS ( 'FCT Net New ITY'[Geschäftsart] = "NEW" )
+			    )
+			VAR _Gewichtet =
+			    CALCULATE (
+			        SUM ( 'FCT Net New ITY'[Betrag] ),
+			        KEEPFILTERS ( 'FCT Net New ITY'[Geschäftsart] = "NEW" )
+			    )
+			RETURN
+			    DIVIDE ( _Gewichtet, _Volumen )
+			```
+		formatString: 0.0\ %;-0.0\ %;0.0\ %
+		displayFolder: 01 Basis
+		lineageTag: a0000000-0000-4000-8000-000000000109
+
+	/// Durchschnittliche Verlustwahrscheinlichkeit der Risikoverträge,
+	/// volumengewichtet. Analog zu Ø Win-%.
+	measure 'Ø Verlust-% (volumengewichtet)' = ```
+			VAR _Volumen =
+			    CALCULATE (
+			        SUM ( 'FCT Net New ITY'[Betrag ungewichtet (vorzeichenbehaftet)] ),
+			        KEEPFILTERS ( 'FCT Net New ITY'[Geschäftsart] = "LOST" )
+			    )
+			VAR _Gewichtet =
+			    CALCULATE (
+			        SUM ( 'FCT Net New ITY'[Betrag] ),
+			        KEEPFILTERS ( 'FCT Net New ITY'[Geschäftsart] = "LOST" )
+			    )
+			RETURN
+			    DIVIDE ( _Gewichtet, _Volumen )
+			```
+		formatString: 0.0\ %;-0.0\ %;0.0\ %
+		displayFolder: 01 Basis
+		lineageTag: a0000000-0000-4000-8000-000000000110
+
+	// =======================================================================
+	// 02 STATUS – Zerlegung nach Sicherheitsgrad
+	// =======================================================================
+
+	/// ITY-Wirkung bereits gewonnener Opportunities (Win-% = 100 %).
+	/// Der belastbarste Teil des New Business.
+	measure 'ITY Won' = CALCULATE ( [New Business ITY], 'DIM Status'[Status Code] = "WON" )
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 02 Status
+		lineageTag: a0000000-0000-4000-8000-000000000201
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// ITY-Wirkung erwarteter Gewinne (Win-% ab 80 %, unter 100 %).
+	measure 'ITY Expected Win' = CALCULATE ( [New Business ITY], 'DIM Status'[Status Code] = "EXPECTED_WIN" )
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 02 Status
+		lineageTag: a0000000-0000-4000-8000-000000000202
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// ITY-Wirkung offener Pipeline (Win-% unter 80 %).
+	measure 'ITY Pipeline' = CALCULATE ( [New Business ITY], 'DIM Status'[Status Code] = "PIPELINE" )
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 02 Status
+		lineageTag: a0000000-0000-4000-8000-000000000203
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// ITY-Wirkung bereits verlorener Verträge (Retention-% = 0). Negativ.
+	measure 'ITY Lost' = CALCULATE ( [Lost Business ITY], 'DIM Status'[Status Code] = "LOST" )
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 02 Status
+		lineageTag: a0000000-0000-4000-8000-000000000204
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// ITY-Wirkung erwarteter Verluste (Retention-% bis 20 %). Negativ.
+	measure 'ITY Expected Loss' = CALCULATE ( [Lost Business ITY], 'DIM Status'[Status Code] = "EXPECTED_LOSS" )
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 02 Status
+		lineageTag: a0000000-0000-4000-8000-000000000205
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// ITY-Wirkung gefährdeter Verträge (Retention-% über 20 %, unter 100 %).
+	/// Negativ.
+	measure 'ITY At Risk' = CALCULATE ( [Lost Business ITY], 'DIM Status'[Status Code] = "AT_RISK" )
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 02 Status
+		lineageTag: a0000000-0000-4000-8000-000000000206
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Gesicherter Anteil: Won plus Lost. Die Zahl, die man ohne weitere
+	/// Annahmen berichten kann.
+	measure 'ITY gesichert' = [ITY Won] + [ITY Lost]
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 02 Status
+		lineageTag: a0000000-0000-4000-8000-000000000207
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Erwarteter Anteil: Expected Win plus Expected Loss.
+	measure 'ITY erwartet' = [ITY Expected Win] + [ITY Expected Loss]
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 02 Status
+		lineageTag: a0000000-0000-4000-8000-000000000208
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Unsicherer Anteil: Pipeline plus At Risk.
+	measure 'ITY unsicher' = [ITY Pipeline] + [ITY At Risk]
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 02 Status
+		lineageTag: a0000000-0000-4000-8000-000000000209
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Anteil des gesicherten am gesamten Net New ITY.
+	/// Kernkennzahl für die Belastbarkeit des Forecasts: je höher, desto
+	/// weniger hängt die Zahl an Annahmen.
+	measure 'Sicherungsgrad' = ```
+			DIVIDE ( ABS ( [ITY gesichert] ), ABS ( [ITY gesichert] ) + ABS ( [ITY erwartet] ) + ABS ( [ITY unsicher] ) )
+			```
+		formatString: 0.0\ %;-0.0\ %;0.0\ %
+		displayFolder: 02 Status
+		lineageTag: a0000000-0000-4000-8000-000000000210
+
+	// =======================================================================
+	// 03 ZEIT
+	// =======================================================================
+
+	/// Net New ITY kumuliert seit Beginn des Geschäftsjahres.
+	///
+	/// Umsetzung über den linearen Monatsindex statt über TOTALYTD: die
+	/// Standard-Zeitintelligenz kennt nur Kalenderjahre und liefert für ein
+	/// Oktober-September-Geschäftsjahr falsche Grenzen.
+	measure 'Net New ITY YTD' = ```
+			VAR _GJ = MAX ( 'DIM Datum'[GJ Jahr] )
+			VAR _BisPeriode = MAX ( 'DIM Datum'[GJ Periode Nr] )
+			RETURN
+			    CALCULATE (
+			        [Net New ITY],
+			        REMOVEFILTERS ( 'DIM Datum' ),
+			        'DIM Datum'[GJ Jahr] = _GJ,
+			        'DIM Datum'[GJ Periode Nr] <= _BisPeriode
+			    )
+			```
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 03 Zeit
+		lineageTag: a0000000-0000-4000-8000-000000000301
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Net New ITY des gesamten Geschäftsjahres, unabhängig davon, welche
+	/// Periode gerade gefiltert ist. Nenner für Fortschrittsanzeigen.
+	measure 'Net New ITY Gesamtjahr' = ```
+			VAR _GJ = MAX ( 'DIM Datum'[GJ Jahr] )
+			RETURN
+			    CALCULATE (
+			        [Net New ITY],
+			        REMOVEFILTERS ( 'DIM Datum' ),
+			        'DIM Datum'[GJ Jahr] = _GJ
+			    )
+			```
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 03 Zeit
+		lineageTag: a0000000-0000-4000-8000-000000000302
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Net New ITY der gleichen Periode des Vorjahres.
+	/// Verschiebt den Monatsindex um zwölf – funktioniert dadurch auch über
+	/// die Geschäftsjahresgrenze hinweg korrekt.
+	measure 'Net New ITY Vorjahr' = ```
+			VAR _Verschoben =
+			    SUMX (
+			        VALUES ( 'DIM Datum'[Monatsindex] ),
+			        VAR _Ziel = 'DIM Datum'[Monatsindex] - 12
+			        RETURN
+			            CALCULATE (
+			                [Net New ITY],
+			                REMOVEFILTERS ( 'DIM Datum' ),
+			                'FCT Net New ITY'[Monatsindex] = _Ziel
+			            )
+			    )
+			RETURN
+			    _Verschoben
+			```
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 03 Zeit
+		lineageTag: a0000000-0000-4000-8000-000000000303
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Veränderung gegenüber der Vorjahresperiode in Euro.
+	measure 'Net New ITY Δ Vorjahr' = [Net New ITY] - [Net New ITY Vorjahr]
+		formatString: +#,0\ "€";-#,0\ "€";0\ "€"
+		displayFolder: 03 Zeit
+		lineageTag: a0000000-0000-4000-8000-000000000304
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	// =======================================================================
+	// 04 SZENARIEN – ersetzt das manuelle Shiften
+	// =======================================================================
+
+	/// Net New ITY unter den gewählten Szenarioannahmen.
+	///
+	/// BERECHNUNG IN ZWEI SCHRITTEN
+	///
+	/// 1. Zeitliche Verschiebung. Für jeden Monat der Achse wird der Wert des
+	///    Quellmonats geholt, der um die eingestellte Anzahl Monate davor
+	///    liegt. Bei +2 zeigt Dezember also den ursprünglichen Oktoberwert.
+	///    Iteriert wird über 'DIM Datum'[Monatsindex] – zwölf bis
+	///    vierundzwanzig Werte im Filterkontext.
+	///
+	/// 2. Anlaufkurve. Innerhalb des Quellmonats wird über
+	///    'FCT Net New ITY'[Periodenindex] iteriert (Monat 1, 2, 3 … seit
+	///    Mobilisierung). Liegt der Periodenindex innerhalb der eingestellten
+	///    Anlaufdauer, wird der Anlauffaktor angewandt.
+	///
+	/// Beide Schleifen laufen über niedrigkardinale Spalten. Der Aufwand liegt
+	/// bei maximal 24 × 24 Zellen – deutlich günstiger, als für jede
+	/// Parameterkombination eine eigene Faktenvariante zu materialisieren
+	/// (das wären 10 × 6 × 7 = 420 Varianten).
+	///
+	/// Sind alle Parameter auf Standard (0 Monate, kein Anlauf), ist das
+	/// Ergebnis identisch zu [Net New ITY].
+	measure 'Net New ITY (Szenario)' = ```
+			VAR _Verschiebung = SELECTEDVALUE ( 'Szenario Verschiebung'[Monate], 0 )
+			VAR _Faktor       = SELECTEDVALUE ( 'Szenario Anlauf'[Faktor], 1 )
+			VAR _Dauer        = SELECTEDVALUE ( 'Szenario Anlaufdauer'[Monate], 0 )
+			RETURN
+			SUMX (
+			    VALUES ( 'DIM Datum'[Monatsindex] ),
+			    VAR _Zielmonat = 'DIM Datum'[Monatsindex] - _Verschiebung
+			    RETURN
+			        CALCULATE (
+			            IF (
+			                _Dauer = 0 || _Faktor = 1,
+			                -- Kein Anlaufeffekt: eine einfache Summe genügt.
+			                [Net New ITY],
+			                -- Mit Anlaufeffekt: je Periodenindex gewichten.
+			                SUMX (
+			                    VALUES ( 'FCT Net New ITY'[Periodenindex] ),
+			                    VAR _Index = 'FCT Net New ITY'[Periodenindex]
+			                    VAR _Gewicht =
+			                        IF ( _Index >= 1 && _Index <= _Dauer, _Faktor, 1 )
+			                    RETURN
+			                        CALCULATE ( [Net New ITY] ) * _Gewicht
+			                )
+			            ),
+			            REMOVEFILTERS ( 'DIM Datum' ),
+			            'FCT Net New ITY'[Monatsindex] = _Zielmonat
+			        )
+			)
+			```
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 04 Szenarien
+		lineageTag: a0000000-0000-4000-8000-000000000401
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Wirkung der Szenarioannahmen gegenüber dem Basisfall.
+	/// Positiv bedeutet: das Szenario ist günstiger als die reine CRM-Sicht.
+	measure 'Δ Szenario zu Basis' = [Net New ITY (Szenario)] - [Net New ITY]
+		formatString: +#,0\ "€";-#,0\ "€";0\ "€"
+		displayFolder: 04 Szenarien
+		lineageTag: a0000000-0000-4000-8000-000000000402
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Net New ITY nur für Vorgänge ab der eingestellten
+	/// Mindestwahrscheinlichkeit.
+	measure 'Net New ITY (ab Schwelle)' = ```
+			VAR _Schwelle = SELECTEDVALUE ( 'Szenario Schwelle'[Schwelle], 0 )
+			RETURN
+			    CALCULATE (
+			        [Net New ITY],
+			        KEEPFILTERS ( 'FCT Net New ITY'[Wahrscheinlichkeit] >= _Schwelle )
+			    )
+			```
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 04 Szenarien
+		lineageTag: a0000000-0000-4000-8000-000000000403
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Beschreibt die aktuell eingestellten Szenarioannahmen als Fließtext.
+	/// Wird als Untertitel der Szenarioseite angezeigt, damit ein Screenshot
+	/// immer seine eigenen Annahmen mitführt – niemand muss raten, welche
+	/// Einstellungen zu einer Zahl geführt haben.
+	measure 'Szenario Beschreibung' = ```
+			VAR _Verschiebung = SELECTEDVALUE ( 'Szenario Verschiebung'[Monate], 0 )
+			VAR _Faktor       = SELECTEDVALUE ( 'Szenario Anlauf'[Faktor], 1 )
+			VAR _Dauer        = SELECTEDVALUE ( 'Szenario Anlaufdauer'[Monate], 0 )
+			VAR _Basis        = SELECTEDVALUE ( 'Szenario Bewertung'[Bewertungsbasis], "CRM-gewichtet" )
+			VAR _Schwelle     = SELECTEDVALUE ( 'Szenario Schwelle'[Schwelle], 0 )
+			VAR _TextShift =
+			    SWITCH (
+			        TRUE (),
+			        _Verschiebung = 0, "keine Verschiebung",
+			        _Verschiebung > 0, FORMAT ( _Verschiebung, "0" ) & " Monat(e) später",
+			        FORMAT ( -_Verschiebung, "0" ) & " Monat(e) früher"
+			    )
+			VAR _TextAnlauf =
+			    IF (
+			        _Dauer = 0 || _Faktor = 1,
+			        "kein Anlaufeffekt",
+			        FORMAT ( _Faktor, "0 %" ) & " über " & FORMAT ( _Dauer, "0" ) & " Monate"
+			    )
+			VAR _TextSchwelle =
+			    IF ( _Schwelle = 0, "alle Wahrscheinlichkeiten", "ab " & FORMAT ( _Schwelle, "0 %" ) )
+			RETURN
+			    "Annahmen: " & _Basis & " · " & _TextShift & " · Anlauf: " & _TextAnlauf
+			        & " · " & _TextSchwelle
+			```
+		displayFolder: 04 Szenarien
+		lineageTag: a0000000-0000-4000-8000-000000000404
+
+	// =======================================================================
+	// 05 BUDGET UND FORECAST (SAP)
+	// =======================================================================
+
+	/// Gebuchter Umsatz laut SAP (Version 0).
+	measure 'Umsatz Ist' = ```
+			CALCULATE (
+			    SUM ( 'FCT Umsatz'[Monatswert] ),
+			    KEEPFILTERS ( 'FCT Umsatz'[Werttyp Version] = "Actual_0" )
+			)
+			```
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 05 Budget und Forecast
+		lineageTag: a0000000-0000-4000-8000-000000000501
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Budgetierter Umsatz (SAP-Version 20).
+	measure 'Umsatz Budget' = ```
+			CALCULATE (
+			    SUM ( 'FCT Umsatz'[Monatswert] ),
+			    KEEPFILTERS ( 'FCT Umsatz'[Werttyp Version] = "Plan_20" )
+			)
+			```
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 05 Budget und Forecast
+		lineageTag: a0000000-0000-4000-8000-000000000502
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Aktueller Forecast (SAP-Versionen RGF und R12).
+	measure 'Umsatz Forecast' = ```
+			CALCULATE (
+			    SUM ( 'FCT Umsatz'[Monatswert] ),
+			    KEEPFILTERS ( 'FCT Umsatz'[Werttyp Version] IN { "Plan_RGF", "Plan_R12" } )
+			)
+			```
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 05 Budget und Forecast
+		lineageTag: a0000000-0000-4000-8000-000000000503
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Budgetierter unknown-ITY-Effekt (SAP-Version 90, Planbetriebe).
+	/// Der Wert, gegen den die CRM-Approximation gestellt wird.
+	measure 'Unknown ITY Budget' = ```
+			CALCULATE (
+			    SUM ( 'FCT Umsatz'[Monatswert] ),
+			    KEEPFILTERS ( 'FCT Umsatz'[Werttyp Version] = "Plan_90" ),
+			    KEEPFILTERS ( 'FCT Umsatz'[Betriebstyp] <> "Real-Betriebe" )
+			)
+			```
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 05 Budget und Forecast
+		lineageTag: a0000000-0000-4000-8000-000000000504
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Abweichung der CRM-Approximation vom Budget.
+	/// Positiv = das CRM zeigt mehr Net New ITY, als budgetiert wurde.
+	measure 'Δ CRM zu Budget' = [Net New ITY (Szenario)] - [Unknown ITY Budget]
+		formatString: +#,0\ "€";-#,0\ "€";0\ "€"
+		displayFolder: 05 Budget und Forecast
+		lineageTag: a0000000-0000-4000-8000-000000000505
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Zielerreichung der CRM-Approximation gegenüber Budget.
+	measure 'Zielerreichung' = DIVIDE ( [Net New ITY (Szenario)], [Unknown ITY Budget] )
+		formatString: 0.0\ %;-0.0\ %;0.0\ %
+		displayFolder: 05 Budget und Forecast
+		lineageTag: a0000000-0000-4000-8000-000000000506
+
+	/// Organischer Vorjahresumsatz – Bezugsgröße aller Prozentkennzahlen der
+	/// Group Guidance (MAP111e, MAP112e).
+	/// Definition laut Guidance: Vorjahresumsatz, bereinigt um Zu- und
+	/// Verkäufe, zu aktuellen Wechselkursen.
+	measure 'Organischer Umsatz Vorjahr' = ```
+			VAR _GJ = MAX ( 'DIM Datum'[GJ Jahr] )
+			RETURN
+			    CALCULATE (
+			        SUM ( 'FCT Umsatz'[Monatswert] ),
+			        REMOVEFILTERS ( 'DIM Datum' ),
+			        'FCT Umsatz'[GJ Jahr] = _GJ - 1,
+			        KEEPFILTERS ( 'FCT Umsatz'[Werttyp Version] = "Actual_0" ),
+			        KEEPFILTERS ( 'FCT Umsatz'[Metric ID] <> 99 )
+			    )
+			```
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 05 Budget und Forecast
+		lineageTag: a0000000-0000-4000-8000-000000000507
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	// =======================================================================
+	// 06 QUOTEN NACH GROUP GUIDANCE
+	// =======================================================================
+
+	/// New Business in Prozent des organischen Vorjahresumsatzes.
+	/// HFM: MAP111e.
+	measure 'New Business %' = DIVIDE ( [New Business ITY], [Organischer Umsatz Vorjahr] )
+		formatString: 0.00\ %;-0.00\ %;0.00\ %
+		displayFolder: 06 Quoten
+		lineageTag: a0000000-0000-4000-8000-000000000601
+
+	/// Lost Business in Prozent des organischen Vorjahresumsatzes.
+	/// Als positive Zahl dargestellt, obwohl der Zähler negativ ist – so liest
+	/// sich "Lost Business 3,2 %" wie in der Group-Berichterstattung.
+	/// HFM: MAP112e.
+	measure 'Lost Business %' = DIVIDE ( ABS ( [Lost Business ITY] ), [Organischer Umsatz Vorjahr] )
+		formatString: 0.00\ %;-0.00\ %;0.00\ %
+		displayFolder: 06 Quoten
+		lineageTag: a0000000-0000-4000-8000-000000000602
+
+	/// Net New Business in Prozent des organischen Vorjahresumsatzes.
+	/// New minus Lost. HFM: Net new business (Reported) %.
+	measure 'Net New Business %' = DIVIDE ( [Net New ITY], [Organischer Umsatz Vorjahr] )
+		formatString: 0.00\ %;-0.00\ %;0.00\ %
+		displayFolder: 06 Quoten
+		lineageTag: a0000000-0000-4000-8000-000000000603
+
+	/// Retention-Quote = 100 Prozent minus Lost Business Quote.
+	/// HFM: Retention (Reported) %.
+	measure 'Retention %' = 1 - [Lost Business %]
+		formatString: 0.00\ %;-0.00\ %;0.00\ %
+		displayFolder: 06 Quoten
+		lineageTag: a0000000-0000-4000-8000-000000000604
+
+	// =======================================================================
+	// 07 CRM-BEWEGUNG
+	// =======================================================================
+
+	/// Summe aller Wertänderungen im CRM im gewählten Zeitraum.
+	measure 'Bewegung Wert' = SUM ( 'FCT CRM-Bewegung'[Wertänderung] )
+		formatString: +#,0\ "€";-#,0\ "€";0\ "€"
+		displayFolder: 07 CRM-Bewegung
+		lineageTag: a0000000-0000-4000-8000-000000000701
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Anzahl der Vorgänge, an denen sich seit dem letzten Stichtag etwas
+	/// geändert hat.
+	measure 'Bewegung Anzahl' = DISTINCTCOUNT ( 'FCT CRM-Bewegung'[Entität ID] )
+		formatString: #,0
+		displayFolder: 07 CRM-Bewegung
+		lineageTag: a0000000-0000-4000-8000-000000000702
+
+	/// Anzahl der Statuswechsel. Die wichtigste Bewegungsart: ein Wechsel von
+	/// Pipeline zu Expected Win verändert die Belastbarkeit des Forecasts
+	/// stärker als jede Wertkorrektur.
+	measure 'Bewegung Statuswechsel' = ```
+			CALCULATE (
+			    DISTINCTCOUNT ( 'FCT CRM-Bewegung'[Entität ID] ),
+			    KEEPFILTERS ( 'FCT CRM-Bewegung'[Änderungsart] = "Statuswechsel" )
+			)
+			```
+		formatString: #,0
+		displayFolder: 07 CRM-Bewegung
+		lineageTag: a0000000-0000-4000-8000-000000000703
+
+	/// Wertänderung nur aus Vorgängen, die sich verbessert haben.
+	measure 'Bewegung positiv' = ```
+			CALCULATE (
+			    SUM ( 'FCT CRM-Bewegung'[Wertänderung] ),
+			    KEEPFILTERS ( 'FCT CRM-Bewegung'[Wertänderung] > 0 )
+			)
+			```
+		formatString: +#,0\ "€";-#,0\ "€";0\ "€"
+		displayFolder: 07 CRM-Bewegung
+		lineageTag: a0000000-0000-4000-8000-000000000704
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Wertänderung nur aus Vorgängen, die sich verschlechtert haben.
+	measure 'Bewegung negativ' = ```
+			CALCULATE (
+			    SUM ( 'FCT CRM-Bewegung'[Wertänderung] ),
+			    KEEPFILTERS ( 'FCT CRM-Bewegung'[Wertänderung] < 0 )
+			)
+			```
+		formatString: +#,0\ "€";-#,0\ "€";0\ "€"
+		displayFolder: 07 CRM-Bewegung
+		lineageTag: a0000000-0000-4000-8000-000000000705
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	// =======================================================================
+	// 08 DATENQUALITÄT
+	// =======================================================================
+
+	/// Anzahl der Regelverstöße im jüngsten Prüflauf.
+	measure 'DQ Verstöße' = ```
+			VAR _Letzte = CALCULATE ( MAX ( 'DQ Prüfungen'[Prüfdatum] ), ALL ( 'DQ Prüfungen' ) )
+			RETURN
+			    CALCULATE ( SUM ( 'DQ Prüfungen'[Verstöße] ), 'DQ Prüfungen'[Prüfdatum] = _Letzte )
+			```
+		formatString: #,0
+		displayFolder: 08 Datenqualität
+		lineageTag: a0000000-0000-4000-8000-000000000801
+
+	/// Anzahl der Verstöße gegen Regeln mit Schweregrad ERROR.
+	/// Ist dieser Wert größer als 0, hat die Pipeline nicht durchlaufen und
+	/// die Zahlen im Bericht sind älter als der letzte Ladelauf.
+	measure 'DQ Fehler' = ```
+			VAR _Letzte = CALCULATE ( MAX ( 'DQ Prüfungen'[Prüfdatum] ), ALL ( 'DQ Prüfungen' ) )
+			RETURN
+			    CALCULATE (
+			        SUM ( 'DQ Prüfungen'[Verstöße] ),
+			        'DQ Prüfungen'[Prüfdatum] = _Letzte,
+			        'DQ Prüfungen'[Schweregrad] = "ERROR"
+			    )
+			```
+		formatString: #,0
+		displayFolder: 08 Datenqualität
+		lineageTag: a0000000-0000-4000-8000-000000000802
+
+	/// Ampeltext zum Zustand der Datenbasis.
+	measure 'DQ Status' = ```
+			VAR _Fehler = [DQ Fehler]
+			VAR _Alle = [DQ Verstöße]
+			RETURN
+			    SWITCH (
+			        TRUE (),
+			        _Fehler > 0, "Kritisch – " & FORMAT ( _Fehler, "#,0" ) & " blockierende Verstöße",
+			        _Alle > 0, "Eingeschränkt – " & FORMAT ( _Alle, "#,0" ) & " Hinweise zur Nachpflege",
+			        "Vollständig"
+			    )
+			```
+		displayFolder: 08 Datenqualität
+		lineageTag: a0000000-0000-4000-8000-000000000803
+
+	// =======================================================================
+	// 09 DYNAMISCHE TITEL UND KONTEXT
+	// =======================================================================
+	// Storytelling with Data, Kapitel 5: Der Titel trägt die Aussage, nicht
+	// die Beschriftung der Achse. Diese Kennzahlen erzeugen Titel, die sich
+	// mit dem Filterkontext ändern und die Botschaft der Grafik benennen.
+
+	/// Kernaussage zur Entwicklung des Net New ITY.
+	/// Benennt Richtung und Größenordnung statt nur die Kennzahl zu
+	/// wiederholen.
+	measure 'Aussage Net New' = ```
+			VAR _Wert = [Net New ITY (Szenario)]
+			VAR _Budget = [Unknown ITY Budget]
+			VAR _Delta = _Wert - _Budget
+			VAR _Richtung = IF ( _Delta >= 0, "über", "unter" )
+			RETURN
+			    IF (
+			        ISBLANK ( _Budget ),
+			        "Net New ITY: " & FORMAT ( _Wert, "#,0 €" ),
+			        "Net New ITY liegt " & FORMAT ( ABS ( _Delta ), "#,0 €" ) & " "
+			            & _Richtung & " Budget ("
+			            & FORMAT ( [Zielerreichung], "0 %" ) & " Zielerreichung)"
+			    )
+			```
+		displayFolder: 09 Titel und Kontext
+		lineageTag: a0000000-0000-4000-8000-000000000901
+
+	/// Aussage zur Belastbarkeit des Forecasts.
+	measure 'Aussage Sicherheit' = ```
+			VAR _Grad = [Sicherungsgrad]
+			RETURN
+			    FORMAT ( _Grad, "0 %" ) & " des ausgewiesenen Net New ITY sind bereits gesichert · "
+			        & FORMAT ( [Anzahl Opportunities], "#,0" ) & " Opportunities · "
+			        & FORMAT ( [Anzahl Risikoverträge], "#,0" ) & " Risikoverträge"
+			```
+		displayFolder: 09 Titel und Kontext
+		lineageTag: a0000000-0000-4000-8000-000000000902
+
+	/// Stand der Daten und Zustand der Prüfungen – gehört auf jede Seite,
+	/// damit ein exportiertes Bild seinen eigenen Stichtag mitführt.
+	measure 'Stand der Daten' = ```
+			VAR _Stand = CALCULATE ( MAX ( 'FCT Net New ITY'[Stichtag] ), ALL ( 'FCT Net New ITY' ) )
+			RETURN
+			    "Datenstand " & FORMAT ( _Stand, "DD.MM.YYYY" ) & " · Datenqualität: " & [DQ Status]
+			```
+		displayFolder: 09 Titel und Kontext
+		lineageTag: a0000000-0000-4000-8000-000000000903
+
+	/// Erläutert die aktuell gewählte Bewertungsbasis im Klartext.
+	measure 'Erläuterung Bewertungsbasis' = ```
+			VAR _Basis = SELECTEDVALUE ( 'Szenario Bewertung'[Bewertungsbasis], "CRM-gewichtet" )
+			RETURN
+			    SWITCH (
+			        _Basis,
+			        "CRM-gewichtet", "Beträge sind mit der Eintrittswahrscheinlichkeit aus dem CRM gewichtet.",
+			        "Vollwert", "Beträge sind ungewichtet – Obergrenze bei vollständigem Eintritt aller Vorgänge.",
+			        "Nur gesichert", "Nur bereits gewonnene bzw. verlorene Vorgänge, ungewichtet – belastbare Untergrenze.",
+			        ""
+			    )
+			```
+		displayFolder: 09 Titel und Kontext
+		lineageTag: a0000000-0000-4000-8000-000000000904
+
+	column Platzhalter
+		dataType: string
+		isHidden
+		lineageTag: a0000000-0000-4000-8000-000000000999
+		summarizeBy: none
+		sourceColumn: Platzhalter
+
+	partition _Kennzahlen = m
+		mode: import
+		source =
+				let
+				    Quelle = Table.FromRows({}, type table [Platzhalter = text])
+				in
+				    Quelle
+
+	annotation PBI_ResultType = Table

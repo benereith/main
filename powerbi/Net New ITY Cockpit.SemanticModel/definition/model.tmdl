@@ -1,0 +1,47 @@
+/// Semantikmodell "Net New ITY Cockpit".
+/// Konsolidiert die Modelle "Net New ITY", "Net New Budget FY2627" und
+/// "Net New Budget (2)" (CRM Call).
+///
+/// Bewusste Einstellungen:
+///   __PBI_TimeIntelligenceEnabled = 0
+///     Schaltet die automatischen Datumstabellen ab. Die Altmodelle trugen
+///     zusammen 32 LocalDateTable_*-Tabellen, die weder genutzt wurden noch
+///     einen Fiskalkalender kannten.
+///
+/// Bewusst NICHT gesetzt: discourageImplicitMeasures. Die Option würde zwar
+/// verhindern, dass jemand eine Betragsspalte direkt in eine Visualisierung
+/// zieht und dabei die Vorzeichen- und Gewichtungslogik umgeht – sie würde
+/// aber zugleich die Summenzeilen der Detailtabellen unterbinden, in denen
+/// ARO- und ITY-Werte je Vorgang bewusst als Rohwerte stehen. Der Schutz
+/// entsteht stattdessen dadurch, dass sämtliche Betragsspalten der
+/// Faktentabellen ausgeblendet sind und nur über Kennzahlen erreichbar bleiben.
+model Model
+	culture: de-DE
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: de-DE
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+	annotation __PBI_TimeIntelligenceEnabled = 0
+
+	annotation PBI_QueryOrder = ["LakehouseServer","LakehouseDatabase","AktuellesGeschaeftsjahr","fnLakehouse","DIM Datum","DIM Betrieb","DIM Status","DIM Opportunity","DIM Vertrag","DIM HFM-Struktur","FCT Net New ITY","FCT Umsatz","FCT CRM-Bewegung","DQ Prüfungen","_Kennzahlen"]
+
+	annotation PBI_ProTooling = ["DevMode"]
+
+ref table 'DIM Datum'
+ref table 'DIM Betrieb'
+ref table 'DIM Status'
+ref table 'DIM Opportunity'
+ref table 'DIM Vertrag'
+ref table 'DIM HFM-Struktur'
+ref table 'FCT Net New ITY'
+ref table 'FCT Umsatz'
+ref table 'FCT CRM-Bewegung'
+ref table 'DQ Prüfungen'
+ref table 'Szenario Verschiebung'
+ref table 'Szenario Anlauf'
+ref table 'Szenario Anlaufdauer'
+ref table 'Szenario Bewertung'
+ref table 'Szenario Schwelle'
+ref table _Kennzahlen

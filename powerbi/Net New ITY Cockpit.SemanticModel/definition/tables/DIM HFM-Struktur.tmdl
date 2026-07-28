@@ -1,0 +1,105 @@
+/// Net-New-Hierarchie und Zuordnung zum HFM-Kontenplan.
+/// Quelle: gold_dim_hfm_struktur.
+///
+/// Übernimmt DIM_Struktur der Altmodelle und ergänzt sie um die
+/// Forward-Indikatoren MAP131/MAP136/MAP141a/MAP141c aus der Group Guidance
+/// (Feb 2025, S. 3) – diese fehlten dort, obwohl der gesamte Bericht sie misst.
+table 'DIM HFM-Struktur'
+	lineageTag: b6000000-0000-4000-8000-000000000001
+
+	column 'Metric ID'
+		dataType: int64
+		formatString: 0
+		isKey
+		isHidden
+		lineageTag: b6000000-0000-4000-8000-000000000101
+		summarizeBy: none
+		sourceColumn: metric_id
+
+	column Kennzahl
+		dataType: string
+		lineageTag: b6000000-0000-4000-8000-000000000102
+		summarizeBy: none
+		sourceColumn: metric
+		sortByColumn: Sortierung
+
+	column Sortierung
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: b6000000-0000-4000-8000-000000000103
+		summarizeBy: none
+		sourceColumn: sort
+
+	column 'Ebene 1'
+		dataType: string
+		lineageTag: b6000000-0000-4000-8000-000000000104
+		summarizeBy: none
+		sourceColumn: level1_label
+
+	column 'Ebene 2'
+		dataType: string
+		lineageTag: b6000000-0000-4000-8000-000000000105
+		summarizeBy: none
+		sourceColumn: level2_label
+
+	column 'Ebene 3'
+		dataType: string
+		lineageTag: b6000000-0000-4000-8000-000000000106
+		summarizeBy: none
+		sourceColumn: level3_label
+
+	column 'Ebene 4'
+		dataType: string
+		lineageTag: b6000000-0000-4000-8000-000000000107
+		summarizeBy: none
+		sourceColumn: level4_label
+
+	/// HFM-Konto, z. B. MAP131, MAP141a, MAP112c.
+	column 'HFM Konto'
+		dataType: string
+		lineageTag: b6000000-0000-4000-8000-000000000108
+		summarizeBy: none
+		sourceColumn: hfm_account
+
+	/// Wortlaut der Kontodefinition aus dem HFM Chart of Accounts.
+	/// Wird im Bericht als QuickInfo an den Kennzahlen angezeigt – damit steht
+	/// die Definition dort, wo die Zahl steht.
+	column 'HFM Definition'
+		dataType: string
+		lineageTag: b6000000-0000-4000-8000-000000000109
+		summarizeBy: none
+		sourceColumn: hfm_beschreibung
+
+	column 'Ist Blattknoten'
+		dataType: boolean
+		formatString: """Ja"";""Ja"";""Nein"""
+		isHidden
+		lineageTag: b6000000-0000-4000-8000-000000000110
+		summarizeBy: none
+		sourceColumn: is_leaf
+
+	hierarchy 'Net New Hierarchie'
+		lineageTag: b6000000-0000-4000-8000-000000000201
+
+		level 'Ebene 1'
+			lineageTag: b6000000-0000-4000-8000-000000000202
+			column: 'Ebene 1'
+
+		level 'Ebene 2'
+			lineageTag: b6000000-0000-4000-8000-000000000203
+			column: 'Ebene 2'
+
+		level 'Ebene 3'
+			lineageTag: b6000000-0000-4000-8000-000000000204
+			column: 'Ebene 3'
+
+		level 'Ebene 4'
+			lineageTag: b6000000-0000-4000-8000-000000000205
+			column: 'Ebene 4'
+
+	partition 'DIM HFM-Struktur' = m
+		mode: import
+		source = fnLakehouse("gold_dim_hfm_struktur")
+
+	annotation PBI_ResultType = Table

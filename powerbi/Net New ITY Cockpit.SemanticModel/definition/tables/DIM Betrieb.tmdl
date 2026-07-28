@@ -1,0 +1,164 @@
+/// SAP-Betriebsstammdaten (Werke). Quelle: gold_dim_unit.
+/// Ersetzt SAP_Stammdaten bzw. dim_sap_master_data_unit der Altmodelle.
+table 'DIM Betrieb'
+	lineageTag: b3000000-0000-4000-8000-000000000001
+
+	column Werk
+		dataType: int64
+		formatString: 0
+		isKey
+		lineageTag: b3000000-0000-4000-8000-000000000101
+		summarizeBy: none
+		sourceColumn: betrieb
+
+	/// "0123 – Bezeichnung". Führende Nullen, damit die Sortierung stimmt.
+	column 'Werk Bezeichnung'
+		dataType: string
+		lineageTag: b3000000-0000-4000-8000-000000000102
+		summarizeBy: none
+		sourceColumn: werk_bezeichnung
+
+	column Betriebsname
+		dataType: string
+		lineageTag: b3000000-0000-4000-8000-000000000103
+		summarizeBy: none
+		sourceColumn: bezeichnung_betrieb
+
+	column Buchungskreis
+		dataType: string
+		lineageTag: b3000000-0000-4000-8000-000000000104
+		summarizeBy: none
+		sourceColumn: buchungskreis
+
+	column Sektor
+		dataType: string
+		lineageTag: b3000000-0000-4000-8000-000000000105
+		summarizeBy: none
+		sourceColumn: sektor
+
+	/// Harmonisierter Sektor für die HFM-Meldung (HC / BU / …).
+	column 'HFM Sektor'
+		dataType: string
+		lineageTag: b3000000-0000-4000-8000-000000000106
+		summarizeBy: none
+		sourceColumn: hfm_sektor
+
+	/// Real-Betriebe / Plan-Betriebe Roll / Plan-Betriebe ITY.
+	/// Plan-Betriebe sind Platzhalter-Kostenstellen für unknown Business und
+	/// dürfen in Betriebszählungen nicht mitlaufen.
+	column Betriebstyp
+		dataType: string
+		lineageTag: b3000000-0000-4000-8000-000000000107
+		summarizeBy: none
+		sourceColumn: betriebstyp
+
+	/// known = realer Betrieb, unknown = Planbetrieb.
+	/// Die Kernunterscheidung des gesamten Berichts: known ITY ist gebucht,
+	/// unknown ITY wird aus dem CRM approximiert.
+	column 'Known / Unknown'
+		dataType: string
+		lineageTag: b3000000-0000-4000-8000-000000000108
+		summarizeBy: none
+		sourceColumn: known_unknown
+
+	column Vertragsbeginn
+		dataType: dateTime
+		formatString: dd.mm.yyyy
+		lineageTag: b3000000-0000-4000-8000-000000000109
+		summarizeBy: none
+		sourceColumn: vertragsbeginn
+
+	column Schließung
+		dataType: dateTime
+		formatString: dd.mm.yyyy
+		lineageTag: b3000000-0000-4000-8000-000000000110
+		summarizeBy: none
+		sourceColumn: schliessung
+
+	column Vertragsart
+		dataType: string
+		lineageTag: b3000000-0000-4000-8000-000000000111
+		summarizeBy: none
+		sourceColumn: bezeichnung_vertragsart
+
+	column Region
+		dataType: string
+		lineageTag: b3000000-0000-4000-8000-000000000112
+		summarizeBy: none
+		sourceColumn: bezeichnung_region
+
+	column Management
+		dataType: string
+		lineageTag: b3000000-0000-4000-8000-000000000113
+		summarizeBy: none
+		sourceColumn: bezeichnung_management
+
+	column Verantwortungsbereich
+		dataType: string
+		lineageTag: b3000000-0000-4000-8000-000000000114
+		summarizeBy: none
+		sourceColumn: bezeichnung_verantwortungsbereich
+
+	column Branche
+		dataType: string
+		lineageTag: b3000000-0000-4000-8000-000000000115
+		summarizeBy: none
+		sourceColumn: bezeichnung_branche
+
+	column Kundengruppe
+		dataType: string
+		lineageTag: b3000000-0000-4000-8000-000000000116
+		summarizeBy: none
+		sourceColumn: bezeichnung_kundengruppe
+
+	column Bundesland
+		dataType: string
+		lineageTag: b3000000-0000-4000-8000-000000000117
+		summarizeBy: none
+		sourceColumn: bundesland
+
+	column Stadt
+		dataType: string
+		lineageTag: b3000000-0000-4000-8000-000000000118
+		summarizeBy: none
+		sourceColumn: stadt
+
+	/// Cause of Change laut SAP-Stammdaten:
+	/// 1 = bestehend, 2 = New Business, 3 = Roll, 4 = Lost Business, 5 = M&A.
+	column 'Cause of Change'
+		dataType: int64
+		formatString: 0
+		lineageTag: b3000000-0000-4000-8000-000000000119
+		summarizeBy: none
+		sourceColumn: cause_of_change
+
+	column 'Cause of Change Bezeichnung'
+		dataType: string
+		lineageTag: b3000000-0000-4000-8000-000000000120
+		summarizeBy: none
+		sourceColumn: bezeichnung_cause_of_change
+
+	hierarchy Organisation
+		lineageTag: b3000000-0000-4000-8000-000000000201
+
+		level Verantwortungsbereich
+			lineageTag: b3000000-0000-4000-8000-000000000202
+			column: Verantwortungsbereich
+
+		level Region
+			lineageTag: b3000000-0000-4000-8000-000000000203
+			column: Region
+
+		level Management
+			lineageTag: b3000000-0000-4000-8000-000000000204
+			column: Management
+
+		level Betrieb
+			lineageTag: b3000000-0000-4000-8000-000000000205
+			column: 'Werk Bezeichnung'
+
+	partition 'DIM Betrieb' = m
+		mode: import
+		source = fnLakehouse("gold_dim_unit")
+
+	annotation PBI_ResultType = Table
