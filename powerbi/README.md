@@ -12,18 +12,34 @@ Der SQL-Endpoint ist eingetragen, die Datenbank löst sich selbst auf:
 | Parameter | Wert |
 |---|---|
 | `SqlEndpoint` | `3w3wftkijo6ujehh4fb2eleovu-sdjibi3hrggujev7dt4yjznhu4.datawarehouse.fabric.microsoft.com` |
-| `WarehouseName` | leer — nur setzen, wenn der Endpoint mehrere Datenbanken führt |
+| `WarehouseName` | **`BITTE_EINTRAGEN`** → Name des Lakehouse bzw. Warehouse |
 | `FY_Start` | `01.10.2025` — Beginn des Betrachtungszeitraums |
 | `FY_Ende` | `30.09.2027` — Ende des Betrachtungszeitraums |
 
-`FabricSql` fragt den Endpoint über `Sql.Databases` ab. Führt er genau eine
-Datenbank, wird sie ohne Zutun genommen. Führt er mehrere, bricht die Abfrage
-mit einer Meldung ab, die **die verfügbaren Namen auflistet** — den passenden
-dann in `WarehouseName` eintragen (*Transformieren → Parameter verwalten*).
-Ein gesetzter Wert hat immer Vorrang vor der Auflösung.
+### Den Datenbanknamen herausfinden
+
+`WarehouseName` muss gesetzt werden — der Wert lässt sich nicht automatisch
+ermitteln, siehe unten. Am schnellsten geht es so:
+
+*Daten abrufen → SQL Server* → Server einfügen, **Datenbank leer lassen** →
+der Navigator listet alle Datenbanken des Endpoints. Den Namen ablesen,
+abbrechen, und ihn unter *Transformieren → Parameter verwalten* eintragen.
+Alternativ steht er im Fabric-Portal als Anzeigename des Lakehouse bzw.
+Warehouse.
 
 Beim ersten Öffnen fragt Power BI nach den Anmeldeinformationen für den
 Endpoint: *Organisationskonto* wählen und anmelden.
+
+### Warum das nicht automatisch geht
+
+Naheliegend wäre, den Endpoint per `Sql.Databases` abzufragen und die einzige
+Datenbank selbst zu nehmen. Power BI lässt das nicht zu: Die Datenquelle muss
+sich beim **Laden** des Modells statisch auflösen lassen. Wird sie erst zur
+Laufzeit konstruiert — durch Fallunterscheidung oder Navigation —, gilt sie
+als *dynamische Datenquelle*, und das Projekt lässt sich gar nicht erst
+öffnen (`InvalidDataSourceReference`). Derselbe Mechanismus verhindert später
+den geplanten Refresh im Service. `FabricSql` enthält deshalb genau einen
+`Sql.Database`-Aufruf mit zwei Parametern und keinerlei Logik.
 
 `FY_Start` und `FY_Ende` steuern `dim_date` und damit den kompletten
 Auswertungshorizont — sie ersetzen die vier `Est_*`-Parameter und die fest

@@ -3,7 +3,7 @@ expression SqlEndpoint = "3w3wftkijo6ujehh4fb2eleovu-sdjibi3hrggujev7dt4yjznhu4.
 
 	annotation PBI_ResultType = Text
 
-expression WarehouseName = "" meta [IsParameterQuery = true, Type = "Text", IsParameterQueryRequired = false]
+expression WarehouseName = "BITTE_EINTRAGEN" meta [IsParameterQuery = true, Type = "Text", IsParameterQueryRequired = true]
 	lineageTag: 82b45174-3ef7-5382-bd8a-6d049900ae85
 
 	annotation PBI_ResultType = Text
@@ -20,22 +20,14 @@ expression FY_Ende = #date(2027, 9, 30) meta [IsParameterQuery = true, Type = ty
 
 expression FabricSql = ```
 		let
-		  // WarehouseName ist optional. Ist er gesetzt, gilt er unveraendert.
-		  // Ist er leer, wird die Datenbank aufgeloest: stellt der Endpoint
-		  // genau eine bereit, ist sie eindeutig und wird genommen. Stehen
-		  // mehrere zur Auswahl, bricht die Abfrage mit deren Namen ab -
-		  // dann ist der Parameter zu setzen.
-		  Manuell = WarehouseName <> null and Text.Trim(WarehouseName) <> "",
-		  Kandidaten = Sql.Databases(SqlEndpoint),
-		  Namen = Text.Combine(List.Transform(Table.Column(Kandidaten, "Name"), Text.From), ", "),
-		  Automatisch =
-		      if Table.RowCount(Kandidaten) = 1 then
-		          Kandidaten{0}[Data]
-		      else
-		          error "Der SQL-Endpoint stellt " & Text.From(Table.RowCount(Kandidaten))
-		              & " Datenbanken bereit - bitte den Parameter WarehouseName setzen. Verfuegbar: "
-		              & Namen,
-		  Datenbank = if Manuell then Sql.Database(SqlEndpoint, WarehouseName) else Automatisch
+		  // Bewusst statisch: genau ein Sql.Database-Aufruf, keine Fallunter-
+		  // scheidung, keine Navigation ueber Sql.Databases. Power BI muss die
+		  // Datenquelle beim Laden des Modells aufloesen koennen. Konstruiert
+		  // der Ausdruck sie erst zur Laufzeit, gilt sie als dynamische
+		  // Datenquelle und das Projekt laesst sich nicht oeffnen
+		  // (InvalidDataSourceReference). Derselbe Grund verhindert spaeter
+		  // den geplanten Refresh im Service.
+		  Datenbank = Sql.Database(SqlEndpoint, WarehouseName)
 		in
 		  Datenbank
 		```
