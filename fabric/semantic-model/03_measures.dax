@@ -13,40 +13,36 @@
 // Teil A - Bestandsmeasures
 // =====================================================================
 
-// --- Vorzeichen und Phase entstehen hier, nicht in der Tabelle -------
+// --- Zwei Sichten, klar getrennt -------------------------------------
+//
+// 1. ABSOLUT: was die Opportunity tatsaechlich beitraegt. Positiv.
+// 2. ROLL / DELTA: die Bruecke ins Folgejahr - der unterjaehrige
+//    ITY-Betrag wird abgezogen, der volle ARO-Betrag kommt hinzu.
+//    Nur hier steht das Minus vor dem ITY-Wert.
+//
+// Im Altmodell steckten beide Sichten zusammen in Budget_Value, weshalb
+// sich der ITY-Wert nie fuer sich betrachten liess.
 //
 // Die Phasengrenze steht je Zeile in fct_budget_effect[Phasenwechsel]:
 // das Ende des ersten Geschaeftsjahres der jeweiligen Opportunity.
-// Perioden bis dorthin sind ITY (negativ, Konvention aus dem Altmodell),
-// spaetere sind ARO (positiv).
-//
-// Bewusst NICHT aus dem Filterkontext abgeleitet: eine Grenze wie
-// MIN(dim_date[Datum]) wandert beim Filtern mit, wodurch das gefilterte
-// Jahr komplett zur ITY-Phase wird und alles negativ anzeigt.
-// Zeilenbezogen bleibt jedes Jahr fuer sich richtig.
+// Bewusst zeilenbezogen - eine aus dem Filterkontext abgeleitete Grenze
+// wandert beim Filtern mit und macht ein gefiltertes Jahr komplett zur
+// ITY-Phase.
 
-Net ITY Effect =
+
+// --- Sicht 1: absolute Werte -----------------------------------------
+
+ITY Wert =
 SUMX (
     fct_budget_effect,
     IF (
         fct_budget_effect[Period_Date] <= fct_budget_effect[Phasenwechsel],
-        fct_budget_effect[ITY_Value] * -1,
-        fct_budget_effect[ARO_Value]
-    )
-)
-
-// Die beiden Phasen einzeln - fuer Bruecken und Abstimmungen.
-ITY Anteil =
-SUMX (
-    fct_budget_effect,
-    IF (
-        fct_budget_effect[Period_Date] <= fct_budget_effect[Phasenwechsel],
-        fct_budget_effect[ITY_Value] * -1,
+        fct_budget_effect[ITY_Value],
         0
     )
 )
 
-ARO Anteil =
+ARO Wert =
 SUMX (
     fct_budget_effect,
     IF (
@@ -56,35 +52,55 @@ SUMX (
     )
 )
 
-// Die beiden Effektarten als Filter auf derselben Tabelle.
-ity_effect =
-CALCULATE (
-    [Net ITY Effect],
-    fct_budget_effect[effect_type] = "New Business"
-)
+New Business ITY =
+CALCULATE ( [ITY Wert], fct_budget_effect[effect_type] = "New Business" )
 
-Lost ITY =
-CALCULATE (
-    [Net ITY Effect],
-    fct_budget_effect[effect_type] = "Retention"
-)
+New Business ARO =
+CALCULATE ( [ARO Wert], fct_budget_effect[effect_type] = "New Business" )
+
+// Die Retention kennt keine Phasentrennung - beide Phasen zusammen sind
+// das gesamte verlorene Volumen. Als Verlust negativ.
+Retention Verlust =
+-1
+    * CALCULATE (
+        [ITY Wert] + [ARO Wert],
+        fct_budget_effect[effect_type] = "Retention"
+    )
+
+
+// --- Sicht 2: Roll / Delta -------------------------------------------
+// Hier und nur hier geht der ITY-Betrag negativ ein.
+
+Roll Delta New Business = [New Business ARO] - [New Business ITY]
+
+Net Budget Delta = [Roll Delta New Business] + [Retention Verlust]
+
+// Namen aus dem Altmodell, damit bestehende Visuals weiter greifen.
+Net ITY Effect = [Net Budget Delta]
+
+ity_effect = [Roll Delta New Business]
+
+Lost ITY = [Retention Verlust]
+
 
 // --- Clusterung Roll / ITY -------------------------------------------
 // Roll = schliesst im Basisjahr und wirkt als Rolleffekt ins Folgejahr.
 // ITY  = schliesst im Folgejahr und wirkt dort unterjaehrig.
 // Als Spalte fct_budget_effect[ity_cluster] auch als Achse nutzbar.
 
-Roll Effekt = CALCULATE ( [Net ITY Effect], fct_budget_effect[ity_cluster] = "Roll" )
+Roll Effekt =
+CALCULATE ( [New Business ITY], fct_budget_effect[ity_cluster] = "Roll" )
 
-ITY Effekt = CALCULATE ( [Net ITY Effect], fct_budget_effect[ity_cluster] = "ITY" )
+ITY Effekt =
+CALCULATE ( [New Business ITY], fct_budget_effect[ity_cluster] = "ITY" )
 
 Ohne Cluster =
 CALCULATE (
-    [Net ITY Effect],
+    [New Business ITY],
     FILTER ( VALUES ( fct_budget_effect[ity_cluster] ), ISBLANK ( fct_budget_effect[ity_cluster] ) )
 )
 
-crm_ity = [ity_effect]
+crm_ity = [New Business ITY]
 
 crm_ity_sply = CALCULATE ( [crm_ity], SAMEPERIODLASTYEAR ( dim_date[Datum] ) )
 

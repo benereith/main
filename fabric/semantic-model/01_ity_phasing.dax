@@ -6,14 +6,16 @@
 // Der Dataflow liefert eine Zeile je Opportunity bzw. Contract, die
 // Aufloesung auf Monatsperioden passiert hier.
 //
-// GRUNDSATZ: Die Tabellen speichern nur VORZEICHENLOSE Betraege.
-// Welcher der beiden gilt, entscheidet das Measure anhand der Spalte
-// Phasenwechsel - der Grenze zwischen ITY- und ARO-Phase je Zeile.
+// GRUNDSATZ: Die Tabellen speichern nur POSITIVE Betraege. Welcher je
+// Periode gilt, entscheidet die Spalte Phasenwechsel - die Grenze
+// zwischen ITY- und ARO-Phase der jeweiligen Zeile. Das Vorzeichen
+// setzt ausschliesslich das Measure.
 //
-// Im Altmodell steckte das Vorzeichen in Budget_Value, gesetzt gegen
-// einen festen Cutoff (Est_Close_Date_E). Damit war die Zuordnung
-// global eingefroren und ein einzelnes Geschaeftsjahr nicht isoliert
-// betrachtbar.
+// Wichtig: Das Minus vor dem ITY-Betrag gehoert in die Roll- bzw.
+// Delta-Betrachtung, nicht in den ITY-Wert selbst. Im Altmodell steckte
+// beides zusammen in Budget_Value, weshalb sich der ITY-Wert dort nie
+// fuer sich betrachten liess. Getrennt gibt es zwei saubere Sichten:
+// die absoluten Werte (positiv) und die Bruecke ARO minus ITY.
 //
 // Die Grenze aus dem Filterkontext abzuleiten waere der falsche Weg
 // zurueck: dann wird das jeweils gefilterte Jahr komplett zur ITY-Phase
@@ -143,11 +145,9 @@ RETURN
 // Grain: 1 Zeile je (cgplc_cgcontractid, Period_Date)
 // Maximal 12 Perioden ab dem Monat nach Vertragsende.
 //
-// Ein verlorener Vertrag ist in jedem Jahr ein Verlust - anders als beim
-// New Business dreht hier nichts am Jahreswechsel. Damit das Measure
-// trotzdem ohne Fallunterscheidung auskommt, tragen beide Wertspalten
-// denselben Effekt: ITY_Value positiv (das Measure dreht es), ARO_Value
-// bereits negativ. Beide Zweige liefern damit denselben negativen Wert.
+// Die Retention kennt keine ITY/ARO-Trennung - ein verlorener Vertrag
+// wirkt in jeder Periode gleich. Beide Wertspalten tragen deshalb
+// denselben positiven Betrag; das Vorzeichen setzt das Measure.
 // ---------------------------------------------------------------------
 fct_retention_phasing =
 VAR _Horizont =
@@ -211,7 +211,7 @@ RETURN
         "Calc_ITY_Months", 12,
         "Phasenwechsel", [@FirstFYEnd],
         "ITY_Value", [@Monatswert],
-        "ARO_Value", [@Monatswert] * -1
+        "ARO_Value", [@Monatswert]
     )
 
 
