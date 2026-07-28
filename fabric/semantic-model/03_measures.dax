@@ -305,8 +305,14 @@ CALCULATE (
 
 'Unmapped Anteil' = DIVIDE ( ABS ( [Unmapped Effekt] ), ABS ( [Netto Budgeteffekt] ) )
 
-// Der eigentliche Net-New-Anteil: Units, die es in SAP noch nicht gibt.
-'Effekt geplante Units' = CALCULATE ( [Netto Budgeteffekt], dim_unit[unit_status] = "Geplant" )
+// Nettoeffekt im gefilterten Jahresfenster. Die Einschraenkung auf die
+// Net-New-Betrachtung passiert ueber Slicer auf close_fy, opening_fy,
+// status und sales_stage - nicht mehr im Ladeprozess.
+'Net New Fenster' =
+CALCULATE (
+    [Netto Budgeteffekt],
+    KEEPFILTERS ( VALUES ( fct_budget_effect[close_fy] ) )
+)
 
 
 // ---------------------------------------------------------------------

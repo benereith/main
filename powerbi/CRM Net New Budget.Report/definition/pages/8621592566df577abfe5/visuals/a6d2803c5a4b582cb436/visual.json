@@ -23,8 +23,10 @@
                       "Entity": "dim_unit"
                     }
                   },
-                  "Property": "unit_status"
-                }
+                  "Property": "bezeichnung"
+                },
+                "queryRef": "dim_unit.bezeichnung",
+                "nativeQueryRef": "bezeichnung"
               },
               "queryRef": "dim_unit.unit_status",
               "nativeQueryRef": "unit_status"

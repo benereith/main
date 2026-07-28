@@ -187,10 +187,17 @@ WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM map_opportunity_unit);
 -- fct_opp_phasing
 -- Grain: 1 Zeile je (opportunityid, period_date)
 --
--- Filter wie im Altmodell. Achtung auf die NULL-Semantik: Zeilen ohne
--- statecodename oder ohne cgplc_salesstagename fallen heraus, weil ein
--- Vergleich mit NULL nicht wahr wird. Das entspricht Power Query - die
--- zwischenzeitliche DAX-Fassung hat sie faelschlich behalten.
+-- KEINE Geschaeftsfilter. Phasiert wird alles, was sich phasieren laesst -
+-- also jede Opportunity mit Opening Date. Status, Sales Stage und das
+-- Betrachtungsjahr sind Filterlogik des Berichts, nicht des Ladeprozesses.
+--
+-- Die dafuer noetigen Attribute laufen als Spalten mit: statecodename,
+-- cgplc_salesstagename, close_fy, opening_fy. Damit laesst sich im Modell
+-- jede Einschraenkung nachbilden, ohne die Tabelle neu zu bauen.
+--
+-- cfg_horizont begrenzt nur noch die PERIODEN, nicht die Opportunities -
+-- er muss also weit genug gesetzt sein, um alle Jahre abzudecken, die im
+-- Bericht waehlbar sein sollen.
 -- ---------------------------------------------------------------------
 CREATE OR REPLACE TABLE fct_opp_phasing
 USING DELTA AS
@@ -207,6 +214,24 @@ basis AS (
     SELECT
         o.opportunityid,
         o.name                                                            AS entity_name,
+        o.statecodename,
+        o.cgplc_salesstagename,
+        o.cgplc_win,
+        -- Geschaeftsjahr des erwarteten Abschlusses bzw. der Eroeffnung.
+        -- Die beiden Spalten tragen die Jahresfilterung des Berichts.
+        CASE WHEN o.estimatedclosedate IS NULL THEN NULL
+             WHEN month(o.estimatedclosedate) >= 10
+             THEN concat('FY', year(o.estimatedclosedate), '/',
+                         substr(cast(year(o.estimatedclosedate) + 1 AS STRING), 3, 2))
+             ELSE concat('FY', year(o.estimatedclosedate) - 1, '/',
+                         substr(cast(year(o.estimatedclosedate) AS STRING), 3, 2))
+        END                                                               AS close_fy,
+        CASE WHEN month(o.cgplc_openingdate) >= 10
+             THEN concat('FY', year(o.cgplc_openingdate), '/',
+                         substr(cast(year(o.cgplc_openingdate) + 1 AS STRING), 3, 2))
+             ELSE concat('FY', year(o.cgplc_openingdate) - 1, '/',
+                         substr(cast(year(o.cgplc_openingdate) AS STRING), 3, 2))
+        END                                                               AS opening_fy,
         o.owner_name,
         o.account_name,
         o.territory,
@@ -222,12 +247,7 @@ basis AS (
         o.cgplc_revenueity * o.cgplc_win                                  AS weighted_ity
     FROM fct_opportunity_current o
     CROSS JOIN h
-    WHERE o.cgplc_openingdate  IS NOT NULL
-      AND o.estimatedclosedate IS NOT NULL
-      AND o.cgplc_openingdate  >= h.fy_start
-      AND o.estimatedclosedate >= h.fy_start
-      AND o.statecodename        <> 'Verloren'
-      AND o.cgplc_salesstagename NOT IN ('Nobid', 'Turndown/Lost', 'Universe')
+    WHERE o.cgplc_openingdate IS NOT NULL
 ),
 mit_laufzeit AS (
     SELECT
@@ -250,6 +270,11 @@ mit_werten AS (
 SELECT
     w.opportunityid,
     w.entity_name,
+    w.statecodename,
+    w.cgplc_salesstagename,
+    w.cgplc_win,
+    w.close_fy,
+    w.opening_fy,
     w.owner_name,
     w.account_name,
     w.territory,
@@ -308,17 +333,16 @@ basis AS (
         -- Ersatzlogik aus dem Altmodell: fehlt das Vertragsende, gilt
         -- das Entscheidungsdatum plus drei Monate.
         COALESCE(c.cgplc_contractenddate, add_months(c.cgplc_decisiondate, 3)) AS end_date_raw,
+        c.statuscodename,
+        c.cgplc_retentionprobability,
         c.cgplc_lastfyrevenuearo * (1 - c.cgplc_retentionprobability)          AS weighted_ly_aro
     FROM fct_retention_current c
-    WHERE c.statuscodename = 'Aktiv'
 ),
 gefiltert AS (
     SELECT b.*, h.fy_start, h.fy_ende
     FROM basis b
     CROSS JOIN h
     WHERE b.end_date_raw IS NOT NULL
-      AND b.end_date_raw >= h.fy_start
-      AND b.end_date_raw <= h.fy_ende
 ),
 mit_eckdaten AS (
     SELECT
@@ -332,6 +356,8 @@ mit_eckdaten AS (
 SELECT
     e.cgplc_cgcontractid,
     e.entity_name,
+    e.statuscodename,
+    e.cgplc_retentionprobability,
     e.cgplc_sapid                                                             AS sap_unit,
     p.period_date,
     e.end_date_raw                                                            AS referenzdatum,
@@ -371,6 +397,10 @@ SELECT
     'New Business'      AS effect_type,
     opportunityid       AS entity_id,
     entity_name,
+    statecodename       AS status,
+    cgplc_salesstagename AS sales_stage,
+    close_fy,
+    opening_fy,
     owner_name,
     account_name,
     territory,
@@ -391,6 +421,10 @@ SELECT
     'Retention'         AS effect_type,
     cgplc_cgcontractid  AS entity_id,
     entity_name,
+    statuscodename      AS status,
+    CAST(NULL AS STRING) AS sales_stage,
+    CAST(NULL AS STRING) AS close_fy,
+    CAST(NULL AS STRING) AS opening_fy,
     -- Die Retention traegt keine CRM-Attribute; ihr Sektor kaeme ueber
     -- den SAP-Betrieb, nicht ueber die Opportunity.
     CAST(NULL AS STRING) AS owner_name,

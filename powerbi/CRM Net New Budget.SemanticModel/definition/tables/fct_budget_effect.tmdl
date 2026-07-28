@@ -147,6 +147,38 @@ table fct_budget_effect
 
 		annotation SummarizationSetBy = Automatic
 
+	column status
+		dataType: string
+		lineageTag: 2720816e-49f7-5e42-a345-1454e6196b27
+		summarizeBy: none
+		sourceColumn: status
+
+		annotation SummarizationSetBy = Automatic
+
+	column sales_stage
+		dataType: string
+		lineageTag: ba009197-8b2d-57e2-b6f9-2cba5a030721
+		summarizeBy: none
+		sourceColumn: sales_stage
+
+		annotation SummarizationSetBy = Automatic
+
+	column close_fy
+		dataType: string
+		lineageTag: 0ae3d6c6-ed74-5b74-a1de-3cd028c827a9
+		summarizeBy: none
+		sourceColumn: close_fy
+
+		annotation SummarizationSetBy = Automatic
+
+	column opening_fy
+		dataType: string
+		lineageTag: 53979dc0-1286-5d9c-aa5e-2e67cc41fbe6
+		summarizeBy: none
+		sourceColumn: opening_fy
+
+		annotation SummarizationSetBy = Automatic
+
 	partition fct_budget_effect = m
 		mode: import
 		source = ```

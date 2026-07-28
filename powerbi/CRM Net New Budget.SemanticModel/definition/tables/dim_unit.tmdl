@@ -11,15 +11,6 @@ table dim_unit
 
 		annotation SummarizationSetBy = Automatic
 
-	column unit_status
-		dataType: string
-		lineageTag: 580ae3c5-e56e-5f9e-b557-910c3083b962
-		summarizeBy: none
-		isNameInferred
-		sourceColumn: [unit_status]
-
-		annotation SummarizationSetBy = Automatic
-
 	column bezeichnung
 		dataType: string
 		lineageTag: b315511e-9edb-501c-a65c-6b910e46dbac
@@ -50,29 +41,13 @@ table dim_unit
 	partition dim_unit = calculated
 		mode: import
 		source = ```
-				VAR _SapKeys =
-				    SELECTCOLUMNS ( dim_sap_master_data_unit, "sap_unit", dim_sap_master_data_unit[betrieb] )
-				VAR _SapUnits =
-				    SELECTCOLUMNS (
-				        dim_sap_master_data_unit,
-				        "sap_unit", dim_sap_master_data_unit[betrieb],
-				        "unit_status", "In Betrieb",
-				        "bezeichnung", dim_sap_master_data_unit[bezeichnung_betrieb],
-				        "sektor", dim_sap_master_data_unit[sektor],
-				        "bezirk", dim_sap_master_data_unit[bezeichnung_bezirk]
-				    )
-				VAR _MappedKeys =
-				    DISTINCT ( SELECTCOLUMNS ( map_opportunity_unit, "sap_unit", map_opportunity_unit[sap_unit] ) )
-				VAR _PlannedUnits =
-				    ADDCOLUMNS (
-				        EXCEPT ( _MappedKeys, _SapKeys ),
-				        "unit_status", "Geplant",
-				        "bezeichnung", "Noch nicht gewonnen",
-				        "sektor", BLANK (),
-				        "bezirk", BLANK ()
-				    )
-				RETURN
-				    UNION ( _SapUnits, _PlannedUnits )
+				SELECTCOLUMNS (
+				    dim_sap_master_data_unit,
+				    "sap_unit", dim_sap_master_data_unit[betrieb],
+				    "bezeichnung", dim_sap_master_data_unit[bezeichnung_betrieb],
+				    "sektor", dim_sap_master_data_unit[sektor],
+				    "bezirk", dim_sap_master_data_unit[bezeichnung_bezirk]
+				)
 				```
 
 	annotation PBI_ResultType = Table

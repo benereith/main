@@ -23,10 +23,10 @@
                       "Entity": "_Measures"
                     }
                   },
-                  "Property": "Effekt geplante Units"
+                  "Property": "Net New Fenster"
                 },
-                "queryRef": "_Measures.Effekt geplante Units",
-                "nativeQueryRef": "Effekt geplante Units"
+                "queryRef": "_Measures.Net New Fenster",
+                "nativeQueryRef": "Net New Fenster"
               },
               "queryRef": "_Measures.Planned Unit Effect",
               "nativeQueryRef": "Planned Unit Effect"

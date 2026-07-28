@@ -173,47 +173,25 @@ DISTINCT (
 
 // ---------------------------------------------------------------------
 // dim_unit
-// Konforme Betriebsdimension fuer fct_budget_effect.
+// Betriebsdimension - schlicht die SAP-Stammdaten.
 //
-// Die SAP-Stammdaten kennen nur Betriebe, die es bereits gibt. Genau die
-// Units, um die es im Net-New-Budget geht, sind dort noch nicht enthalten:
-// sie sind noch nicht gewonnen und werden im Budget- und Forecast-Prozess
-// manuell gemappt. Wuerde die Dimension nur aus den SAP-Stammdaten
-// aufgebaut, fielen diese Effekte beim Schneiden nach Betrieb in die
-// Blank-Zeile - also ausgerechnet der Teil, den der Report zeigen soll.
+// Frueher stand hier eine Zweiteilung, die Mapping-Betriebsnummern ohne
+// SAP-Entsprechung als "Geplant" auswies. Das beruhte auf einem
+// Missverstaendnis: noch nicht gewonnene Opportunities werden auf
+// PLANWERKE gemappt, und die existieren in den Stammdaten bereits. Die
+// Zweiteilung lief also faktisch leer.
 //
-// Deshalb: SAP-Stammdaten vereinigt mit den ausschliesslich im Mapping
-// vorkommenden Units, unterschieden ueber unit_status.
+// Offen fuer spaeter: die fachlich richtige Unterscheidung waere, ob die
+// SAP-ID im CRM schon gepflegt ist - nicht, ob der Betrieb in SAP steht.
 // ---------------------------------------------------------------------
 dim_unit =
-VAR _SapKeys =
-    SELECTCOLUMNS (
-        dim_sap_master_data_unit,
-        "sap_unit", dim_sap_master_data_unit[betrieb]
-    )
-VAR _SapUnits =
-    SELECTCOLUMNS (
-        dim_sap_master_data_unit,
-        "sap_unit", dim_sap_master_data_unit[betrieb],
-        "unit_status", "In Betrieb",
-        "bezeichnung", dim_sap_master_data_unit[bezeichnung_betrieb],
-        "sektor", dim_sap_master_data_unit[sektor],
-        "bezirk", dim_sap_master_data_unit[bezeichnung_bezirk]
-    )
-VAR _MappedKeys =
-    DISTINCT (
-        SELECTCOLUMNS ( map_opportunity_unit, "sap_unit", map_opportunity_unit[sap_unit] )
-    )
-VAR _PlannedUnits =
-    ADDCOLUMNS (
-        EXCEPT ( _MappedKeys, _SapKeys ),
-        "unit_status", "Geplant",
-        "bezeichnung", "Noch nicht gewonnen",
-        "sektor", BLANK (),
-        "bezirk", BLANK ()
-    )
-RETURN
-    UNION ( _SapUnits, _PlannedUnits )
+SELECTCOLUMNS (
+    dim_sap_master_data_unit,
+    "sap_unit", dim_sap_master_data_unit[betrieb],
+    "bezeichnung", dim_sap_master_data_unit[bezeichnung_betrieb],
+    "sektor", dim_sap_master_data_unit[sektor],
+    "bezirk", dim_sap_master_data_unit[bezeichnung_bezirk]
+)
 
 
 // Sektor der Retention ueber den SAP-Betrieb erben.

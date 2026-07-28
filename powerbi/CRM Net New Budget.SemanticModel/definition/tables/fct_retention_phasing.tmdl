@@ -84,6 +84,23 @@ table fct_retention_phasing
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
+	column statuscodename
+		dataType: string
+		lineageTag: b25bd97b-0d1b-5d88-8a19-0b9f85e171a9
+		summarizeBy: none
+		sourceColumn: statuscodename
+
+		annotation SummarizationSetBy = Automatic
+
+	column cgplc_retentionprobability
+		dataType: double
+		formatString: 0.00\ %;-0.00\ %;0.00\ %
+		lineageTag: ba6a4941-a20a-54b8-8757-129e2bb2b640
+		summarizeBy: none
+		sourceColumn: cgplc_retentionprobability
+
+		annotation SummarizationSetBy = Automatic
+
 	partition fct_retention_phasing = m
 		mode: import
 		source = ```

@@ -84,6 +84,47 @@ table fct_opp_phasing
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
+	column statecodename
+		dataType: string
+		lineageTag: 2f1c3dc9-ff71-56c2-937f-e0a8533ab87d
+		summarizeBy: none
+		sourceColumn: statecodename
+
+		annotation SummarizationSetBy = Automatic
+
+	column cgplc_salesstagename
+		dataType: string
+		lineageTag: bd883bc4-a67b-5cdb-bce9-e8728900d306
+		summarizeBy: none
+		sourceColumn: cgplc_salesstagename
+
+		annotation SummarizationSetBy = Automatic
+
+	column cgplc_win
+		dataType: double
+		formatString: 0.00\ %;-0.00\ %;0.00\ %
+		lineageTag: a152bfe1-cafa-5989-8e9b-906163f0ebac
+		summarizeBy: none
+		sourceColumn: cgplc_win
+
+		annotation SummarizationSetBy = Automatic
+
+	column close_fy
+		dataType: string
+		lineageTag: df616be7-3cd9-59d4-a719-345d183a2ec1
+		summarizeBy: none
+		sourceColumn: close_fy
+
+		annotation SummarizationSetBy = Automatic
+
+	column opening_fy
+		dataType: string
+		lineageTag: 9502024a-c872-522a-8c2c-dc9aef74d5fa
+		summarizeBy: none
+		sourceColumn: opening_fy
+
+		annotation SummarizationSetBy = Automatic
+
 	partition fct_opp_phasing = m
 		mode: import
 		source = ```

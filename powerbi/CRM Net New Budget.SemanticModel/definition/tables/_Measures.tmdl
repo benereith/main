@@ -388,9 +388,14 @@ table _Measures
 		formatString: 0.00\ %;-0.00\ %;0.00\ %
 		lineageTag: 3b8f1f6c-3f35-5061-aaf7-2cb4ec52fc4e
 
-	measure 'Effekt geplante Units' = CALCULATE ( [Netto Budgeteffekt], dim_unit[unit_status] = "Geplant" )
+	measure 'Net New Fenster' = ```
+			CALCULATE (
+			    [Netto Budgeteffekt],
+			    KEEPFILTERS ( VALUES ( fct_budget_effect[close_fy] ) )
+			)
+			```
 		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
-		lineageTag: d80cf566-7133-5f47-807e-ba3384a69ebe
+		lineageTag: 925b9326-f467-5944-b43d-1a6c1a95ca15
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
