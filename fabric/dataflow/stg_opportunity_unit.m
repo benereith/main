@@ -82,13 +82,17 @@ let
     Eindeutig = Table.Distinct(Bereinigt, {"opportunityid"}),
 
     // Einmal je Lauf auswerten, nicht je Zeile - siehe fn_berlin_now.
-    Ladezeit = fn_berlin_now(),
-    Snapshot = DateTime.Date(DateTime.From(Ladezeit)),
+    // Der Versatz wird hier bewusst abgeschnitten: das Lakehouse-Ziel eines
+    // Dataflow Gen2 unterstuetzt datetimezone nicht. Uebrig bleibt die
+    // Berliner Ortszeit als naiver Zeitstempel - passend zur
+    // Session-Zeitzone, die 02_load_snapshot.py auf Europe/Berlin setzt.
+    Ladezeit = DateTime.From(fn_berlin_now()),
+    Snapshot = DateTime.Date(Ladezeit),
 
     MitSnapshot =
         Table.AddColumn(Eindeutig, "snapshot_date", each Snapshot, type date),
 
     MitLadezeit =
-        Table.AddColumn(MitSnapshot, "loaded_at", each Ladezeit, type datetimezone)
+        Table.AddColumn(MitSnapshot, "loaded_at", each Ladezeit, type datetime)
 in
     MitLadezeit

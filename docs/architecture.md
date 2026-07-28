@@ -211,7 +211,7 @@ werden deshalb explizit auf Berlin gerechnet:
 | Stelle | Vorher | Jetzt |
 |---|---|---|
 | `snapshot_date` (3 Dataflow-Queries) | `DateTimeZone.FixedLocalNow()` → UK | `fn_berlin_now()` |
-| `loaded_at` (3 Dataflow-Queries) | `DateTimeZone.FixedUtcNow()` → UTC | `fn_berlin_now()`, mit Versatz gespeichert |
+| `loaded_at` (3 Dataflow-Queries) | `DateTimeZone.FixedUtcNow()` → UTC | `fn_berlin_now()`, Versatz abgeschnitten |
 | Lakehouse-Notebook | Session-Zeitzone der Kapazität | `spark.sql.session.timeZone = Europe/Berlin` |
 | `days_to_decision` | `TODAY()` → UTC | Berliner Stichtag inline |
 | Report-Stichtag | – | Measure `Heute Berlin` |
@@ -228,6 +228,21 @@ explizit in `fn_berlin_now` (letzter Sonntag im März 01:00 UTC bis letzter
 Sonntag im Oktober 01:00 UTC), in DAX dieselbe Regel noch einmal. Beide
 Varianten wurden stundenweise über 2024–2035 gegen die IANA-Zeitzonendaten
 geprüft — keine Abweichung.
+
+`loaded_at` wird als **naiver** Zeitstempel in Berliner Ortszeit gespeichert,
+nicht mit Zeitzonenversatz: das Lakehouse-Ziel eines Dataflow Gen2 unterstützt
+den Typ `datetimezone` nicht ("Diese Spalte kann nicht eingeschlossen werden,
+da ihr Typ nicht unterstützt wird"). `fn_berlin_now` liefert weiterhin
+`datetimezone` — der Versatz wird zum Rechnen gebraucht, aber vor dem
+Schreiben per `DateTime.From` abgeschnitten. Zusammen mit der auf
+`Europe/Berlin` gesetzten Spark-Session bleibt die Wanduhrzeit über die
+ganze Strecke konsistent.
+
+Der Preis: in der Stunde der Zeitumstellung im Oktober ist ein naiver
+Zeitstempel nicht eindeutig — 02:30 gibt es zweimal. Für ein reines
+Audit-Feld ist das folgenlos; `snapshot_date` ist davon nicht betroffen, weil
+es ein reines Datum ist. Wer Eindeutigkeit braucht, müsste `loaded_at` in UTC
+führen und die Anzeige der Session-Zeitzone überlassen.
 
 Zusätzlich werden `snapshot_date` und `loaded_at` jetzt **einmal je Lauf**
 ausgewertet statt je Zeile. Vorher hätte ein Ladelauf über Mitternacht zwei

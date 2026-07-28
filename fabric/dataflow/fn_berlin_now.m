@@ -5,6 +5,11 @@
 // "Laden aktivieren" fuer diese Query ausschalten - sie ist ein Helfer,
 // keine Zieltabelle.
 //
+// Der Rueckgabetyp ist datetimezone. Die aufrufenden Queries schneiden den
+// Versatz per DateTime.From ab, bevor sie schreiben: das Lakehouse-Ziel
+// eines Dataflow Gen2 unterstuetzt datetimezone nicht. Der Versatz wird also
+// nur zum Rechnen gebraucht, nicht zum Speichern.
+//
 // Warum nicht DateTimeZone.FixedLocalNow():
 // Die Fabric-Kapazitaet laeuft in der Zeitzone der Gruppe (UK), Berlin liegt
 // durchgehend eine Stunde davor. Ein Lauf zwischen 00:00 und 01:00 Berliner
