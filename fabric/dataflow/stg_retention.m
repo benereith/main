@@ -1,5 +1,7 @@
 // =====================================================================
-// Dataflow Gen2 - Query: fct_retention
+// Dataflow Gen2 - Query: stg_retention
+// Der Queryname entspricht der Zieltabelle - die Historisierung
+// nach fct_* bzw. map_* uebernimmt 02_load_snapshot.py.
 // Quelle : Dataverse / Dynamics CRM, Entity "cgplc_cgcontract"
 // Ziel   : Lakehouse-Tabelle stg_retention (Destination: REPLACE)
 // Lauf   : taeglich

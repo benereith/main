@@ -1,5 +1,7 @@
 // =====================================================================
-// Dataflow Gen2 - Query: map_opportunity_unit
+// Dataflow Gen2 - Query: stg_opportunity_unit
+// Der Queryname entspricht der Zieltabelle - die Historisierung
+// nach fct_* bzw. map_* uebernimmt 02_load_snapshot.py.
 // Quelle : SharePoint, Mapping_Planwerke.xlsx (Group Controlling)
 // Ziel   : Lakehouse-Tabelle stg_opportunity_unit (Destination: REPLACE)
 // Lauf   : taeglich, gemeinsam mit den Faktenqueries

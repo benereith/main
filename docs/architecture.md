@@ -87,6 +87,12 @@ Dataflow-Queries und entstehen beim ersten Lauf; jeder weitere Lauf
 überschreibt sie vollständig. Nur die historientragenden Tabellen stehen in
 `01_create_tables.sql`, weil deren Schema über Jahre stabil bleiben muss.
 
+**Namenskonvention:** Der Queryname im Dataflow entspricht immer seiner
+Zieltabelle (`stg_opportunity` → `stg_opportunity`). Die Umbenennung auf
+`fct_*` bzw. `map_*` passiert erst in der Historisierung. Ein Query, der
+`fct_opportunity` heißt, aber nach `stg_opportunity` schreibt, lädt
+zuverlässig zur falschen Verdrahtung ein.
+
 ### Keine Dimensionen im Lakehouse
 
 Das Lakehouse hält ausschließlich die zwei Faktentabellen. Die elf `dim_opp_*`
@@ -275,9 +281,9 @@ Tabellen erscheinen dort automatisch.
 
 | Pfad | Zweck |
 |---|---|
-| `fabric/dataflow/fct_opportunity.m` | Dataflow-Gen2-Query, Vollextrakt Opportunities |
-| `fabric/dataflow/fct_retention.m` | Dataflow-Gen2-Query, Vollextrakt Contracts |
-| `fabric/dataflow/map_opportunity_unit.m` | Mapping Opportunity → SAP-Betrieb aus SharePoint |
+| `fabric/dataflow/stg_opportunity.m` | Dataflow-Gen2-Query, Vollextrakt Opportunities |
+| `fabric/dataflow/stg_retention.m` | Dataflow-Gen2-Query, Vollextrakt Contracts |
+| `fabric/dataflow/stg_opportunity_unit.m` | Mapping Opportunity → SAP-Betrieb aus SharePoint |
 | `fabric/dataflow/fn_berlin_now.m` | Zeitstempel auf Europe/Berlin (Laden deaktivieren) |
 | `fabric/lakehouse/01_create_tables.sql` | Delta-Tabellen, partitioniert nach `snapshot_date` |
 | `fabric/lakehouse/02_load_snapshot.py` | Idempotenter Tageslauf Staging → Fakt |
