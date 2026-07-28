@@ -23,8 +23,10 @@
                       "Entity": "_Measures"
                     }
                   },
-                  "Property": "Unmapped Share"
-                }
+                  "Property": "Unmapped Anteil"
+                },
+                "queryRef": "_Measures.Unmapped Anteil",
+                "nativeQueryRef": "Unmapped Anteil"
               },
               "queryRef": "_Measures.Unmapped Share",
               "nativeQueryRef": "Unmapped Share"

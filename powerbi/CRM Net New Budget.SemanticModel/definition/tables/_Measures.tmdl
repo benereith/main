@@ -1,39 +1,121 @@
 table _Measures
 	lineageTag: 828f5323-66b9-5fe3-89e0-b0c014596280
 
-	measure 'Net ITY Effect' = SUM ( fct_budget_effect[Budget_Value] )
+	measure 'Vorzeichen ITY' = -1
+		isHidden
+		formatString: 0
+		lineageTag: 20721ec4-c63f-549d-bd6f-917827b47726
+
+	measure 'Vorzeichen Retention' = -1
+		isHidden
+		formatString: 0
+		lineageTag: b71d1efa-7451-52af-b45f-3261836fc5d6
+
+	measure 'ITY Volumen' = ```
+			SUMX (
+			    fct_budget_effect,
+			    IF (
+			        fct_budget_effect[Period_Date] <= fct_budget_effect[Phasenwechsel],
+			        fct_budget_effect[ITY_Value],
+			        0
+			    )
+			)
+			```
 		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
-		lineageTag: 68361a5f-5560-5550-b6b8-884312f5c038
+		lineageTag: aea616d5-e40c-575c-bb2e-fdb01c6b1795
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
-	measure ity_effect = CALCULATE ( [Net ITY Effect], fct_budget_effect[effect_type] = "New Business" )
+	measure 'ARO Volumen' = ```
+			SUMX (
+			    fct_budget_effect,
+			    IF (
+			        fct_budget_effect[Period_Date] > fct_budget_effect[Phasenwechsel],
+			        fct_budget_effect[ARO_Value],
+			        0
+			    )
+			)
+			```
 		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
-		lineageTag: 469390f6-04a2-59ef-851a-904b0fb211a3
+		lineageTag: ded8badb-7c1d-5c0d-808e-6d03ea592ee1
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
-	measure 'Lost ITY' = CALCULATE ( [Net ITY Effect], fct_budget_effect[effect_type] = "Retention" )
+	measure 'Budget Volumen' = [ITY Volumen] + [ARO Volumen]
 		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
-		lineageTag: 358f5e59-46bf-5979-a10d-912a49b58661
+		lineageTag: 672c5390-52ed-581e-8ef8-7addb5d4685f
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
-	measure crm_ity = [ity_effect]
+	measure 'New Business ITY' = CALCULATE ( [ITY Volumen], fct_budget_effect[effect_type] = "New Business" )
 		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
-		lineageTag: 4be2c1e4-7836-5d03-8339-e67488d03e5d
+		lineageTag: 4e68b133-c687-5efb-80a5-96fa437d83d7
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
-	measure crm_ity_sply = CALCULATE ( [crm_ity], SAMEPERIODLASTYEAR ( dim_date[Datum] ) )
+	measure 'New Business ARO' = CALCULATE ( [ARO Volumen], fct_budget_effect[effect_type] = "New Business" )
 		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
-		lineageTag: fd45a56d-4ce5-5546-b7ba-e1db63a1d7c9
+		lineageTag: 39887ee4-d069-5aaa-b059-b551e7558a63
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
-	measure crm_ity_delta = [crm_ity] - [crm_ity_sply]
+	measure 'New Business Volumen' = [New Business ITY] + [New Business ARO]
 		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
-		lineageTag: 8135700c-aea4-5c19-8164-c60fe80e93fd
+		lineageTag: 764213a2-e773-5497-97c4-4d75f1e28013
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	measure 'Retention Volumen' = CALCULATE ( [Budget Volumen], fct_budget_effect[effect_type] = "Retention" )
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: df5549c5-351c-57ff-a781-9b560992203a
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	measure 'Netto Budgeteffekt' = ```
+			[New Business ARO]
+			    + [Vorzeichen ITY] * [New Business ITY]
+			    + [Vorzeichen Retention] * [Retention Volumen]
+			```
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: 2d94ea14-f2c2-591a-85ce-a59e1b329b9d
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	measure 'Netto Budgeteffekt VJ' = CALCULATE ( [Netto Budgeteffekt], SAMEPERIODLASTYEAR ( dim_date[Datum] ) )
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: 1a0459c8-1cb8-5e79-b9d2-5321b0746bc6
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	measure 'Netto Budgeteffekt Delta' = [Netto Budgeteffekt] - [Netto Budgeteffekt VJ]
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: ebe35f06-0323-5884-916c-b6d07d71af69
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	measure 'Effekt Cluster Roll' = CALCULATE ( [Netto Budgeteffekt], fct_budget_effect[ity_cluster] = "Roll" )
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: 482587b0-202c-536b-8e62-73d1ea062c5a
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	measure 'Effekt Cluster ITY' = CALCULATE ( [Netto Budgeteffekt], fct_budget_effect[ity_cluster] = "ITY" )
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: d8cabf77-9e01-52e7-b8ad-64e25ddec43d
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	measure 'Effekt ohne Cluster' = ```
+			CALCULATE (
+			    [Netto Budgeteffekt],
+			    FILTER (
+			        VALUES ( fct_budget_effect[ity_cluster] ),
+			        ISBLANK ( fct_budget_effect[ity_cluster] )
+			    )
+			)
+			```
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: e2c0c14d-85c5-5b59-bb07-5e86d71babc7
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
@@ -189,6 +271,26 @@ table _Measures
 		formatString: 0
 		lineageTag: a2b49c82-7ccd-5349-92c9-bf5d785d7a0c
 
+	measure 'Stale Pipeline ARO' = ```
+			VAR _letzterStand = MAX ( fct_opportunity_changes[snapshot_date] )
+			RETURN
+			    CALCULATE (
+			        SUM ( fct_opportunity[cgplc_revenuearo] ),
+			        fct_opportunity[statecodename] = "Offen",
+			        FILTER (
+			            VALUES ( fct_opportunity[opportunityid] ),
+			            VAR _letzteAenderung =
+			                CALCULATE ( MAX ( fct_opportunity_changes[snapshot_date] ) )
+			            RETURN
+			                DATEDIFF ( _letzteAenderung, _letzterStand, DAY ) > 90
+			        )
+			    )
+			```
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: d78b911f-c808-5da6-a67b-9bea959f172c
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
 	measure 'Retention Exposure ARO' = ```
 			CALCULATE (
 			    SUM ( fct_retention[cgplc_lastfyrevenuearo] ),
@@ -255,14 +357,17 @@ table _Measures
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
-	measure 'Unmapped Effect' = ```
+	measure 'Unmapped Effekt' = ```
 			CALCULATE (
-			    [Net ITY Effect],
-			    FILTER ( VALUES ( fct_budget_effect[sap_unit] ), ISBLANK ( fct_budget_effect[sap_unit] ) )
+			    [Netto Budgeteffekt],
+			    FILTER (
+			        VALUES ( fct_budget_effect[sap_unit] ),
+			        ISBLANK ( fct_budget_effect[sap_unit] )
+			    )
 			)
 			```
 		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
-		lineageTag: 5474acae-2098-5a28-9832-ce08e34959e4
+		lineageTag: 69816c9c-1471-5ec1-b7a9-6ffdd47c6926
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
@@ -270,52 +375,70 @@ table _Measures
 			CALCULATE (
 			    DISTINCTCOUNT ( fct_budget_effect[entity_id] ),
 			    fct_budget_effect[effect_type] = "New Business",
-			    FILTER ( VALUES ( fct_budget_effect[sap_unit] ), ISBLANK ( fct_budget_effect[sap_unit] ) )
+			    FILTER (
+			        VALUES ( fct_budget_effect[sap_unit] ),
+			        ISBLANK ( fct_budget_effect[sap_unit] )
+			    )
 			)
 			```
 		formatString: 0
 		lineageTag: 4d424966-14cd-53c5-a146-c63af3c4991c
 
-	measure 'Unmapped Share' = DIVIDE ( ABS ( [Unmapped Effect] ), ABS ( [Net ITY Effect] ) )
+	measure 'Unmapped Anteil' = DIVIDE ( ABS ( [Unmapped Effekt] ), ABS ( [Netto Budgeteffekt] ) )
 		formatString: 0.00\ %;-0.00\ %;0.00\ %
-		lineageTag: ce3ff55b-c492-5d7f-baf1-171069ec94b7
+		lineageTag: 3b8f1f6c-3f35-5061-aaf7-2cb4ec52fc4e
 
-	measure 'Planned Unit Effect' = CALCULATE ( [Net ITY Effect], dim_unit[unit_status] = "Geplant" )
+	measure 'Effekt geplante Units' = CALCULATE ( [Netto Budgeteffekt], dim_unit[unit_status] = "Geplant" )
 		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
-		lineageTag: b484fa1a-74c7-513f-8254-953b349e4e97
+		lineageTag: d80cf566-7133-5f47-807e-ba3384a69ebe
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	measure 'Heute Berlin' = ```
+			VAR _UtcJetzt = UTCNOW ()
+			VAR _Jahr = YEAR ( _UtcJetzt )
+			VAR _MaerzEnde = DATE ( _Jahr, 3, 31 )
+			VAR _OktoberEnde = DATE ( _Jahr, 10, 31 )
+			VAR _SommerzeitBeginn =
+			    _MaerzEnde - ( WEEKDAY ( _MaerzEnde, 1 ) - 1 ) + TIME ( 1, 0, 0 )
+			VAR _SommerzeitEnde =
+			    _OktoberEnde - ( WEEKDAY ( _OktoberEnde, 1 ) - 1 ) + TIME ( 1, 0, 0 )
+			VAR _Versatz =
+			    IF ( _UtcJetzt >= _SommerzeitBeginn && _UtcJetzt < _SommerzeitEnde, 2, 1 )
+			VAR _BerlinJetzt = _UtcJetzt + _Versatz / 24
+			RETURN
+			    DATE ( YEAR ( _BerlinJetzt ), MONTH ( _BerlinJetzt ), DAY ( _BerlinJetzt ) )
+			```
+		formatString: dd.mm.yyyy
+		lineageTag: 471b0e52-5fa4-59b6-ac97-40bc9dc52965
 
 	measure Datenstand = FORMAT ( MAX ( fct_opportunity[snapshot_date] ), "dd.MM.yyyy" )
 		lineageTag: d27aed0e-dbb7-5fe0-b1d2-957ec9b75f91
 
-	/// Diagnose - nach der Fehlersuche ausblendbar.
-	// Muss 1 sein. Mehr bedeutet: die Tabelle haengt an fct_opportunity statt an
-		// fct_opportunity_current - dann summiert jede Kennzahl ueber alle Tagesstaende.
 	measure 'Diag Snapshots' = DISTINCTCOUNT ( fct_opportunity[snapshot_date] )
 		formatString: 0
 		lineageTag: b779a2bd-163d-5710-9e12-3f50efeaecc7
 
-	// Anzahl Opportunities, die tatsaechlich Budgetwirkung erzeugen.
-	measure 'Diag Opps in Phasierung' = DISTINCTCOUNT ( fct_opp_phasing[opportunityid] )
-		formatString: 0
-		lineageTag: a270bdcc-0c9d-5e38-8bc8-36425f8f530a
+	measure 'Diag Fanout' = ```
+			DIVIDE (
+			    COUNTROWS ( fct_opportunity ),
+			    DISTINCTCOUNT ( fct_opportunity[opportunityid] )
+			)
+			```
+		formatString: 0.00
+		lineageTag: 360e41bd-f8e9-5f5e-99e9-f68f455a8987
 
-	// Zum Vergleich: alles im Extrakt, inklusive verlorener und alter.
-	measure 'Diag Opps gesamt' = DISTINCTCOUNT ( fct_opportunity[opportunityid] )
-		formatString: 0
-		lineageTag: acb2fd9f-2651-5027-91c0-8e7c01dd6ed7
-
-	// Muss <= 1 sein. Liegt der Wert bei 100, ist cgplc_win nicht auf eine Quote
-		// normalisiert und alle gewichteten Werte sind um Faktor 100 zu hoch.
 	measure 'Diag Max Win' = MAX ( fct_opportunity[cgplc_win] )
 		formatString: 0.00
 		lineageTag: c198b0d3-0d14-5b15-9ca8-74a1042ee419
 
-	// Muss 1,00 sein. Groesser bedeutet doppelte Zeilen je Opportunity.
-	measure 'Diag Fanout' = DIVIDE ( COUNTROWS ( fct_opportunity ), DISTINCTCOUNT ( fct_opportunity[opportunityid] ) )
-		formatString: 0.00
-		lineageTag: 360e41bd-f8e9-5f5e-99e9-f68f455a8987
+	measure 'Diag Opps gesamt' = DISTINCTCOUNT ( fct_opportunity[opportunityid] )
+		formatString: 0
+		lineageTag: acb2fd9f-2651-5027-91c0-8e7c01dd6ed7
+
+	measure 'Diag Opps in Phasierung' = DISTINCTCOUNT ( fct_opp_phasing[opportunityid] )
+		formatString: 0
+		lineageTag: a270bdcc-0c9d-5e38-8bc8-36425f8f530a
 
 	column Platzhalter
 		dataType: string

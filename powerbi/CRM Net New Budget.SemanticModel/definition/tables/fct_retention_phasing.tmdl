@@ -30,31 +30,27 @@ table fct_retention_phasing
 
 		annotation SummarizationSetBy = Automatic
 
-	column Calc_EndDate
+	column Referenzdatum
 		dataType: dateTime
-		isHidden
 		formatString: Short Date
-		lineageTag: 0a02fa86-4854-5a16-8544-16f74eb181aa
+		lineageTag: 211519f6-9bd4-54a3-8347-a0a967bfaed9
 		summarizeBy: none
 		isNameInferred
-		sourceColumn: [Calc_EndDate]
+		sourceColumn: [Referenzdatum]
 
 		annotation SummarizationSetBy = Automatic
 
-	column Calc_FirstFYEnd
-		dataType: dateTime
-		isHidden
-		formatString: Short Date
-		lineageTag: 456897ad-75fc-5c8b-9027-629a30ccd667
+	column ity_cluster
+		dataType: string
+		lineageTag: ede5d888-816f-50f7-b4c8-9e2cb958938e
 		summarizeBy: none
 		isNameInferred
-		sourceColumn: [Calc_FirstFYEnd]
+		sourceColumn: [ity_cluster]
 
 		annotation SummarizationSetBy = Automatic
 
 	column Calc_ITY_Months
 		dataType: int64
-		isHidden
 		formatString: 0
 		lineageTag: 896c7bad-9b54-512e-b906-af0a6c421da8
 		summarizeBy: none
@@ -63,26 +59,35 @@ table fct_retention_phasing
 
 		annotation SummarizationSetBy = Automatic
 
-	column weighted_ly_aro
-		dataType: decimal
-		isHidden
-		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
-		lineageTag: 8ba6ed52-95dd-5eeb-ad35-adb9688e75b2
+	column Phasenwechsel
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: e076aed6-2f56-5664-8bb9-38c1bc173906
 		summarizeBy: none
 		isNameInferred
-		sourceColumn: [weighted_ly_aro]
+		sourceColumn: [Phasenwechsel]
+
+		annotation SummarizationSetBy = Automatic
+
+	column ITY_Value
+		dataType: decimal
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: a7393233-f006-53f4-8e96-e7ea5103b369
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [ITY_Value]
 
 		annotation SummarizationSetBy = Automatic
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
-	column Calc_ARO_Value
+	column ARO_Value
 		dataType: decimal
 		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
-		lineageTag: a7eeee94-4eaf-5127-bcd0-9dc6e201e787
+		lineageTag: 0e5b5dd0-69dd-57c4-a898-40d3f0d47dad
 		summarizeBy: none
 		isNameInferred
-		sourceColumn: [Calc_ARO_Value]
+		sourceColumn: [ARO_Value]
 
 		annotation SummarizationSetBy = Automatic
 
@@ -98,6 +103,9 @@ table fct_retention_phasing
 				            "Period_Date", DATE ( YEAR ( dim_date[Datum] ), MONTH ( dim_date[Datum] ), 1 )
 				        )
 				    )
+				VAR _Fenster_Ab = MIN ( dim_date[Datum] )
+				VAR _BasisFY_Ende = DATE ( YEAR ( EDATE ( _Fenster_Ab, -9 ) ) + 1, 9, 30 )
+				VAR _FolgeFY_Ende = DATE ( YEAR ( _BasisFY_Ende ) + 1, 9, 30 )
 				VAR _Basis =
 				    ADDCOLUMNS (
 				        FILTER ( fct_retention, fct_retention[statuscodename] = "Aktiv" ),
@@ -110,23 +118,21 @@ table fct_retention_phasing
 				    )
 				VAR _MitEckdaten =
 				    ADDCOLUMNS (
-				        FILTER ( _Basis, NOT ISBLANK ( [@EndDateRaw] ) ),
+				        FILTER (
+				            _Basis,
+				            NOT ISBLANK ( [@EndDateRaw] ) && [@EndDateRaw] >= _Fenster_Ab
+				        ),
+				        // Wirkung beginnt im Monat NACH dem Vertragsende
 				        "@EndDate",
 				            EDATE ( DATE ( YEAR ( [@EndDateRaw] ), MONTH ( [@EndDateRaw] ), 1 ), 1 ),
-				        "@FirstFYEnd", DATE ( YEAR ( EDATE ( [@EndDateRaw], -9 ) ) + 1, 9, 30 ),
+				        "@FirstFYEnd",
+				            DATE ( YEAR ( EDATE ( [@EndDateRaw], -9 ) ) + 1, 9, 30 ),
 				        "@WeightedLyAro",
 				            fct_retention[cgplc_lastfyrevenuearo]
 				                * ( 1 - COALESCE ( fct_retention[cgplc_retentionprobability], 0 ) )
 				    )
-				VAR _MitLaufzeit =
-				    ADDCOLUMNS (
-				        _MitEckdaten,
-				        "@ITY_Months",
-				            ( YEAR ( [@FirstFYEnd] ) - YEAR ( [@EndDate] ) ) * 12
-				                + MONTH ( [@FirstFYEnd] ) - MONTH ( [@EndDate] ) + 1
-				    )
 				VAR _MitWerten =
-				    ADDCOLUMNS ( _MitLaufzeit, "@ARO_Value", DIVIDE ( [@WeightedLyAro], 12, 0 ) * -1 )
+				    ADDCOLUMNS ( _MitEckdaten, "@Monatswert", DIVIDE ( [@WeightedLyAro], 12, 0 ) )
 				VAR _Expandiert =
 				    FILTER (
 				        GENERATE ( _MitWerten, _Horizont ),
@@ -138,11 +144,18 @@ table fct_retention_phasing
 				        "cgplc_cgcontractid", fct_retention[cgplc_cgcontractid],
 				        "sap_unit", fct_retention[cgplc_sapid],
 				        "Period_Date", [Period_Date],
-				        "Calc_EndDate", [@EndDate],
-				        "Calc_FirstFYEnd", [@FirstFYEnd],
-				        "Calc_ITY_Months", [@ITY_Months],
-				        "weighted_ly_aro", [@WeightedLyAro],
-				        "Calc_ARO_Value", [@ARO_Value]
+				        "Referenzdatum", [@EndDateRaw],
+				        "ity_cluster",
+				            SWITCH (
+				                TRUE (),
+				                [@EndDateRaw] <= _BasisFY_Ende, "Roll",
+				                [@EndDateRaw] <= _FolgeFY_Ende, "ITY",
+				                BLANK ()
+				            ),
+				        "Calc_ITY_Months", 12,
+				        "Phasenwechsel", [@FirstFYEnd],
+				        "ITY_Value", [@Monatswert],
+				        "ARO_Value", [@Monatswert]
 				    )
 				```
 

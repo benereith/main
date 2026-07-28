@@ -173,9 +173,9 @@ Daraus folgen drei Dinge für das Modell:
   Units** und unterscheidet sie über `unit_status` (`In Betrieb` / `Geplant`).
   Eine Dimension allein aus den SAP-Stammdaten würde genau die geplanten Units
   in die Blank-Zeile fallen lassen — also den Teil, um den es im Net New Budget
-  geht. `Planned Unit Effect` macht diesen Anteil direkt sichtbar.
-- **Der Pflegestand wird messbar.** `Unmapped Effect`, `Unmapped
-  Opportunities` und `Unmapped Share` zeigen, welches Volumen noch keinem
+  geht. `Effekt geplante Units` macht diesen Anteil direkt sichtbar.
+- **Der Pflegestand wird messbar.** `Unmapped Effekt`, `Unmapped
+  Opportunities` und `Unmapped Anteil` zeigen, welches Volumen noch keinem
   Betrieb zugeordnet ist, solange eine Runde offen ist.
 
 Die CRM-eigene Brücke über `cgplc_contractid` → `cgplc_sapid` bleibt als
@@ -332,7 +332,7 @@ Die Kennzahlen, die erst durch Historisierung und Vollextrakt möglich werden:
 
 | KPI | Aussage | Voraussetzung |
 |---|---|---|
-| Pipeline Coverage | Deckt die gewichtete Pipeline den Plan? | — |
+| Pipeline Coverage | Deckt die gewichtete Pipeline den Plan? | offen, braucht `Revenues` |
 | Net New Pipeline (30d) | Wächst die Pipeline nach? | Historisierung |
 | Pipeline Value Movement | Organisches Wachstum oder nachträgliche Abwertung? | Historisierung |
 | Stage Movements | Bewegt sich die Pipeline überhaupt? | Historisierung |

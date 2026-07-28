@@ -41,8 +41,10 @@
                       "Entity": "_Measures"
                     }
                   },
-                  "Property": "Net ITY Effect"
-                }
+                  "Property": "Netto Budgeteffekt"
+                },
+                "queryRef": "_Measures.Netto Budgeteffekt",
+                "nativeQueryRef": "Netto Budgeteffekt"
               },
               "queryRef": "_Measures.Net ITY Effect",
               "nativeQueryRef": "Net ITY Effect"
@@ -55,8 +57,10 @@
                       "Entity": "_Measures"
                     }
                   },
-                  "Property": "ity_effect"
-                }
+                  "Property": "New Business ITY"
+                },
+                "queryRef": "_Measures.New Business ITY",
+                "nativeQueryRef": "New Business ITY"
               },
               "queryRef": "_Measures.ity_effect",
               "nativeQueryRef": "ity_effect"
@@ -69,8 +73,10 @@
                       "Entity": "_Measures"
                     }
                   },
-                  "Property": "Lost ITY"
-                }
+                  "Property": "Retention Volumen"
+                },
+                "queryRef": "_Measures.Retention Volumen",
+                "nativeQueryRef": "Retention Volumen"
               },
               "queryRef": "_Measures.Lost ITY",
               "nativeQueryRef": "Lost ITY"

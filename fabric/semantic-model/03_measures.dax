@@ -1,38 +1,38 @@
 // =====================================================================
 // Measures
 //
-// Teil A - Bestandsmeasures, 1:1 aus dem Altmodell uebernommen,
-//          umgehaengt auf die neuen Phasing-Tabellen.
-// Teil B - Leading KPIs. Basis sind die Aenderungsviews aus dem
-//          Lakehouse (fct_opportunity_changes / fct_retention_changes),
-//          die es ohne die Historisierung nicht gaebe.
+// Vollstaendig neu aufgebaut auf das neue Modell. Aufbau:
+//   1. Vorzeichenkonvention - zwei Helfer, sonst nirgends ein Minus
+//   2. Budgetwirkung        - Basis, Effektart, Nettoeffekt, Cluster
+//   3. Leading KPIs         - Pipeline, Bewegung, Qualitaet, Retention
+//   4. Betrieb              - Mappingpflege, Zeitbezug, Diagnose
+//
+// Grundsatz: alle Basiswerte sind POSITIVE Volumina. Vorzeichen
+// entstehen ausschliesslich in [Netto Budgeteffekt], und zwar ueber
+// die beiden Konventionsmeasures. Wer die Konvention aendern will,
+// aendert genau eine Zahl - nicht verteilte Formeln.
 // =====================================================================
 
 
-// =====================================================================
-// Teil A - Bestandsmeasures
-// =====================================================================
+// ---------------------------------------------------------------------
+// Vorzeichenkonvention
+// ---------------------------------------------------------------------
 
-// --- Zwei Sichten, klar getrennt -------------------------------------
-//
-// 1. ABSOLUT: was die Opportunity tatsaechlich beitraegt. Positiv.
-// 2. ROLL / DELTA: die Bruecke ins Folgejahr - der unterjaehrige
-//    ITY-Betrag wird abgezogen, der volle ARO-Betrag kommt hinzu.
-//    Nur hier steht das Minus vor dem ITY-Wert.
-//
-// Im Altmodell steckten beide Sichten zusammen in Budget_Value, weshalb
-// sich der ITY-Wert nie fuer sich betrachten liess.
-//
-// Die Phasengrenze steht je Zeile in fct_budget_effect[Phasenwechsel]:
-// das Ende des ersten Geschaeftsjahres der jeweiligen Opportunity.
-// Bewusst zeilenbezogen - eine aus dem Filterkontext abgeleitete Grenze
-// wandert beim Filtern mit und macht ein gefiltertes Jahr komplett zur
-// ITY-Phase.
+// Die einzige Stelle, an der die ITY-Konvention steht. Auf 1 setzen,
+// wenn der ITY-Anteil positiv in den Nettoeffekt eingehen soll.
+'Vorzeichen ITY' = -1
+
+// Analog fuer die Retention. -1 = Verlust mindert den Nettoeffekt.
+'Vorzeichen Retention' = -1
 
 
-// --- Sicht 1: absolute Werte -----------------------------------------
+// ---------------------------------------------------------------------
+// Budgetwirkung - Basis
+// ---------------------------------------------------------------------
 
-ITY Wert =
+// Unterjaehriger Anteil, positiv. Die Phasengrenze steht je Zeile in
+// Phasenwechsel - dem Ende des ersten Geschaeftsjahres der Zeile.
+'ITY Volumen' =
 SUMX (
     fct_budget_effect,
     IF (
@@ -42,7 +42,8 @@ SUMX (
     )
 )
 
-ARO Wert =
+// Annualisierter Anteil, positiv.
+'ARO Volumen' =
 SUMX (
     fct_budget_effect,
     IF (
@@ -52,168 +53,151 @@ SUMX (
     )
 )
 
-New Business ITY =
-CALCULATE ( [ITY Wert], fct_budget_effect[effect_type] = "New Business" )
+'Budget Volumen' = [ITY Volumen] + [ARO Volumen]
 
-New Business ARO =
-CALCULATE ( [ARO Wert], fct_budget_effect[effect_type] = "New Business" )
 
-// Die Retention kennt keine Phasentrennung - beide Phasen zusammen sind
-// das gesamte verlorene Volumen. Als Verlust negativ.
-Retention Verlust =
--1
-    * CALCULATE (
-        [ITY Wert] + [ARO Wert],
-        fct_budget_effect[effect_type] = "Retention"
+// ---------------------------------------------------------------------
+// Budgetwirkung - nach Effektart
+// ---------------------------------------------------------------------
+
+'New Business ITY' = CALCULATE ( [ITY Volumen], fct_budget_effect[effect_type] = "New Business" )
+
+'New Business ARO' = CALCULATE ( [ARO Volumen], fct_budget_effect[effect_type] = "New Business" )
+
+'New Business Volumen' = [New Business ITY] + [New Business ARO]
+
+// Gefaehrdetes Volumen, positiv. Das Vorzeichen setzt der Nettoeffekt.
+'Retention Volumen' = CALCULATE ( [Budget Volumen], fct_budget_effect[effect_type] = "Retention" )
+
+
+// ---------------------------------------------------------------------
+// Budgetwirkung - Nettoeffekt
+// ---------------------------------------------------------------------
+
+// Der Nettoeffekt. Die Vorzeichen kommen ausschliesslich aus den beiden
+// Konventionsmeasures - hier steht kein hart codiertes Minus.
+'Netto Budgeteffekt' =
+[New Business ARO]
+    + [Vorzeichen ITY] * [New Business ITY]
+    + [Vorzeichen Retention] * [Retention Volumen]
+
+'Netto Budgeteffekt VJ' = CALCULATE ( [Netto Budgeteffekt], SAMEPERIODLASTYEAR ( dim_date[Datum] ) )
+
+'Netto Budgeteffekt Delta' = [Netto Budgeteffekt] - [Netto Budgeteffekt VJ]
+
+
+// ---------------------------------------------------------------------
+// Clusterung Roll / ITY
+// ---------------------------------------------------------------------
+
+'Effekt Cluster Roll' = CALCULATE ( [Netto Budgeteffekt], fct_budget_effect[ity_cluster] = "Roll" )
+
+'Effekt Cluster ITY' = CALCULATE ( [Netto Budgeteffekt], fct_budget_effect[ity_cluster] = "ITY" )
+
+// Zeilen ausserhalb des Clusterfensters - sollten fachlich leer bleiben.
+'Effekt ohne Cluster' =
+CALCULATE (
+    [Netto Budgeteffekt],
+    FILTER (
+        VALUES ( fct_budget_effect[ity_cluster] ),
+        ISBLANK ( fct_budget_effect[ity_cluster] )
     )
-
-
-// --- Sicht 2: Roll / Delta -------------------------------------------
-// Hier und nur hier geht der ITY-Betrag negativ ein.
-
-Roll Delta New Business = [New Business ARO] - [New Business ITY]
-
-Net Budget Delta = [Roll Delta New Business] + [Retention Verlust]
-
-// Namen aus dem Altmodell, damit bestehende Visuals weiter greifen.
-Net ITY Effect = [Net Budget Delta]
-
-ity_effect = [Roll Delta New Business]
-
-Lost ITY = [Retention Verlust]
-
-
-// --- Clusterung Roll / ITY -------------------------------------------
-// Roll = schliesst im Basisjahr und wirkt als Rolleffekt ins Folgejahr.
-// ITY  = schliesst im Folgejahr und wirkt dort unterjaehrig.
-// Als Spalte fct_budget_effect[ity_cluster] auch als Achse nutzbar.
-
-Roll Effekt =
-CALCULATE ( [New Business ITY], fct_budget_effect[ity_cluster] = "Roll" )
-
-ITY Effekt =
-CALCULATE ( [New Business ITY], fct_budget_effect[ity_cluster] = "ITY" )
-
-Ohne Cluster =
-CALCULATE (
-    [New Business ITY],
-    FILTER ( VALUES ( fct_budget_effect[ity_cluster] ), ISBLANK ( fct_budget_effect[ity_cluster] ) )
-)
-
-crm_ity = [New Business ITY]
-
-crm_ity_sply = CALCULATE ( [crm_ity], SAMEPERIODLASTYEAR ( dim_date[Datum] ) )
-
-crm_ity_delta = [crm_ity] - [crm_ity_sply]
-
-// Geschaeftsjahre nicht mehr hart codiert, sondern ueber den Filterkontext.
-ity_effect_fy =
-CALCULATE (
-    [ity_effect],
-    TREATAS ( VALUES ( dim_date[FY_Jahr] ), dim_date[FY_Jahr] )
 )
 
 
-// =====================================================================
-// Teil B - Leading KPIs
-// =====================================================================
+// ---------------------------------------------------------------------
+// Pipeline - Bestand
+// ---------------------------------------------------------------------
 
-// --- Pipeline-Bestand ------------------------------------------------
-
-Pipeline ARO =
+'Pipeline ARO' =
 CALCULATE (
     SUM ( fct_opportunity[cgplc_revenuearo] ),
     fct_opportunity[statecodename] = "Offen"
 )
 
-Weighted Pipeline ARO =
+'Weighted Pipeline ARO' =
 CALCULATE (
     SUM ( fct_opportunity[weighted_aro] ),
     fct_opportunity[statecodename] = "Offen"
 )
 
-Opportunity Count =
+'Opportunity Count' =
 CALCULATE (
     DISTINCTCOUNT ( fct_opportunity[opportunityid] ),
     fct_opportunity[statecodename] = "Offen"
 )
 
-// Deckungsgrad der gewichteten Pipeline gegen den Planwert.
-// Werte deutlich unter 1 zeigen eine Zielluecke, bevor sie im Ist sichtbar wird.
-Pipeline Coverage =
-DIVIDE ( [Weighted Pipeline ARO], [90_Value] )
 
+// ---------------------------------------------------------------------
+// Pipeline - Bewegung (nur mit Historisierung)
+// ---------------------------------------------------------------------
 
-// --- Pipeline-Bewegung (nur mit Historisierung moeglich) -------------
-
-// Volumen der Opportunities, die im gewaehlten Zeitraum neu entstanden sind.
-Net New Pipeline =
+'Net New Pipeline' =
 CALCULATE (
     SUM ( fct_opportunity_changes[cgplc_revenuearo] ),
     fct_opportunity_changes[is_new] = TRUE ()
 )
 
-Net New Opportunity Count =
+'Net New Opportunity Count' =
 CALCULATE (
     DISTINCTCOUNT ( fct_opportunity_changes[opportunityid] ),
     fct_opportunity_changes[is_new] = TRUE ()
 )
 
-Net New Pipeline 30d =
+'Net New Pipeline 30d' =
 CALCULATE (
     [Net New Pipeline],
     DATESINPERIOD ( dim_date[Datum], MAX ( dim_date[Datum] ), -30, DAY )
 )
 
-// Summe aller Wertveraenderungen an bestehenden Opportunities.
-// Zeigt, ob die Pipeline organisch waechst oder nachtraeglich abgewertet wird.
-Pipeline Value Movement =
+// Wertveraenderung an bestehenden Opportunities - waechst die Pipeline
+// organisch oder wird sie nachtraeglich abgewertet?
+'Pipeline Value Movement' =
 CALCULATE (
     SUM ( fct_opportunity_changes[delta_revenuearo] ),
     fct_opportunity_changes[is_new] = FALSE ()
 )
 
-// Anzahl der Stage-Wechsel - Mass fuer die Bewegung in der Pipeline.
-Stage Movements =
+'Stage Movements' =
 CALCULATE (
     COUNTROWS ( fct_opportunity_changes ),
     fct_opportunity_changes[stage_changed] = TRUE ()
 )
 
-// Summe der Verschiebungen des erwarteten Abschlussdatums in Tagen.
-// Steigende Werte sind ein Fruehindikator fuer Planverfehlung.
-Close Date Slippage Days =
+'Close Date Slippage Days' =
 CALCULATE (
     SUM ( fct_opportunity_changes[delta_closedate_days] ),
     fct_opportunity_changes[delta_closedate_days] > 0
 )
 
-Slipped Opportunities =
+'Slipped Opportunities' =
 CALCULATE (
     DISTINCTCOUNT ( fct_opportunity_changes[opportunityid] ),
     fct_opportunity_changes[delta_closedate_days] > 0
 )
 
 
-// --- Qualitaet und Geschwindigkeit -----------------------------------
+// ---------------------------------------------------------------------
+// Qualitaet und Geschwindigkeit
+// ---------------------------------------------------------------------
 
-Won ARO =
+'Won ARO' =
 CALCULATE (
     SUM ( fct_opportunity[cgplc_revenuearo] ),
     fct_opportunity[win_status] = "Won"
 )
 
-Lost ARO =
+'Lost ARO' =
 CALCULATE (
     SUM ( fct_opportunity[cgplc_revenuearo] ),
     fct_opportunity[statecodename] = "Verloren"
 )
 
-// Wertbasierte Win Rate. Der Vollextrakt macht sie erst moeglich -
-// im Altmodell waren verlorene Opportunities herausgefiltert.
-Win Rate Value = DIVIDE ( [Won ARO], [Won ARO] + [Lost ARO] )
+// Der Vollextrakt macht sie erst moeglich - im Altmodell waren die
+// verlorenen Opportunities herausgefiltert.
+'Win Rate Value' = DIVIDE ( [Won ARO], [Won ARO] + [Lost ARO] )
 
-Win Rate Count =
+'Win Rate Count' =
 VAR _won =
     CALCULATE (
         DISTINCTCOUNT ( fct_opportunity[opportunityid] ),
@@ -227,15 +211,15 @@ VAR _lost =
 RETURN
     DIVIDE ( _won, _won + _lost )
 
-Avg Sales Cycle Days =
+'Avg Sales Cycle Days' =
 CALCULATE (
     AVERAGE ( fct_opportunity[sales_cycle_days] ),
     fct_opportunity[win_status] = "Won"
 )
 
-// Opportunities, die seit mehr als 90 Tagen keinen Stage-Wechsel hatten.
-// Klassischer Fruehindikator fuer nicht belastbare Pipeline.
-Stale Pipeline ARO =
+// Opportunities ohne Stage-Wechsel seit 90 Tagen - Fruehindikator fuer
+// nicht belastbare Pipeline.
+'Stale Pipeline ARO' =
 VAR _letzterStand = MAX ( fct_opportunity_changes[snapshot_date] )
 RETURN
     CALCULATE (
@@ -251,25 +235,26 @@ RETURN
     )
 
 
-// --- Retention als Fruehindikator ------------------------------------
+// ---------------------------------------------------------------------
+// Retention als Fruehindikator
+// ---------------------------------------------------------------------
 
-Retention Exposure ARO =
+'Retention Exposure ARO' =
 CALCULATE (
     SUM ( fct_retention[cgplc_lastfyrevenuearo] ),
     fct_retention[statuscodename] = "Aktiv"
 )
 
-At Risk ARO =
+'At Risk ARO' =
 CALCULATE (
     SUM ( fct_retention[cgplc_lastfyrevenuearo] ),
     fct_retention[statuscodename] = "Aktiv",
     fct_retention[Ret_Status] IN { "At Risk", "Expected Loss", "Lost" }
 )
 
-At Risk Share = DIVIDE ( [At Risk ARO], [Retention Exposure ARO] )
+'At Risk Share' = DIVIDE ( [At Risk ARO], [Retention Exposure ARO] )
 
-// Vertraege mit anstehender Entscheidung - der operative Handlungsbedarf.
-Decisions Due 90d =
+'Decisions Due 90d' =
 CALCULATE (
     SUM ( fct_retention[cgplc_lastfyrevenuearo] ),
     fct_retention[statuscodename] = "Aktiv",
@@ -277,9 +262,8 @@ CALCULATE (
     fct_retention[days_to_decision] <= 90
 )
 
-// Veraenderung der Retention-Wahrscheinlichkeiten im Zeitraum.
 // Negativ bedeutet: die Einschaetzung im CRM verschlechtert sich.
-Retention Probability Movement =
+'Retention Probability Movement' =
 CALCULATE (
     SUMX (
         fct_retention_changes,
@@ -289,47 +273,48 @@ CALCULATE (
     fct_retention_changes[is_new] = FALSE ()
 )
 
-Newly At Risk ARO =
+'Newly At Risk ARO' =
 CALCULATE (
     SUM ( fct_retention_changes[cgplc_lastfyrevenuearo] ),
     fct_retention_changes[delta_retentionprobability] < 0
 )
 
 
-// --- Steuerung der manuellen Mappingpflege ---------------------------
-// Das Mapping Opportunity -> SAP-Betrieb wird im Budget- und
-// Forecast-Prozess von Hand gepflegt, weil die betroffenen Units noch
-// nicht gewonnen sind. Diese Measures machen den Pflegestand messbar,
-// damit eine Luecke vor dem Abschluss einer Runde auffaellt und nicht
-// erst, wenn Effekte ohne Betrieb in der Auswertung stehen.
+// ---------------------------------------------------------------------
+// Mappingpflege
+// ---------------------------------------------------------------------
 
-Unmapped Effect =
+'Unmapped Effekt' =
 CALCULATE (
-    [Net ITY Effect],
-    FILTER ( VALUES ( fct_budget_effect[sap_unit] ), ISBLANK ( fct_budget_effect[sap_unit] ) )
+    [Netto Budgeteffekt],
+    FILTER (
+        VALUES ( fct_budget_effect[sap_unit] ),
+        ISBLANK ( fct_budget_effect[sap_unit] )
+    )
 )
 
-Unmapped Opportunities =
+'Unmapped Opportunities' =
 CALCULATE (
     DISTINCTCOUNT ( fct_budget_effect[entity_id] ),
     fct_budget_effect[effect_type] = "New Business",
-    FILTER ( VALUES ( fct_budget_effect[sap_unit] ), ISBLANK ( fct_budget_effect[sap_unit] ) )
+    FILTER (
+        VALUES ( fct_budget_effect[sap_unit] ),
+        ISBLANK ( fct_budget_effect[sap_unit] )
+    )
 )
 
-// Anteil des Effekts, der noch keinem Betrieb zugeordnet ist.
-Unmapped Share = DIVIDE ( ABS ( [Unmapped Effect] ), ABS ( [Net ITY Effect] ) )
+'Unmapped Anteil' = DIVIDE ( ABS ( [Unmapped Effekt] ), ABS ( [Netto Budgeteffekt] ) )
 
-// Effekt auf Units, die es in SAP noch nicht gibt - der eigentliche
-// Net-New-Anteil. Kein Fehler, sondern die Kernaussage des Reports.
-Planned Unit Effect =
-CALCULATE ( [Net ITY Effect], dim_unit[unit_status] = "Geplant" )
+// Der eigentliche Net-New-Anteil: Units, die es in SAP noch nicht gibt.
+'Effekt geplante Units' = CALCULATE ( [Netto Budgeteffekt], dim_unit[unit_status] = "Geplant" )
 
 
-// --- Zeitbezug -------------------------------------------------------
-// Fuer Stichtagsanzeigen und Titel im Report. TODAY() waere hier UTC und
-// zwischen Mitternacht und 02:00 Berliner Zeit einen Tag zu frueh.
+// ---------------------------------------------------------------------
+// Zeitbezug
+// ---------------------------------------------------------------------
 
-Heute Berlin =
+// TODAY() laeuft im Service in UTC und waere nachts einen Tag zu frueh.
+'Heute Berlin' =
 VAR _UtcJetzt = UTCNOW ()
 VAR _Jahr = YEAR ( _UtcJetzt )
 VAR _MaerzEnde = DATE ( _Jahr, 3, 31 )
@@ -344,6 +329,29 @@ VAR _BerlinJetzt = _UtcJetzt + _Versatz / 24
 RETURN
     DATE ( YEAR ( _BerlinJetzt ), MONTH ( _BerlinJetzt ), DAY ( _BerlinJetzt ) )
 
-// Stand der Daten: juengster Snapshot, nicht der Zeitpunkt des Aufrufs.
-Datenstand =
-FORMAT ( MAX ( fct_opportunity[snapshot_date] ), "dd.MM.yyyy" )
+// Steht hier nicht das heutige Datum, ist die Ladestrecke stehen geblieben.
+Datenstand = FORMAT ( MAX ( fct_opportunity[snapshot_date] ), "dd.MM.yyyy" )
+
+
+// ---------------------------------------------------------------------
+// Diagnose
+// ---------------------------------------------------------------------
+
+// Muss 1 sein. Mehr heisst: das Modell haengt an fct_opportunity statt
+// an fct_opportunity_current - dann summiert alles ueber alle Tage.
+'Diag Snapshots' = DISTINCTCOUNT ( fct_opportunity[snapshot_date] )
+
+// Muss 1,00 sein. Groesser heisst doppelte Zeilen je Opportunity.
+'Diag Fanout' =
+DIVIDE (
+    COUNTROWS ( fct_opportunity ),
+    DISTINCTCOUNT ( fct_opportunity[opportunityid] )
+)
+
+// Muss <= 1 sein. Bei 100 ist cgplc_win nicht auf eine Quote normalisiert.
+'Diag Max Win' = MAX ( fct_opportunity[cgplc_win] )
+
+'Diag Opps gesamt' = DISTINCTCOUNT ( fct_opportunity[opportunityid] )
+
+// Deutlich kleiner als Diag Opps gesamt - sonst greifen die Filter nicht.
+'Diag Opps in Phasierung' = DISTINCTCOUNT ( fct_opp_phasing[opportunityid] )

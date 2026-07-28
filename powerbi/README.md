@@ -94,6 +94,36 @@ eine eigene Ausbaustufe — die Phasierungslogik müsste von DAX nach Spark SQL
 | Retention | Exposure, Risikogründe, Bewegung der Einschätzung, Entscheidungen |
 | Mapping & Datenqualität | Effekt ohne Betriebszuordnung, Unit-Status, Datenstand |
 
+## Measures
+
+Die Measure-Schicht ist vollständig neu aufgebaut (`_Measures`, 48 Stück).
+Aufbau in vier Blöcken:
+
+| Block | Inhalt |
+|---|---|
+| Vorzeichenkonvention | `Vorzeichen ITY`, `Vorzeichen Retention` — ausgeblendet |
+| Budgetwirkung | Volumina, Effektart, `Netto Budgeteffekt`, Cluster |
+| Leading KPIs | Pipeline, Bewegung, Qualität, Retention |
+| Betrieb | Mappingpflege, Zeitbezug, Diagnose |
+
+**Alle Basiswerte sind positive Volumina.** Vorzeichen entstehen an genau
+einer Stelle — in `Netto Budgeteffekt`, über die beiden Konventionsmeasures:
+
+```dax
+Netto Budgeteffekt =
+[New Business ARO]
+    + [Vorzeichen ITY] * [New Business ITY]
+    + [Vorzeichen Retention] * [Retention Volumen]
+```
+
+Soll der ITY-Anteil positiv eingehen, wird `Vorzeichen ITY` von `-1` auf `1`
+gesetzt. Sonst ändert sich nichts — es gibt kein zweites hart codiertes Minus
+im Modell.
+
+Zum Abstimmen gegen den Altbericht liegt in
+`fabric/semantic-model/00_altmodell_referenz.dax` ein 1:1-Nachbau der
+Power-Query-Logik (`alt_ity_effect`, `alt_Lost_ITY`).
+
 ## Was bewusst fehlt
 
 Die Measures `90_Value`, `90_Periodic` und `Pipeline Coverage` sind **nicht**

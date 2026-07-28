@@ -73,8 +73,10 @@
                       "Entity": "_Measures"
                     }
                   },
-                  "Property": "Net ITY Effect"
-                }
+                  "Property": "Netto Budgeteffekt"
+                },
+                "queryRef": "_Measures.Netto Budgeteffekt",
+                "nativeQueryRef": "Netto Budgeteffekt"
               },
               "queryRef": "_Measures.Net ITY Effect",
               "nativeQueryRef": "Net ITY Effect"

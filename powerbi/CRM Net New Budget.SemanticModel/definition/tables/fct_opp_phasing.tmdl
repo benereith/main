@@ -30,31 +30,27 @@ table fct_opp_phasing
 
 		annotation SummarizationSetBy = Automatic
 
-	column Calc_StartDate
+	column Referenzdatum
 		dataType: dateTime
-		isHidden
 		formatString: Short Date
-		lineageTag: 3c26f37a-3b8c-571a-99c0-9bfd4fa0e0cb
+		lineageTag: 60ad3152-0841-5b23-85f1-3e8b1f579ccd
 		summarizeBy: none
 		isNameInferred
-		sourceColumn: [Calc_StartDate]
+		sourceColumn: [Referenzdatum]
 
 		annotation SummarizationSetBy = Automatic
 
-	column Calc_FirstFYEnd
-		dataType: dateTime
-		isHidden
-		formatString: Short Date
-		lineageTag: 174cba87-5f24-589b-b64f-7f6e2881a2b8
+	column ity_cluster
+		dataType: string
+		lineageTag: 5c225777-ea4c-528b-bf5f-9d1763dc36e6
 		summarizeBy: none
 		isNameInferred
-		sourceColumn: [Calc_FirstFYEnd]
+		sourceColumn: [ity_cluster]
 
 		annotation SummarizationSetBy = Automatic
 
 	column Calc_ITY_Months
 		dataType: int64
-		isHidden
 		formatString: 0
 		lineageTag: f0ba50c4-fc3a-528d-b91d-d9d395cff69e
 		summarizeBy: none
@@ -63,52 +59,39 @@ table fct_opp_phasing
 
 		annotation SummarizationSetBy = Automatic
 
-	column Calc_ITY_Value
-		dataType: double
-		isHidden
-		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
-		lineageTag: 99a9896c-0a91-524e-bb57-f9ca1be80a04
+	column Phasenwechsel
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: c341cc86-d850-5700-ac89-bdfe7107fdf9
 		summarizeBy: none
 		isNameInferred
-		sourceColumn: [Calc_ITY_Value]
+		sourceColumn: [Phasenwechsel]
+
+		annotation SummarizationSetBy = Automatic
+
+	column ITY_Value
+		dataType: double
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: 15754438-d813-5f82-ab2e-768fafd5c236
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [ITY_Value]
 
 		annotation SummarizationSetBy = Automatic
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
-	column Calc_ARO_Value
+	column ARO_Value
 		dataType: double
-		isHidden
 		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
-		lineageTag: 82675678-7148-5a7a-bd01-77f504523e17
+		lineageTag: e2d30515-da21-5856-9506-74560241f1ac
 		summarizeBy: none
 		isNameInferred
-		sourceColumn: [Calc_ARO_Value]
+		sourceColumn: [ARO_Value]
 
 		annotation SummarizationSetBy = Automatic
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
-
-	column Budget_Value
-		dataType: double
-		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
-		lineageTag: 73275f7b-f529-55c1-bb40-8e430151e9fa
-		summarizeBy: none
-		isNameInferred
-		sourceColumn: [Budget_Value]
-
-		annotation SummarizationSetBy = Automatic
-
-		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
-
-	column Phase
-		dataType: string
-		lineageTag: c4a61861-f3dd-53f9-85ce-82fdf33ad6d3
-		summarizeBy: none
-		isNameInferred
-		sourceColumn: [Phase]
-
-		annotation SummarizationSetBy = Automatic
 
 	partition fct_opp_phasing = calculated
 		mode: import
@@ -120,9 +103,9 @@ table fct_opp_phasing
 				            "Period_Date", DATE ( YEAR ( dim_date[Datum] ), MONTH ( dim_date[Datum] ), 1 )
 				        )
 				    )
-				VAR _ITY_Cutoff =
-				    DATE ( YEAR ( EDATE ( MIN ( dim_date[Datum] ), -9 ) ) + 1, 9, 30 )
 				VAR _Fenster_Ab = MIN ( dim_date[Datum] )
+				VAR _BasisFY_Ende = DATE ( YEAR ( EDATE ( _Fenster_Ab, -9 ) ) + 1, 9, 30 )
+				VAR _FolgeFY_Ende = DATE ( YEAR ( _BasisFY_Ende ) + 1, 9, 30 )
 				VAR _Basis =
 				    FILTER (
 				        fct_opportunity,
@@ -139,16 +122,19 @@ table fct_opp_phasing
 				VAR _MitEckdaten =
 				    ADDCOLUMNS (
 				        _Basis,
+				        // Start = 1. des Monats des Opening Date
 				        "@StartDate",
 				            DATE (
 				                YEAR ( fct_opportunity[cgplc_openingdate] ),
 				                MONTH ( fct_opportunity[cgplc_openingdate] ),
 				                1
 				            ),
+				        // Ende des ersten Geschaeftsjahres dieser Opportunity
 				        "@FirstFYEnd",
 				            DATE ( YEAR ( EDATE ( fct_opportunity[cgplc_openingdate], -9 ) ) + 1, 9, 30 ),
 				        "@WeightedAro", fct_opportunity[cgplc_revenuearo] * fct_opportunity[cgplc_win],
 				        "@WeightedIty", fct_opportunity[cgplc_revenueity] * fct_opportunity[cgplc_win],
+				        // Konforme Achse zur Retention: der SAP-Betrieb.
 				        "@SapUnit",
 				            COALESCE (
 				                LOOKUPVALUE (
@@ -164,6 +150,7 @@ table fct_opp_phasing
 				VAR _MitLaufzeit =
 				    ADDCOLUMNS (
 				        _MitEckdaten,
+				        // Laenge der ITY-Phase in Monaten, inklusive Start- und Endmonat
 				        "@ITY_Months",
 				            ( YEAR ( [@FirstFYEnd] ) - YEAR ( [@StartDate] ) ) * 12
 				                + MONTH ( [@FirstFYEnd] ) - MONTH ( [@StartDate] ) + 1
@@ -182,14 +169,26 @@ table fct_opp_phasing
 				        "opportunityid", fct_opportunity[opportunityid],
 				        "sap_unit", [@SapUnit],
 				        "Period_Date", [Period_Date],
-				        "Calc_StartDate", [@StartDate],
-				        "Calc_FirstFYEnd", [@FirstFYEnd],
+				        // Stichtag der Clusterung: wann die Opportunity abschliesst.
+				        "Referenzdatum", fct_opportunity[estimatedclosedate],
+				        // Roll  = schliesst im Basisjahr, wirkt als Rolleffekt ins Folgejahr
+				        // ITY   = schliesst im Folgejahr, wirkt dort unterjaehrig
+				        "ity_cluster",
+				            SWITCH (
+				                TRUE (),
+				                fct_opportunity[estimatedclosedate] <= _BasisFY_Ende, "Roll",
+				                fct_opportunity[estimatedclosedate] <= _FolgeFY_Ende, "ITY",
+				                BLANK ()
+				            ),
 				        "Calc_ITY_Months", [@ITY_Months],
-				        "Calc_ITY_Value", [@ITY_Value],
-				        "Calc_ARO_Value", [@ARO_Value],
-				        "Budget_Value",
-				            IF ( [Period_Date] <= _ITY_Cutoff, [@ITY_Value] * -1, [@ARO_Value] ),
-				        "Phase", IF ( [Period_Date] <= _ITY_Cutoff, "ITY", "ARO" )
+				        // Grenze zwischen ITY- und ARO-Phase DIESER Opportunity.
+				        // Bewusst zeilenbezogen und nicht aus dem Filterkontext: sonst
+				        // wird jedes gefilterte Jahr komplett zur ITY-Phase und damit
+				        // durchgaengig negativ.
+				        "Phasenwechsel", [@FirstFYEnd],
+				        // Beide Betraege vorzeichenlos - das Measure entscheidet.
+				        "ITY_Value", [@ITY_Value],
+				        "ARO_Value", [@ARO_Value]
 				    )
 				```
 

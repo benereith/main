@@ -23,8 +23,10 @@
                       "Entity": "_Measures"
                     }
                   },
-                  "Property": "ity_effect"
-                }
+                  "Property": "New Business ITY"
+                },
+                "queryRef": "_Measures.New Business ITY",
+                "nativeQueryRef": "New Business ITY"
               },
               "queryRef": "_Measures.ity_effect",
               "nativeQueryRef": "ity_effect"

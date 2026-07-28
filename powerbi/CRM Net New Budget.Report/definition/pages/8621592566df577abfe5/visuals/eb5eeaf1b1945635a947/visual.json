@@ -23,8 +23,10 @@
                       "Entity": "_Measures"
                     }
                   },
-                  "Property": "Lost ITY"
-                }
+                  "Property": "Retention Volumen"
+                },
+                "queryRef": "_Measures.Retention Volumen",
+                "nativeQueryRef": "Retention Volumen"
               },
               "queryRef": "_Measures.Lost ITY",
               "nativeQueryRef": "Lost ITY"

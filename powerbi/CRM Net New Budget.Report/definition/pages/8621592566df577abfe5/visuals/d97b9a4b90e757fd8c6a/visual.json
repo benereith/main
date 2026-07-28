@@ -23,8 +23,10 @@
                       "Entity": "_Measures"
                     }
                   },
-                  "Property": "Planned Unit Effect"
-                }
+                  "Property": "Effekt geplante Units"
+                },
+                "queryRef": "_Measures.Effekt geplante Units",
+                "nativeQueryRef": "Effekt geplante Units"
               },
               "queryRef": "_Measures.Planned Unit Effect",
               "nativeQueryRef": "Planned Unit Effect"

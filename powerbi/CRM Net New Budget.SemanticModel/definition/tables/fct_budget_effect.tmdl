@@ -39,22 +39,54 @@ table fct_budget_effect
 
 		annotation SummarizationSetBy = Automatic
 
-	column Phase
-		dataType: string
-		lineageTag: 86366941-667b-54e3-abca-7dad9e28c01e
+	column Referenzdatum
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: 607df69d-2f8e-57f9-997c-b79d537d07e3
 		summarizeBy: none
 		isNameInferred
-		sourceColumn: [Phase]
+		sourceColumn: [Referenzdatum]
 
 		annotation SummarizationSetBy = Automatic
 
-	column Budget_Value
-		dataType: double
-		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
-		lineageTag: 229d9116-3190-5571-9d25-f6bee520f5fd
+	column ity_cluster
+		dataType: string
+		lineageTag: a12a8a28-1f5a-5dcf-b634-864b5ca68959
 		summarizeBy: none
 		isNameInferred
-		sourceColumn: [Budget_Value]
+		sourceColumn: [ity_cluster]
+
+		annotation SummarizationSetBy = Automatic
+
+	column Phasenwechsel
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: eeca1f9c-db7f-5a52-bd6b-fd737e91a862
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Phasenwechsel]
+
+		annotation SummarizationSetBy = Automatic
+
+	column ITY_Value
+		dataType: double
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: adb415e5-3dbe-5a92-8d15-ed33d133ff21
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [ITY_Value]
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	column ARO_Value
+		dataType: double
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: 07091a22-447e-5072-aae8-1fc5391223dc
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [ARO_Value]
 
 		annotation SummarizationSetBy = Automatic
 
@@ -70,8 +102,11 @@ table fct_budget_effect
 				        "entity_id", fct_opp_phasing[opportunityid],
 				        "sap_unit", fct_opp_phasing[sap_unit],
 				        "Period_Date", fct_opp_phasing[Period_Date],
-				        "Phase", fct_opp_phasing[Phase],
-				        "Budget_Value", fct_opp_phasing[Budget_Value]
+				        "Referenzdatum", fct_opp_phasing[Referenzdatum],
+				        "ity_cluster", fct_opp_phasing[ity_cluster],
+				        "Phasenwechsel", fct_opp_phasing[Phasenwechsel],
+				        "ITY_Value", fct_opp_phasing[ITY_Value],
+				        "ARO_Value", fct_opp_phasing[ARO_Value]
 				    ),
 				    SELECTCOLUMNS (
 				        fct_retention_phasing,
@@ -79,8 +114,14 @@ table fct_budget_effect
 				        "entity_id", fct_retention_phasing[cgplc_cgcontractid],
 				        "sap_unit", fct_retention_phasing[sap_unit],
 				        "Period_Date", fct_retention_phasing[Period_Date],
-				        "Phase", "Retention",
-				        "Budget_Value", CONVERT ( fct_retention_phasing[Calc_ARO_Value], DOUBLE )
+				        "Referenzdatum", fct_retention_phasing[Referenzdatum],
+				        "ity_cluster", fct_retention_phasing[ity_cluster],
+				        "Phasenwechsel", fct_retention_phasing[Phasenwechsel],
+				        // Explizit auf DOUBLE: die Opportunity-Seite liefert das Ergebnis
+				        // von DIVIDE, die Retention-Seite einen Waehrungswert. UNION
+				        // verlangt vergleichbare Typen je Position.
+				        "ITY_Value", CONVERT ( fct_retention_phasing[ITY_Value], DOUBLE ),
+				        "ARO_Value", CONVERT ( fct_retention_phasing[ARO_Value], DOUBLE )
 				    )
 				)
 				```
