@@ -13,6 +13,14 @@ Dieses Notebook loescht die Partition des Snapshot-Datums, bevor es schreibt -
 der Tageslauf ist damit beliebig oft wiederholbar.
 """
 
+# --- Parameterzelle (im Notebook als "Parameter" markieren) --------------
+# Die Pipeline setzt diesen Wert. True nur fuer bewusste Nachladungen eines
+# aelteren Standes von Hand.
+allow_stale_snapshot = False
+
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
 from pyspark.sql import functions as F
 from delta.tables import DeltaTable
 
@@ -39,6 +47,22 @@ def load_snapshot(staging_table: str, target_table: str, business_key: str) -> N
             f"{staging_table}: erwartet genau ein snapshot_date, gefunden {snapshot_dates}"
         )
     snapshot_date = snapshot_dates[0]
+
+    # Der Dataflow schreibt mit Replace. Schlaegt er fehl, bleibt der Stand
+    # des Vortags in der Staging-Tabelle stehen - fachlich unauffaellig, denn
+    # der Load waere idempotent und wuerde die Vortagspartition einfach neu
+    # schreiben. Genau das ist die Gefahr: der Lauf meldet Erfolg, es
+    # entsteht aber kein neuer Snapshot, und der Bericht zeigt alte Zahlen
+    # als aktuell. Deshalb hier hart pruefen statt sich auf die
+    # Abhaengigkeit in der Pipeline allein zu verlassen.
+    heute_berlin = datetime.now(ZoneInfo("Europe/Berlin")).date()
+    if snapshot_date != heute_berlin and not allow_stale_snapshot:
+        raise ValueError(
+            f"{staging_table}: snapshot_date ist {snapshot_date}, erwartet "
+            f"{heute_berlin} (Berliner Zeit). Der Dataflow hat vermutlich nicht "
+            "erfolgreich geschrieben. Fuer eine bewusste Nachladung "
+            "allow_stale_snapshot=True setzen."
+        )
 
     duplicates = (
         src.groupBy(business_key).count().filter(F.col("count") > 1).count()

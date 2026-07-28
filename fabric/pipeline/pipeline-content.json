@@ -1,0 +1,87 @@
+{
+  "properties": {
+    "description": "Taegliche Aktualisierung der CRM-Strecke: Dataflow -> Snapshot-Load -> abgeleitete Tabellen -> Semantic Model. Der komplette Lauf ist wiederholbar; ein Neustart nach Fehler ist immer sicher.",
+    "activities": [
+      {
+        "name": "01 CRM Extrakt (Dataflow)",
+        "description": "Vollextrakt aus Dataverse und SharePoint nach stg_opportunity, stg_retention, stg_opportunity_unit. Destination Replace.",
+        "type": "RefreshDataflow",
+        "dependsOn": [],
+        "policy": {
+          "timeout": "0.02:00:00",
+          "retry": 2,
+          "retryIntervalInSeconds": 300,
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "dataflowId": "PLATZHALTER_DATAFLOW_ID",
+          "workspaceId": "PLATZHALTER_WORKSPACE_ID",
+          "dataflowType": "DataflowFabric",
+          "notifyOption": "NoNotification"
+        }
+      },
+      {
+        "name": "02 Snapshot laden und ableiten",
+        "description": "02_load_snapshot.py (idempotenter Append je Tagespartition) und 03_derived_tables.sql (fct_*_current, fct_*_changes) in einem Notebook.",
+        "type": "TridentNotebook",
+        "dependsOn": [
+          {
+            "activity": "01 CRM Extrakt (Dataflow)",
+            "dependencyConditions": ["Succeeded"]
+          }
+        ],
+        "policy": {
+          "timeout": "0.01:00:00",
+          "retry": 1,
+          "retryIntervalInSeconds": 120,
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "notebookId": "PLATZHALTER_NOTEBOOK_ID",
+          "workspaceId": "PLATZHALTER_WORKSPACE_ID",
+          "parameters": {
+            "allow_stale_snapshot": {
+              "value": "false",
+              "type": "bool"
+            }
+          }
+        }
+      },
+      {
+        "name": "03 Semantic Model aktualisieren",
+        "description": "Import-Modell, muss nach den abgeleiteten Tabellen refreshen. Die Workspace-Identitaet braucht Schreibrechte auf dem Semantic Model.",
+        "type": "WebActivity",
+        "dependsOn": [
+          {
+            "activity": "02 Snapshot laden und ableiten",
+            "dependencyConditions": ["Succeeded"]
+          }
+        ],
+        "policy": {
+          "timeout": "0.01:00:00",
+          "retry": 1,
+          "retryIntervalInSeconds": 120,
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "method": "POST",
+          "url": "https://api.powerbi.com/v1.0/myorg/groups/PLATZHALTER_WORKSPACE_ID/datasets/PLATZHALTER_SEMANTICMODEL_ID/refreshes",
+          "body": {
+            "type": "Full",
+            "commitMode": "transactional",
+            "notifyOption": "MailOnFailure"
+          },
+          "authentication": {
+            "type": "MSI",
+            "resource": "https://analysis.windows.net/powerbi/api"
+          }
+        }
+      }
+    ],
+    "parameters": {},
+    "annotations": []
+  }
+}

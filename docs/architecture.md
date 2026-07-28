@@ -305,6 +305,8 @@ Tabellen erscheinen dort automatisch.
 | `fabric/lakehouse/03_derived_tables.sql` | Ist-Stand und Änderungshistorie als Delta-Tabellen |
 | `powerbi/CRM Net New Budget.pbip` | PBIP-Projekt: Semantic Model + Bericht |
 | `powerbi/README.md` | Parameter, Voraussetzungen, Speichermodus |
+| `fabric/pipeline/pipeline-content.json` | Orchestrierung des Tageslaufs |
+| `docs/pipeline.md` | Ablauf, Zeitplan, Fehlerbehandlung |
 | `fabric/semantic-model/01_ity_phasing.dax` | ITY-Monatsphasierung und vereinigte Effekttabelle |
 | `fabric/semantic-model/02_calculated_columns.dax` | Klassifizierungen und abgeleitete Dimensionen |
 | `fabric/semantic-model/03_measures.dax` | Bestandsmeasures und Leading KPIs |
