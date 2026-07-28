@@ -6,7 +6,7 @@ model Model
 		legacyRedirects
 		returnErrorValuesAsNull
 
-annotation PBI_QueryOrder = ["fct_opportunity","fct_retention","map_opportunity_unit","fct_opportunity_changes","fct_retention_changes","dim_sap_master_data_unit","dim_date","fct_opp_phasing","fct_retention_phasing","fct_budget_effect","dim_unit","dim_owner","dim_sector","dim_subsector","dim_territory","dim_contracttype","dim_currentsupplier","dim_account","_Measures"]
+annotation PBI_QueryOrder = ["fct_opportunity","fct_retention","map_opportunity_unit","fct_opportunity_changes","fct_retention_changes","dim_sap_master_data_unit","dim_date","fct_opp_phasing","fct_retention_phasing","fct_budget_effect","dim_unit","_Measures"]
 
 annotation __PBI_TimeIntelligenceEnabled = 0
 
@@ -23,13 +23,6 @@ ref table fct_opp_phasing
 ref table fct_retention_phasing
 ref table fct_budget_effect
 ref table dim_unit
-ref table dim_owner
-ref table dim_sector
-ref table dim_subsector
-ref table dim_territory
-ref table dim_contracttype
-ref table dim_currentsupplier
-ref table dim_account
 ref table _Measures
 
 ref cultureInfo de-DE

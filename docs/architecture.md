@@ -93,13 +93,36 @@ Zieltabelle (`stg_opportunity` → `stg_opportunity`). Die Umbenennung auf
 `fct_opportunity` heißt, aber nach `stg_opportunity` schreibt, lädt
 zuverlässig zur falschen Verdrahtung ein.
 
-### Keine Dimensionen im Lakehouse
+### Namen in der Faktenzeile statt in Dimensionen
 
-Das Lakehouse hält ausschließlich die zwei Faktentabellen. Die elf `dim_opp_*`
-Tabellen des Altmodells waren eigene CRM-Abfragen auf dieselben Entities und
-sind als `DISTINCT`-Ableitungen aus den Fakten vollständig ersetzbar
-(`02_calculated_columns.dax`). Der Dataflow bleibt damit der einzige
-Kontaktpunkt zum CRM.
+Die elf `dim_opp_*` Tabellen des Altmodells waren eigene CRM-Abfragen auf
+dieselben Entities. Sie entfallen ersatzlos: `02_load_snapshot.py` löst die
+Lookup-IDs beim Laden gegen `stg_lkp_*` auf und schreibt den Klartext in die
+Faktenzeile (`owner_name`, `territory`, `sector`, …).
+
+Drei Gründe, in dieser Reihenfolge:
+
+- **Historische Richtigkeit.** Eine Dimension trägt nur den aktuellen Namen.
+  Wird ein Territory umbenannt oder eine Opportunity umverteilt, zeigte auch
+  der Snapshot von vor drei Monaten den heutigen Stand — der Tagesstand wäre
+  nicht mehr das, was er behauptet zu sein. In der Faktenzeile ist jeder
+  Snapshot in sich geschlossen.
+- **Kein CRM-Zugriff aus Desktop.** Der Dataflow bleibt der einzige
+  Kontaktpunkt; Desktop liest nur den SQL-Endpoint. Das umgeht auch die
+  Zscaler-Sperre, die die Bearbeitung CRM-gebundener Dimensionen verhinderte.
+- **Keine berechneten Tabellen** — Voraussetzung für Direct Lake.
+
+Die Attribute laufen bis in `fct_budget_effect` durch. Ohne das hätte der
+Nettoeffekt keinen Bezug zu Territory oder Sektor: die Tabelle ist über
+`entity_id` an nichts anschließbar, weil dort Opportunity- und Contract-IDs
+nebeneinander stehen. Denormalisiert kostet es nichts, weil die Werte über
+die Phasierung ohnehin mitkommen.
+
+Der Join gehört in die **Historisierung**, nicht in die abgeleitete Schicht.
+Ein Join erst in `03_derived_tables.sql` würde die heutigen Namen rückwirkend
+über die gesamte Historie legen. Und er gehört nach **Spark**, nicht nach M:
+ein `Table.NestedJoin` gegen mehrere Dataverse-Entitäten faltet nicht mehr
+und macht den Vollextrakt langsam.
 
 ### ITY-Logik im Lakehouse, nicht im Modell
 
@@ -335,7 +358,9 @@ Tabellen erscheinen dort automatisch.
 | `fabric/dataflow/stg_opportunity.m` | Dataflow-Gen2-Query, Vollextrakt Opportunities |
 | `fabric/dataflow/stg_retention.m` | Dataflow-Gen2-Query, Vollextrakt Contracts |
 | `fabric/dataflow/stg_opportunity_unit.m` | Mapping Opportunity → SAP-Betrieb aus SharePoint |
+| `fabric/dataflow/stg_lookups.m` | Lookup-Queries für die Klartextnamen |
 | `fabric/dataflow/fn_berlin_now.m` | Zeitstempel auf Europe/Berlin (Laden deaktivieren) |
+| `fabric/lakehouse/04_pruefung.sql` | Neun Abfragen zum Gegenrechnen |
 | `fabric/lakehouse/01_create_tables.sql` | Delta-Tabellen, partitioniert nach `snapshot_date` |
 | `fabric/lakehouse/02_load_snapshot.py` | Idempotenter Tageslauf Staging → Fakt |
 | `fabric/lakehouse/03_derived_tables.sql` | Ist-Stand und Änderungshistorie als Delta-Tabellen |

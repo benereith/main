@@ -313,6 +313,78 @@ table fct_opportunity
 
 		annotation SummarizationSetBy = Automatic
 
+	column owner_name
+		dataType: string
+		lineageTag: 4fa84659-7dbd-5839-b273-2d5da5d47107
+		summarizeBy: none
+		sourceColumn: owner_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column account_name
+		dataType: string
+		lineageTag: c4cf5d2b-f6c7-5d45-8ec9-5387b58d7417
+		summarizeBy: none
+		sourceColumn: account_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column parent_account_name
+		dataType: string
+		lineageTag: bd5f79fc-3ca8-54ef-a1df-68d10ac123f0
+		summarizeBy: none
+		sourceColumn: parent_account_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column territory
+		dataType: string
+		lineageTag: 956d5e2a-ea79-5fed-a773-be33183db67c
+		summarizeBy: none
+		sourceColumn: territory
+
+		annotation SummarizationSetBy = Automatic
+
+	column sector
+		dataType: string
+		lineageTag: 0532e89e-5ba2-5f3d-beed-6d146ad5cfd6
+		summarizeBy: none
+		sourceColumn: sector
+
+		annotation SummarizationSetBy = Automatic
+
+	column subsector
+		dataType: string
+		lineageTag: 95cd08af-88c1-50e3-a538-99e0101bc6e3
+		summarizeBy: none
+		sourceColumn: subsector
+
+		annotation SummarizationSetBy = Automatic
+
+	column contracttype
+		dataType: string
+		lineageTag: 2603aa61-40d6-5898-bb4d-1e7d4fa01b7b
+		summarizeBy: none
+		sourceColumn: contracttype
+
+		annotation SummarizationSetBy = Automatic
+
+	column currentsupplier
+		dataType: string
+		lineageTag: 32f9f878-4fee-5a12-b10f-8d63c8052eed
+		summarizeBy: none
+		sourceColumn: currentsupplier
+
+		annotation SummarizationSetBy = Automatic
+
+	column contract_name
+		dataType: string
+		lineageTag: 0704448f-f8d5-5ff1-8d87-5ac340325c44
+		summarizeBy: none
+		sourceColumn: contract_name
+
+		annotation SummarizationSetBy = Automatic
+
 	partition fct_opportunity = m
 		mode: import
 		source = ```

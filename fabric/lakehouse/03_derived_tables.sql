@@ -206,6 +206,14 @@ perioden AS (
 basis AS (
     SELECT
         o.opportunityid,
+        o.name                                                            AS entity_name,
+        o.owner_name,
+        o.account_name,
+        o.territory,
+        o.sector,
+        o.subsector,
+        o.contracttype,
+        o.currentsupplier,
         o.cgplc_contractid,
         o.estimatedclosedate,
         trunc(o.cgplc_openingdate, 'MM')                                  AS start_date,
@@ -241,6 +249,14 @@ mit_werten AS (
 )
 SELECT
     w.opportunityid,
+    w.entity_name,
+    w.owner_name,
+    w.account_name,
+    w.territory,
+    w.sector,
+    w.subsector,
+    w.contracttype,
+    w.currentsupplier,
     COALESCE(mu.sap_unit, r.cgplc_sapid)                                  AS sap_unit,
     p.period_date,
     w.estimatedclosedate                                                  AS referenzdatum,
@@ -287,6 +303,7 @@ perioden AS (
 basis AS (
     SELECT
         c.cgplc_cgcontractid,
+        c.cgplc_name                                                           AS entity_name,
         c.cgplc_sapid,
         -- Ersatzlogik aus dem Altmodell: fehlt das Vertragsende, gilt
         -- das Entscheidungsdatum plus drei Monate.
@@ -314,6 +331,7 @@ mit_eckdaten AS (
 )
 SELECT
     e.cgplc_cgcontractid,
+    e.entity_name,
     e.cgplc_sapid                                                             AS sap_unit,
     p.period_date,
     e.end_date_raw                                                            AS referenzdatum,
@@ -340,12 +358,26 @@ JOIN perioden p
 -- Harmonisierung auf die gemeinsame Achse Periode x SAP-Betrieb. Die
 -- Quelltabellen bleiben getrennt - Opportunity und Contract sind
 -- unterschiedliche Geschaeftsobjekte mit disjunkten Attributen.
+--
+-- Die beschreibenden Spalten laufen mit. Ohne sie haette der Nettoeffekt
+-- keinen Bezug zu Territory oder Sektor: fct_budget_effect ist ueber
+-- entity_id an nichts anschliessbar, weil dort Opportunity- und
+-- Contract-IDs nebeneinander stehen. Denormalisiert kostet es nichts -
+-- die Werte kommen ohnehin aus der Phasierung mit.
 -- ---------------------------------------------------------------------
 CREATE OR REPLACE TABLE fct_budget_effect
 USING DELTA AS
 SELECT
     'New Business'      AS effect_type,
     opportunityid       AS entity_id,
+    entity_name,
+    owner_name,
+    account_name,
+    territory,
+    sector,
+    subsector,
+    contracttype,
+    currentsupplier,
     sap_unit,
     period_date,
     referenzdatum,
@@ -358,6 +390,16 @@ UNION ALL
 SELECT
     'Retention'         AS effect_type,
     cgplc_cgcontractid  AS entity_id,
+    entity_name,
+    -- Die Retention traegt keine CRM-Attribute; ihr Sektor kaeme ueber
+    -- den SAP-Betrieb, nicht ueber die Opportunity.
+    CAST(NULL AS STRING) AS owner_name,
+    CAST(NULL AS STRING) AS account_name,
+    CAST(NULL AS STRING) AS territory,
+    CAST(NULL AS STRING) AS sector,
+    CAST(NULL AS STRING) AS subsector,
+    CAST(NULL AS STRING) AS contracttype,
+    CAST(NULL AS STRING) AS currentsupplier,
     sap_unit,
     period_date,
     referenzdatum,

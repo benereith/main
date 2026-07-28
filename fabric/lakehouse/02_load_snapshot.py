@@ -31,6 +31,25 @@ from delta.tables import DeltaTable
 # ist davon unabhaengig -, aber genau darueber wird geprueft und gelesen.
 spark.conf.set("spark.sql.session.timeZone", "Europe/Berlin")
 
+# Lookups, die als Klartextnamen in die Opportunity-Zeile wandern.
+# (Staging-Tabelle, ID-Spalte in fct_opportunity, Zielspalte)
+#
+# Der Join passiert HIER und nicht in der abgeleiteten Schicht: nur so
+# steht der Name in der historisierten Zeile. Ein Join erst in
+# 03_derived_tables.sql wuerde die heutigen Namen rueckwirkend ueber die
+# gesamte Historie legen und den Snapshot entwerten.
+LOOKUPS = [
+    ("stg_lkp_owner",           "ownerid",                  "owner_name"),
+    ("stg_lkp_account",         "accountid",                "account_name"),
+    ("stg_lkp_account",         "parentaccountid",          "parent_account_name"),
+    ("stg_lkp_territory",       "cgplc_territoryid",        "territory"),
+    ("stg_lkp_sector",          "cgplc_sectorlookup",       "sector"),
+    ("stg_lkp_subsector",       "cgplc_subsector",          "subsector"),
+    ("stg_lkp_contracttype",    "cgplc_contracttypelookup", "contracttype"),
+    ("stg_lkp_currentsupplier", "cgplc_currentsupplier",    "currentsupplier"),
+    ("stg_lkp_contract",        "cgplc_contractid",         "contract_name"),
+]
+
 SNAPSHOT_TABLES = [
     ("stg_opportunity", "fct_opportunity", "opportunityid"),
     ("stg_retention", "fct_retention", "cgplc_cgcontractid"),
@@ -38,8 +57,27 @@ SNAPSHOT_TABLES = [
 ]
 
 
+def mit_namen(src):
+    """Loest die Lookup-IDs gegen die stg_lkp_*-Tabellen auf.
+
+    LEFT JOIN, damit eine fehlende Zuordnung die Zeile nicht verliert -
+    ein unaufgeloester Name ist ein Datenqualitaetsthema, kein Grund,
+    die Opportunity aus dem Snapshot zu werfen.
+    """
+    for staging, id_spalte, ziel in LOOKUPS:
+        lkp = (
+            spark.read.table(staging)
+            .select(F.col("Id").alias("_lkp_id"), F.col("Name").alias(ziel))
+            .dropDuplicates(["_lkp_id"])
+        )
+        src = src.join(lkp, src[id_spalte] == lkp["_lkp_id"], "left").drop("_lkp_id")
+    return src
+
+
 def load_snapshot(staging_table: str, target_table: str, business_key: str) -> None:
     src = spark.read.table(staging_table)
+    if target_table == "fct_opportunity":
+        src = mit_namen(src)
 
     snapshot_dates = [r[0] for r in src.select("snapshot_date").distinct().collect()]
     if len(snapshot_dates) != 1:

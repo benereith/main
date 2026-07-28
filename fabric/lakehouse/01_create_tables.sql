@@ -55,6 +55,21 @@ CREATE TABLE IF NOT EXISTS fct_opportunity (
     cgplc_win                   DOUBLE,
     cgplc_bgpercent             DOUBLE,
 
+    -- Klartextnamen, in 02_load_snapshot.py aus stg_lkp_* aufgeloest.
+    -- Bewusst in der Faktenzeile statt in Dimensionen: eine Dimension
+    -- traegt nur den aktuellen Namen und wuerde ihn rueckwirkend ueber
+    -- die gesamte Historie legen. So bleibt jeder Snapshot in sich
+    -- geschlossen und zeigt die Zuordnung, die an dem Tag galt.
+    owner_name                  STRING,
+    account_name                STRING,
+    parent_account_name         STRING,
+    territory                   STRING,
+    sector                      STRING,
+    subsector                   STRING,
+    contracttype                STRING,
+    currentsupplier             STRING,
+    contract_name               STRING,
+
     createdon                   TIMESTAMP,
     modifiedon                  TIMESTAMP,
     loaded_at                   TIMESTAMP

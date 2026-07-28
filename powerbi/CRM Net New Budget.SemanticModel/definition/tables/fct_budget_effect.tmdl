@@ -83,6 +83,70 @@ table fct_budget_effect
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
+	column entity_name
+		dataType: string
+		lineageTag: 5970f01c-85c6-5963-bc86-92bc99e69516
+		summarizeBy: none
+		sourceColumn: entity_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column owner_name
+		dataType: string
+		lineageTag: e2e90810-dac7-592e-88d3-94072a094b8d
+		summarizeBy: none
+		sourceColumn: owner_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column account_name
+		dataType: string
+		lineageTag: 7e321a63-3c56-53f8-bf38-b90030fb8bd1
+		summarizeBy: none
+		sourceColumn: account_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column territory
+		dataType: string
+		lineageTag: 7f3a3197-f5ac-59ca-8dbc-49f69291b1fa
+		summarizeBy: none
+		sourceColumn: territory
+
+		annotation SummarizationSetBy = Automatic
+
+	column sector
+		dataType: string
+		lineageTag: 1711d2ec-8930-54b0-a9ca-05309f0f947b
+		summarizeBy: none
+		sourceColumn: sector
+
+		annotation SummarizationSetBy = Automatic
+
+	column subsector
+		dataType: string
+		lineageTag: bc9fb6da-3053-5068-87e0-c0fef830987b
+		summarizeBy: none
+		sourceColumn: subsector
+
+		annotation SummarizationSetBy = Automatic
+
+	column contracttype
+		dataType: string
+		lineageTag: ce9ba6c3-d480-5a17-84ce-632bc4f3858d
+		summarizeBy: none
+		sourceColumn: contracttype
+
+		annotation SummarizationSetBy = Automatic
+
+	column currentsupplier
+		dataType: string
+		lineageTag: 6e68868a-af53-5ae2-b1c5-532af5af32c5
+		summarizeBy: none
+		sourceColumn: currentsupplier
+
+		annotation SummarizationSetBy = Automatic
+
 	partition fct_budget_effect = m
 		mode: import
 		source = ```
