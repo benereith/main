@@ -117,6 +117,21 @@ Zwei Dinge ändern sich bewusst:
 - **Keine Row-Explosion im Ladeprozess.** Der Extrakt bleibt bei einer Zeile
   je Opportunity, die Expansion passiert erst im Modell.
 
+**Achtung bei den Filtern.** Weil der Extrakt bewusst *ohne* Datumsfilter
+zieht, muss die Phasierung die Untergrenze selbst setzen — sonst erzeugt jede
+Opportunity aus abgeschlossenen Jahren volle Budgetwirkung über den ganzen
+Horizont. `fct_opp_phasing` bildet deshalb alle drei Filter des Altmodells ab:
+
+| Altmodell (Power Query) | Phasierung (DAX) |
+|---|---|
+| `cgplc_openingdate >= Est_Close_Date_A` | `>= MIN(dim_date[Datum])` |
+| `estimatedclosedate >= Est_Close_Date_A` | `>= MIN(dim_date[Datum])` |
+| `statecodename <> "Verloren"`, Stage-Ausschlüsse | unverändert |
+
+Die Verlagerung der Fachlogik ins Modell ist nur dann wertneutral, wenn sie
+**vollständig** ist. Ein weggelassener Filter fällt hier nicht als Fehler auf,
+sondern als stille Überzeichnung.
+
 ### Harmonisierung erst auf Effektebene
 
 Opportunities und Retention-Contracts werden **nicht** zu einer Quelltabelle

@@ -34,13 +34,24 @@ VAR _Horizont =
 // Bis hierhin gilt der ITY-Wert, danach greift der ARO-Wert.
 VAR _ITY_Cutoff =
     DATE ( YEAR ( EDATE ( MIN ( dim_date[Datum] ), -9 ) ) + 1, 9, 30 )
+// Untergrenze des Betrachtungszeitraums - im Altmodell der Parameter
+// Est_Close_Date_A, hier aus dim_date abgeleitet.
+VAR _Fenster_Ab = MIN ( dim_date[Datum] )
 // Nur Opportunities, die in die Budgetwirkung eingehen.
 // Der Vollextrakt im Lakehouse bleibt unangetastet - diese Einschraenkung
 // gilt ausschliesslich fuer die Budget-Phasierung.
+//
+// Die beiden Datumsuntergrenzen sind hier zwingend: der Extrakt zieht
+// bewusst OHNE Datumsfilter, die Faktentabelle enthaelt also auch
+// Opportunities aus abgeschlossenen Jahren. Ohne diese Bedingungen
+// erzeugt jede davon volle Budgetwirkung ueber den gesamten Horizont.
 VAR _Basis =
     FILTER (
         fct_opportunity,
         NOT ISBLANK ( fct_opportunity[cgplc_openingdate] )
+            && NOT ISBLANK ( fct_opportunity[estimatedclosedate] )
+            && fct_opportunity[cgplc_openingdate] >= _Fenster_Ab
+            && fct_opportunity[estimatedclosedate] >= _Fenster_Ab
             && fct_opportunity[statecodename] <> "Verloren"
             && NOT (
                 fct_opportunity[cgplc_salesstagename]

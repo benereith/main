@@ -122,10 +122,14 @@ table fct_opp_phasing
 				    )
 				VAR _ITY_Cutoff =
 				    DATE ( YEAR ( EDATE ( MIN ( dim_date[Datum] ), -9 ) ) + 1, 9, 30 )
+				VAR _Fenster_Ab = MIN ( dim_date[Datum] )
 				VAR _Basis =
 				    FILTER (
 				        fct_opportunity,
 				        NOT ISBLANK ( fct_opportunity[cgplc_openingdate] )
+				            && NOT ISBLANK ( fct_opportunity[estimatedclosedate] )
+				            && fct_opportunity[cgplc_openingdate] >= _Fenster_Ab
+				            && fct_opportunity[estimatedclosedate] >= _Fenster_Ab
 				            && fct_opportunity[statecodename] <> "Verloren"
 				            && NOT (
 				                fct_opportunity[cgplc_salesstagename]

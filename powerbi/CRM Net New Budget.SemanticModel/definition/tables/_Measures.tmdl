@@ -289,6 +289,34 @@ table _Measures
 	measure Datenstand = FORMAT ( MAX ( fct_opportunity[snapshot_date] ), "dd.MM.yyyy" )
 		lineageTag: d27aed0e-dbb7-5fe0-b1d2-957ec9b75f91
 
+	/// Diagnose - nach der Fehlersuche ausblendbar.
+	// Muss 1 sein. Mehr bedeutet: die Tabelle haengt an fct_opportunity statt an
+		// fct_opportunity_current - dann summiert jede Kennzahl ueber alle Tagesstaende.
+	measure 'Diag Snapshots' = DISTINCTCOUNT ( fct_opportunity[snapshot_date] )
+		formatString: 0
+		lineageTag: b779a2bd-163d-5710-9e12-3f50efeaecc7
+
+	// Anzahl Opportunities, die tatsaechlich Budgetwirkung erzeugen.
+	measure 'Diag Opps in Phasierung' = DISTINCTCOUNT ( fct_opp_phasing[opportunityid] )
+		formatString: 0
+		lineageTag: a270bdcc-0c9d-5e38-8bc8-36425f8f530a
+
+	// Zum Vergleich: alles im Extrakt, inklusive verlorener und alter.
+	measure 'Diag Opps gesamt' = DISTINCTCOUNT ( fct_opportunity[opportunityid] )
+		formatString: 0
+		lineageTag: acb2fd9f-2651-5027-91c0-8e7c01dd6ed7
+
+	// Muss <= 1 sein. Liegt der Wert bei 100, ist cgplc_win nicht auf eine Quote
+		// normalisiert und alle gewichteten Werte sind um Faktor 100 zu hoch.
+	measure 'Diag Max Win' = MAX ( fct_opportunity[cgplc_win] )
+		formatString: 0.00
+		lineageTag: c198b0d3-0d14-5b15-9ca8-74a1042ee419
+
+	// Muss 1,00 sein. Groesser bedeutet doppelte Zeilen je Opportunity.
+	measure 'Diag Fanout' = DIVIDE ( COUNTROWS ( fct_opportunity ), DISTINCTCOUNT ( fct_opportunity[opportunityid] ) )
+		formatString: 0.00
+		lineageTag: 360e41bd-f8e9-5f5e-99e9-f68f455a8987
+
 	column Platzhalter
 		dataType: string
 		isHidden
