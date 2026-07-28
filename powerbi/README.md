@@ -5,21 +5,25 @@ Power-BI-Projekt für den neu gebauten Bericht. Öffnen mit
 aktiv sein: *Datei → Optionen → Vorschaufeatures → Power BI Project (.pbip)
 save option*).
 
-## Vor dem ersten Öffnen: zwei Parameter setzen
+## Verbindung
 
-Beim ersten Refresh fragt Power BI nach den Verbindungsparametern. Der
-SQL-Endpoint ist bereits eingetragen, der Name der Datenbank fehlt:
+Der SQL-Endpoint ist eingetragen, die Datenbank löst sich selbst auf:
 
 | Parameter | Wert |
 |---|---|
 | `SqlEndpoint` | `3w3wftkijo6ujehh4fb2eleovu-sdjibi3hrggujev7dt4yjznhu4.datawarehouse.fabric.microsoft.com` |
-| `WarehouseName` | **`BITTE_EINTRAGEN`** → Name des Lakehouse bzw. Warehouse |
+| `WarehouseName` | leer — nur setzen, wenn der Endpoint mehrere Datenbanken führt |
 | `FY_Start` | `01.10.2025` — Beginn des Betrachtungszeitraums |
 | `FY_Ende` | `30.09.2027` — Ende des Betrachtungszeitraums |
 
-`WarehouseName` ist der Anzeigename des Artefakts im Fabric-Workspace, unter
-dem die Tabellen im Schema `dbo` liegen. Zu ändern über *Transformieren →
-Parameter verwalten*.
+`FabricSql` fragt den Endpoint über `Sql.Databases` ab. Führt er genau eine
+Datenbank, wird sie ohne Zutun genommen. Führt er mehrere, bricht die Abfrage
+mit einer Meldung ab, die **die verfügbaren Namen auflistet** — den passenden
+dann in `WarehouseName` eintragen (*Transformieren → Parameter verwalten*).
+Ein gesetzter Wert hat immer Vorrang vor der Auflösung.
+
+Beim ersten Öffnen fragt Power BI nach den Anmeldeinformationen für den
+Endpoint: *Organisationskonto* wählen und anmelden.
 
 `FY_Start` und `FY_Ende` steuern `dim_date` und damit den kompletten
 Auswertungshorizont — sie ersetzen die vier `Est_*`-Parameter und die fest

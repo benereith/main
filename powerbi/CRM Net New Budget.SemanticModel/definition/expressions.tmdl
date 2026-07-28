@@ -3,7 +3,7 @@ expression SqlEndpoint = "3w3wftkijo6ujehh4fb2eleovu-sdjibi3hrggujev7dt4yjznhu4.
 
 	annotation PBI_ResultType = Text
 
-expression WarehouseName = "BITTE_EINTRAGEN" meta [IsParameterQuery = true, Type = "Text", IsParameterQueryRequired = true]
+expression WarehouseName = "" meta [IsParameterQuery = true, Type = "Text", IsParameterQueryRequired = false]
 	lineageTag: 82b45174-3ef7-5382-bd8a-6d049900ae85
 
 	annotation PBI_ResultType = Text
@@ -20,7 +20,22 @@ expression FY_Ende = #date(2027, 9, 30) meta [IsParameterQuery = true, Type = ty
 
 expression FabricSql = ```
 		let
-		  Datenbank = Sql.Database(SqlEndpoint, WarehouseName)
+		  // WarehouseName ist optional. Ist er gesetzt, gilt er unveraendert.
+		  // Ist er leer, wird die Datenbank aufgeloest: stellt der Endpoint
+		  // genau eine bereit, ist sie eindeutig und wird genommen. Stehen
+		  // mehrere zur Auswahl, bricht die Abfrage mit deren Namen ab -
+		  // dann ist der Parameter zu setzen.
+		  Manuell = WarehouseName <> null and Text.Trim(WarehouseName) <> "",
+		  Kandidaten = Sql.Databases(SqlEndpoint),
+		  Namen = Text.Combine(List.Transform(Table.Column(Kandidaten, "Name"), Text.From), ", "),
+		  Automatisch =
+		      if Table.RowCount(Kandidaten) = 1 then
+		          Kandidaten{0}[Data]
+		      else
+		          error "Der SQL-Endpoint stellt " & Text.From(Table.RowCount(Kandidaten))
+		              & " Datenbanken bereit - bitte den Parameter WarehouseName setzen. Verfuegbar: "
+		              & Namen,
+		  Datenbank = if Manuell then Sql.Database(SqlEndpoint, WarehouseName) else Automatisch
 		in
 		  Datenbank
 		```
