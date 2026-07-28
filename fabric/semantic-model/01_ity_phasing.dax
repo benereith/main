@@ -1,20 +1,26 @@
 // =====================================================================
 // ITY-Phasing als berechnete Tabellen im Semantic Model
 //
-// Ersetzt 1:1 die Monats-Expansion, die bisher in Power Query lief
+// Ersetzt die Monats-Expansion, die bisher in Power Query lief
 // (List.Generate + Table.ExpandListColumn in fct_opp / fct_retention).
-// Der Dataflow liefert jetzt eine Zeile je Opportunity bzw. Contract,
-// die Aufloesung auf Monatsperioden passiert hier.
+// Der Dataflow liefert eine Zeile je Opportunity bzw. Contract, die
+// Aufloesung auf Monatsperioden passiert hier.
 //
-// Vorzeichenkonvention aus dem Altmodell beibehalten:
-//   ITY-Phase  -> negativ (Effekt gegen das laufende Geschaeftsjahr)
-//   ARO-Phase  -> positiv
-//   Retention  -> durchgaengig negativ (Verlustwirkung)
+// GRUNDSATZ: Die Tabellen speichern nur VORZEICHENLOSE Betraege.
+// Welcher der beiden Betraege je Periode gilt und mit welchem Vorzeichen,
+// entscheidet erst das Measure - abhaengig vom Filterkontext.
+//
+// Warum: Im Altmodell steckte das Vorzeichen in Budget_Value, gesetzt
+// gegen einen festen Cutoff (Est_Close_Date_E). Damit ist die Zuordnung
+// ITY/ARO global eingefroren, und ein einzelnes Geschaeftsjahr laesst
+// sich nicht isoliert betrachten: Filtert man FY2026/27, gelten dort
+// weiterhin die Vorzeichen, die relativ zu FY2025/26 berechnet wurden.
+// Verlagert man die Entscheidung ins Measure, wird das jeweils erste
+// Jahr im Filterkontext zum laufenden Jahr - genau das erlaubt den
+// isolierten Blick auf jedes Jahr.
 //
 // Geschaeftsjahr: 1. Oktober bis 30. September.
-// Horizont und ITY-Cutoff werden aus dim_date abgeleitet, nicht mehr
-// hart codiert - dim_date ist die einzige Stelle, an der der
-// Betrachtungszeitraum gepflegt wird.
+// Horizont, ITY-Grenze und Clustergrenzen leiten sich aus dim_date ab.
 // =====================================================================
 
 
@@ -30,21 +36,19 @@ VAR _Horizont =
             "Period_Date", DATE ( YEAR ( dim_date[Datum] ), MONTH ( dim_date[Datum] ), 1 )
         )
     )
-// Ende des ersten Geschaeftsjahres im Betrachtungszeitraum.
-// Bis hierhin gilt der ITY-Wert, danach greift der ARO-Wert.
-VAR _ITY_Cutoff =
-    DATE ( YEAR ( EDATE ( MIN ( dim_date[Datum] ), -9 ) ) + 1, 9, 30 )
-// Untergrenze des Betrachtungszeitraums - im Altmodell der Parameter
-// Est_Close_Date_A, hier aus dim_date abgeleitet.
+// Untergrenze des Betrachtungszeitraums - im Altmodell Est_Close_Date_A.
 VAR _Fenster_Ab = MIN ( dim_date[Datum] )
+// Ende des Basisjahres (Est_Close_Date_E) und des Folgejahres
+// (Est_Opening_Date_E). Nur fuer die Clusterung, nicht fuers Vorzeichen.
+VAR _BasisFY_Ende = DATE ( YEAR ( EDATE ( _Fenster_Ab, -9 ) ) + 1, 9, 30 )
+VAR _FolgeFY_Ende = DATE ( YEAR ( _BasisFY_Ende ) + 1, 9, 30 )
 // Nur Opportunities, die in die Budgetwirkung eingehen.
-// Der Vollextrakt im Lakehouse bleibt unangetastet - diese Einschraenkung
-// gilt ausschliesslich fuer die Budget-Phasierung.
+// Der Vollextrakt im Lakehouse bleibt unangetastet.
 //
-// Die beiden Datumsuntergrenzen sind hier zwingend: der Extrakt zieht
-// bewusst OHNE Datumsfilter, die Faktentabelle enthaelt also auch
-// Opportunities aus abgeschlossenen Jahren. Ohne diese Bedingungen
-// erzeugt jede davon volle Budgetwirkung ueber den gesamten Horizont.
+// Die beiden Datumsuntergrenzen sind zwingend: der Extrakt zieht bewusst
+// OHNE Datumsfilter, die Faktentabelle enthaelt also auch Opportunities
+// aus abgeschlossenen Jahren. Ohne sie erzeugt jede davon volle
+// Budgetwirkung ueber den gesamten Horizont.
 VAR _Basis =
     FILTER (
         fct_opportunity,
@@ -74,8 +78,6 @@ VAR _MitEckdaten =
         "@WeightedAro", fct_opportunity[cgplc_revenuearo] * fct_opportunity[cgplc_win],
         "@WeightedIty", fct_opportunity[cgplc_revenueity] * fct_opportunity[cgplc_win],
         // Konforme Achse zur Retention: der SAP-Betrieb.
-        // Primaer die gepflegte Mappingtabelle, ersatzweise die CRM-eigene
-        // Bruecke Opportunity -> Contract -> SAP-ID.
         "@SapUnit",
             COALESCE (
                 LOOKUPVALUE (
@@ -103,24 +105,28 @@ VAR _MitWerten =
         "@ARO_Value", DIVIDE ( [@WeightedAro], 12, 0 )
     )
 VAR _Expandiert =
-    FILTER (
-        GENERATE ( _MitWerten, _Horizont ),
-        [Period_Date] >= [@StartDate]
-    )
+    FILTER ( GENERATE ( _MitWerten, _Horizont ), [Period_Date] >= [@StartDate] )
 RETURN
     SELECTCOLUMNS (
         _Expandiert,
         "opportunityid", fct_opportunity[opportunityid],
         "sap_unit", [@SapUnit],
         "Period_Date", [Period_Date],
-        "Calc_StartDate", [@StartDate],
-        "Calc_FirstFYEnd", [@FirstFYEnd],
+        // Stichtag der Clusterung: wann die Opportunity abschliesst.
+        "Referenzdatum", fct_opportunity[estimatedclosedate],
+        // Roll  = schliesst im Basisjahr, wirkt als Rolleffekt ins Folgejahr
+        // ITY   = schliesst im Folgejahr, wirkt dort unterjaehrig
+        "ity_cluster",
+            SWITCH (
+                TRUE (),
+                fct_opportunity[estimatedclosedate] <= _BasisFY_Ende, "Roll",
+                fct_opportunity[estimatedclosedate] <= _FolgeFY_Ende, "ITY",
+                BLANK ()
+            ),
         "Calc_ITY_Months", [@ITY_Months],
-        "Calc_ITY_Value", [@ITY_Value],
-        "Calc_ARO_Value", [@ARO_Value],
-        "Budget_Value",
-            IF ( [Period_Date] <= _ITY_Cutoff, [@ITY_Value] * -1, [@ARO_Value] ),
-        "Phase", IF ( [Period_Date] <= _ITY_Cutoff, "ITY", "ARO" )
+        // Beide Betraege vorzeichenlos - das Measure entscheidet.
+        "ITY_Value", [@ITY_Value],
+        "ARO_Value", [@ARO_Value]
     )
 
 
@@ -128,6 +134,12 @@ RETURN
 // fct_retention_phasing
 // Grain: 1 Zeile je (cgplc_cgcontractid, Period_Date)
 // Maximal 12 Perioden ab dem Monat nach Vertragsende.
+//
+// Ein verlorener Vertrag ist in jedem Jahr ein Verlust - anders als beim
+// New Business dreht hier nichts am Jahreswechsel. Damit das Measure
+// trotzdem ohne Fallunterscheidung auskommt, tragen beide Wertspalten
+// denselben Effekt: ITY_Value positiv (das Measure dreht es), ARO_Value
+// bereits negativ. Beide Zweige liefern damit denselben negativen Wert.
 // ---------------------------------------------------------------------
 fct_retention_phasing =
 VAR _Horizont =
@@ -137,6 +149,9 @@ VAR _Horizont =
             "Period_Date", DATE ( YEAR ( dim_date[Datum] ), MONTH ( dim_date[Datum] ), 1 )
         )
     )
+VAR _Fenster_Ab = MIN ( dim_date[Datum] )
+VAR _BasisFY_Ende = DATE ( YEAR ( EDATE ( _Fenster_Ab, -9 ) ) + 1, 9, 30 )
+VAR _FolgeFY_Ende = DATE ( YEAR ( _BasisFY_Ende ) + 1, 9, 30 )
 // Vertragsende ersatzweise aus dem Entscheidungsdatum ableiten,
 // wenn im CRM kein Enddatum gepflegt ist (Logik aus dem Altmodell).
 VAR _Basis =
@@ -151,33 +166,23 @@ VAR _Basis =
     )
 VAR _MitEckdaten =
     ADDCOLUMNS (
-        FILTER ( _Basis, NOT ISBLANK ( [@EndDateRaw] ) ),
+        FILTER (
+            _Basis,
+            NOT ISBLANK ( [@EndDateRaw] ) && [@EndDateRaw] >= _Fenster_Ab
+        ),
         // Wirkung beginnt im Monat NACH dem Vertragsende
         "@EndDate",
             EDATE ( DATE ( YEAR ( [@EndDateRaw] ), MONTH ( [@EndDateRaw] ), 1 ), 1 ),
-        "@FirstFYEnd",
-            DATE ( YEAR ( EDATE ( [@EndDateRaw], -9 ) ) + 1, 9, 30 ),
         "@WeightedLyAro",
             fct_retention[cgplc_lastfyrevenuearo]
                 * ( 1 - COALESCE ( fct_retention[cgplc_retentionprobability], 0 ) )
     )
-VAR _MitLaufzeit =
-    ADDCOLUMNS (
-        _MitEckdaten,
-        "@ITY_Months",
-            ( YEAR ( [@FirstFYEnd] ) - YEAR ( [@EndDate] ) ) * 12
-                + MONTH ( [@FirstFYEnd] ) - MONTH ( [@EndDate] ) + 1
-    )
 VAR _MitWerten =
-    ADDCOLUMNS (
-        _MitLaufzeit,
-        "@ARO_Value", DIVIDE ( [@WeightedLyAro], 12, 0 ) * -1
-    )
+    ADDCOLUMNS ( _MitEckdaten, "@Monatswert", DIVIDE ( [@WeightedLyAro], 12, 0 ) )
 VAR _Expandiert =
     FILTER (
         GENERATE ( _MitWerten, _Horizont ),
-        [Period_Date] >= [@EndDate]
-            && [Period_Date] <= EDATE ( [@EndDate], 11 )
+        [Period_Date] >= [@EndDate] && [Period_Date] <= EDATE ( [@EndDate], 11 )
     )
 RETURN
     SELECTCOLUMNS (
@@ -185,11 +190,17 @@ RETURN
         "cgplc_cgcontractid", fct_retention[cgplc_cgcontractid],
         "sap_unit", fct_retention[cgplc_sapid],
         "Period_Date", [Period_Date],
-        "Calc_EndDate", [@EndDate],
-        "Calc_FirstFYEnd", [@FirstFYEnd],
-        "Calc_ITY_Months", [@ITY_Months],
-        "weighted_ly_aro", [@WeightedLyAro],
-        "Calc_ARO_Value", [@ARO_Value]
+        "Referenzdatum", [@EndDateRaw],
+        "ity_cluster",
+            SWITCH (
+                TRUE (),
+                [@EndDateRaw] <= _BasisFY_Ende, "Roll",
+                [@EndDateRaw] <= _FolgeFY_Ende, "ITY",
+                BLANK ()
+            ),
+        "Calc_ITY_Months", 12,
+        "ITY_Value", [@Monatswert],
+        "ARO_Value", [@Monatswert] * -1
     )
 
 
@@ -201,9 +212,6 @@ RETURN
 // Periode und SAP-Betrieb. Nur hier ist die Vereinigung fachlich korrekt -
 // die Quelltabellen bleiben getrennt, weil Opportunity und Contract
 // unterschiedliche Geschaeftsobjekte mit disjunkten Attributen sind.
-//
-// Vorzeichen sind bereits in den Phasing-Tabellen gesetzt, eine Summe
-// ueber diese Tabelle ist damit direkt der Nettoeffekt.
 // ---------------------------------------------------------------------
 fct_budget_effect =
 UNION (
@@ -213,8 +221,10 @@ UNION (
         "entity_id", fct_opp_phasing[opportunityid],
         "sap_unit", fct_opp_phasing[sap_unit],
         "Period_Date", fct_opp_phasing[Period_Date],
-        "Phase", fct_opp_phasing[Phase],
-        "Budget_Value", fct_opp_phasing[Budget_Value]
+        "Referenzdatum", fct_opp_phasing[Referenzdatum],
+        "ity_cluster", fct_opp_phasing[ity_cluster],
+        "ITY_Value", fct_opp_phasing[ITY_Value],
+        "ARO_Value", fct_opp_phasing[ARO_Value]
     ),
     SELECTCOLUMNS (
         fct_retention_phasing,
@@ -222,10 +232,12 @@ UNION (
         "entity_id", fct_retention_phasing[cgplc_cgcontractid],
         "sap_unit", fct_retention_phasing[sap_unit],
         "Period_Date", fct_retention_phasing[Period_Date],
-        "Phase", "Retention",
+        "Referenzdatum", fct_retention_phasing[Referenzdatum],
+        "ity_cluster", fct_retention_phasing[ity_cluster],
         // Explizit auf DOUBLE: die Opportunity-Seite liefert das Ergebnis
         // von DIVIDE, die Retention-Seite einen Waehrungswert. UNION
         // verlangt vergleichbare Typen je Position.
-        "Budget_Value", CONVERT ( fct_retention_phasing[Calc_ARO_Value], DOUBLE )
+        "ITY_Value", CONVERT ( fct_retention_phasing[ITY_Value], DOUBLE ),
+        "ARO_Value", CONVERT ( fct_retention_phasing[ARO_Value], DOUBLE )
     )
 )

@@ -13,11 +13,58 @@
 // Teil A - Bestandsmeasures
 // =====================================================================
 
-// Nettoeffekt ueber beide Effektarten - eine Summe statt eines
-// Measure-Paares, weil die Vorzeichen bereits im Phasing gesetzt sind.
-Net ITY Effect = SUM ( fct_budget_effect[Budget_Value] )
+// --- Vorzeichen und Phase entstehen hier, nicht in der Tabelle -------
+//
+// _ErstesFYEnde ist das Ende des ERSTEN Geschaeftsjahres im aktuellen
+// Filterkontext. Ohne Jahresfilter ist das FY2025/26, mit Filter auf
+// FY2026/27 wird dieses Jahr zum laufenden Jahr. Perioden bis dorthin
+// gelten als ITY (negativ), spaetere als ARO (positiv).
+//
+// Genau dadurch laesst sich jedes Jahr isoliert betrachten: waere das
+// Vorzeichen in der Tabelle gespeichert, gaelte immer die Zuordnung
+// relativ zum Basisjahr, egal was gefiltert ist.
 
-// Die beiden Bestandteile als Filter auf derselben Tabelle.
+Net ITY Effect =
+VAR _ErstesFYEnde =
+    DATE ( YEAR ( EDATE ( MIN ( dim_date[Datum] ), -9 ) ) + 1, 9, 30 )
+RETURN
+    SUMX (
+        fct_budget_effect,
+        IF (
+            fct_budget_effect[Period_Date] <= _ErstesFYEnde,
+            fct_budget_effect[ITY_Value] * -1,
+            fct_budget_effect[ARO_Value]
+        )
+    )
+
+// Die beiden Phasen einzeln - fuer Bruecken und Abstimmungen.
+ITY Anteil =
+VAR _ErstesFYEnde =
+    DATE ( YEAR ( EDATE ( MIN ( dim_date[Datum] ), -9 ) ) + 1, 9, 30 )
+RETURN
+    SUMX (
+        fct_budget_effect,
+        IF (
+            fct_budget_effect[Period_Date] <= _ErstesFYEnde,
+            fct_budget_effect[ITY_Value] * -1,
+            0
+        )
+    )
+
+ARO Anteil =
+VAR _ErstesFYEnde =
+    DATE ( YEAR ( EDATE ( MIN ( dim_date[Datum] ), -9 ) ) + 1, 9, 30 )
+RETURN
+    SUMX (
+        fct_budget_effect,
+        IF (
+            fct_budget_effect[Period_Date] > _ErstesFYEnde,
+            fct_budget_effect[ARO_Value],
+            0
+        )
+    )
+
+// Die beiden Effektarten als Filter auf derselben Tabelle.
 ity_effect =
 CALCULATE (
     [Net ITY Effect],
@@ -28,6 +75,21 @@ Lost ITY =
 CALCULATE (
     [Net ITY Effect],
     fct_budget_effect[effect_type] = "Retention"
+)
+
+// --- Clusterung Roll / ITY -------------------------------------------
+// Roll = schliesst im Basisjahr und wirkt als Rolleffekt ins Folgejahr.
+// ITY  = schliesst im Folgejahr und wirkt dort unterjaehrig.
+// Als Spalte fct_budget_effect[ity_cluster] auch als Achse nutzbar.
+
+Roll Effekt = CALCULATE ( [Net ITY Effect], fct_budget_effect[ity_cluster] = "Roll" )
+
+ITY Effekt = CALCULATE ( [Net ITY Effect], fct_budget_effect[ity_cluster] = "ITY" )
+
+Ohne Cluster =
+CALCULATE (
+    [Net ITY Effect],
+    FILTER ( VALUES ( fct_budget_effect[ity_cluster] ), ISBLANK ( fct_budget_effect[ity_cluster] ) )
 )
 
 crm_ity = [ity_effect]
