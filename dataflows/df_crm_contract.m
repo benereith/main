@@ -69,10 +69,20 @@ let
         "cgplc_retentionactionplan",     // [C] Massnahmenplan
 
         // --- Klassifizierung -----------------------------------------------
-        "cgplc_sectorlookup",            // [C] Sektor
-        "cgplc_subsector",               // [C] Subsektor
-        "cgplc_contracttypelookup",      // [C] Vertragsart
-        "cgplc_territoryid",             // [C] Vertriebsgebiet
+        // Lookup-Namenspaare wie in df_crm_opportunity.m: GUID als Schluessel,
+        // ...name-Spalte fuer Anzeige, Filter und das Sektor-Mapping.
+        "cgplc_sectorlookup",            // [C] Sektor (GUID)
+        "cgplc_sectorlookupname",        // [C] Sektor (Anzeigename)
+        "cgplc_subsector",               // [C] Subsektor (GUID)
+        "cgplc_subsectorname",           // [C] Subsektor (Anzeigename)
+        "cgplc_contracttypelookup",      // [C] Vertragsart (GUID)
+        "cgplc_contracttypelookupname",  // [C] Vertragsart (Anzeigename)
+        "cgplc_territoryid",             // [C] Vertriebsgebiet (GUID)
+        "cgplc_territoryidname",         // [C] Vertriebsgebiet (Anzeigename)
+        "cgplc_accountidname",           // [C] Kunde (Anzeigename)
+        "cgplc_parentaccountidname",     // [C] Konzernmutter (Anzeigename)
+        "cgplc_competitoridname",        // [C] konkurrierender Anbieter (Anzeigename)
+        "cgplc_riskcategoryname",        // [C] Risikokategorie (Klartext)
         "cgplc_numberofsites",           // [C] Anzahl Standorte
         "cgplc_headcount"                // [C] Mitarbeiterzahl
     },

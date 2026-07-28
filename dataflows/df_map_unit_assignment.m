@@ -17,8 +17,9 @@
 // AUFBAU DER EXCEL-TABELLE (Tabelle1, Spaltennamen exakt so):
 //   entity_id   optional  opportunityid oder cgplc_cgcontractid fuer
 //                         Einzelfall-Ausnahmen. Gewinnt vor allem anderen.
-//   sektor      optional  Sektor laut CRM (cgplc_sectorlookup)
-//   subsektor   optional  Subsektor laut CRM (cgplc_subsector)
+//   sektor      optional  Sektor als ANZEIGENAME (cgplc_sectorlookupname),
+//                         z. B. "Healthcare" - nicht die GUID
+//   subsektor   optional  Subsektor als ANZEIGENAME (cgplc_subsectorname)
 //   werk        Pflicht   SAP-Betriebsnummer (Ziel der Zuordnung)
 //   kommentar   optional  Begruendung der Zuordnung
 //

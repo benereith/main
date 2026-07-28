@@ -85,15 +85,31 @@ let
         "cgplc_confidencelevel",         // [C] Konfidenzstufe des Vertriebs
 
         // --- Klassifizierung -----------------------------------------------
-        "cgplc_contracttypelookup",      // [B] Vertragsart
-        "cgplc_sectorlookup",            // [B] Sektor
-        "cgplc_subsector",               // [B] Subsektor
-        "cgplc_currentsupplier",         // [B] aktueller Anbieter (Wettbewerber)
-        "cgplc_territoryid",             // [B] Vertriebsgebiet
-        "cgplc_contractid",              // [B] verknuepfter Vertrag
-        "cgplc_sapid",                   // [C] SAP-Betriebsnummer - ersetzt das
-                                         //     SharePoint-Mapping der Altmodelle
+        // WICHTIG - Lookup-Namenspaare: Der TDS-Endpunkt liefert fuer jedes
+        // Lookup-Feld foo die GUID in foo und den Anzeigenamen in fooname.
+        // Beide werden geladen: die GUID als Schluessel, der Name fuer
+        // Anzeige, Filter und das Sektor-Mapping (Mapping_Planwerke.xlsx ist
+        // ueber Namen geschluesselt, nicht ueber GUIDs).
+        "cgplc_contracttypelookup",      // [B] Vertragsart (GUID)
+        "cgplc_contracttypelookupname",  // [S] Vertragsart (Anzeigename)
+        "cgplc_sectorlookup",            // [B] Sektor (GUID)
+        "cgplc_sectorlookupname",        // [S] Sektor (Anzeigename)
+        "cgplc_subsector",               // [B] Subsektor (GUID)
+        "cgplc_subsectorname",           // [S] Subsektor (Anzeigename)
+        "cgplc_currentsupplier",         // [B] aktueller Anbieter (GUID)
+        "cgplc_currentsuppliername",     // [S] aktueller Anbieter (Anzeigename)
+        "cgplc_territoryid",             // [B] Vertriebsgebiet (GUID)
+        "cgplc_territoryidname",         // [S] Vertriebsgebiet (Anzeigename)
+        "cgplc_contractid",              // [B] verknuepfter Vertrag (GUID)
+        "cgplc_contractidname",          // [S] verknuepfter Vertrag (Anzeigename)
+        "accountidname",                 // [S] Kunde (Anzeigename)
+        "parentaccountidname",           // [S] Konzernmutter (Anzeigename)
+        "transactioncurrencyidname",     // [S] Waehrung (Anzeigename)
+        "opportunityratingcodename",     // [S] A/B/C-Einstufung (Klartext)
+        "cgplc_sapid",                   // [C] SAP-Betriebsnummer - Stufe 2 der
+                                         //     Werk-Aufloesungskette
         "cgplc_businesstype",            // [C] New / Retention / Extension
+        "cgplc_businesstypename",        // [C] dito, Klartext
         "cgplc_isretender",              // [C] Kennzeichen Ausschreibung Bestand
         "cgplc_numberofsites",           // [C] Anzahl Standorte
         "cgplc_headcount"                // [C] betroffene Mitarbeiterzahl

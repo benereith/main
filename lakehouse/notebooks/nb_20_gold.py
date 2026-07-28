@@ -155,10 +155,14 @@ write_delta(
         F.col("name").alias("opportunity_name"),
         "account_name", "owner_name", "territory_name",
         F.col("cgplc_salesstagename").alias("sales_stage"),
-        F.col("cgplc_contracttypelookup").alias("contract_type"),
-        F.col("cgplc_sectorlookup").alias("sector"),
-        F.col("cgplc_subsector").alias("subsector"),
-        F.col("cgplc_currentsupplier").alias("current_supplier"),
+        # Lookups als ANZEIGENAME, nicht als GUID: der TDS-Endpunkt liefert
+        # in cgplc_sectorlookup nur die GUID; der lesbare Wert steht in der
+        # ...name-Begleitspalte. name_oder_id() nimmt den Namen und faellt auf
+        # die ID zurueck, falls die Namensspalte im Mandanten fehlt.
+        name_oder_id(opp, "cgplc_contracttypelookup").alias("contract_type"),
+        name_oder_id(opp, "cgplc_sectorlookup").alias("sector"),
+        name_oder_id(opp, "cgplc_subsector").alias("subsector"),
+        name_oder_id(opp, "cgplc_currentsupplier").alias("current_supplier"),
         F.col("cgplc_contractid").alias("contract_id"),
         "ity_cluster", "status_code",
         F.col("estimatedclosedate").alias("est_close_date"),
@@ -184,9 +188,9 @@ write_delta(
         # denselben Merkmalen auswertbar ist wie die New-Seite. Fehlen sie,
         # wirkt ein Sektorfilter nur auf die Haelfte der Net-New-Rechnung -
         # und zwar ohne Fehlerbild, nur mit falscher Zahl.
-        spalte_oder_null(con, "cgplc_sectorlookup").alias("sector"),
-        spalte_oder_null(con, "cgplc_subsector").alias("subsector"),
-        spalte_oder_null(con, "cgplc_contracttypelookup").alias("contract_type"),
+        name_oder_id(con, "cgplc_sectorlookup").alias("sector"),
+        name_oder_id(con, "cgplc_subsector").alias("subsector"),
+        name_oder_id(con, "cgplc_contracttypelookup").alias("contract_type"),
         spalte_oder_null(con, "owneridname").alias("owner_name"),
         "adj_end_date", "ity_cluster", "status_code", "ly_aro_status",
         "retention_probability", "revenue_aro", "last_fy_revenue_aro",
@@ -246,9 +250,12 @@ opp_base = silver_opp.select(
     "calc_first_fy_end", "calc_ity_months",
     F.col("cgplc_openingdate").alias("driver_date"),
     F.col("estimatedclosedate").alias("decision_date"),
-    spalte_oder_null(silver_opp, "cgplc_sectorlookup").alias("sector"),
-    spalte_oder_null(silver_opp, "cgplc_subsector").alias("subsector"),
-    spalte_oder_null(silver_opp, "cgplc_contracttypelookup").alias("contract_type"),
+    # Anzeigenamen statt GUIDs - Voraussetzung dafuer, dass das
+    # Sektor-Mapping (Abschnitt 5d) greift: Mapping_Planwerke.xlsx ist ueber
+    # Namen geschluesselt.
+    name_oder_id(silver_opp, "cgplc_sectorlookup").alias("sector"),
+    name_oder_id(silver_opp, "cgplc_subsector").alias("subsector"),
+    name_oder_id(silver_opp, "cgplc_contracttypelookup").alias("contract_type"),
     "account_name", "owner_name",
     # Betriebsnummer, sofern direkt am Vorgang gepflegt. Das ist nur Stufe 2
     # der Aufloesungskette - die eigentliche Zuordnung passiert in Abschnitt
@@ -338,10 +345,15 @@ con_base = silver_con.select(
     F.col("cgplc_decisiondate").alias("decision_date"),
     F.col("cgplc_sapid").alias("sap_id_crm"),
     # Dieselben konformen Attribute wie auf der New-Seite.
-    spalte_oder_null(silver_con, "cgplc_sectorlookup").alias("sector"),
-    spalte_oder_null(silver_con, "cgplc_subsector").alias("subsector"),
-    spalte_oder_null(silver_con, "cgplc_contracttypelookup").alias("contract_type"),
-    spalte_oder_null(silver_con, "account_name").alias("account_name"),
+    name_oder_id(silver_con, "cgplc_sectorlookup").alias("sector"),
+    name_oder_id(silver_con, "cgplc_subsector").alias("subsector"),
+    name_oder_id(silver_con, "cgplc_contracttypelookup").alias("contract_type"),
+    # Kundenname: bevorzugt aus dem Konto-Join, ersatzweise der Anzeigename
+    # des Lookups direkt am Vertrag.
+    F.coalesce(
+        spalte_oder_null(silver_con, "account_name"),
+        spalte_oder_null(silver_con, "cgplc_accountidname"),
+    ).alias("account_name"),
     spalte_oder_null(silver_con, "owneridname").alias("owner_name"),
 )
 

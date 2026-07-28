@@ -182,6 +182,28 @@ def spalte_oder_null(df, name: str, typ: str = "string"):
     return F.col(name).cast(typ) if name in df.columns else F.lit(None).cast(typ)
 
 
+def name_oder_id(df, spalte: str):
+    """Anzeigename eines Dataverse-Lookup-/Optionset-Felds, ersatzweise die ID.
+
+    Der TDS-Endpunkt (CommonDataService.Database) liefert fuer jedes
+    Lookup-Feld foo ZWEI Spalten: foo (GUID) und fooname (Anzeigename);
+    analog fuer Optionsets (Code + Klartext). Fuer Anzeige, Filter und das
+    Sektor-Mapping ist der NAME massgeblich - eine GUID im Slicer ist
+    unlesbar, und die Mapping-Tabelle des Controllings ist ueber Namen
+    geschluesselt. Die GUID bleibt, wo sie hingehoert: als Join-Schluessel.
+
+    Faellt sauber zurueck, wenn die Namensspalte im Mandanten fehlt.
+    """
+    name_col = f"{spalte}name"
+    hat_name = name_col in df.columns
+    hat_id = spalte in df.columns
+    if hat_name and hat_id:
+        return F.coalesce(F.col(name_col), F.col(spalte).cast("string"))
+    if hat_name:
+        return F.col(name_col)
+    return spalte_oder_null(df, spalte)
+
+
 def write_delta(df, table_name: str, mode: str = "overwrite", partition_by=None):
     """Einheitlicher Schreibpfad mit Schema-Evolution."""
     writer = (

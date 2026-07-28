@@ -29,6 +29,30 @@ fehlendes Feld bricht den Ladelauf also nicht ab, sondern erscheint in der
 Diagnosespalte `_fehlende_felder`. Der Katalog kann dadurch schrittweise
 wachsen, ohne dass jemand vorher jede Spalte in Dataverse verifizieren muss.
 
+## Lookup-Namenspaare: GUID und Anzeigename
+
+Der TDS-Endpunkt (`CommonDataService.Database`) liefert für jedes
+**Lookup-Feld** `foo` zwei Spalten: `foo` enthält die **GUID**, `fooname` den
+**Anzeigenamen**. Analog bei Optionsets (`statecode` / `statecodename`).
+
+Beide werden geladen und haben getrennte Aufgaben:
+
+| Spalte | Aufgabe |
+|---|---|
+| `cgplc_sectorlookup` (GUID) | Join-Schlüssel, stabil bei Umbenennungen |
+| `cgplc_sectorlookupname` | Anzeige, Filter, Schlüssel des Sektor-Mappings |
+
+In Silver/Gold löst die Hilfsfunktion `name_oder_id()` (in `nb_00_config.py`)
+jeden Lookup zum Anzeigenamen auf und fällt auf die GUID zurück, falls die
+Namensspalte im Mandanten fehlt. Alle sprechenden Spalten des Berichts
+(Sektor, Subsektor, Vertragsart, aktueller Anbieter, Kunde …) tragen dadurch
+Namen, keine GUIDs – und das Sektor-Mapping in `Mapping_Planwerke.xlsx` wird
+über Namen geschlüsselt, so wie das Controlling sie pflegt.
+
+Das Altmodell „CRM Call" hat dasselbe Problem anders gelöst: elf
+`dim_opp_*`-Tabellen, per „Duplikate entfernen" aus dem Fakt erzeugt, jeweils
+GUID + Name. Der Umweg entfällt.
+
 ---
 
 ## opportunity – New Business
@@ -185,12 +209,15 @@ ergänzen, ohne dass sich am Datenmodell etwas ändert.
 Sechs Merkmale gelten für **beide** Geschäftsarten und liegen deshalb nicht nur
 in den Dimensionen, sondern auch auf der Faktentabelle:
 
+Alle Quellspalten sind die `…name`-Anzeigenamen der jeweiligen Lookups (mit
+GUID-Rückfall über `name_oder_id()`, siehe oben):
+
 | Attribut | Quelle New Business | Quelle Lost Business |
 |---|---|---|
-| Sektor | `opportunity.cgplc_sectorlookup` | `cgplc_cgcontract.cgplc_sectorlookup` |
-| Subsektor | `opportunity.cgplc_subsector` | `cgplc_cgcontract.cgplc_subsector` |
-| Vertragsart | `opportunity.cgplc_contracttypelookup` | `cgplc_cgcontract.cgplc_contracttypelookup` |
-| Kunde | `account.name` über `accountid` | `account.name` über `cgplc_accountid` |
+| Sektor | `opportunity.cgplc_sectorlookupname` | `cgplc_cgcontract.cgplc_sectorlookupname` |
+| Subsektor | `opportunity.cgplc_subsectorname` | `cgplc_cgcontract.cgplc_subsectorname` |
+| Vertragsart | `opportunity.cgplc_contracttypelookupname` | `cgplc_cgcontract.cgplc_contracttypelookupname` |
+| Kunde | `account.name` über `accountid` | `account.name` über `cgplc_accountid`, ersatzweise `cgplc_accountidname` |
 | Verantwortlicher | `opportunity.owneridname` | `cgplc_cgcontract.owneridname` |
 | Werk | Auflösungskette, siehe unten | Auflösungskette, siehe unten |
 
