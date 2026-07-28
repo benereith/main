@@ -7,17 +7,20 @@
 // Aufloesung auf Monatsperioden passiert hier.
 //
 // GRUNDSATZ: Die Tabellen speichern nur VORZEICHENLOSE Betraege.
-// Welcher der beiden Betraege je Periode gilt und mit welchem Vorzeichen,
-// entscheidet erst das Measure - abhaengig vom Filterkontext.
+// Welcher der beiden gilt, entscheidet das Measure anhand der Spalte
+// Phasenwechsel - der Grenze zwischen ITY- und ARO-Phase je Zeile.
 //
-// Warum: Im Altmodell steckte das Vorzeichen in Budget_Value, gesetzt
-// gegen einen festen Cutoff (Est_Close_Date_E). Damit ist die Zuordnung
-// ITY/ARO global eingefroren, und ein einzelnes Geschaeftsjahr laesst
-// sich nicht isoliert betrachten: Filtert man FY2026/27, gelten dort
-// weiterhin die Vorzeichen, die relativ zu FY2025/26 berechnet wurden.
-// Verlagert man die Entscheidung ins Measure, wird das jeweils erste
-// Jahr im Filterkontext zum laufenden Jahr - genau das erlaubt den
-// isolierten Blick auf jedes Jahr.
+// Im Altmodell steckte das Vorzeichen in Budget_Value, gesetzt gegen
+// einen festen Cutoff (Est_Close_Date_E). Damit war die Zuordnung
+// global eingefroren und ein einzelnes Geschaeftsjahr nicht isoliert
+// betrachtbar.
+//
+// Die Grenze aus dem Filterkontext abzuleiten waere der falsche Weg
+// zurueck: dann wird das jeweils gefilterte Jahr komplett zur ITY-Phase
+// und damit durchgaengig negativ. Richtig ist die Grenze je Zeile - das
+// Ende des ersten Geschaeftsjahres DIESER Opportunity. Damit zeigt jedes
+// Jahr genau die Mischung, die ihm zusteht: die ITY-Anteile der in ihm
+// eroeffneten Opportunities und die ARO-Anteile der frueheren.
 //
 // Geschaeftsjahr: 1. Oktober bis 30. September.
 // Horizont, ITY-Grenze und Clustergrenzen leiten sich aus dim_date ab.
@@ -124,6 +127,11 @@ RETURN
                 BLANK ()
             ),
         "Calc_ITY_Months", [@ITY_Months],
+        // Grenze zwischen ITY- und ARO-Phase DIESER Opportunity.
+        // Bewusst zeilenbezogen und nicht aus dem Filterkontext: sonst
+        // wird jedes gefilterte Jahr komplett zur ITY-Phase und damit
+        // durchgaengig negativ.
+        "Phasenwechsel", [@FirstFYEnd],
         // Beide Betraege vorzeichenlos - das Measure entscheidet.
         "ITY_Value", [@ITY_Value],
         "ARO_Value", [@ARO_Value]
@@ -173,6 +181,8 @@ VAR _MitEckdaten =
         // Wirkung beginnt im Monat NACH dem Vertragsende
         "@EndDate",
             EDATE ( DATE ( YEAR ( [@EndDateRaw] ), MONTH ( [@EndDateRaw] ), 1 ), 1 ),
+        "@FirstFYEnd",
+            DATE ( YEAR ( EDATE ( [@EndDateRaw], -9 ) ) + 1, 9, 30 ),
         "@WeightedLyAro",
             fct_retention[cgplc_lastfyrevenuearo]
                 * ( 1 - COALESCE ( fct_retention[cgplc_retentionprobability], 0 ) )
@@ -199,6 +209,7 @@ RETURN
                 BLANK ()
             ),
         "Calc_ITY_Months", 12,
+        "Phasenwechsel", [@FirstFYEnd],
         "ITY_Value", [@Monatswert],
         "ARO_Value", [@Monatswert] * -1
     )
@@ -223,6 +234,7 @@ UNION (
         "Period_Date", fct_opp_phasing[Period_Date],
         "Referenzdatum", fct_opp_phasing[Referenzdatum],
         "ity_cluster", fct_opp_phasing[ity_cluster],
+        "Phasenwechsel", fct_opp_phasing[Phasenwechsel],
         "ITY_Value", fct_opp_phasing[ITY_Value],
         "ARO_Value", fct_opp_phasing[ARO_Value]
     ),
@@ -234,6 +246,7 @@ UNION (
         "Period_Date", fct_retention_phasing[Period_Date],
         "Referenzdatum", fct_retention_phasing[Referenzdatum],
         "ity_cluster", fct_retention_phasing[ity_cluster],
+        "Phasenwechsel", fct_retention_phasing[Phasenwechsel],
         // Explizit auf DOUBLE: die Opportunity-Seite liefert das Ergebnis
         // von DIVIDE, die Retention-Seite einen Waehrungswert. UNION
         // verlangt vergleichbare Typen je Position.

@@ -15,54 +15,46 @@
 
 // --- Vorzeichen und Phase entstehen hier, nicht in der Tabelle -------
 //
-// _ErstesFYEnde ist das Ende des ERSTEN Geschaeftsjahres im aktuellen
-// Filterkontext. Ohne Jahresfilter ist das FY2025/26, mit Filter auf
-// FY2026/27 wird dieses Jahr zum laufenden Jahr. Perioden bis dorthin
-// gelten als ITY (negativ), spaetere als ARO (positiv).
+// Die Phasengrenze steht je Zeile in fct_budget_effect[Phasenwechsel]:
+// das Ende des ersten Geschaeftsjahres der jeweiligen Opportunity.
+// Perioden bis dorthin sind ITY (negativ, Konvention aus dem Altmodell),
+// spaetere sind ARO (positiv).
 //
-// Genau dadurch laesst sich jedes Jahr isoliert betrachten: waere das
-// Vorzeichen in der Tabelle gespeichert, gaelte immer die Zuordnung
-// relativ zum Basisjahr, egal was gefiltert ist.
+// Bewusst NICHT aus dem Filterkontext abgeleitet: eine Grenze wie
+// MIN(dim_date[Datum]) wandert beim Filtern mit, wodurch das gefilterte
+// Jahr komplett zur ITY-Phase wird und alles negativ anzeigt.
+// Zeilenbezogen bleibt jedes Jahr fuer sich richtig.
 
 Net ITY Effect =
-VAR _ErstesFYEnde =
-    DATE ( YEAR ( EDATE ( MIN ( dim_date[Datum] ), -9 ) ) + 1, 9, 30 )
-RETURN
-    SUMX (
-        fct_budget_effect,
-        IF (
-            fct_budget_effect[Period_Date] <= _ErstesFYEnde,
-            fct_budget_effect[ITY_Value] * -1,
-            fct_budget_effect[ARO_Value]
-        )
+SUMX (
+    fct_budget_effect,
+    IF (
+        fct_budget_effect[Period_Date] <= fct_budget_effect[Phasenwechsel],
+        fct_budget_effect[ITY_Value] * -1,
+        fct_budget_effect[ARO_Value]
     )
+)
 
 // Die beiden Phasen einzeln - fuer Bruecken und Abstimmungen.
 ITY Anteil =
-VAR _ErstesFYEnde =
-    DATE ( YEAR ( EDATE ( MIN ( dim_date[Datum] ), -9 ) ) + 1, 9, 30 )
-RETURN
-    SUMX (
-        fct_budget_effect,
-        IF (
-            fct_budget_effect[Period_Date] <= _ErstesFYEnde,
-            fct_budget_effect[ITY_Value] * -1,
-            0
-        )
+SUMX (
+    fct_budget_effect,
+    IF (
+        fct_budget_effect[Period_Date] <= fct_budget_effect[Phasenwechsel],
+        fct_budget_effect[ITY_Value] * -1,
+        0
     )
+)
 
 ARO Anteil =
-VAR _ErstesFYEnde =
-    DATE ( YEAR ( EDATE ( MIN ( dim_date[Datum] ), -9 ) ) + 1, 9, 30 )
-RETURN
-    SUMX (
-        fct_budget_effect,
-        IF (
-            fct_budget_effect[Period_Date] > _ErstesFYEnde,
-            fct_budget_effect[ARO_Value],
-            0
-        )
+SUMX (
+    fct_budget_effect,
+    IF (
+        fct_budget_effect[Period_Date] > fct_budget_effect[Phasenwechsel],
+        fct_budget_effect[ARO_Value],
+        0
     )
+)
 
 // Die beiden Effektarten als Filter auf derselben Tabelle.
 ity_effect =
