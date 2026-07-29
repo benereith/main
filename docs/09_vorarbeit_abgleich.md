@@ -52,7 +52,7 @@ echten Vortagsstand und **löschte einen Tag Historie** aus den
 Bewegungstabellen. Bei einem Nachtplan oder einem Retry nach Mitternacht
 passiert das unbemerkt.
 
-Übernommen: `dataflows/fn_berlin_now.m` (EU-Sommerzeitregel explizit, in der
+Übernommen: `dataflows/df_crm_ingest/00_fn_berlin_now.m` (EU-Sommerzeitregel explizit, in der
 Vorarbeit stundenweise über 2024–2035 gegen die IANA-Daten geprüft) und
 `spark.conf.set("spark.sql.session.timeZone", "Europe/Berlin")` in
 `nb_00_config.py`. Der Zonenversatz wird vor dem Schreiben abgeschnitten, weil

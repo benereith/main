@@ -12,8 +12,8 @@ bedeutete – und alles, was nie ausgewählt wurde, im Bericht schlicht nicht
 existierte.
 
 Der neue Extrakt lädt breit in die Bronze-Schicht und filtert erst in Silver.
-Die Feldlisten stehen in `dataflows/df_crm_opportunity.m` und
-`dataflows/df_crm_contract.m`.
+Die Feldlisten stehen in `dataflows/df_crm_ingest/01_stg_crm_opportunity.m`
+und `dataflows/df_crm_ingest/02_stg_crm_contract.m`.
 
 ## Statuskennzeichnung
 
@@ -227,7 +227,7 @@ GUID-Rückfall über `name_oder_id()`, siehe oben):
 Konto ist ein **Debitor, kein Betrieb** – sie taugt nicht als Ersatz. Die
 fachliche Information, wohin ein Vorgang gehört, hängt am **Sektor und
 Subsektor** und wird vom Controlling in `Mapping_Planwerke.xlsx` gepflegt
-(geladen über `dataflows/df_map_unit_assignment.m` nach
+(geladen über `dataflows/df_map_unit_assignment/01_stg_map_unit_assignment.m` nach
 `bronze_map_unit_assignment`).
 
 Auflösungskette, erster Treffer gewinnt:

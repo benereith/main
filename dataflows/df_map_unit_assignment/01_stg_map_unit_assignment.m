@@ -1,15 +1,17 @@
 // ===========================================================================
-// Dataflow Gen2  ·  df_map_unit_assignment
-//                   ->  stg_map_unit_assignment  ->  bronze_map_unit_assignment
+// Dataflow Gen2 "df_map_unit_assignment"  ·  Abfrage: stg_map_unit_assignment
 // ===========================================================================
-// Zweck : Gepflegtes Mapping, das CRM-Vorgaenge einem SAP-(Plan-)Betrieb
-//         zuordnet. Quelle ist Mapping_Planwerke.xlsx (SharePoint,
-//         Group Controlling / Net New ITY / 08_Budget) - dieselbe Datei, die
-//         das Altmodell als dim_opp_mapping live in fct_opp gejoint hat.
+// Gepflegtes Mapping, das CRM-Vorgaenge einem SAP-(Plan-)Betrieb zuordnet.
+// Quelle ist Mapping_Planwerke.xlsx (SharePoint, Group Controlling /
+// Net New ITY / 08_Budget) - dieselbe Datei, die das Altmodell als
+// dim_opp_mapping live in fct_opp gejoint hat.
 // Ziel  : lakehouse_group_controlling / stg_map_unit_assignment
 // Modus : REPLACE. Die Historisierung nach bronze_map_unit_assignment
 //         uebernimmt nb_05_snapshot.py.
-// Lauf  : taeglich, gemeinsam mit den CRM-Extrakten
+// Lauf  : taeglich, eigener Dataflow (siehe dataflows/README.md fuer die
+//         Begruendung der Trennung von df_crm_ingest)
+// Benoetigt die Funktionsquery fn_berlin_now (00_fn_berlin_now.m) im selben
+// Dataflow.
 //
 // WARUM DAS MAPPING STRUKTURELL NOTWENDIG IST
 // Es laesst sich NICHT durch CRM-Daten ersetzen. Die Zuordnung wird im

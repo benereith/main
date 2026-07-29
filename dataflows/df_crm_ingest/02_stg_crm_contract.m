@@ -1,11 +1,13 @@
 // ===========================================================================
-// Dataflow Gen2  ·  df_crm_contract  ->  stg_crm_contract  ->  bronze_crm_contract
+// Dataflow Gen2 "df_crm_ingest"  ·  Abfrage: stg_crm_contract
 // ===========================================================================
-// Zweck   : Rohextrakt der Dataverse-Entitaet "cgplc_cgcontract" (Bestands-
-//           vertraege / Retention) in die Bronze-Schicht.
+// Rohextrakt der Dataverse-Entitaet "cgplc_cgcontract" (Bestandsvertraege /
+// Retention) in die Bronze-Schicht.
 // Ziel    : lakehouse_group_controlling / stg_crm_contract
 // Modus   : REPLACE in die Staging-Tabelle (Historisierung: nb_05_snapshot.py)
 // Zeitplan: taeglich 05:00
+// Benoetigt die Funktionsquery fn_berlin_now (00_fn_berlin_now.m) im selben
+// Dataflow.
 //
 // Der Altstand (fct_retention) holte 13 Spalten und filterte sofort auf
 // statuscodename = "Aktiv". Damit war nicht mehr feststellbar, welche

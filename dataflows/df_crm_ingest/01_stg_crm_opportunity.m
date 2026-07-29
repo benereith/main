@@ -1,13 +1,15 @@
 // ===========================================================================
-// Dataflow Gen2  ·  df_crm_opportunity  ->  stg_crm_opportunity  ->  bronze_crm_opportunity
+// Dataflow Gen2 "df_crm_ingest"  ·  Abfrage: stg_crm_opportunity
 // ===========================================================================
-// Zweck   : Rohextrakt der Dataverse-Entitaet "opportunity" in die
-//           Bronze-Schicht des Lakehouse. KEINE fachliche Logik - alles
-//           Rechnen passiert in nb_10_silver / nb_20_gold.
+// Rohextrakt der Dataverse-Entitaet "opportunity" in die Bronze-Schicht des
+// Lakehouse. KEINE fachliche Logik - alles Rechnen passiert in
+// nb_10_silver / nb_20_gold.
 // Ziel    : lakehouse_group_controlling / stg_crm_opportunity
 // Modus   : REPLACE in die Staging-Tabelle. Die Historisierung nach
-//           bronze_* uebernimmt nb_05_snapshot.py - siehe unten.
+//           bronze_crm_opportunity uebernimmt nb_05_snapshot.py.
 // Zeitplan: taeglich 05:00
+// Benoetigt die Funktionsquery fn_berlin_now (00_fn_berlin_now.m) im selben
+// Dataflow.
 //
 // UNTERSCHIED ZUM ALTZUSTAND
 // Das Altmodell "CRM Call" holte 21 Spalten und filterte direkt in der

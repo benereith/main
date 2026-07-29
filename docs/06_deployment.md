@@ -23,24 +23,29 @@ Power BI Desktop: unter *Datei → Optionen → Vorschaufunktionen* müssen
 
 ## Schritt 1 – Dataflows anlegen
 
-Im Fabric-Arbeitsbereich vier Dataflows Gen2 erstellen und den M-Code aus
-`dataflows/` einfügen. **Alle schreiben mit Ersetzen in eine `stg_*`-Tabelle:**
+Im Fabric-Arbeitsbereich **zwei** Dataflows Gen2 erstellen. Jede Abfrage steht
+einzeln unter `dataflows/<dataflow>/` und lässt sich per Copy-Paste in den
+erweiterten Editor einer neuen Power-Query-Abfrage übertragen. Die Trennung
+in zwei Dataflows folgt der Quelle: CRM-Extrakte teilen eine Verbindung und
+einen Fehlerfall, das Mapping hängt an SharePoint und soll nicht mitreißen,
+wenn Dataverse klemmt – Begründung ausführlich in `dataflows/README.md`.
 
-| Dataflow | Datei | Ziel | Modus |
+| Dataflow | Ordner | Abfragen (Ziel = Dateiname ohne Nummer) | Modus |
 |---|---|---|---|
-| `df_crm_opportunity` | `dataflows/df_crm_opportunity.m` | `stg_crm_opportunity` | Ersetzen |
-| `df_crm_contract` | `dataflows/df_crm_contract.m` | `stg_crm_contract` | Ersetzen |
-| `df_crm_lookups` | `dataflows/df_crm_lookups.m` | `stg_crm_account`, `stg_crm_territory` | Ersetzen |
-| `df_map_unit_assignment` | `dataflows/df_map_unit_assignment.m` | `stg_map_unit_assignment` | Ersetzen |
+| `df_crm_ingest` | `dataflows/df_crm_ingest/` | `stg_crm_opportunity`, `stg_crm_contract`, `stg_crm_account`, `stg_crm_territory` | Ersetzen |
+| `df_map_unit_assignment` | `dataflows/df_map_unit_assignment/` | `stg_map_unit_assignment` | Ersetzen |
 
-In `df_crm_lookups` ist nur die erste Abfrage aktiv; `territory` steht
-auskommentiert in derselben Datei und wird als eigene Abfrage angelegt. Die
-gemeinsame Quellfunktion `fnDataverse` steht am Dateianfang. Die Entitäten
-`systemuser` und `audit` werden bewusst **nicht** extrahiert – beide sind im
-Mandanten nicht verfügbar (Begründung und Konsequenzen:
+In jedem Ordner zuerst `00_fn_berlin_now.m` als **Funktionsquery** anlegen und
+**"Laden aktivieren" ausschalten** – sie liefert keine Zieltabelle, sondern
+wird von den übrigen Abfragen des Dataflows aufgerufen. Dataflow Gen2 teilt
+Funktionen nicht über Dataflow-Grenzen hinweg, deshalb liegt die Datei in
+beiden Ordnern.
+
+Die Entitäten `systemuser` und `audit` werden bewusst **nicht** extrahiert –
+beide sind im Mandanten nicht verfügbar (Begründung und Konsequenzen:
 `docs/04_crm_feldkatalog.md`, Abschnitt „Bewusst nicht extrahiert").
 
-`df_map_unit_assignment` lädt die vom Controlling gepflegte Datei
+`stg_map_unit_assignment` lädt die vom Controlling gepflegte Datei
 `Mapping_Planwerke.xlsx` (SharePoint, `08_Budget`) – dieselbe Datei, die das
 Altmodell live in `fct_opp` gejoint hat. Sie steuert die Werk-Zuordnung über
 Sektor/Subsektor; Aufbau und Auflösungskette:
@@ -49,14 +54,9 @@ Fakten historisiert, weil sie ein manueller Input in offizielle Budgetzahlen
 ist: ohne Snapshot lässt sich eine abgeschlossene Budgetrunde nach der
 nächsten Pflegerunde nicht mehr reproduzieren.
 
-Alle Dataflows schreiben mit **Ersetzen** in ihre `stg_*`-Tabelle. Die
-Historisierung nach `bronze_*` übernimmt `nb_05_snapshot`. Nicht mit Anfügen
-direkt nach `bronze_*` schreiben – der Grund steht in Schritt 2.
-
-Zusätzlich anzulegen: die Hilfsfunktion `fn_berlin_now` aus
-`dataflows/fn_berlin_now.m` in jedem Dataflow, der einen Zeitstempel setzt.
-**"Laden aktivieren" für diese Query ausschalten** – sie ist ein Helfer, keine
-Zieltabelle.
+Alle Abfragen schreiben mit **Ersetzen** in ihre `stg_*`-Tabelle. Die
+Historisierung nach `bronze_*` übernimmt `nb_05_snapshot` – nicht mit Anfügen
+direkt nach `bronze_*` schreiben, der Grund steht in Schritt 2.
 
 SAP-Seite: `bronze_sap_revenue` aus `V_SAP_EXPORTS_cleansed` und
 `bronze_sap_unit` aus dem bestehenden Dataflow `sap_master_data_unit`. Das
