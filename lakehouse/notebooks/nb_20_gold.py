@@ -135,18 +135,59 @@ write_delta(dim_hfm, "gold_dim_hfm_struktur")
 # 4. gold_dim_unit / gold_dim_opportunity / gold_dim_contract
 # ===========================================================================
 unit = spark.table("silver_unit")
-write_delta(
-    unit.select(
-        "betrieb", "werk_bezeichnung", "bezeichnung_betrieb", "buchungskreis",
-        "sektor", "hfm_sektor", "betriebstyp", "known_unknown", "vertragsbeginn",
-        "schliessung", "bezeichnung_vertragsart", "bezeichnung_region",
-        "bezeichnung_management", "bezeichnung_verantwortungsbereich",
-        "bezeichnung_branche", "bezeichnung_kundengruppe", "bundesland", "stadt",
-        "cause_of_change", "bezeichnung_cause_of_change",
-        "cause_of_change_fy", "cause_of_change_ny",
-    ).dropDuplicates(["betrieb"]),
-    "gold_dim_unit",
+
+DIM_UNIT_SPALTEN = [
+    "betrieb", "werk_bezeichnung", "bezeichnung_betrieb", "buchungskreis",
+    "sektor", "hfm_sektor", "betriebstyp", "known_unknown", "vertragsbeginn",
+    "schliessung", "bezeichnung_vertragsart", "bezeichnung_region",
+    "bezeichnung_management", "bezeichnung_verantwortungsbereich",
+    "bezeichnung_branche", "bezeichnung_kundengruppe", "bundesland", "stadt",
+    "cause_of_change", "bezeichnung_cause_of_change",
+    "cause_of_change_fy", "cause_of_change_ny",
+]
+
+dim_unit_sap = (
+    unit.select(*DIM_UNIT_SPALTEN)
+    .dropDuplicates(["betrieb"])
+    .withColumn("unit_status", F.lit("In Betrieb"))
 )
+
+# --- Geplante Units aus dem Mapping ergaenzen ------------------------------
+# Eine Dimension allein aus den SAP-Stammdaten laesst genau die Units in die
+# Blank-Zeile fallen, um die es im Net New Business geht: Betriebe, die noch
+# nicht gewonnen sind und deshalb in SAP nicht existieren. Sie stehen
+# ausschliesslich im gepflegten Mapping.
+#
+# unit_status unterscheidet beide Herkuenfte, damit im Bericht sichtbar
+# bleibt, welcher Anteil des Effekts auf geplanten Units liegt.
+if spark.catalog.tableExists("bronze_map_unit_assignment"):
+    mapping_alle = spark.table("bronze_map_unit_assignment")
+    letzter_stand = mapping_alle.agg(F.max("snapshot_date")).collect()[0][0]
+    geplante = (
+        mapping_alle.filter(F.col("snapshot_date") == F.lit(letzter_stand))
+        .select(F.col("sap_unit").alias("betrieb"))
+        .distinct()
+        .join(dim_unit_sap.select("betrieb"), "betrieb", "left_anti")
+        .withColumn(
+            "werk_bezeichnung",
+            F.concat(F.lpad(F.col("betrieb").cast("string"), 4, "0"),
+                     F.lit(" - Geplante Unit")),
+        )
+        .withColumn("unit_status", F.lit("Geplant"))
+        .withColumn("betriebstyp", F.lit("Plan-Betriebe ITY"))
+        .withColumn("known_unknown", F.lit("unknown"))
+    )
+    # Fehlende Attributspalten typgerecht ergaenzen, damit unionByName greift.
+    schema = {f.name: f.dataType for f in dim_unit_sap.schema.fields}
+    for spalte in DIM_UNIT_SPALTEN:
+        if spalte not in geplante.columns:
+            geplante = geplante.withColumn(spalte, F.lit(None).cast(schema[spalte]))
+    dim_unit = dim_unit_sap.unionByName(geplante.select(dim_unit_sap.columns))
+    print(f"  gold_dim_unit: {geplante.count():,} geplante Units ergaenzt")
+else:
+    dim_unit = dim_unit_sap
+
+write_delta(dim_unit, "gold_dim_unit")
 
 opp = spark.table("silver_opportunity")
 write_delta(
@@ -405,47 +446,67 @@ fct_lost_sel = fct_lost.select(*FAKT_SPALTEN)
 fct = fct_new_sel.unionByName(fct_lost_sel)
 
 # --- 5d. Werk-Zuordnung ueber die Mapping-Tabelle --------------------------
-# cgplc_sapid ist am Vorgang nur lueckenhaft gepflegt. Die fachliche
-# Information, WOHIN ein Vorgang gehoert, haengt am Sektor und Subsektor und
-# wird vom Controlling in bronze_map_unit_assignment gepflegt (Quelle:
-# Mapping_Planwerke.xlsx, siehe dataflows/df_map_unit_assignment.m).
+# Die fachliche Information, WOHIN ein Vorgang gehoert, haengt am Sektor und
+# Subsektor und wird vom Controlling in Mapping_Planwerke.xlsx gepflegt
+# (-> bronze_map_unit_assignment, siehe dataflows/df_map_unit_assignment.m).
 #
-# Aufloesungskette, erste Treffer gewinnt:
-#   1. AUSNAHME     entity_id-Zeile der Mapping-Tabelle (Einzelfall schlaegt
-#                   alles - dafuer ist eine Ausnahme da)
-#   2. CRM          cgplc_sapid am Vorgang selbst
-#   3. MAPPING S+S  Mapping-Zeile mit passendem Sektor UND Subsektor
-#   4. MAPPING S    Mapping-Zeile mit passendem Sektor, subsektor leer
+# Aufloesungskette, erster Treffer gewinnt:
+#   1. AUSNAHME     Mapping-Zeile mit opportunityid (Einzelfall schlaegt alles)
+#   2. MAPPING S+S  Mapping-Zeile mit passendem Sektor UND Subsektor
+#   3. MAPPING S    Mapping-Zeile mit passendem Sektor, subsektor leer
+#   4. CRM-BRUECKE  cgplc_sapid am Vorgang selbst
 #   5. NULL         -> Regel DQ-MAP-001
 #
-# Die Herkunft wird als werk_zuordnung mitgefuehrt. Damit ist im Bericht je
-# Vorgang sichtbar, ob eine Zahl auf gepflegten CRM-Daten oder auf dem
-# Mapping beruht - und die Nachpflege laesst sich priorisieren.
+# WARUM DIE CRM-BRUECKE GANZ HINTEN STEHT
+# Sie greift nur fuer Opportunities, die einen BESTEHENDEN Vertrag betreffen
+# (Neuausschreibung eines laufenden Objekts). Fuer echte Net-New-Units laeuft
+# sie definitionsgemaess leer - dort gibt es weder Vertrag im CRM noch Betrieb
+# in SAP. Das gepflegte Mapping traegt die vorausschauende Annahme und ist
+# damit die fachlich massgebliche Quelle; die CRM-Bruecke schliesst nur
+# Restluecken. Stuende sie vor dem Mapping, wuerde ein veralteter
+# cgplc_sapid-Eintrag eine bewusst gepflegte Zuordnung ueberstimmen.
+#
+# Das Mapping ist HISTORISIERT (snapshot_date). Verwendet wird der jeweils
+# juengste Stand - eine abgeschlossene Budgetrunde bleibt ueber den Snapshot
+# trotzdem reproduzierbar.
+#
+# Die Herkunft wird als werk_zuordnung mitgefuehrt: im Bericht ist je Vorgang
+# sichtbar, welche Stufe gegriffen hat, und die Nachpflege laesst sich
+# priorisieren.
 if spark.catalog.tableExists("bronze_map_unit_assignment"):
-    mapping = spark.table("bronze_map_unit_assignment")
+    mapping_alle = spark.table("bronze_map_unit_assignment")
+    letzter_stand = mapping_alle.agg(F.max("snapshot_date")).collect()[0][0]
+    mapping = mapping_alle.filter(F.col("snapshot_date") == F.lit(letzter_stand))
+    print(f"  Mapping-Stand: {letzter_stand}")
 
-    map_entity = (
-        mapping.filter(F.col("entity_id").isNotNull())
-        .select(F.col("entity_id"), F.col("werk").alias("werk_ausnahme"))
+    map_ausnahme = (
+        mapping.filter(F.col("opportunityid").isNotNull())
+        .select(
+            F.col("opportunityid").alias("entity_id"),
+            F.col("sap_unit").alias("werk_ausnahme"),
+        )
         .dropDuplicates(["entity_id"])
     )
     map_subsektor = (
-        mapping.filter(F.col("entity_id").isNull() & F.col("subsektor").isNotNull())
+        mapping.filter(F.col("opportunityid").isNull() & F.col("subsektor").isNotNull())
         .select(
             F.col("sektor").alias("m2_sektor"),
             F.col("subsektor").alias("m2_subsektor"),
-            F.col("werk").alias("werk_subsektor"),
+            F.col("sap_unit").alias("werk_subsektor"),
         )
         .dropDuplicates(["m2_sektor", "m2_subsektor"])
     )
     map_sektor = (
-        mapping.filter(F.col("entity_id").isNull() & F.col("subsektor").isNull())
-        .select(F.col("sektor").alias("m3_sektor"), F.col("werk").alias("werk_sektor"))
+        mapping.filter(F.col("opportunityid").isNull() & F.col("subsektor").isNull())
+        .select(
+            F.col("sektor").alias("m3_sektor"),
+            F.col("sap_unit").alias("werk_sektor"),
+        )
         .dropDuplicates(["m3_sektor"])
     )
 
     fct = (
-        fct.join(map_entity, "entity_id", "left")
+        fct.join(map_ausnahme, "entity_id", "left")
         .join(
             map_subsektor,
             (F.col("sector") == F.col("m2_sektor"))
@@ -455,8 +516,8 @@ if spark.catalog.tableExists("bronze_map_unit_assignment"):
         .join(map_sektor, F.col("sector") == F.col("m3_sektor"), "left")
     )
 else:
-    # Mapping-Tabelle (noch) nicht geladen: Kette degradiert auf Stufe 2.
-    # Kein Abbruch - die Luecken werden von DQ-MAP-001 gezaehlt.
+    # Mapping-Tabelle (noch) nicht geladen: Kette degradiert auf die
+    # CRM-Bruecke. Kein Abbruch - die Luecken zaehlt DQ-MAP-001.
     print("  ! bronze_map_unit_assignment fehlt - Werk-Zuordnung nur aus cgplc_sapid")
     fct = (
         fct.withColumn("werk_ausnahme", F.lit(None).cast("int"))
@@ -469,17 +530,17 @@ fct = (
         "sap_id",
         F.coalesce(
             F.col("werk_ausnahme"),
-            F.col("sap_id_crm").cast("int"),
             F.col("werk_subsektor"),
             F.col("werk_sektor"),
+            F.col("sap_id_crm").cast("int"),
         ),
     )
     .withColumn(
         "werk_zuordnung",
-        F.when(F.col("werk_ausnahme").isNotNull(), F.lit("Ausnahme (Mapping)"))
-        .when(F.col("sap_id_crm").isNotNull(), F.lit("CRM direkt"))
+        F.when(F.col("werk_ausnahme").isNotNull(), F.lit("Mapping Einzelfall"))
         .when(F.col("werk_subsektor").isNotNull(), F.lit("Mapping Sektor/Subsektor"))
         .when(F.col("werk_sektor").isNotNull(), F.lit("Mapping Sektor"))
+        .when(F.col("sap_id_crm").isNotNull(), F.lit("CRM-Bruecke"))
         .otherwise(F.lit("Nicht zugeordnet")),
     )
     .drop("werk_ausnahme", "werk_subsektor", "werk_sektor",

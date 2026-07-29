@@ -80,7 +80,7 @@ mit Name, Grund und Handlungsanweisung.
 ```
 docs/                    Dokumentation (Einstieg: 01_architektur.md)
 lakehouse/
-  notebooks/             PySpark: Bronze -> Silver -> Gold -> Qualität
+  notebooks/             PySpark: Staging -> Bronze -> Silver -> Gold -> Qualität
   03_gold/               T-SQL-Variante des Perioden-Fanouts
 dataflows/               M-Code der CRM-Extrakte
 powerbi/
@@ -106,7 +106,8 @@ tools/
 | [05_report_design.md](docs/05_report_design.md) | Gestaltungsentscheidungen, Farbsystem, Seitenaufbau |
 | [06_deployment.md](docs/06_deployment.md) | Einrichtung Schritt für Schritt, Betrieb, Fehlerbilder |
 | [07_migration_mapping.md](docs/07_migration_mapping.md) | Jede alte Kennzahl und Seite → neu, inkl. bewusster Abweichungen |
-| [08_datenqualitaet.md](docs/08_datenqualitaet.md) | Die 12 Regeln, ihre Bedeutung, Zuständigkeiten |
+| [08_datenqualitaet.md](docs/08_datenqualitaet.md) | Die Regeln, ihre Bedeutung, Zuständigkeiten |
+| [09_vorarbeit_abgleich.md](docs/09_vorarbeit_abgleich.md) | Abgleich mit den früheren Branches: übernommen, bewusst abweichend, offen |
 
 ---
 

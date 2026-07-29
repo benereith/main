@@ -1,6 +1,6 @@
 // ===========================================================================
-// Dataflow Gen2  ·  df_crm_lookups  ->  bronze_crm_account
-//                                       bronze_crm_territory
+// Dataflow Gen2  ·  df_crm_lookups  ->  stg_crm_account
+//                                       stg_crm_territory
 // ===========================================================================
 // Zweck : Die Nachschlagetabellen, die im Altmodell als dim_opp_* aus dem
 //         Fakt heraus per "Duplikate entfernen" erzeugt wurden. Das war
@@ -42,7 +42,7 @@
 
 
 // ---------------------------------------------------------------------------
-// Abfrage 1: bronze_crm_account
+// Abfrage 1: stg_crm_account
 // ---------------------------------------------------------------------------
 let
     account = fnDataverse("account"),
@@ -68,19 +68,22 @@ let
     },
     Auswahl = List.Intersect({Gewuenscht, Table.ColumnNames(account)}),
     Selektiert = Table.SelectColumns(account, Auswahl),
-    MitSnapshot = Table.AddColumn(Selektiert, "snapshot_date", each Date.From(DateTime.FixedLocalNow()), type date)
+    // Zeitstempel einmal je Lauf, auf Berliner Zeit - siehe fn_berlin_now.m.
+    Snapshot = DateTime.Date(DateTime.From(fn_berlin_now())),
+    MitSnapshot = Table.AddColumn(Selektiert, "snapshot_date", each Snapshot, type date)
 in
     MitSnapshot
 
 
 // ---------------------------------------------------------------------------
-// Abfrage 2: bronze_crm_territory
+// Abfrage 2: stg_crm_territory
 // ---------------------------------------------------------------------------
 // let
 //     terr = fnDataverse("territory"),
 //     Gewuenscht = { "territoryid", "name", "parentterritoryid", "managerid" },
 //     Auswahl = List.Intersect({Gewuenscht, Table.ColumnNames(terr)}),
 //     Selektiert = Table.SelectColumns(terr, Auswahl),
-//     MitSnapshot = Table.AddColumn(Selektiert, "snapshot_date", each Date.From(DateTime.FixedLocalNow()), type date)
+//     Snapshot = DateTime.Date(DateTime.From(fn_berlin_now())),
+//     MitSnapshot = Table.AddColumn(Selektiert, "snapshot_date", each Snapshot, type date)
 // in
 //     MitSnapshot

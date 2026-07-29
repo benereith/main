@@ -20,6 +20,24 @@ from pyspark.sql import functions as F
 from pyspark.sql import types as T
 
 # ===========================================================================
+# 0. Zeitzone
+# ===========================================================================
+# Die Fabric-Kapazitaet der Gruppe laeuft in UK-Zeit, der Power BI Service in
+# UTC. Berlin liegt gegenueber UK durchgehend eine, gegenueber UTC je nach
+# Sommerzeit ein bis zwei Stunden vorn.
+#
+# Ohne diese Einstellung interpretiert Spark alle TIMESTAMP-Werte in UK-Zeit.
+# Kritisch ist das nicht wegen der Anzeige, sondern weil current_timestamp()
+# den Stichtag jedes Ladelaufs bestimmt: ein Lauf zwischen 00:00 und 01:00
+# Berliner Zeit bekaeme das Datum des Vortags, fiele in die Vortagspartition,
+# ueberschriebe dort den echten Vortagsstand und loeschte einen Tag Historie
+# aus den Bewegungstabellen. Bei einem Nachtplan oder einem Retry nach
+# Mitternacht passiert das unbemerkt.
+#
+# Gegenstueck auf der Dataflow-Seite: dataflows/fn_berlin_now.m
+spark.conf.set("spark.sql.session.timeZone", "Europe/Berlin")
+
+# ===========================================================================
 # 1. Geschaeftsjahr
 # ===========================================================================
 # Das Geschaeftsjahr der Gruppe laeuft vom 1. Oktober bis zum 30. September.

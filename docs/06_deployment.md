@@ -23,15 +23,15 @@ Power BI Desktop: unter *Datei → Optionen → Vorschaufunktionen* müssen
 
 ## Schritt 1 – Dataflows anlegen
 
-Im Fabric-Arbeitsbereich drei Dataflows Gen2 erstellen und den M-Code aus
-`dataflows/` einfügen:
+Im Fabric-Arbeitsbereich vier Dataflows Gen2 erstellen und den M-Code aus
+`dataflows/` einfügen. **Alle schreiben mit Ersetzen in eine `stg_*`-Tabelle:**
 
 | Dataflow | Datei | Ziel | Modus |
 |---|---|---|---|
-| `df_crm_opportunity` | `dataflows/df_crm_opportunity.m` | `bronze_crm_opportunity` | Anfügen |
-| `df_crm_contract` | `dataflows/df_crm_contract.m` | `bronze_crm_contract` | Anfügen |
-| `df_crm_lookups` | `dataflows/df_crm_lookups.m` | `bronze_crm_account`, `bronze_crm_territory` | Anfügen |
-| `df_map_unit_assignment` | `dataflows/df_map_unit_assignment.m` | `bronze_map_unit_assignment` | **Ersetzen** |
+| `df_crm_opportunity` | `dataflows/df_crm_opportunity.m` | `stg_crm_opportunity` | Ersetzen |
+| `df_crm_contract` | `dataflows/df_crm_contract.m` | `stg_crm_contract` | Ersetzen |
+| `df_crm_lookups` | `dataflows/df_crm_lookups.m` | `stg_crm_account`, `stg_crm_territory` | Ersetzen |
+| `df_map_unit_assignment` | `dataflows/df_map_unit_assignment.m` | `stg_map_unit_assignment` | Ersetzen |
 
 In `df_crm_lookups` ist nur die erste Abfrage aktiv; `territory` steht
 auskommentiert in derselben Datei und wird als eigene Abfrage angelegt. Die
@@ -41,13 +41,22 @@ Mandanten nicht verfügbar (Begründung und Konsequenzen:
 `docs/04_crm_feldkatalog.md`, Abschnitt „Bewusst nicht extrahiert").
 
 `df_map_unit_assignment` lädt die vom Controlling gepflegte Datei
-`Mapping_Planwerke.xlsx` (SharePoint, `08_Budget`). Sie steuert die
-Werk-Zuordnung der CRM-Vorgänge über Sektor/Subsektor – Aufbau und
-Auflösungskette: `docs/04_crm_feldkatalog.md`, Abschnitt „Werk-Zuordnung".
-Als Stammdatum wird sie ersetzt, nicht angefügt.
+`Mapping_Planwerke.xlsx` (SharePoint, `08_Budget`) – dieselbe Datei, die das
+Altmodell live in `fct_opp` gejoint hat. Sie steuert die Werk-Zuordnung über
+Sektor/Subsektor; Aufbau und Auflösungskette:
+`docs/04_crm_feldkatalog.md`, Abschnitt „Werk-Zuordnung". Sie wird wie die
+Fakten historisiert, weil sie ein manueller Input in offizielle Budgetzahlen
+ist: ohne Snapshot lässt sich eine abgeschlossene Budgetrunde nach der
+nächsten Pflegerunde nicht mehr reproduzieren.
 
-Für die CRM-Extrakte gilt Aktualisierungsmethode **Anfügen** – die
-Snapshot-Historie hängt daran.
+Alle Dataflows schreiben mit **Ersetzen** in ihre `stg_*`-Tabelle. Die
+Historisierung nach `bronze_*` übernimmt `nb_05_snapshot`. Nicht mit Anfügen
+direkt nach `bronze_*` schreiben – der Grund steht in Schritt 2.
+
+Zusätzlich anzulegen: die Hilfsfunktion `fn_berlin_now` aus
+`dataflows/fn_berlin_now.m` in jedem Dataflow, der einen Zeitstempel setzt.
+**"Laden aktivieren" für diese Query ausschalten** – sie ist ein Helfer, keine
+Zieltabelle.
 
 SAP-Seite: `bronze_sap_revenue` aus `V_SAP_EXPORTS_cleansed` und
 `bronze_sap_unit` aus dem bestehenden Dataflow `sap_master_data_unit`. Das
@@ -69,15 +78,22 @@ jedem Eintrag eine Entscheidung treffen – siehe `docs/04_crm_feldkatalog.md`.
 
 ## Schritt 2 – Notebooks importieren
 
-Die vier Dateien aus `lakehouse/notebooks/` als Fabric-Notebooks importieren und
-mit dem Lakehouse verbinden:
+Die fünf Dateien aus `lakehouse/notebooks/` als Fabric-Notebooks importieren
+und mit dem Lakehouse verbinden:
 
 ```
-nb_00_config     Konstanten und Hilfsfunktionen (schreibt nichts)
+nb_00_config     Konstanten, Hilfsfunktionen, Zeitzone (schreibt nichts)
+nb_05_snapshot   Staging -> Bronze, idempotent je Tagespartition
 nb_10_silver     Bronze -> Silver, Historisierung
 nb_20_gold       Silver -> Gold, Perioden-Fanout
 nb_30_quality    Qualitätsregeln, bricht bei ERROR ab
 ```
+
+`nb_05_snapshot` ist der Grund, warum die Dataflows mit **Ersetzen** in
+`stg_*` schreiben und nicht mit Anfügen direkt nach `bronze_*`: es löscht die
+Partition des Tages, bevor es schreibt, und macht den Lauf beliebig oft
+wiederholbar. Ein Dataflow-Append würde bei jedem Retry einen zweiten Snapshot
+desselben Tages anhängen und jede Summe verdoppeln.
 
 **In `nb_00_config` anzupassen:**
 
@@ -89,17 +105,18 @@ Derselbe Wert steht im Semantikmodell als Parameter
 `AktuellesGeschaeftsjahr`. Beide müssen übereinstimmen –
 `docs/08_datenqualitaet.md` beschreibt, woran man eine Abweichung erkennt.
 
-Manueller Erstlauf in dieser Reihenfolge: `nb_10_silver`, `nb_20_gold`,
-`nb_30_quality`.
+Manueller Erstlauf in dieser Reihenfolge: `nb_05_snapshot`, `nb_10_silver`,
+`nb_20_gold`, `nb_30_quality`.
 
 ---
 
 ## Schritt 3 – Pipeline einrichten
 
-Data-Pipeline `pl_net_new_ity_daily` mit vier aufeinanderfolgenden Aktivitäten:
+Data-Pipeline `pl_net_new_ity_daily` mit fünf aufeinanderfolgenden Aktivitäten:
 
 ```
-Dataflows (parallel)        05:00
+Dataflows (parallel)        05:00   REPLACE nach stg_*
+   -> nb_05_snapshot        05:20   bei Erfolg
    -> nb_10_silver          05:30   bei Erfolg
    -> nb_20_gold            05:45   bei Erfolg
    -> nb_30_quality         06:00   bei Erfolg
@@ -182,7 +199,8 @@ Zum 1. Oktober:
 2. `AktuellesGeschaeftsjahr` in `expressions.tmdl` hochzählen
 3. `@CURRENT_FY` in `lakehouse/03_gold/gold_fct_net_new_ity.sql` hochzählen,
    falls die SQL-Variante verwendet wird
-4. `nb_10_silver`, `nb_20_gold`, `nb_30_quality` manuell laufen lassen
+4. `nb_05_snapshot`, `nb_10_silver`, `nb_20_gold`, `nb_30_quality` manuell
+   laufen lassen
 5. Semantikmodell aktualisieren
 
 ---
@@ -191,6 +209,8 @@ Zum 1. Oktober:
 
 | Symptom | Ursache | Abhilfe |
 |---|---|---|
+| `nb_05_snapshot` bricht mit "snapshot_date ist X, erwartet Y" ab | Der Dataflow hat nicht erfolgreich geschrieben, im Staging steht der Vortagsstand | Dataflow-Lauf prüfen und wiederholen. Für eine bewusste Nachladung `allow_stale_snapshot=True` setzen |
+| `nb_05_snapshot` bricht mit "doppelte Werte in …" ab | Der Snapshot-Grain ist verletzt, die Quelle liefert einen Schlüssel mehrfach | Staging-Tabelle prüfen; meist ein geänderter Extraktfilter |
 | Pipeline bricht bei `nb_30_quality` ab | ERROR-Regel verletzt | `SELECT * FROM gold_dq_checks WHERE schweregrad = 'ERROR' AND anzahl_verstoesse > 0 ORDER BY pruef_datum DESC` – jede Zeile nennt den Handlungshinweis |
 | Bericht zeigt leere Werte | `CURRENT_FY` und `AktuellesGeschaeftsjahr` weichen ab | Beide Werte angleichen |
 | Szenarienseite verändert nichts | Alle Regler auf Vorbelegung (0 Monate, kein Anlauf) | Das ist der Basisfall; Regler verstellen |

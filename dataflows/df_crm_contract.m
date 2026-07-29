@@ -1,10 +1,10 @@
 // ===========================================================================
-// Dataflow Gen2  ·  df_crm_contract  ->  bronze_crm_contract
+// Dataflow Gen2  ·  df_crm_contract  ->  stg_crm_contract  ->  bronze_crm_contract
 // ===========================================================================
 // Zweck   : Rohextrakt der Dataverse-Entitaet "cgplc_cgcontract" (Bestands-
 //           vertraege / Retention) in die Bronze-Schicht.
-// Ziel    : lakehouse_group_controlling / bronze_crm_contract
-// Modus   : Append
+// Ziel    : lakehouse_group_controlling / stg_crm_contract
+// Modus   : REPLACE in die Staging-Tabelle (Historisierung: nb_05_snapshot.py)
 // Zeitplan: taeglich 05:00
 //
 // Der Altstand (fct_retention) holte 13 Spalten und filterte sofort auf
@@ -92,11 +92,19 @@ let
     Fehlend = List.Difference(GewuenschteSpalten, VorhandeneSpalten),
     Selektiert = Table.SelectColumns(vertrag, Auswahl),
 
+    // Einmal je LAUF auswerten, nicht je Zeile: ein Ladelauf ueber Mitternacht
+    // erzeugte sonst zwei verschiedene snapshot_date in einer Staging-Tabelle
+    // und liesse den Grain-Check im Notebook hart auf Fehler laufen.
+    // Der Zonenversatz wird abgeschnitten - das Lakehouse-Ziel eines
+    // Dataflow Gen2 unterstuetzt datetimezone nicht.
+    Ladezeit = DateTime.From(fn_berlin_now()),
+    Snapshot = DateTime.Date(Ladezeit),
+
     MitSnapshot = Table.AddColumn(
-        Selektiert, "snapshot_ts", each DateTime.FixedLocalNow(), type datetime
+        Selektiert, "loaded_at", each Ladezeit, type datetime
     ),
     MitSnapshotDatum = Table.AddColumn(
-        MitSnapshot, "snapshot_date", each Date.From([snapshot_ts]), type date
+        MitSnapshot, "snapshot_date", each Snapshot, type date
     ),
     MitDiagnose = Table.AddColumn(
         MitSnapshotDatum, "_fehlende_felder", each Text.Combine(Fehlend, ","), type text

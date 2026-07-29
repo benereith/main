@@ -10,7 +10,7 @@
 
 | Tabelle | Rolle | Spalten | Kennzahlen | Quelle |
 |---|---|---:|---:|---|
-| `DIM Betrieb` | Dimension | 20 | 0 | `gold_dim_unit` |
+| `DIM Betrieb` | Dimension | 21 | 0 | `gold_dim_unit` |
 | `DIM Datum` | Dimension | 13 | 0 | `gold_dim_date` |
 | `DIM HFM-Struktur` | Dimension | 10 | 0 | `gold_dim_hfm_struktur` |
 | `DIM Opportunity` | Dimension | 19 | 0 | `gold_dim_opportunity` |
@@ -58,6 +58,7 @@ SAP-Betriebsstammdaten (Werke). Quelle: gold_dim_unit. Ersetzt SAP_Stammdaten bz
 | `HFM Sektor` | string | `hfm_sektor` | Harmonisierter Sektor für die HFM-Meldung (HC / BU / …). |
 | `Betriebstyp` | string | `betriebstyp` | Real-Betriebe / Plan-Betriebe Roll / Plan-Betriebe ITY. Plan-Betriebe sind Platzhalter-Kostenstellen für unknown Business und dürfen in Betriebszählungen nicht mitlaufen. |
 | `Known / Unknown` | string | `known_unknown` | known = realer Betrieb, unknown = Planbetrieb. Die Kernunterscheidung des gesamten Berichts: known ITY ist gebucht, unknown ITY wird aus dem CRM approximiert. |
+| `Unit-Status` | string | `unit_status` | "In Betrieb" = aus den SAP-Stammdaten. "Geplant"    = existiert nur im gepflegten Mapping, weil die Unit noch nicht gewonnen ist. Ohne diese Ergänzung fielen geplante Units in die Leerzeile jeder Organisationsauswertung – also genau der Teil, um den es im Net New Business geht. Für sie bleiben Region, Management und Sektor leer, solange die Mappingdatei diese Angaben nicht mitführt. |
 | `Vertragsbeginn` | dateTime | `vertragsbeginn` | – |
 | `Schließung` | dateTime | `schliessung` | – |
 | `Vertragsart` | string | `bezeichnung_vertragsart` | – |

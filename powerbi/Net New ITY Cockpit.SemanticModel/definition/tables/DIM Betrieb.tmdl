@@ -61,6 +61,20 @@ table 'DIM Betrieb'
 		summarizeBy: none
 		sourceColumn: known_unknown
 
+	/// "In Betrieb" = aus den SAP-Stammdaten.
+	/// "Geplant"    = existiert nur im gepflegten Mapping, weil die Unit noch
+	///                nicht gewonnen ist.
+	///
+	/// Ohne diese Ergänzung fielen geplante Units in die Leerzeile jeder
+	/// Organisationsauswertung – also genau der Teil, um den es im Net New
+	/// Business geht. Für sie bleiben Region, Management und Sektor leer,
+	/// solange die Mappingdatei diese Angaben nicht mitführt.
+	column 'Unit-Status'
+		dataType: string
+		lineageTag: b3000000-0000-4000-8000-000000000121
+		summarizeBy: none
+		sourceColumn: unit_status
+
 	column Vertragsbeginn
 		dataType: dateTime
 		formatString: dd.mm.yyyy

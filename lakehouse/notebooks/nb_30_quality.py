@@ -279,6 +279,35 @@ if einseitig:
         print(f"       -> {anzeige} ({spalte}): NEW {fn} %, LOST {fl} % - leer auf {seite}")
 
 # ---------------------------------------------------------------------------
+# DQ-SNP-001  Mehrere Ladelaeufe je Stichtag
+# ---------------------------------------------------------------------------
+# Waechter gegen den Fehler, den die Staging-Strecke verhindern soll: Wenn ein
+# Dataflow-Append zweimal am selben Tag laeuft, stehen zwei Snapshots mit
+# identischem snapshot_date in der Bronze-Tabelle und JEDE SUMME VERDOPPELT
+# SICH - ohne Fehler, ohne Warnung, nur mit falschen Zahlen.
+#
+# Geprueft wird der Geschaeftsschluessel je Stichtag: er muss eindeutig sein.
+for tabelle, schluessel in [
+    ("bronze_crm_opportunity", "opportunityid"),
+    ("bronze_crm_contract", "cgplc_cgcontractid"),
+]:
+    if not spark.catalog.tableExists(tabelle):
+        continue
+    doppelte = (
+        spark.table(tabelle)
+        .groupBy("snapshot_date", schluessel)
+        .count()
+        .filter(F.col("count") > 1)
+    )
+    check(
+        f"DQ-SNP-001-{schluessel}", "ERROR",
+        f"Doppelte Snapshot-Zeilen in {tabelle} (Grain snapshot_date + {schluessel})",
+        doppelte,
+        "nb_05_snapshot.py hat die Tagespartition nicht geloescht, oder der "
+        "Dataflow schreibt mit Append statt Replace in die Staging-Tabelle.",
+    )
+
+# ---------------------------------------------------------------------------
 # DQ-MAP-001  Vorgang ohne Zuordnung zu einem SAP-Betrieb
 # ---------------------------------------------------------------------------
 # Die Werk-Zuordnung laeuft ueber die Kette Ausnahme -> cgplc_sapid ->
@@ -291,7 +320,8 @@ check(
     "Vorgang ohne Zuordnung zu einem SAP-Betrieb (werk_zuordnung = Nicht zugeordnet)",
     fct.filter(F.col("sap_id").isNull()).select("entity_id").distinct(),
     "Sektor/Subsektor-Kombination in Mapping_Planwerke.xlsx ergaenzen "
-    "(df_map_unit_assignment) oder cgplc_sapid am Vorgang pflegen.",
+    "(Spalten sektor, subsektor, Mapping Unit) oder Einzelfall ueber "
+    "dim_opp_name[opportunityid] zuordnen.",
 )
 
 # ---------------------------------------------------------------------------

@@ -1,11 +1,12 @@
 // ===========================================================================
-// Dataflow Gen2  ·  df_crm_opportunity  ->  bronze_crm_opportunity
+// Dataflow Gen2  ·  df_crm_opportunity  ->  stg_crm_opportunity  ->  bronze_crm_opportunity
 // ===========================================================================
 // Zweck   : Rohextrakt der Dataverse-Entitaet "opportunity" in die
 //           Bronze-Schicht des Lakehouse. KEINE fachliche Logik - alles
 //           Rechnen passiert in nb_10_silver / nb_20_gold.
-// Ziel    : lakehouse_group_controlling / bronze_crm_opportunity
-// Modus   : Append (Snapshot je Lauf ueber snapshot_ts unterscheidbar)
+// Ziel    : lakehouse_group_controlling / stg_crm_opportunity
+// Modus   : REPLACE in die Staging-Tabelle. Die Historisierung nach
+//           bronze_* uebernimmt nb_05_snapshot.py - siehe unten.
 // Zeitplan: taeglich 05:00
 //
 // UNTERSCHIED ZUM ALTZUSTAND
@@ -128,11 +129,19 @@ let
     // -----------------------------------------------------------------------
     // Nur der Ladezeitpunkt wird ergaenzt. Sonst nichts.
     // -----------------------------------------------------------------------
+    // Einmal je LAUF auswerten, nicht je Zeile: ein Ladelauf ueber Mitternacht
+    // erzeugte sonst zwei verschiedene snapshot_date in einer Staging-Tabelle
+    // und liesse den Grain-Check im Notebook hart auf Fehler laufen.
+    // Der Zonenversatz wird abgeschnitten - das Lakehouse-Ziel eines
+    // Dataflow Gen2 unterstuetzt datetimezone nicht.
+    Ladezeit = DateTime.From(fn_berlin_now()),
+    Snapshot = DateTime.Date(Ladezeit),
+
     MitSnapshot = Table.AddColumn(
-        Selektiert, "snapshot_ts", each DateTime.FixedLocalNow(), type datetime
+        Selektiert, "loaded_at", each Ladezeit, type datetime
     ),
     MitSnapshotDatum = Table.AddColumn(
-        MitSnapshot, "snapshot_date", each Date.From([snapshot_ts]), type date
+        MitSnapshot, "snapshot_date", each Snapshot, type date
     ),
 
     // Diagnose: fehlende Felder als Spalte mitfuehren, damit sie im
