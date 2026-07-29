@@ -23,6 +23,23 @@
 
 # COMMAND ----------
 
+# --- Konfigurationsstand pruefen -------------------------------------------
+# Fabric haelt eine eigene Kopie jedes Notebooks. Wird nb_00_config im Repo
+# geaendert, aber in Fabric nicht neu importiert, laeuft %run stillschweigend
+# gegen die ALTE Fassung - der Abbruch kommt dann erst spaeter als NameError
+# auf eine Funktion, die es dort noch nicht gibt. Diese Pruefung zieht den
+# Fehler an den Anfang und sagt, was zu tun ist.
+BENOETIGTE_CONFIG_VERSION = 2
+if globals().get("CONFIG_VERSION", 1) < BENOETIGTE_CONFIG_VERSION:
+    raise ValueError(
+        f"nb_00_config ist veraltet (v{globals().get('CONFIG_VERSION', 1)}, "
+        f"benoetigt v{BENOETIGTE_CONFIG_VERSION}).\n"
+        "In Fabric liegt noch eine aeltere Kopie. nb_00_config aus "
+        "lakehouse/notebooks/nb_00_config.py neu importieren bzw. den "
+        "Inhalt dort ersetzen, dann dieses Notebook erneut starten."
+    )
+
+
 from pyspark.sql import functions as F
 from pyspark.sql import Window
 

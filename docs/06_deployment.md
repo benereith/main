@@ -136,6 +136,16 @@ enthält ausschließlich `%run nb_00_config` (ohne `# MAGIC`-Präfix, das wird
 beim Import automatisch aufgelöst) und läuft ohne Fehler grün durch, bevor
 die zweite Zelle startet.
 
+**Nach jeder Änderung an `nb_00_config` alle fünf Notebooks neu importieren.**
+Fabric hält je Notebook eine eigene Kopie; wird nur `nb_10_silver` ersetzt,
+läuft dessen `%run` weiter gegen die alte Konfiguration. Damit das nicht als
+`NameError` mitten im Lauf auffällt, trägt `nb_00_config` die Konstante
+`CONFIG_VERSION`, die die vier abhängigen Notebooks in ihrer ersten Codezelle
+prüfen. Ist sie zu niedrig, brechen sie sofort mit einer Meldung ab, die zum
+Neuimport auffordert. Beim Ändern von Hilfsfunktionen in `nb_00_config` die
+Version hochzählen und `BENOETIGTE_CONFIG_VERSION` in den vier Notebooks
+mitziehen.
+
 **In `nb_00_config` anzupassen:**
 
 ```python

@@ -293,7 +293,14 @@ def write_delta(df, table_name: str, mode: str = "overwrite", partition_by=None)
     print(f"  -> {table_name}: {df.count():,} Zeilen ({mode})")
 
 
+# Wird von den abhaengigen Notebooks geprueft. BEI JEDER AENDERUNG AN DEN
+# HILFSFUNKTIONEN HOCHZAEHLEN - dann meldet ein veraltetes nb_00_config in
+# Fabric sich selbst, statt die abhaengigen Notebooks mitten im Lauf mit
+# einem NameError auf eine noch unbekannte Funktion abbrechen zu lassen.
+CONFIG_VERSION = 2
+
 print(
-    f"Konfiguration geladen | CY = FY{CURRENT_FY}/{str(CURRENT_FY + 1)[2:]} "
+    f"Konfiguration geladen (v{CONFIG_VERSION}) | "
+    f"CY = FY{CURRENT_FY}/{str(CURRENT_FY + 1)[2:]} "
     f"({CY_START} - {CY_END}) | Fanout-Ende {FANOUT_END}"
 )
