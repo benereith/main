@@ -77,7 +77,7 @@ table 'FCT Net New ITY'
 	/// null. Regel DQ-NEW-001 zählt, wie viel Volumen darüber läuft.
 	column 'ITY Quelle'
 		dataType: string
-		lineageTag: c1000000-0000-4000-8000-000000000123
+		lineageTag: c1000000-0000-4000-8000-000000000131
 		summarizeBy: none
 		sourceColumn: ity_quelle
 

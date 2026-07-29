@@ -15,6 +15,8 @@ Geprüft wird:
   8. TMDL-Kommentare sind gültig: kein //-Kommentar (TMDL kennt nur ///) und
      keine Leerzeile zwischen führendem ///-Block und erstem Objekt – beides
      lässt Power BI Desktop beim Öffnen mit "TDML-Formatfehler" abbrechen.
+  9. Jeder lineageTag kommt im Modell genau einmal vor. Ein doppelt vergebener
+     Tag lässt Power BI Desktop das Modell komplett verweigern.
 
 Aufruf:
     python3 tools/validate_pbip.py
@@ -290,6 +292,42 @@ def pruefe_tmdl_kommentare():
 
 
 # ---------------------------------------------------------------------------
+# 8. lineageTags muessen modellweit eindeutig sein
+# ---------------------------------------------------------------------------
+def pruefe_lineage_tags():
+    # Der lineageTag ist die dauerhafte Identitaet eines Objekts. Vergibt man
+    # ihn zweimal, lehnt Power BI Desktop das gesamte Modell beim Laden ab:
+    #   "Die Sammlung enthaelt bereits ein Objekt mit dem Herkunftstag ..."
+    # Die Meldung nennt dabei das ZWEITE Objekt, nicht das Paar - ohne diese
+    # Pruefung muss man den Partner von Hand suchen. Genau das ist passiert,
+    # als eine neue Spalte einen bereits belegten Tag bekam.
+    gesehen = {}
+    for pfad in sorted(glob.glob(os.path.join(MODEL, "**", "*.tmdl"), recursive=True)):
+        rel = os.path.relpath(pfad, ROOT)
+        zeilen = open(pfad, encoding="utf-8").read().split("\n")
+        for i, z in enumerate(zeilen):
+            m = re.match(r"\s*lineageTag:\s*(\S+)", z)
+            if not m:
+                continue
+            tag = m.group(1)
+            # Objektzeile = letzte nicht-leere Zeile davor, die kein ///-Kommentar ist
+            objekt = "?"
+            for j in range(i - 1, -1, -1):
+                s = zeilen[j].strip()
+                if s and not s.startswith("///"):
+                    objekt = s
+                    break
+            ort = f"{rel}:{i + 1} ({objekt})"
+            if tag in gesehen:
+                melde_fehler(
+                    f"lineageTag {tag} doppelt vergeben – Power BI Desktop "
+                    f"verweigert das Laden. Betroffen: {gesehen[tag]} und {ort}"
+                )
+            else:
+                gesehen[tag] = ort
+
+
+# ---------------------------------------------------------------------------
 def main():
     print("Prüfe PBIP-Projekt …\n")
     tabellen = lies_modell()
@@ -303,6 +341,7 @@ def main():
     pruefe_bericht(tabellen)
     pruefe_farben()
     pruefe_tmdl_kommentare()
+    pruefe_lineage_tags()
 
     print()
     if warnungen:
