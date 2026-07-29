@@ -1,8 +1,8 @@
-/// Verbindungsparameter und geteilte Ausdrücke.
-///
-/// ALLE Stichtage stehen genau hier. In den Altmodellen lagen sie als
-/// Est_Close_Date_A/E, Est_Opening_Date_A/E und Geschäftsjahresbeginn parallel
-/// in drei Modellen und konnten auseinanderlaufen.
+// Verbindungsparameter und geteilte Ausdrücke.
+//
+// ALLE Stichtage stehen genau hier. In den Altmodellen lagen sie als
+// Est_Close_Date_A/E, Est_Opening_Date_A/E und Geschäftsjahresbeginn parallel
+// in drei Modellen und konnten auseinanderlaufen.
 
 /// SQL-Endpunkt des Lakehouse. Für Deployment über Umgebungen als
 /// Verbindungsparameter im Fabric-Arbeitsbereich überschreiben.

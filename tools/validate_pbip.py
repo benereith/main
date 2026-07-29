@@ -12,6 +12,9 @@ Geprüft wird:
      in einer Weise, die Inhalte verdeckt.
   6. Jede Kennzahl trägt eine Beschreibung (/// Kommentar).
   7. Die im Bericht verwendeten Hexfarben stammen aus der Themendatei.
+  8. Kein führender ///-Kommentarblock, auf den eine Leerzeile folgt, bevor er
+     ein Objekt dokumentiert (TMDL-Parser bricht dort mit "InvalidLineType"
+     ab – siehe expressions.tmdl-Vorfall).
 
 Aufruf:
     python3 tools/validate_pbip.py
@@ -225,6 +228,31 @@ def pruefe_farben():
 
 
 # ---------------------------------------------------------------------------
+# 7. TMDL-Kommentarblöcke: kein verwaister /// -Block vor einer Leerzeile
+# ---------------------------------------------------------------------------
+def pruefe_tmdl_kommentare():
+    # ///-Zeilen sind Objektdokumentation und müssen lückenlos direkt vor dem
+    # Objekt stehen, das sie beschreiben. Ein Kopfblock, der kein eigenes
+    # Objekt hat (z. B. eine Datei-Übersicht vor mehreren Top-Level-Objekten),
+    # darf deshalb NICHT mit /// beginnen, sonst bricht Power BI Desktop beim
+    # Öffnen mit "TDML-Formatfehler ... Unerwarteter Zeilentyp: Empty" ab.
+    for pfad in sorted(glob.glob(os.path.join(MODEL, "**", "*.tmdl"), recursive=True)):
+        zeilen = open(pfad, encoding="utf-8").read().split("\n")
+        i = 0
+        sah_kommentar = False
+        while i < len(zeilen) and zeilen[i].startswith("///"):
+            sah_kommentar = True
+            i += 1
+        if sah_kommentar and i < len(zeilen) and zeilen[i].strip() == "":
+            melde_fehler(
+                f"{os.path.relpath(pfad, ROOT)}: Zeile {i + 1} ist eine Leerzeile "
+                "direkt nach einem führenden ///-Kommentarblock ohne zugehöriges "
+                "Objekt – als // (ohne Objektbezug) schreiben oder lückenlos vor "
+                "das erste Objekt ziehen"
+            )
+
+
+# ---------------------------------------------------------------------------
 def main():
     print("Prüfe PBIP-Projekt …\n")
     tabellen = lies_modell()
@@ -237,6 +265,7 @@ def main():
     pruefe_dokumentation(tabellen)
     pruefe_bericht(tabellen)
     pruefe_farben()
+    pruefe_tmdl_kommentare()
 
     print()
     if warnungen:
