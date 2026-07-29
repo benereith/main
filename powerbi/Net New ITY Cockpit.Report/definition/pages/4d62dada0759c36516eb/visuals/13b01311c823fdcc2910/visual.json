@@ -23,11 +23,11 @@
                       "Entity": "DIM Datum"
                     }
                   },
-                  "Property": "GJ Bezeichnung"
+                  "Property": "GJ relativ"
                 }
               },
-              "queryRef": "DIM Datum.GJ Bezeichnung",
-              "nativeQueryRef": "GJ Bezeichnung",
+              "queryRef": "DIM Datum.GJ relativ",
+              "nativeQueryRef": "GJ relativ",
               "active": true
             }
           ]

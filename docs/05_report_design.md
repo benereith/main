@@ -43,7 +43,7 @@ Aus dem Layout entfernt:
 * Datenbeschriftungen an jedem Punkt einer Linie – dort, wo die Form die
   Aussage trägt, stört jede Zahl
 * Die "Duplikat von …"-Seiten der Altberichte. Von 51 Seiten in drei Berichten
-  bleiben **9 Seiten** in einem.
+  bleiben **10 Seiten** in einem.
 
 Behalten: horizontale Hilfslinien in `#E1E0D9`. Sie helfen beim Ablesen von
 Größenordnungen und sind hell genug, um nicht mit Daten verwechselt zu werden.
@@ -209,7 +209,44 @@ Im Altmodell erforderte jede dieser Einstellungen eine Änderung in Power Query
 und einen vollständigen Refresh. Details zur Umsetzung:
 `docs/03_berechnungslogik.md`, Ordner *04 Szenarien*.
 
-### 3.4 New Business
+### 3.4 Roll-Budget
+
+**Frage:** Was muss im laufenden Jahr noch gewonnen werden, damit das
+Roll-Budget des Budgetjahres steht?
+
+Die operative Konsequenz aus dem Cockpit, deshalb direkt dahinter. Der Umsatz
+eines Budgetjahres aus Neugeschäft zerfällt in zwei Teile:
+
+| Teil | Entscheidung fällt | Beeinflussbar? |
+|---|---|---|
+| **Roll** | im vorhergehenden Jahr | ja – jetzt |
+| **ITY** | im Budgetjahr selbst | erst später |
+
+Die Trennung liegt auf dem Fakt als `ITY Cluster` und auf der Budgetseite als
+Betriebstyp der Planbetriebe (SAP-Version 90, `Plan-Betriebe Roll` bzw.
+`Plan-Betriebe ITY`) – sie musste also nicht erfunden werden, sie war in
+beiden Quellen schon da, wurde aber in keinem Altmodell gegeneinander gestellt.
+
+Aufbau:
+
+1. Die Antwort als Satz (`[Aussage Roll-Lücke]`) – nennt Betrag und ob die
+   offene Pipeline ihn im Erwartungswert deckt.
+2. Fünf Kopfzahlen, die sich als Rechnung lesen: Budget → Gesichertes → Lücke
+   → offene Pipeline → Deckungsgrad.
+3. Links Budget, Gesichertes und Pipeline auf gemeinsamer Achse. Der *Abstand*
+   ist die Botschaft, deshalb Balken und keine Kacheln.
+4. Rechts die Rangliste der offenen Roll-Vorgänge, absteigend nach Beitrag,
+   mit kumulierter Summe und der Spalte `Schließt Lücke`. Ab der ersten
+   „Ja"-Zeile ist das Minimalpaket beisammen – das ist die eigentliche
+   Handlungsinformation und der Grund für die Seite.
+5. Unten die Netto-Sicht des gewählten Jahres: Roll, ITY und Lost Business
+   nebeneinander über die Perioden.
+
+`[Roll Lücke]` rechnet bewusst gegen `[Roll gesichert]`, nicht gegen die
+gewichtete Pipeline: die Frage lautet „was muss noch kommen", nicht „was
+erwarten wir im Mittel".
+
+### 3.5 New Business
 
 **Frage:** Welche Opportunities konkret?
 
@@ -218,7 +255,7 @@ bisherigem Anbieter), darunter die Detailtabelle. Die Wettbewerbersicht war im
 Altbericht nicht darstellbar, weil das Feld `cgplc_currentsupplier` zwar
 geladen, aber nie visualisiert wurde.
 
-### 3.5 Lost Business
+### 3.6 Lost Business
 
 **Frage:** Welche Verträge sind gefährdet und warum?
 
@@ -228,7 +265,7 @@ sofort zurecht. Zusätzlich eine Auswertung nach Risikogrund und ein Filter auf
 die Datenlage des Vorjahres-ARO, weil Verträge ohne diesen Wert mit 0 € bewertet
 werden und sonst unsichtbar unterschlagen würden.
 
-### 3.6 CRM-Bewegung
+### 3.7 CRM-Bewegung
 
 **Frage:** Was hat sich seit dem letzten Call geändert?
 
@@ -241,7 +278,7 @@ Grundlage ist die Snapshot-Historie aus `silver_*_history`: pro Tag ein
 Snapshot, aber nur dann eine neue Zeile, wenn sich tatsächlich etwas geändert
 hat. Jede Zeile in der Tabelle bedeutet also eine echte Änderung.
 
-### 3.7 Abstimmung und Datenqualität
+### 3.8 Abstimmung und Datenqualität
 
 **Frage:** Kann ich den Zahlen trauen?
 
@@ -253,12 +290,12 @@ Die Altmodelle filterten fehlerhafte Sätze per "Gefilterte Zeilen" heraus. Der
 fehlende Betrag war im Ergebnis nicht mehr erklärbar. Hier steht er in einer
 Tabelle mit Namen und Grund.
 
-### 3.8 Detail (Drillthrough)
+### 3.9 Detail (Drillthrough)
 
 Aus jeder Tabelle per Rechtsklick erreichbar. Zeigt die Periodenverteilung eines
 einzelnen Vorgangs und dessen vollständige CRM-Historie.
 
-### 3.9 Definitionen
+### 3.10 Definitionen
 
 HFM-Kontendefinitionen im Wortlaut der Group Guidance und die
 Statusdefinitionen mit Farbzuordnung. Damit steht die Definition im Bericht und

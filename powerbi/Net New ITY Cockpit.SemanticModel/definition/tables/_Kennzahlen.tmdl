@@ -585,6 +585,249 @@ table _Kennzahlen
 		displayFolder: 06 Quoten
 		lineageTag: a0000000-0000-4000-8000-000000000604
 
+	/// 10 ROLL-BUDGET
+	///
+	/// Alle Kennzahlen dieser Gruppe beantworten EINE Frage:
+	/// "Was muss im laufenden Geschäftsjahr noch gewonnen werden, damit das
+	/// Roll-Budget des Budgetjahres erreicht wird?"
+	///
+	/// Der Umsatz eines Budgetjahres aus Neugeschäft zerfällt in zwei Teile:
+	///   Roll → Entscheidung fällt im VORHERGEHENDEN Jahr, Umsatz rollt hinein.
+	///          Darauf lässt sich JETZT noch Einfluss nehmen.
+	///   ITY  → Entscheidung fällt im Budgetjahr selbst.
+	/// Die Trennung steht auf dem Fakt als 'ITY Cluster' und im SAP-Budget als
+	/// Betriebstyp der Planbetriebe (Version 90).
+	///
+	/// Budgetseite: Roll-Anteil des unknown-ITY-Budgets (SAP-Version 90,
+	/// Planbetriebe vom Typ Roll). Gegengröße zu [Roll gesichert].
+	measure 'Roll Budget' = ```
+			CALCULATE (
+			    SUM ( 'FCT Umsatz'[Monatswert] ),
+			    KEEPFILTERS ( 'FCT Umsatz'[Werttyp Version] = "Plan_90" ),
+			    KEEPFILTERS ( 'FCT Umsatz'[Betriebstyp] = "Plan-Betriebe Roll" )
+			)
+			```
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 10 Roll-Budget
+		lineageTag: a0000000-0000-4000-8000-000000001001
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Budgetseite: ITY-Anteil des unknown-ITY-Budgets (Planbetriebe Typ ITY).
+	/// Entscheidungen dazu fallen erst im Budgetjahr selbst.
+	measure 'ITY Budget' = ```
+			CALCULATE (
+			    SUM ( 'FCT Umsatz'[Monatswert] ),
+			    KEEPFILTERS ( 'FCT Umsatz'[Werttyp Version] = "Plan_90" ),
+			    KEEPFILTERS ( 'FCT Umsatz'[Betriebstyp] = "Plan-Betriebe ITY" )
+			)
+			```
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 10 Roll-Budget
+		lineageTag: a0000000-0000-4000-8000-000000001002
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// CRM-Seite: Neugeschäft im gewählten Zeitraum, dessen Entscheidung im
+	/// Vorjahr fällt – der Roll-Anteil. Bewertung folgt dem Datenschnitt
+	/// 'Szenario Bewertung'.
+	measure 'Roll CRM' = ```
+			CALCULATE (
+			    [Net New ITY],
+			    KEEPFILTERS ( 'FCT Net New ITY'[Geschäftsart] = "NEW" ),
+			    KEEPFILTERS ( 'FCT Net New ITY'[ITY Cluster] = "unknown Roll" )
+			)
+			```
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 10 Roll-Budget
+		lineageTag: a0000000-0000-4000-8000-000000001003
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Bereits gewonnener Roll-Anteil. Ungewichtet, weil WON keine
+	/// Wahrscheinlichkeit mehr trägt – der Auftrag liegt vor.
+	/// Das ist der Sockel, auf dem die Lücke aufsetzt.
+	measure 'Roll gesichert' = ```
+			CALCULATE (
+			    SUM ( 'FCT Net New ITY'[Betrag ungewichtet (vorzeichenbehaftet)] ),
+			    KEEPFILTERS ( 'FCT Net New ITY'[Geschäftsart] = "NEW" ),
+			    KEEPFILTERS ( 'FCT Net New ITY'[ITY Cluster] = "unknown Roll" ),
+			    KEEPFILTERS ( 'DIM Status'[Status Code] = "WON" )
+			)
+			```
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 10 Roll-Budget
+		lineageTag: a0000000-0000-4000-8000-000000001004
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Noch offener Roll-Anteil, gewichtet mit der Win-Wahrscheinlichkeit.
+	/// Enthält Expected Win und Pipeline – also alles, was noch zu gewinnen
+	/// ist. Das ist der erwartete Beitrag der laufenden Verhandlungen.
+	measure 'Roll offen (gewichtet)' = ```
+			CALCULATE (
+			    SUM ( 'FCT Net New ITY'[Betrag] ),
+			    KEEPFILTERS ( 'FCT Net New ITY'[Geschäftsart] = "NEW" ),
+			    KEEPFILTERS ( 'FCT Net New ITY'[ITY Cluster] = "unknown Roll" ),
+			    KEEPFILTERS ( 'DIM Status'[Status Code] IN { "EXPECTED_WIN", "PIPELINE", "NO_PROBABILITY" } )
+			)
+			```
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 10 Roll-Budget
+		lineageTag: a0000000-0000-4000-8000-000000001005
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Voller Wert des noch offenen Roll-Anteils, ohne Gewichtung.
+	/// Obergrenze: so viel wäre erreichbar, wenn ALLES gewonnen würde.
+	measure 'Roll offen (Vollwert)' = ```
+			CALCULATE (
+			    SUM ( 'FCT Net New ITY'[Betrag ungewichtet (vorzeichenbehaftet)] ),
+			    KEEPFILTERS ( 'FCT Net New ITY'[Geschäftsart] = "NEW" ),
+			    KEEPFILTERS ( 'FCT Net New ITY'[ITY Cluster] = "unknown Roll" ),
+			    KEEPFILTERS ( 'DIM Status'[Status Code] IN { "EXPECTED_WIN", "PIPELINE", "NO_PROBABILITY" } )
+			)
+			```
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 10 Roll-Budget
+		lineageTag: a0000000-0000-4000-8000-000000001006
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// DIE Kernzahl der Seite: Was fehlt noch bis zum Roll-Budget?
+	/// Budget minus bereits Gewonnenes. Positiv = es fehlt noch etwas.
+	///
+	/// Bewusst gegen [Roll gesichert] gerechnet, nicht gegen die gewichtete
+	/// Pipeline: die Frage lautet "was muss noch kommen", nicht "was erwarten
+	/// wir im Mittel".
+	measure 'Roll Lücke' = [Roll Budget] - [Roll gesichert]
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 10 Roll-Budget
+		lineageTag: a0000000-0000-4000-8000-000000001007
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Deckt die gewichtete Pipeline die Lücke?
+	/// Über 100 Prozent = die offenen Opportunities reichen im Erwartungswert
+	/// aus. Unter 100 Prozent = es fehlt Pipeline, nicht nur Abschlussquote.
+	measure 'Roll Deckungsgrad' = DIVIDE ( [Roll offen (gewichtet)], [Roll Lücke] )
+		formatString: 0.0\ %;-0.0\ %;0.0\ %
+		displayFolder: 10 Roll-Budget
+		lineageTag: a0000000-0000-4000-8000-000000001008
+
+	/// Zielerreichung Roll gesamt: Gewonnenes plus gewichtete Pipeline
+	/// gegen Budget.
+	measure 'Roll Zielerreichung' = ```
+			DIVIDE ( [Roll gesichert] + [Roll offen (gewichtet)], [Roll Budget] )
+			```
+		formatString: 0.0\ %;-0.0\ %;0.0\ %
+		displayFolder: 10 Roll-Budget
+		lineageTag: a0000000-0000-4000-8000-000000001009
+
+	/// Ampeltext zur Roll-Lücke. Beantwortet in einem Satz, ob und wie viel
+	/// noch gewonnen werden muss – Storytelling with Data, Kapitel 5:
+	/// die Aussage gehört in den Titel, nicht in die Legende.
+	measure 'Aussage Roll-Lücke' = ```
+			VAR _Luecke  = [Roll Lücke]
+			VAR _Pipe    = [Roll offen (gewichtet)]
+			VAR _Deckung = DIVIDE ( _Pipe, _Luecke )
+			VAR _GJ      = SELECTEDVALUE ( 'DIM Datum'[GJ Bezeichnung], "dem Budgetjahr" )
+			RETURN
+			SWITCH (
+			    TRUE (),
+			    ISBLANK ( [Roll Budget] ),
+			        "Kein Roll-Budget im Filterkontext – Betriebstyp und Geschäftsjahr prüfen",
+			    _Luecke <= 0,
+			        "Roll-Budget für " & _GJ & " ist gedeckt: "
+			            & FORMAT ( -_Luecke, "#,0 €" ) & " über Plan",
+			    _Deckung >= 1,
+			        "Noch " & FORMAT ( _Luecke, "#,0 €" ) & " bis zum Roll-Budget "
+			            & _GJ & " – die offene Pipeline deckt das im Erwartungswert ("
+			            & FORMAT ( _Deckung, "0 %" ) & ")",
+			    "Noch " & FORMAT ( _Luecke, "#,0 €" ) & " bis zum Roll-Budget "
+			        & _GJ & " – die offene Pipeline deckt davon nur "
+			        & FORMAT ( _Deckung, "0 %" ) & ", es fehlt Pipeline"
+			)
+			```
+		displayFolder: 10 Roll-Budget
+		lineageTag: a0000000-0000-4000-8000-000000001010
+
+	/// ITY-Anteil des Budgetjahres aus dem CRM – Entscheidungen, die im
+	/// Budgetjahr selbst fallen. Gegengröße zu [ITY Budget].
+	measure 'ITY CRM (Budgetjahr)' = ```
+			CALCULATE (
+			    [Net New ITY],
+			    KEEPFILTERS ( 'FCT Net New ITY'[Geschäftsart] = "NEW" ),
+			    KEEPFILTERS ( 'FCT Net New ITY'[ITY Cluster] = "unknown ITY" )
+			)
+			```
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 10 Roll-Budget
+		lineageTag: a0000000-0000-4000-8000-000000001011
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Lost Business des gewählten Geschäftsjahres, als negative Zahl.
+	/// Steht neben [Roll CRM] und [ITY CRM (Budgetjahr)], damit die
+	/// Netto-Sicht des Budgetjahres vollständig ist.
+	measure 'Lost Business (Zeitraum)' = ```
+			CALCULATE (
+			    [Net New ITY],
+			    KEEPFILTERS ( 'FCT Net New ITY'[Geschäftsart] = "LOST" )
+			)
+			```
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 10 Roll-Budget
+		lineageTag: a0000000-0000-4000-8000-000000001012
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Beitrag einer einzelnen Opportunity zum gewählten Geschäftsjahr,
+	/// gewichtet. Für die Rangliste "was muss noch gewonnen werden":
+	/// in einer Tabelle über 'FCT Net New ITY'[Entität Name] liefert sie je
+	/// Zeile den Beitrag genau dieses Vorgangs.
+	measure 'Beitrag Zeitraum (gewichtet)' = ```
+			CALCULATE (
+			    SUM ( 'FCT Net New ITY'[Betrag] ),
+			    KEEPFILTERS ( 'FCT Net New ITY'[Geschäftsart] = "NEW" )
+			)
+			```
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 10 Roll-Budget
+		lineageTag: a0000000-0000-4000-8000-000000001013
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Kumulierter Beitrag der offenen Roll-Opportunities, absteigend nach
+	/// Beitrag. Zusammen mit [Roll Lücke] beantwortet sie die eigentliche
+	/// Frage: WIE VIELE der offenen Vorgänge reichen aus, um die Lücke zu
+	/// schließen? In der Rangliste ist das die Zeile, ab der die kumulierte
+	/// Summe die Lücke übersteigt.
+	measure 'Beitrag kumuliert' = ```
+			VAR _Aktuell = [Beitrag Zeitraum (gewichtet)]
+			VAR _Tabelle =
+			    ADDCOLUMNS (
+			        ALLSELECTED ( 'FCT Net New ITY'[Entität Name] ),
+			        "@Beitrag", [Beitrag Zeitraum (gewichtet)]
+			    )
+			RETURN
+			    SUMX ( FILTER ( _Tabelle, [@Beitrag] >= _Aktuell ), [@Beitrag] )
+			```
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 10 Roll-Budget
+		lineageTag: a0000000-0000-4000-8000-000000001014
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Reicht dieser Vorgang zusammen mit allen größeren aus, um die Lücke zu
+	/// schließen? Färbt die Rangliste ein: alles bis zur ersten "Ja"-Zeile ist
+	/// das Minimalpaket, das gewonnen werden muss.
+	measure 'Schließt Lücke' = ```
+			IF ( [Beitrag kumuliert] >= [Roll Lücke], "Ja", "Nein" )
+			```
+		displayFolder: 10 Roll-Budget
+		lineageTag: a0000000-0000-4000-8000-000000001015
+
 	/// 07 CRM-BEWEGUNG
 	///
 	/// Summe aller Wertänderungen im CRM im gewählten Zeitraum.

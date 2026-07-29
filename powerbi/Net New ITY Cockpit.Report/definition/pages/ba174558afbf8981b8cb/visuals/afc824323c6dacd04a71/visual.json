@@ -1,13 +1,13 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.8.0/schema.json",
-  "name": "17c643aae305437b5caa",
+  "name": "afc824323c6dacd04a71",
   "position": {
-    "x": 1056,
-    "y": 26,
-    "z": 365,
+    "x": 728,
+    "y": 100,
+    "z": 1072,
     "height": 56,
-    "width": 208,
-    "tabOrder": 365
+    "width": 264,
+    "tabOrder": 1072
   },
   "visual": {
     "visualType": "slicer",
@@ -20,14 +20,14 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "DIM Datum"
+                      "Entity": "FCT Net New ITY"
                     }
                   },
-                  "Property": "GJ relativ"
+                  "Property": "Sektor"
                 }
               },
-              "queryRef": "DIM Datum.GJ relativ",
-              "nativeQueryRef": "GJ relativ",
+              "queryRef": "FCT Net New ITY.Sektor",
+              "nativeQueryRef": "Sektor",
               "active": true
             }
           ]
@@ -96,7 +96,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Geschäftsjahr'"
+                  "Value": "'Sektor'"
                 }
               }
             },
@@ -131,7 +131,7 @@
     },
     "drillFilterOtherVisuals": true,
     "syncGroup": {
-      "groupName": "geschaeftsjahr",
+      "groupName": "sektor_konform",
       "fieldChanges": false,
       "filterChanges": true
     }

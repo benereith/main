@@ -124,6 +124,32 @@ table 'DIM Datum'
 		summarizeBy: none
 		sourceColumn: ist_vergangenheit
 
+	/// Abstand zum laufenden Geschäftsjahr: 0 = laufend, +1 = Budgetjahr,
+	/// −1 = Vorjahr.
+	///
+	/// Grundlage der Standardauswahl im Bericht. Ein fester Filter auf
+	/// "FY2026/27" müsste jeden Oktober von Hand umgestellt werden – genau die
+	/// Handarbeit, die dieser Bericht ablösen soll. Ein Filter auf Offset = 1
+	/// wandert mit CURRENT_FY mit.
+	column 'GJ Offset'
+		dataType: int64
+		formatString: +0;-0;0
+		lineageTag: b1000000-0000-4000-8000-000000000114
+		summarizeBy: none
+		sourceColumn: fy_offset
+
+	/// Sprechende Fassung von 'GJ Offset' für Datenschnitte:
+	/// Vorjahr · Laufendes Jahr · Budgetjahr · Folgejahr +2.
+	///
+	/// "Budgetjahr" ist der Zeitraum, auf den sich die Planung richtet – was
+	/// jetzt gewonnen wird, zahlt dort ein. Das ist die Standardauswahl.
+	column 'GJ relativ'
+		dataType: string
+		lineageTag: b1000000-0000-4000-8000-000000000115
+		summarizeBy: none
+		sourceColumn: fy_relativ
+		sortByColumn: 'GJ Offset'
+
 	hierarchy 'Geschäftsjahr'
 		lineageTag: b1000000-0000-4000-8000-000000000201
 

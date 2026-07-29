@@ -1,13 +1,13 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.8.0/schema.json",
-  "name": "17c643aae305437b5caa",
+  "name": "d022317655407e356b5e",
   "position": {
-    "x": 1056,
-    "y": 26,
-    "z": 365,
+    "x": 1000,
+    "y": 100,
+    "z": 1100,
     "height": 56,
-    "width": 208,
-    "tabOrder": 365
+    "width": 264,
+    "tabOrder": 1100
   },
   "visual": {
     "visualType": "slicer",
@@ -20,14 +20,14 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "DIM Datum"
+                      "Entity": "FCT Net New ITY"
                     }
                   },
-                  "Property": "GJ relativ"
+                  "Property": "Verantwortlicher"
                 }
               },
-              "queryRef": "DIM Datum.GJ relativ",
-              "nativeQueryRef": "GJ relativ",
+              "queryRef": "FCT Net New ITY.Verantwortlicher",
+              "nativeQueryRef": "Verantwortlicher",
               "active": true
             }
           ]
@@ -96,7 +96,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Geschäftsjahr'"
+                  "Value": "'Verantwortlicher'"
                 }
               }
             },
@@ -129,11 +129,6 @@
         }
       ]
     },
-    "drillFilterOtherVisuals": true,
-    "syncGroup": {
-      "groupName": "geschaeftsjahr",
-      "fieldChanges": false,
-      "filterChanges": true
-    }
+    "drillFilterOtherVisuals": true
   }
 }

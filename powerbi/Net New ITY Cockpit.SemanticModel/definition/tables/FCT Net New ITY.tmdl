@@ -52,14 +52,34 @@ table 'FCT Net New ITY'
 		summarizeBy: none
 		sourceColumn: status_code
 
-	/// "unknown ITY" oder "unknown Roll" – in welchem Geschäftsjahr die
-	/// Wirkung entsteht. Bezeichner aus den Altmodellen beibehalten, damit
-	/// Abstimmungen gegen die Altreports möglich bleiben.
+	/// "unknown ITY" oder "unknown Roll" – wann die Entscheidung fällt und
+	/// wohin sie dadurch wirkt. Bezeichner aus den Altmodellen beibehalten,
+	/// damit Abstimmungen gegen die Altreports möglich bleiben.
+	///
+	/// unknown Roll → Abschluss im laufenden Geschäftsjahr, Umsatz überwiegend
+	///   im Folgejahr. Das ist die Größe, die auf der Seite "Roll-Budget"
+	///   gegen das Budget läuft: was jetzt noch gewonnen werden muss.
+	/// unknown ITY → Abschluss im Folgejahr, Wirkung innerhalb desselben Jahres.
 	column 'ITY Cluster'
 		dataType: string
 		lineageTag: c1000000-0000-4000-8000-000000000106
 		summarizeBy: none
 		sourceColumn: ity_cluster
+
+	/// Herkunft der ITY-Monatsrate. "CRM-ITY" = aus cgplc_revenueity gerechnet,
+	/// "ARO-Ersatz (Eroeffnung Folgejahr)" = ersatzweise ARO/12.
+	///
+	/// Hintergrund: cgplc_revenueity ist im CRM gegen das LAUFENDE
+	/// Geschäftsjahr gerechnet. Liegt die Mobilisierung komplett im nächsten
+	/// Jahr, steht dort systematisch 0 – nicht weil kein Umsatz entsteht,
+	/// sondern weil er im laufenden Jahr nicht anfällt. nb_20_gold setzt für
+	/// diese Fälle ARO/12 an, sonst fiele das gesamte erste Vertragsjahr auf
+	/// null. Regel DQ-NEW-001 zählt, wie viel Volumen darüber läuft.
+	column 'ITY Quelle'
+		dataType: string
+		lineageTag: c1000000-0000-4000-8000-000000000123
+		summarizeBy: none
+		sourceColumn: ity_quelle
 
 	/// Gewinn- bzw. Verlustwahrscheinlichkeit als Dezimalzahl (0–1).
 	/// New Business  : Win-% aus dem CRM.

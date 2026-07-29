@@ -11,21 +11,21 @@
 | Tabelle | Rolle | Spalten | Kennzahlen | Quelle |
 |---|---|---:|---:|---|
 | `DIM Betrieb` | Dimension | 21 | 0 | `gold_dim_unit` |
-| `DIM Datum` | Dimension | 13 | 0 | `gold_dim_date` |
+| `DIM Datum` | Dimension | 15 | 0 | `gold_dim_date` |
 | `DIM HFM-Struktur` | Dimension | 10 | 0 | `gold_dim_hfm_struktur` |
 | `DIM Opportunity` | Dimension | 19 | 0 | `gold_dim_opportunity` |
 | `DIM Status` | Dimension | 7 | 0 | `gold_dim_status` |
 | `DIM Vertrag` | Dimension | 18 | 0 | `gold_dim_contract` |
 | `DQ Prüfungen` | Prüfung | 6 | 0 | `gold_dq_checks` |
 | `FCT CRM-Bewegung` | Fakt | 14 | 0 | `gold_fct_crm_movement` |
-| `FCT Net New ITY` | Fakt | 30 | 0 | `gold_fct_net_new_ity` |
+| `FCT Net New ITY` | Fakt | 31 | 0 | `gold_fct_net_new_ity` |
 | `FCT Umsatz` | Fakt | 14 | 0 | `gold_fct_revenue` |
 | `Szenario Anlauf` | Szenario-Parameter | 2 | 0 | berechnet (DATATABLE) |
 | `Szenario Anlaufdauer` | Szenario-Parameter | 2 | 0 | berechnet (DATATABLE) |
 | `Szenario Bewertung` | Szenario-Parameter | 3 | 0 | berechnet (DATATABLE) |
 | `Szenario Schwelle` | Szenario-Parameter | 2 | 0 | berechnet (DATATABLE) |
 | `Szenario Verschiebung` | Szenario-Parameter | 3 | 0 | berechnet (DATATABLE) |
-| `_Kennzahlen` | Kennzahlen | 1 | 51 | – |
+| `_Kennzahlen` | Kennzahlen | 1 | 66 | – |
 
 ## Beziehungen
 
@@ -100,6 +100,8 @@ Fiskalkalender der Gruppe (1. Oktober – 30. September). Quelle: gold_dim_date.
 | `Monatsindex` _(technisch)_ | int64 | `monat_index` | LINEARER Monatsindex = GJ-Jahr × 12 + GJ-Periode. Grundlage der Szenario-Verschiebung: "n Monate später" ist damit eine einfache Subtraktion. Ein Schlüssel aus Jahr × 100 + Periode wäre an der Jahresgrenze nicht linear (202512 → 202601) und würde die Verschiebung im Dezember zerreißen. |
 | `GJ Sortierung` _(technisch)_ | int64 | `fy_sort` | Sortierschlüssel GJ-Jahr × 100 + Periode. Nur für Sortierung, nicht für Arithmetik verwenden (siehe Monatsindex). |
 | `Ist Vergangenheit` | boolean | `ist_vergangenheit` | Wahr für alle Tage vor dem heutigen. Trennt im Bericht Ist von Plan, ohne dass jede Visualisierung eine eigene Datumsbedingung braucht. |
+| `GJ Offset` | int64 | `fy_offset` | Abstand zum laufenden Geschäftsjahr: 0 = laufend, +1 = Budgetjahr, −1 = Vorjahr. Grundlage der Standardauswahl im Bericht. Ein fester Filter auf "FY2026/27" müsste jeden Oktober von Hand umgestellt werden – genau die Handarbeit, die dieser Bericht ablösen soll. Ein Filter auf Offset = 1 wandert mit CURRENT_FY mit. |
+| `GJ relativ` | string | `fy_relativ` | Sprechende Fassung von 'GJ Offset' für Datenschnitte: Vorjahr · Laufendes Jahr · Budgetjahr · Folgejahr +2. "Budgetjahr" ist der Zeitraum, auf den sich die Planung richtet – was jetzt gewonnen wird, zahlt dort ein. Das ist die Standardauswahl. |
 
 ### `DIM HFM-Struktur`
 
@@ -248,7 +250,8 @@ VORZEICHENKONVENTION – der wichtigste Unterschied zu den Altmodellen: New Busi
 | `Entitätstyp` | string | `entity_type` | OPPORTUNITY oder CONTRACT. |
 | `Geschäftsart` | string | `business_type` | NEW oder LOST. Steuert Vorzeichen und HFM-Kontenzuordnung. |
 | `Status Code` _(technisch)_ | string | `status_code` | Verknüpfung zu DIM Status (Won / Expected Win / Pipeline / …). |
-| `ITY Cluster` | string | `ity_cluster` | "unknown ITY" oder "unknown Roll" – in welchem Geschäftsjahr die Wirkung entsteht. Bezeichner aus den Altmodellen beibehalten, damit Abstimmungen gegen die Altreports möglich bleiben. |
+| `ITY Cluster` | string | `ity_cluster` | "unknown ITY" oder "unknown Roll" – wann die Entscheidung fällt und wohin sie dadurch wirkt. Bezeichner aus den Altmodellen beibehalten, damit Abstimmungen gegen die Altreports möglich bleiben. unknown Roll → Abschluss im laufenden Geschäftsjahr, Umsatz überwiegend im Folgejahr. Das ist die Größe, die auf der Seite "Roll-Budget" gegen das Budget läuft: was jetzt noch gewonnen werden muss. unknown ITY → Abschluss im Folgejahr, Wirkung innerhalb desselben Jahres. |
+| `ITY Quelle` | string | `ity_quelle` | Herkunft der ITY-Monatsrate. "CRM-ITY" = aus cgplc_revenueity gerechnet, "ARO-Ersatz (Eroeffnung Folgejahr)" = ersatzweise ARO/12. Hintergrund: cgplc_revenueity ist im CRM gegen das LAUFENDE Geschäftsjahr gerechnet. Liegt die Mobilisierung komplett im nächsten Jahr, steht dort systematisch 0 – nicht weil kein Umsatz entsteht, sondern weil er im laufenden Jahr nicht anfällt. nb_20_gold setzt für diese Fälle ARO/12 an, sonst fiele das gesamte erste Vertragsjahr auf null. Regel DQ-NEW-001 zählt, wie viel Volumen darüber läuft. |
 | `Wahrscheinlichkeit` | double | `probability` | Gewinn- bzw. Verlustwahrscheinlichkeit als Dezimalzahl (0–1). New Business  : Win-% aus dem CRM. Lost Business : 1 − Retention-%. |
 | `Periode` _(technisch)_ | dateTime | `period_date` | Erster Tag des Wirkungsmonats. Verbindung zu DIM Datum. |
 | `GJ Jahr` _(technisch)_ | int64 | `fy_year` | – |

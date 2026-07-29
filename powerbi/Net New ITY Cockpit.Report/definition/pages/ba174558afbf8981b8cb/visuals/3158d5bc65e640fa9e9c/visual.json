@@ -1,13 +1,13 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.8.0/schema.json",
-  "name": "17c643aae305437b5caa",
+  "name": "3158d5bc65e640fa9e9c",
   "position": {
-    "x": 1056,
-    "y": 26,
-    "z": 365,
+    "x": 456,
+    "y": 100,
+    "z": 1045,
     "height": 56,
-    "width": 208,
-    "tabOrder": 365
+    "width": 264,
+    "tabOrder": 1045
   },
   "visual": {
     "visualType": "slicer",
@@ -20,14 +20,14 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "DIM Datum"
+                      "Entity": "DIM Status"
                     }
                   },
-                  "Property": "GJ relativ"
+                  "Property": "Status"
                 }
               },
-              "queryRef": "DIM Datum.GJ relativ",
-              "nativeQueryRef": "GJ relativ",
+              "queryRef": "DIM Status.Status",
+              "nativeQueryRef": "Status",
               "active": true
             }
           ]
@@ -96,7 +96,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Geschäftsjahr'"
+                  "Value": "'Status'"
                 }
               }
             },
@@ -129,11 +129,6 @@
         }
       ]
     },
-    "drillFilterOtherVisuals": true,
-    "syncGroup": {
-      "groupName": "geschaeftsjahr",
-      "fieldChanges": false,
-      "filterChanges": true
-    }
+    "drillFilterOtherVisuals": true
   }
 }

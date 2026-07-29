@@ -88,6 +88,22 @@ dim_date = (
         F.concat(F.date_format("datum", "MMM"), F.lit(" "), F.date_format("datum", "yy")),
     )
     .withColumn("ist_vergangenheit", F.col("datum") < F.lit(RUN_DATE))
+    # --- Relative Geschaeftsjahre ------------------------------------------
+    # fy_offset ist die Grundlage fuer die Standardauswahl im Bericht.
+    # Ein fester Filter auf "FY2026/27" muesste jeden Oktober von Hand
+    # umgestellt werden - genau die Handarbeit, die dieser Bericht abloesen
+    # soll. Ein Filter auf fy_offset = 1 wandert dagegen mit CURRENT_FY mit.
+    .withColumn("fy_offset", (F.col("fy_year") - F.lit(CURRENT_FY)).cast("int"))
+    .withColumn(
+        "fy_relativ",
+        F.when(F.col("fy_offset") == -1, F.lit("Vorjahr"))
+        .when(F.col("fy_offset") == 0, F.lit("Laufendes Jahr"))
+        # Das Budgetjahr ist der Zeitraum, auf den sich die Planung richtet:
+        # was jetzt gewonnen wird, zahlt dort ein.
+        .when(F.col("fy_offset") == 1, F.lit("Budgetjahr"))
+        .when(F.col("fy_offset") == 2, F.lit("Folgejahr +2"))
+        .otherwise(F.concat(F.lit("Offset "), F.col("fy_offset").cast("string"))),
+    )
 )
 write_delta(dim_date, "gold_dim_date")
 
@@ -342,20 +358,56 @@ opp_base = silver_opp.select(
     spalte_oder_null(silver_opp, "cgplc_sapid", "int").alias("sap_id_crm"),
 )
 
+# ITY-Ersatzregel bei Eroeffnung im Folgejahr
+# ---------------------------------------------------------------------------
+# cgplc_revenueity ist im CRM gegen das LAUFENDE Geschaeftsjahr gerechnet.
+# Liegt die Mobilisierung komplett im naechsten GJ, steht dort deshalb
+# systematisch 0 - nicht weil kein Umsatz entsteht, sondern weil er im
+# laufenden Jahr nicht anfaellt.
+#
+# Ohne Gegenmassnahme faellt genau das erste Vertragsjahr auf 0: der Fanout
+# stuft alle Perioden bis calc_first_fy_end als value_layer = "ITY" ein und
+# multipliziert sie mit einer ITY-Rate von 0. Erst ab dem zweiten Jahr greift
+# aro_rate. Ein "unknown Roll", der im November des Folgejahres eroeffnet,
+# erzeugt so elf Monate ohne Umsatz.
+#
+# Ersatzwert ist ARO/12, nicht ARO/calc_ity_months: ARO ist definitionsgemaess
+# der Umsatz der ersten zwoelf Vertragsmonate, die Monatsrate also unabhaengig
+# davon, wie viele Monate ins erste GJ fallen.
+#
+# Die Bedingung ist bewusst eng: nur wenn die Eroeffnung NACH dem Ende des
+# laufenden GJ liegt UND CRM keinen ITY-Wert fuehrt. Eine Opportunity, die
+# spaet im laufenden Jahr eroeffnet, hat einen kleinen, aber echten ITY-Wert -
+# der darf nicht ueberschrieben werden.
+ITY_LEER_WEIL_FOLGEJAHR = (F.col("event_month") > F.lit(CY_END)) & (
+    F.coalesce(F.col("revenue_ity"), F.lit(0.0)) == 0
+)
+
 fct_new = (
     opp_base.join(months, F.col("period_date") >= F.col("event_month"))
     .filter(F.col("period_date") <= F.lit(FANOUT_END))
-    .withColumn(
-        "ity_rate",
-        F.when(
-            (F.col("calc_ity_months") > 0) & F.col("weighted_ity").isNotNull(),
-            F.col("weighted_ity") / F.col("calc_ity_months"),
-        ).otherwise(F.lit(0.0)),
-    )
+    # aro_rate MUSS vor ity_rate stehen - ity_rate greift im Ersatzfall darauf zu.
     .withColumn(
         "aro_rate",
         F.when(F.col("weighted_aro").isNotNull(), F.col("weighted_aro") / F.lit(12.0)).otherwise(
             F.lit(0.0)
+        ),
+    )
+    .withColumn(
+        "ity_rate",
+        F.when(ITY_LEER_WEIL_FOLGEJAHR, F.col("aro_rate"))
+        .when(
+            (F.col("calc_ity_months") > 0) & F.col("weighted_ity").isNotNull(),
+            F.col("weighted_ity") / F.col("calc_ity_months"),
+        )
+        .otherwise(F.lit(0.0)),
+    )
+    # Herkunft der ITY-Rate mitfuehren, damit im Bericht und in DQ-NEW-001
+    # nachvollziehbar bleibt, welches Volumen ueber die Ersatzregel laeuft.
+    .withColumn(
+        "ity_quelle",
+        F.when(ITY_LEER_WEIL_FOLGEJAHR, F.lit("ARO-Ersatz (Eroeffnung Folgejahr)")).otherwise(
+            F.lit("CRM-ITY")
         ),
     )
     # value_layer trennt ITY-Phase (erstes GJ) vom Dauerzustand (ARO).
@@ -373,8 +425,17 @@ fct_new = (
         "amount_unweighted",
         F.when(
             F.col("value_layer") == "ITY",
-            F.when(F.col("calc_ity_months") > 0,
-                   F.coalesce(F.col("revenue_ity"), F.lit(0.0)) / F.col("calc_ity_months")).otherwise(F.lit(0.0)),
+            # Gleiche Ersatzregel ungewichtet, sonst laufen gewichtete und
+            # ungewichtete Sicht auseinander.
+            F.when(
+                ITY_LEER_WEIL_FOLGEJAHR,
+                F.coalesce(F.col("revenue_aro"), F.lit(0.0)) / F.lit(12.0),
+            )
+            .when(
+                F.col("calc_ity_months") > 0,
+                F.coalesce(F.col("revenue_ity"), F.lit(0.0)) / F.col("calc_ity_months"),
+            )
+            .otherwise(F.lit(0.0)),
         ).otherwise(F.coalesce(F.col("revenue_aro"), F.lit(0.0)) / F.lit(12.0)),
     )
     .withColumn(
@@ -462,13 +523,18 @@ fct_lost = (
         "hfm_account",
         F.when(F.col("value_layer") == "ITY", F.lit("MAP141c")).otherwise(F.lit("MAP136")),
     )
+    # Lost Business kennt die ITY-Ersatzregel nicht: der Verlustwert stammt aus
+    # dem Vorjahres-ARO und ist unabhaengig davon, in welchem GJ der Vertrag
+    # endet. Die Spalte wird trotzdem gefuehrt, damit beide Haelften denselben
+    # Spaltensatz haben (Voraussetzung fuer unionByName).
+    .withColumn("ity_quelle", F.lit("CRM-ARO (Vorjahr)"))
 )
 
 COMMON = [
     "entity_id", "entity_name", "entity_type", "business_type", "status_code",
     "ity_cluster", "probability", "period_date", "value_layer", "hfm_account",
     "amount_weighted", "amount_unweighted", "event_month", "driver_date",
-    "decision_date", "calc_first_fy_end", "calc_ity_months",
+    "decision_date", "calc_first_fy_end", "calc_ity_months", "ity_quelle",
 ]
 
 # Beide Seiten liefern jetzt denselben Spaltensatz. Es gibt keine Spalte mehr,

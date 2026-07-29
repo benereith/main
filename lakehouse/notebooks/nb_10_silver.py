@@ -140,11 +140,19 @@ opp_no_opening = opp_filtered.filter(F.col("cgplc_openingdate").isNull())
 opp_valid = opp_filtered.filter(F.col("cgplc_openingdate").isNotNull())
 
 # --- Ableitungen -----------------------------------------------------------
-# ity_cluster: In welchem Jahr entfaltet die Opportunity ihre ITY-Wirkung?
-#   "unknown ITY"  -> Abschluss im laufenden GJ, Wirkung noch im laufenden GJ
-#   "unknown Roll" -> Abschluss im Folgejahr, im laufenden GJ nur Rest-ITY
+# ity_cluster: Wann faellt die ENTSCHEIDUNG, und wohin wirkt sie dadurch?
+#   "unknown Roll" -> Abschluss im LAUFENDEN GJ. Der Umsatz faellt ueberwiegend
+#                     erst im Folgejahr an (Mobilisierung folgt der
+#                     Entscheidung), rollt also ins naechste Jahr hinueber.
+#   "unknown ITY"  -> Abschluss im FOLGEJAHR. Wirkung entsteht innerhalb des
+#                     Folgejahres selbst.
 # Uebernommen aus fct_opp; Bezeichner beibehalten fuer Vergleichbarkeit mit
 # den Altreports.
+#
+# Achtung Leserichtung: der Name benennt die WIRKUNG aus Sicht des Budgetjahrs,
+# nicht den Abschlusszeitpunkt. Ein "unknown Roll" wird also JETZT gewonnen und
+# zahlt auf das naechste Jahr ein - das ist die Groesse, die auf der Seite
+# "Roll-Budget" gegen das Budget laeuft.
 opp_silver = (
     opp_valid.withColumn(
         "ity_cluster",

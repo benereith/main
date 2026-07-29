@@ -6,7 +6,7 @@
 > nicht hier.
 
 
-Das Modell enthält **51 Kennzahlen** in 9 Ordnern.
+Das Modell enthält **66 Kennzahlen** in 10 Ordnern.
 
 ## Inhalt
 
@@ -19,6 +19,7 @@ Das Modell enthält **51 Kennzahlen** in 9 Ordnern.
 - [07 CRM-Bewegung](#07-crm-bewegung) – 5 Kennzahlen
 - [08 Datenqualität](#08-datenqualität) – 3 Kennzahlen
 - [09 Titel und Kontext](#09-titel-und-kontext) – 4 Kennzahlen
+- [10 Roll-Budget](#10-roll-budget) – 15 Kennzahlen
 
 
 ## 01 Basis
@@ -840,4 +841,239 @@ Stand der Daten =
 VAR _Stand = CALCULATE ( MAX ( 'FCT Net New ITY'[Stichtag] ), ALL ( 'FCT Net New ITY' ) )
 RETURN
     "Datenstand " & FORMAT ( _Stand, "DD.MM.YYYY" ) & " · Datenqualität: " & [DQ Status]
+```
+
+
+## 10 Roll-Budget
+
+### `Aussage Roll-Lücke`
+
+Ampeltext zur Roll-Lücke. Beantwortet in einem Satz, ob und wie viel noch gewonnen werden muss – Storytelling with Data, Kapitel 5: die Aussage gehört in den Titel, nicht in die Legende.
+
+```dax
+Aussage Roll-Lücke =
+VAR _Luecke  = [Roll Lücke]
+VAR _Pipe    = [Roll offen (gewichtet)]
+VAR _Deckung = DIVIDE ( _Pipe, _Luecke )
+VAR _GJ      = SELECTEDVALUE ( 'DIM Datum'[GJ Bezeichnung], "dem Budgetjahr" )
+RETURN
+SWITCH (
+    TRUE (),
+    ISBLANK ( [Roll Budget] ),
+        "Kein Roll-Budget im Filterkontext – Betriebstyp und Geschäftsjahr prüfen",
+    _Luecke <= 0,
+        "Roll-Budget für " & _GJ & " ist gedeckt: "
+            & FORMAT ( -_Luecke, "#,0 €" ) & " über Plan",
+    _Deckung >= 1,
+        "Noch " & FORMAT ( _Luecke, "#,0 €" ) & " bis zum Roll-Budget "
+            & _GJ & " – die offene Pipeline deckt das im Erwartungswert ("
+            & FORMAT ( _Deckung, "0 %" ) & ")",
+    "Noch " & FORMAT ( _Luecke, "#,0 €" ) & " bis zum Roll-Budget "
+        & _GJ & " – die offene Pipeline deckt davon nur "
+        & FORMAT ( _Deckung, "0 %" ) & ", es fehlt Pipeline"
+)
+```
+
+### `Beitrag Zeitraum (gewichtet)`
+
+Beitrag einer einzelnen Opportunity zum gewählten Geschäftsjahr, gewichtet. Für die Rangliste "was muss noch gewonnen werden": in einer Tabelle über 'FCT Net New ITY'[Entität Name] liefert sie je Zeile den Beitrag genau dieses Vorgangs.
+
+**Format:** `#,0\ "€";-#,0\ "€";#,0\ "€"`
+
+```dax
+Beitrag Zeitraum (gewichtet) =
+CALCULATE (
+    SUM ( 'FCT Net New ITY'[Betrag] ),
+    KEEPFILTERS ( 'FCT Net New ITY'[Geschäftsart] = "NEW" )
+)
+```
+
+### `Beitrag kumuliert`
+
+Kumulierter Beitrag der offenen Roll-Opportunities, absteigend nach Beitrag. Zusammen mit [Roll Lücke] beantwortet sie die eigentliche Frage: WIE VIELE der offenen Vorgänge reichen aus, um die Lücke zu schließen? In der Rangliste ist das die Zeile, ab der die kumulierte Summe die Lücke übersteigt.
+
+**Format:** `#,0\ "€";-#,0\ "€";#,0\ "€"`
+
+```dax
+Beitrag kumuliert =
+VAR _Aktuell = [Beitrag Zeitraum (gewichtet)]
+VAR _Tabelle =
+    ADDCOLUMNS (
+        ALLSELECTED ( 'FCT Net New ITY'[Entität Name] ),
+        "@Beitrag", [Beitrag Zeitraum (gewichtet)]
+    )
+RETURN
+    SUMX ( FILTER ( _Tabelle, [@Beitrag] >= _Aktuell ), [@Beitrag] )
+```
+
+### `ITY Budget`
+
+Budgetseite: ITY-Anteil des unknown-ITY-Budgets (Planbetriebe Typ ITY). Entscheidungen dazu fallen erst im Budgetjahr selbst.
+
+**Format:** `#,0\ "€";-#,0\ "€";#,0\ "€"`
+
+```dax
+ITY Budget =
+CALCULATE (
+    SUM ( 'FCT Umsatz'[Monatswert] ),
+    KEEPFILTERS ( 'FCT Umsatz'[Werttyp Version] = "Plan_90" ),
+    KEEPFILTERS ( 'FCT Umsatz'[Betriebstyp] = "Plan-Betriebe ITY" )
+)
+```
+
+### `ITY CRM (Budgetjahr)`
+
+ITY-Anteil des Budgetjahres aus dem CRM – Entscheidungen, die im Budgetjahr selbst fallen. Gegengröße zu [ITY Budget].
+
+**Format:** `#,0\ "€";-#,0\ "€";#,0\ "€"`
+
+```dax
+ITY CRM (Budgetjahr) =
+CALCULATE (
+    [Net New ITY],
+    KEEPFILTERS ( 'FCT Net New ITY'[Geschäftsart] = "NEW" ),
+    KEEPFILTERS ( 'FCT Net New ITY'[ITY Cluster] = "unknown ITY" )
+)
+```
+
+### `Lost Business (Zeitraum)`
+
+Lost Business des gewählten Geschäftsjahres, als negative Zahl. Steht neben [Roll CRM] und [ITY CRM (Budgetjahr)], damit die Netto-Sicht des Budgetjahres vollständig ist.
+
+**Format:** `#,0\ "€";-#,0\ "€";#,0\ "€"`
+
+```dax
+Lost Business (Zeitraum) =
+CALCULATE (
+    [Net New ITY],
+    KEEPFILTERS ( 'FCT Net New ITY'[Geschäftsart] = "LOST" )
+)
+```
+
+### `Roll Budget`
+
+10 ROLL-BUDGET
+
+Alle Kennzahlen dieser Gruppe beantworten EINE Frage: "Was muss im laufenden Geschäftsjahr noch gewonnen werden, damit das Roll-Budget des Budgetjahres erreicht wird?"
+
+Der Umsatz eines Budgetjahres aus Neugeschäft zerfällt in zwei Teile: Roll → Entscheidung fällt im VORHERGEHENDEN Jahr, Umsatz rollt hinein. Darauf lässt sich JETZT noch Einfluss nehmen. ITY  → Entscheidung fällt im Budgetjahr selbst. Die Trennung steht auf dem Fakt als 'ITY Cluster' und im SAP-Budget als Betriebstyp der Planbetriebe (Version 90).
+
+Budgetseite: Roll-Anteil des unknown-ITY-Budgets (SAP-Version 90, Planbetriebe vom Typ Roll). Gegengröße zu [Roll gesichert].
+
+**Format:** `#,0\ "€";-#,0\ "€";#,0\ "€"`
+
+```dax
+Roll Budget =
+CALCULATE (
+    SUM ( 'FCT Umsatz'[Monatswert] ),
+    KEEPFILTERS ( 'FCT Umsatz'[Werttyp Version] = "Plan_90" ),
+    KEEPFILTERS ( 'FCT Umsatz'[Betriebstyp] = "Plan-Betriebe Roll" )
+)
+```
+
+### `Roll CRM`
+
+CRM-Seite: Neugeschäft im gewählten Zeitraum, dessen Entscheidung im Vorjahr fällt – der Roll-Anteil. Bewertung folgt dem Datenschnitt 'Szenario Bewertung'.
+
+**Format:** `#,0\ "€";-#,0\ "€";#,0\ "€"`
+
+```dax
+Roll CRM =
+CALCULATE (
+    [Net New ITY],
+    KEEPFILTERS ( 'FCT Net New ITY'[Geschäftsart] = "NEW" ),
+    KEEPFILTERS ( 'FCT Net New ITY'[ITY Cluster] = "unknown Roll" )
+)
+```
+
+### `Roll Deckungsgrad`
+
+Deckt die gewichtete Pipeline die Lücke? Über 100 Prozent = die offenen Opportunities reichen im Erwartungswert aus. Unter 100 Prozent = es fehlt Pipeline, nicht nur Abschlussquote.
+
+**Format:** `0.0\ %;-0.0\ %;0.0\ %`
+
+```dax
+Roll Deckungsgrad =
+DIVIDE ( [Roll offen (gewichtet)], [Roll Lücke] )
+```
+
+### `Roll Lücke`
+
+DIE Kernzahl der Seite: Was fehlt noch bis zum Roll-Budget? Budget minus bereits Gewonnenes. Positiv = es fehlt noch etwas.
+
+Bewusst gegen [Roll gesichert] gerechnet, nicht gegen die gewichtete Pipeline: die Frage lautet "was muss noch kommen", nicht "was erwarten wir im Mittel".
+
+**Format:** `#,0\ "€";-#,0\ "€";#,0\ "€"`
+
+```dax
+Roll Lücke =
+[Roll Budget] - [Roll gesichert]
+```
+
+### `Roll Zielerreichung`
+
+Zielerreichung Roll gesamt: Gewonnenes plus gewichtete Pipeline gegen Budget.
+
+**Format:** `0.0\ %;-0.0\ %;0.0\ %`
+
+```dax
+Roll Zielerreichung =
+DIVIDE ( [Roll gesichert] + [Roll offen (gewichtet)], [Roll Budget] )
+```
+
+### `Roll gesichert`
+
+Bereits gewonnener Roll-Anteil. Ungewichtet, weil WON keine Wahrscheinlichkeit mehr trägt – der Auftrag liegt vor. Das ist der Sockel, auf dem die Lücke aufsetzt.
+
+**Format:** `#,0\ "€";-#,0\ "€";#,0\ "€"`
+
+```dax
+Roll gesichert =
+CALCULATE (
+    SUM ( 'FCT Net New ITY'[Betrag ungewichtet (vorzeichenbehaftet)] ),
+    KEEPFILTERS ( 'FCT Net New ITY'[Geschäftsart] = "NEW" ),
+    KEEPFILTERS ( 'FCT Net New ITY'[ITY Cluster] = "unknown Roll" ),
+    KEEPFILTERS ( 'DIM Status'[Status Code] = "WON" )
+)
+```
+
+### `Roll offen (Vollwert)`
+
+Voller Wert des noch offenen Roll-Anteils, ohne Gewichtung. Obergrenze: so viel wäre erreichbar, wenn ALLES gewonnen würde.
+
+**Format:** `#,0\ "€";-#,0\ "€";#,0\ "€"`
+
+```dax
+Roll offen (Vollwert) =
+CALCULATE (
+    SUM ( 'FCT Net New ITY'[Betrag ungewichtet (vorzeichenbehaftet)] ),
+    KEEPFILTERS ( 'FCT Net New ITY'[Geschäftsart] = "NEW" ),
+    KEEPFILTERS ( 'FCT Net New ITY'[ITY Cluster] = "unknown Roll" ),
+    KEEPFILTERS ( 'DIM Status'[Status Code] IN { "EXPECTED_WIN", "PIPELINE", "NO_PROBABILITY" } )
+)
+```
+
+### `Roll offen (gewichtet)`
+
+Noch offener Roll-Anteil, gewichtet mit der Win-Wahrscheinlichkeit. Enthält Expected Win und Pipeline – also alles, was noch zu gewinnen ist. Das ist der erwartete Beitrag der laufenden Verhandlungen.
+
+**Format:** `#,0\ "€";-#,0\ "€";#,0\ "€"`
+
+```dax
+Roll offen (gewichtet) =
+CALCULATE (
+    SUM ( 'FCT Net New ITY'[Betrag] ),
+    KEEPFILTERS ( 'FCT Net New ITY'[Geschäftsart] = "NEW" ),
+    KEEPFILTERS ( 'FCT Net New ITY'[ITY Cluster] = "unknown Roll" ),
+    KEEPFILTERS ( 'DIM Status'[Status Code] IN { "EXPECTED_WIN", "PIPELINE", "NO_PROBABILITY" } )
+)
+```
+
+### `Schließt Lücke`
+
+Reicht dieser Vorgang zusammen mit allen größeren aus, um die Lücke zu schließen? Färbt die Rangliste ein: alles bis zur ersten "Ja"-Zeile ist das Minimalpaket, das gewonnen werden muss.
+
+```dax
+Schließt Lücke =
+IF ( [Beitrag kumuliert] >= [Roll Lücke], "Ja", "Nein" )
 ```

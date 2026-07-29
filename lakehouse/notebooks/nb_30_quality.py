@@ -320,6 +320,37 @@ if einseitig:
         print(f"       -> {anzeige} ({spalte}): NEW {fn} %, LOST {fl} % - leer auf {seite}")
 
 # ---------------------------------------------------------------------------
+# DQ-NEW-001  ITY-Wert ueber die ARO-Ersatzregel gebildet
+# ---------------------------------------------------------------------------
+# INFO, kein Fehler. cgplc_revenueity ist im CRM gegen das LAUFENDE
+# Geschaeftsjahr gerechnet; bei Mobilisierung im Folgejahr steht dort
+# systematisch 0. nb_20_gold setzt fuer diese Faelle ARO/12 als Monatsrate an
+# (Abschnitt 5a, ITY_LEER_WEIL_FOLGEJAHR), sonst faellt das gesamte erste
+# Vertragsjahr auf null.
+#
+# Diese Regel macht sichtbar, WIE VIEL Volumen ueber die Ersatzregel laeuft.
+# Ein hoher Anteil ist normal, solange der Geschaeftsjahreswechsel bevorsteht -
+# er sollte nach dem Wechsel aber deutlich zurueckgehen, weil CRM die
+# ITY-Werte dann gegen das neue laufende Jahr fuehrt. Bleibt der Anteil hoch,
+# ist cgplc_revenueity im CRM nicht nachgepflegt worden.
+ersatz = fct.filter(
+    (F.col("business_type") == "NEW")
+    & (F.col("ity_quelle") == "ARO-Ersatz (Eroeffnung Folgejahr)")
+) if "ity_quelle" in fct.columns else spark.createDataFrame([], "entity_id string")
+
+check(
+    "DQ-NEW-001", "INFO",
+    "Perioden, deren ITY-Wert aus ARO/12 statt aus cgplc_revenueity stammt",
+    ersatz,
+    "Normal vor dem Geschaeftsjahreswechsel. Bleibt der Anteil danach hoch, "
+    "cgplc_revenueity im CRM nachpflegen.",
+)
+if "ity_quelle" in fct.columns:
+    betroffen = ersatz.select("entity_id").distinct().count()
+    volumen = ersatz.agg(F.sum("amount_weighted")).collect()[0][0] or 0
+    print(f"       -> {betroffen:,} Opportunities, {volumen:,.0f} EUR gewichtet")
+
+# ---------------------------------------------------------------------------
 # DQ-SNP-001  Mehrere Ladelaeufe je Stichtag
 # ---------------------------------------------------------------------------
 # Waechter gegen den Fehler, den die Staging-Strecke verhindern soll: Wenn ein

@@ -401,7 +401,7 @@ def seite_cockpit():
         y + (HEADER_H - FILTER_H) // 2,
         [
             ("FCT Net New ITY", "Sektor", "Sektor", "sektor_konform"),
-            ("DIM Datum", "GJ Bezeichnung", "Geschäftsjahr", "geschaeftsjahr"),
+            ("DIM Datum", "GJ relativ", "Geschäftsjahr", "geschaeftsjahr"),
         ],
         x=CONTENT_X + aussage_w + 8,
         breite_gesamt=CONTENT_W - aussage_w - 8,
@@ -763,6 +763,123 @@ def seite_new_business():
     return "New Business", vis
 
 
+def seite_roll_budget():
+    """Was muss im laufenden Jahr noch gewonnen werden, damit das Roll-Budget
+    des Budgetjahres steht?
+
+    Aufbau folgt der Frage, nicht den verfügbaren Feldern:
+      1. Die Antwort als Satz (Aussage Roll-Lücke).
+      2. Die vier Zahlen, aus denen sie entsteht.
+      3. Links: Budget gegen Gewonnenes gegen Pipeline - der Abstand IST die
+         Botschaft, deshalb ein Balken je Größe auf gemeinsamer Achse.
+      4. Rechts: die Rangliste der offenen Vorgänge mit kumulierter Summe.
+         Sie beantwortet die eigentliche Handlungsfrage - WELCHE Vorgänge
+         reichen aus. 'Schließt Lücke' markiert die Grenze.
+      5. Unten: die Netto-Sicht des Budgetjahres, New und Lost nebeneinander.
+    """
+    y = INHALT_Y
+    vis = kopf(aussage_measure="Aussage Roll-Lücke", zusatz_measure="Aussage Sicherheit")
+
+    vis += filterzeile(y, [
+        ("DIM Datum", "GJ relativ", "Geschäftsjahr", "geschaeftsjahr"),
+        ("DIM Status", "Status", "Status"),
+        ("FCT Net New ITY", "Sektor", "Sektor", "sektor_konform"),
+        ("FCT Net New ITY", "Verantwortlicher", "Verantwortlicher"),
+    ])
+    y += FILTER_H + 8
+
+    # Kennzahlenzeile: Budget, Gewonnenes, Lücke, Deckung durch Pipeline.
+    # Bewusst in dieser Reihenfolge - sie liest sich als Rechnung.
+    vis.append(
+        kpi(CONTENT_X, y, CONTENT_W, 88,
+            ["Roll Budget", "Roll gesichert", "Roll Lücke",
+             "Roll offen (gewichtet)", "Roll Deckungsgrad"])
+    )
+    y += 88 + 8
+
+    h_mitte = 236
+    links_w = int(CONTENT_W * 0.42) - 4
+
+    vis.append(
+        visual(
+            "barChart",
+            CONTENT_X, y, links_w, h_mitte,
+            roles={
+                "Y": [measure("Roll Budget"), measure("Roll gesichert"),
+                      measure("Roll offen (gewichtet)"), measure("Roll offen (Vollwert)")],
+            },
+            titel="Budget, Gesichertes und Pipeline",
+            untertitel="Der Abstand zwischen Budget und Gesichertem ist die Lücke",
+            objects={
+                "labels": props(show=lit(True), fontSize=lit(9.0), labelDisplayUnits=lit(1000.0)),
+                "categoryAxis": props(show=lit(True), fontSize=lit(9.0)),
+                "valueAxis": props(show=lit(False)),
+            },
+        )
+    )
+
+    # Rangliste: absteigend nach Beitrag, damit die kumulierte Spalte
+    # überhaupt eine Bedeutung hat - 'Beitrag kumuliert' summiert alle
+    # Vorgänge mit größerem oder gleichem Beitrag.
+    vis.append(
+        visual(
+            "tableEx",
+            CONTENT_X + links_w + 8, y, CONTENT_W - links_w - 8, h_mitte,
+            roles={
+                "Values": [
+                    spalte("FCT Net New ITY", "Entität"),
+                    spalte("FCT Net New ITY", "Kunde"),
+                    spalte("DIM Status", "Status"),
+                    measure("Beitrag Zeitraum (gewichtet)"),
+                    measure("Beitrag kumuliert"),
+                    measure("Schließt Lücke"),
+                ]
+            },
+            titel="Was noch gewonnen werden muss",
+            untertitel="Absteigend nach Beitrag. Ab der ersten Ja-Zeile ist die Lücke geschlossen",
+            sort=sortierung("Beitrag Zeitraum (gewichtet)"),
+            filters=[filter_measure_gleich(
+                "FCT Net New ITY", "ITY Cluster", ["unknown Roll"]
+            )],
+            objects={
+                "grid": props(gridVertical=lit(False), rowPadding=lit(3)),
+                "columnHeaders": props(fontSize=lit(9.0), bold=lit(True)),
+                "values": props(fontSize=lit(9.0)),
+            },
+        )
+    )
+    y += h_mitte + 8
+
+    # Netto-Sicht des gewählten Jahres. Roll und ITY sind die beiden Quellen
+    # des Neugeschäfts, Lost steht als negative Größe daneben - zusammen
+    # ergeben sie das, was am Ende im Budgetjahr ankommt.
+    h_unten = CANVAS_H - MARGIN - FOOTER_H - 8 - y
+    vis.append(
+        visual(
+            "clusteredColumnChart",
+            CONTENT_X, y, CONTENT_W, h_unten,
+            roles={
+                "Category": [spalte("DIM Datum", "Periode Label")],
+                "Y": [measure("Roll CRM"), measure("ITY CRM (Budgetjahr)"),
+                      measure("Lost Business (Zeitraum)")],
+            },
+            titel="Woraus sich das gewählte Geschäftsjahr zusammensetzt",
+            untertitel="Roll aus Vorjahresentscheidungen · ITY aus Entscheidungen im Jahr selbst · Lost Business",
+            objects={
+                "labels": props(show=lit(False)),
+                "categoryAxis": props(show=lit(True), fontSize=lit(9.0)),
+                "valueAxis": props(show=lit(True), fontSize=lit(9.0),
+                                   labelDisplayUnits=lit(1000.0)),
+                "legend": props(show=lit(True), position=lit("Top"), fontSize=lit(9.0)),
+            },
+        )
+    )
+
+    vis.append(fusszeile())
+    vis.append(nav())
+    return "Roll-Budget", vis
+
+
 def seite_lost_business():
     y = INHALT_Y
     vis = kopf()
@@ -948,7 +1065,7 @@ def seite_abstimmung():
     vis += filterzeile(y, [
         ("FCT Net New ITY", "Werk Zuordnung", "Herkunft der Werk-Zuordnung"),
         ("FCT Net New ITY", "Sektor", "Sektor", "sektor_konform"),
-        ("DIM Datum", "GJ Bezeichnung", "Geschäftsjahr", "geschaeftsjahr"),
+        ("DIM Datum", "GJ relativ", "Geschäftsjahr", "geschaeftsjahr"),
     ])
     y += FILTER_H + 8
 
@@ -1129,6 +1246,10 @@ PAGES = [
     seite_cockpit,
     seite_bridge,
     seite_szenario,
+    # Direkt nach den Szenarien und vor den Detailseiten: die Roll-Frage ist
+    # die operative Konsequenz aus dem Cockpit ("was muss noch passieren"),
+    # die Einzelsichten New/Lost liefern danach die Begruendung.
+    seite_roll_budget,
     seite_new_business,
     seite_lost_business,
     seite_bewegung,
@@ -1209,10 +1330,29 @@ def schreibe():
     with open(os.path.join(DEFINITION, "version.json"), "w", encoding="utf-8") as fh:
         json.dump({"$schema": SCHEMA_VERSION, "version": "2.0.0"}, fh, indent=2)
 
+    # Berichtsweiter Standardfilter auf das Budgetjahr.
+    #
+    # Er steht auf REPORT-Ebene, nicht je Seite: der Zeitraum ist die eine
+    # Einstellung, die auf allen Seiten gleich gelten muss - sonst zeigt das
+    # Cockpit ein anderes Jahr als die Rangliste, ohne dass es auffällt.
+    #
+    # Gefiltert wird auf 'GJ relativ', nicht auf "FY2026/27": der relative
+    # Wert wandert mit CURRENT_FY mit, ein fester Jahreswert müsste jeden
+    # Oktober von Hand nachgezogen werden.
+    #
+    # howCreated "User" statt "Auto": der Filter ist im Filterbereich sichtbar
+    # und lässt sich aufheben. Eine Voreinstellung, die man nicht sieht und
+    # nicht ändern kann, ist die Ursache der meisten "die Zahl stimmt nicht"-
+    # Rückfragen.
+    berichtsfilter = filter_measure_gleich("DIM Datum", "GJ relativ", ["Budgetjahr"])
+    berichtsfilter["howCreated"] = "User"
+    berichtsfilter["displayName"] = "Geschäftsjahr (Standard: Budgetjahr)"
+
     with open(os.path.join(DEFINITION, "report.json"), "w", encoding="utf-8") as fh:
         json.dump(
             {
                 "$schema": SCHEMA_REPORT,
+                "filterConfig": {"filters": [berichtsfilter]},
                 "themeCollection": {
                     "baseTheme": {
                         "name": "NetNewITY",
