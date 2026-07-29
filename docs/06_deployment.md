@@ -112,22 +112,88 @@ Manueller Erstlauf in dieser Reihenfolge: `nb_05_snapshot`, `nb_10_silver`,
 
 ## Schritt 3 – Pipeline einrichten
 
-Data-Pipeline `pl_net_new_ity_daily` mit fünf aufeinanderfolgenden Aktivitäten:
+Data-Pipeline `pl_net_new_ity_daily` mit sieben Aktivitäten:
 
 ```
-Dataflows (parallel)        05:00   REPLACE nach stg_*
-   -> nb_05_snapshot        05:20   bei Erfolg
-   -> nb_10_silver          05:30   bei Erfolg
-   -> nb_20_gold            05:45   bei Erfolg
-   -> nb_30_quality         06:00   bei Erfolg
-   -> Semantikmodell        06:15   bei Erfolg
+df_crm_ingest aktualisieren            ─┐
+                                         ├─▶ nb_05_snapshot ─▶ nb_10_silver ─▶ nb_20_gold ─▶ nb_30_quality ─▶ Semantikmodell
+df_map_unit_assignment aktualisieren   ─┘         │                 │              │              │                │
+                                              (Succeeded)       (Succeeded)    (Succeeded)    (Succeeded)      (Succeeded)
 ```
 
-Die Verkettung über "bei Erfolg" ist die eigentliche Absicherung:
-`nb_30_quality` wirft bei Verstößen gegen ERROR-Regeln eine Ausnahme, die
-Pipeline bricht ab, und das Semantikmodell behält den letzten geprüften Stand.
-Ein Bericht mit alten, aber korrekten Zahlen ist besser als einer mit frischen,
-aber falschen.
+| # | Aktivität | Typ | Abhängigkeit | Liest zusätzlich | Schreibt |
+|---|---|---|---|---|---|
+| 1 | `df_crm_ingest` aktualisieren | Dataflow-Aktualisierung | – | Dataverse | `stg_crm_opportunity`, `stg_crm_contract`, `stg_crm_account`, `stg_crm_territory` |
+| 2 | `df_map_unit_assignment` aktualisieren | Dataflow-Aktualisierung | – | SharePoint | `stg_map_unit_assignment` |
+| 3 | `nb_05_snapshot` | Notebook | 1 **und** 2, je Succeeded | alle `stg_*` | `bronze_crm_*`, `bronze_map_unit_assignment` |
+| 4 | `nb_10_silver` | Notebook | 3, Succeeded | `bronze_crm_*`, **`bronze_sap_unit`** | `silver_opportunity`, `silver_contract`, `silver_unit`, `silver_*_history`, `silver_dq_reject` |
+| 5 | `nb_20_gold` | Notebook | 4, Succeeded | `silver_*`, `bronze_map_unit_assignment`, **`bronze_sap_revenue`** | `gold_dim_*`, `gold_fct_*` |
+| 6 | `nb_30_quality` | Notebook | 5, Succeeded | `gold_fct_net_new_ity`, `silver_*` | `gold_dq_checks` |
+| 7 | Semantikmodell aktualisieren | native Aktivität, sonst Web-Aktivität gegen die Enhanced-Refresh-REST-API | 6, Succeeded | – | Import-Tabellen des Modells |
+
+**Die Abhängigkeitsbedingung muss überall „Succeeded" sein, nicht
+„Completed".** `nb_05_snapshot` und `nb_30_quality` werfen absichtlich eine
+Ausnahme, wenn etwas nicht stimmt (doppelter Snapshot, veralteter
+Staging-Stand, ERROR-Datenqualitätsregel). Bei „Completed" liefe die Pipeline
+trotzdem weiter und aktualisierte das Semantikmodell mit kaputten oder alten
+Daten – genau der Fall, den die Verkettung verhindern soll. Ein Bericht mit
+alten, aber korrekten Zahlen ist besser als einer mit frischen, aber falschen.
+
+Vorschlag für Startzeiten: 05:00 (Dataflows) · 05:20 · 05:30 · 05:45 · 06:00 ·
+06:15 – siehe aber die Einschränkung zu SAP direkt im Anschluss, bevor die
+Zeiten festgelegt werden.
+
+### Die Lücke, die diese Pipeline nicht schließt: SAP-Aktualität
+
+`bronze_sap_unit` und `bronze_sap_revenue` werden von **keiner** der sieben
+Aktivitäten geschrieben. Es sind Lakehouse-Shortcuts auf bereits bestehende
+Objekte – den vorhandenen Dataflow `sap_master_data_unit` und die SQL-View
+`V_SAP_EXPORTS_cleansed` (siehe Schritt 1). Ein Shortcut ist ein Live-Zeiger
+und braucht keinen eigenen Refresh-Schritt in dieser Pipeline.
+
+Damit hängt ihre Aktualität an einem Zeitplan, den `pl_net_new_ity_daily`
+nicht kennt. Läuft der bestehende SAP-Dataflow später als 05:00, rechnet
+`nb_10_silver` mit dem SAP-Stand von gestern – ohne dass ein Fehler auftaucht,
+weil die Tabelle ja existiert und Daten enthält, nur veraltete.
+
+Vor dem produktiven Einsatz eine der beiden Optionen wählen:
+
+* **Zugriff auf den SAP-Dataflow vorhanden:** eine achte Aktivität
+  „SAP-Dataflow aktualisieren" parallel zu 1 und 2 einfügen und
+  `nb_10_silver` zusätzlich davon abhängig machen.
+* **Kein Zugriff:** die Startzeit von `pl_net_new_ity_daily` mit Puffer hinter
+  den bekannten SAP-Refresh legen.
+
+### Nach dem ersten vollständigen Lauf prüfen
+
+```sql
+-- Genau ein Snapshot je Bronze-Tabelle für heute?
+SELECT 'bronze_crm_opportunity' AS tabelle, COUNT(DISTINCT snapshot_date) AS n
+FROM   bronze_crm_opportunity WHERE snapshot_date = current_date()
+UNION ALL
+SELECT 'bronze_crm_contract', COUNT(DISTINCT snapshot_date)
+FROM   bronze_crm_contract WHERE snapshot_date = current_date()
+UNION ALL
+SELECT 'bronze_map_unit_assignment', COUNT(DISTINCT snapshot_date)
+FROM   bronze_map_unit_assignment WHERE snapshot_date = current_date();
+-- jede Zeile muss n = 1 zeigen; 0 heißt der Dataflow/nb_05 ist nicht durchgelaufen
+
+-- Ist der Gold-Fakt für denselben Tag geschrieben?
+SELECT snapshot_date, COUNT(*) AS zeilen
+FROM   gold_fct_net_new_ity
+GROUP  BY snapshot_date
+ORDER  BY snapshot_date DESC
+LIMIT  3;
+
+-- Blockiert eine ERROR-Regel den heutigen Stand?
+SELECT regel_id, anzahl_verstoesse, beschreibung
+FROM   gold_dq_checks
+WHERE  pruef_datum = current_date() AND schweregrad = 'ERROR' AND anzahl_verstoesse > 0;
+```
+
+Erst wenn diese drei Abfragen den erwarteten Tagesstand zeigen und die letzte
+leer bleibt, hat die Pipeline **alle** Daten korrekt geladen. Die vollständige
+Regelliste inklusive Handlungsanweisungen: `docs/08_datenqualitaet.md`.
 
 ---
 
