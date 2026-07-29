@@ -23,17 +23,38 @@ Power BI Desktop: unter *Datei → Optionen → Vorschaufunktionen* müssen
 
 ## Schritt 1 – Dataflows anlegen
 
-Im Fabric-Arbeitsbereich **zwei** Dataflows Gen2 erstellen. Jede Abfrage steht
+Im Fabric-Arbeitsbereich **drei** Dataflows Gen2 erstellen. Jede Abfrage steht
 einzeln unter `dataflows/<dataflow>/` und lässt sich per Copy-Paste in den
 erweiterten Editor einer neuen Power-Query-Abfrage übertragen. Die Trennung
-in zwei Dataflows folgt der Quelle: CRM-Extrakte teilen eine Verbindung und
-einen Fehlerfall, das Mapping hängt an SharePoint und soll nicht mitreißen,
-wenn Dataverse klemmt – Begründung ausführlich in `dataflows/README.md`.
+folgt der Quelle: CRM-Extrakte teilen eine Verbindung und einen Fehlerfall,
+das Mapping hängt an SharePoint und die SAP-Abfragen am Warehouse – keine
+davon soll mitreißen, wenn eine andere klemmt. Begründung ausführlich in
+`dataflows/README.md`.
 
 | Dataflow | Ordner | Abfragen (Ziel = Dateiname ohne Nummer) | Modus |
 |---|---|---|---|
 | `df_crm_ingest` | `dataflows/df_crm_ingest/` | `stg_crm_opportunity`, `stg_crm_contract`, `stg_crm_account`, `stg_crm_territory` | Ersetzen |
 | `df_map_unit_assignment` | `dataflows/df_map_unit_assignment/` | `stg_map_unit_assignment` | Ersetzen |
+| `df_sap_ingest` | `dataflows/df_sap_ingest/` | `bronze_sap_unit`, `bronze_sap_revenue` | Ersetzen |
+
+**Warum die SAP-Abfragen direkt nach `bronze_*` schreiben und nicht nach
+`stg_*`:** sie werden bewusst **nicht historisiert**. Betriebsstammdaten sind
+ein Ist-Stand und keine Bewegung; `V_SAP_EXPORTS_cleansed` ist bereits der
+gepflegte Ist-/Planstand je Periode. Ein Tagessnapshot darüber würde dieselben
+Buchungen täglich vervielfachen, ohne eine Frage zu beantworten, die nicht
+schon über `fy_year`/`fy_period` beantwortbar wäre. `nb_05_snapshot` fasst
+diese beiden Tabellen deshalb nicht an – anders als die CRM-Extrakte, bei
+denen die Bewegungsanalyse genau auf der Historie beruht.
+
+In `df_sap_ingest` sind vor dem ersten Lauf zwei Stellen zu füllen:
+
+* `01_bronze_sap_unit.m` – die Navigation zum bestehenden Gen1-Dataflow
+  `sap_master_data_unit` enthält mandantenspezifische GUIDs. Über *Daten
+  abrufen → Dataflows* erzeugen lassen und die beiden ersten Schritte der
+  Datei damit ersetzen.
+* `02_bronze_sap_revenue.m` – `SapServer` auf den Servernamen des
+  SAP-Warehouse `Reporting` setzen und `AktuellesGJ` mit `CURRENT_FY`
+  gleichhalten.
 
 In jedem Ordner zuerst `00_fn_berlin_now.m` als **Funktionsquery** anlegen und
 **"Laden aktivieren" ausschalten** – sie liefert keine Zieltabelle, sondern
@@ -54,14 +75,12 @@ Fakten historisiert, weil sie ein manueller Input in offizielle Budgetzahlen
 ist: ohne Snapshot lässt sich eine abgeschlossene Budgetrunde nach der
 nächsten Pflegerunde nicht mehr reproduzieren.
 
-Alle Abfragen schreiben mit **Ersetzen** in ihre `stg_*`-Tabelle. Die
-Historisierung nach `bronze_*` übernimmt `nb_05_snapshot` – nicht mit Anfügen
-direkt nach `bronze_*` schreiben, der Grund steht in Schritt 2.
-
-SAP-Seite: `bronze_sap_revenue` aus `V_SAP_EXPORTS_cleansed` und
-`bronze_sap_unit` aus dem bestehenden Dataflow `sap_master_data_unit`. Das
-SQL-Muster steht in `lakehouse/03_gold/gold_fct_net_new_ity.sql`; im Regelfall
-genügt eine Verknüpfung (Shortcut) auf die bestehenden Tabellen.
+Die **CRM- und Mapping-Abfragen** schreiben mit **Ersetzen** in ihre
+`stg_*`-Tabelle. Die Historisierung nach `bronze_*` übernimmt `nb_05_snapshot`
+– nicht mit Anfügen direkt nach `bronze_*` schreiben, der Grund steht in
+Schritt 2. Die **SAP-Abfragen** schreiben dagegen direkt nach `bronze_*`,
+ebenfalls mit Ersetzen; sie durchlaufen die Historisierung nicht (Begründung
+oben).
 
 ### Erster Lauf prüfen
 
@@ -134,12 +153,12 @@ Manueller Erstlauf in dieser Reihenfolge: `nb_05_snapshot`, `nb_10_silver`,
 
 ## Schritt 3 – Pipeline einrichten
 
-Data-Pipeline `pl_net_new_ity_daily` mit sieben Aktivitäten:
+Data-Pipeline `pl_net_new_ity_daily` mit acht Aktivitäten:
 
 ```
 df_crm_ingest aktualisieren            ─┐
-                                         ├─▶ nb_05_snapshot ─▶ nb_10_silver ─▶ nb_20_gold ─▶ nb_30_quality ─▶ Semantikmodell
-df_map_unit_assignment aktualisieren   ─┘         │                 │              │              │                │
+df_map_unit_assignment aktualisieren   ─┼─▶ nb_05_snapshot ─▶ nb_10_silver ─▶ nb_20_gold ─▶ nb_30_quality ─▶ Semantikmodell
+df_sap_ingest aktualisieren            ─┘         │                 │              │              │                │
                                               (Succeeded)       (Succeeded)    (Succeeded)    (Succeeded)      (Succeeded)
 ```
 
@@ -147,11 +166,17 @@ df_map_unit_assignment aktualisieren   ─┘         │                 │   
 |---|---|---|---|---|---|
 | 1 | `df_crm_ingest` aktualisieren | Dataflow-Aktualisierung | – | Dataverse | `stg_crm_opportunity`, `stg_crm_contract`, `stg_crm_account`, `stg_crm_territory` |
 | 2 | `df_map_unit_assignment` aktualisieren | Dataflow-Aktualisierung | – | SharePoint | `stg_map_unit_assignment` |
-| 3 | `nb_05_snapshot` | Notebook | 1 **und** 2, je Succeeded | alle `stg_*` | `bronze_crm_*`, `bronze_map_unit_assignment` |
-| 4 | `nb_10_silver` | Notebook | 3, Succeeded | `bronze_crm_*`, **`bronze_sap_unit`** | `silver_opportunity`, `silver_contract`, `silver_unit`, `silver_*_history`, `silver_dq_reject` |
-| 5 | `nb_20_gold` | Notebook | 4, Succeeded | `silver_*`, `bronze_map_unit_assignment`, **`bronze_sap_revenue`** | `gold_dim_*`, `gold_fct_*` |
-| 6 | `nb_30_quality` | Notebook | 5, Succeeded | `gold_fct_net_new_ity`, `silver_*` | `gold_dq_checks` |
-| 7 | Semantikmodell aktualisieren | native Aktivität, sonst Web-Aktivität gegen die Enhanced-Refresh-REST-API | 6, Succeeded | – | Import-Tabellen des Modells |
+| 3 | `df_sap_ingest` aktualisieren | Dataflow-Aktualisierung | – | SAP-Warehouse `Reporting`, Gen1-Dataflow `sap_master_data_unit` | `bronze_sap_unit`, `bronze_sap_revenue` |
+| 4 | `nb_05_snapshot` | Notebook | 1 **und** 2, je Succeeded | alle `stg_*` | `bronze_crm_*`, `bronze_map_unit_assignment` |
+| 5 | `nb_10_silver` | Notebook | 4 **und** 3, je Succeeded | `bronze_crm_*`, **`bronze_sap_unit`** | `silver_opportunity`, `silver_contract`, `silver_unit`, `silver_*_history`, `silver_dq_reject` |
+| 6 | `nb_20_gold` | Notebook | 5, Succeeded | `silver_*`, `bronze_map_unit_assignment`, **`bronze_sap_revenue`** | `gold_dim_*`, `gold_fct_*` |
+| 7 | `nb_30_quality` | Notebook | 6, Succeeded | `gold_fct_net_new_ity`, `silver_*` | `gold_dq_checks` |
+| 8 | Semantikmodell aktualisieren | native Aktivität, sonst Web-Aktivität gegen die Enhanced-Refresh-REST-API | 7, Succeeded | – | Import-Tabellen des Modells |
+
+`df_sap_ingest` läuft parallel zu 1 und 2, hängt aber **nicht** an
+`nb_05_snapshot`: es schreibt direkt nach `bronze_*` und wird nicht
+historisiert. Die Verkettung greift erst bei `nb_10_silver`, der ersten
+Aktivität, die SAP-Daten tatsächlich liest.
 
 **Die Abhängigkeitsbedingung muss überall „Succeeded" sein, nicht
 „Completed".** `nb_05_snapshot` und `nb_30_quality` werfen absichtlich eine
@@ -162,29 +187,22 @@ Daten – genau der Fall, den die Verkettung verhindern soll. Ein Bericht mit
 alten, aber korrekten Zahlen ist besser als einer mit frischen, aber falschen.
 
 Vorschlag für Startzeiten: 05:00 (Dataflows) · 05:20 · 05:30 · 05:45 · 06:00 ·
-06:15 – siehe aber die Einschränkung zu SAP direkt im Anschluss, bevor die
-Zeiten festgelegt werden.
+06:15.
 
-### Die Lücke, die diese Pipeline nicht schließt: SAP-Aktualität
+### SAP-Aktualität
 
-`bronze_sap_unit` und `bronze_sap_revenue` werden von **keiner** der sieben
-Aktivitäten geschrieben. Es sind Lakehouse-Shortcuts auf bereits bestehende
-Objekte – den vorhandenen Dataflow `sap_master_data_unit` und die SQL-View
-`V_SAP_EXPORTS_cleansed` (siehe Schritt 1). Ein Shortcut ist ein Live-Zeiger
-und braucht keinen eigenen Refresh-Schritt in dieser Pipeline.
+`df_sap_ingest` ist Teil dieser Pipeline und zieht `bronze_sap_unit` und
+`bronze_sap_revenue` bei jedem Lauf frisch. Die SAP-Aktualität hängt damit
+nicht mehr an einem fremden Zeitplan – der frühere Fall „`nb_10_silver`
+rechnet unbemerkt mit dem SAP-Stand von gestern" ist konstruktiv
+ausgeschlossen, weil Aktivität 5 auf Aktivität 3 mit „Succeeded" wartet.
 
-Damit hängt ihre Aktualität an einem Zeitplan, den `pl_net_new_ity_daily`
-nicht kennt. Läuft der bestehende SAP-Dataflow später als 05:00, rechnet
-`nb_10_silver` mit dem SAP-Stand von gestern – ohne dass ein Fehler auftaucht,
-weil die Tabelle ja existiert und Daten enthält, nur veraltete.
-
-Vor dem produktiven Einsatz eine der beiden Optionen wählen:
-
-* **Zugriff auf den SAP-Dataflow vorhanden:** eine achte Aktivität
-  „SAP-Dataflow aktualisieren" parallel zu 1 und 2 einfügen und
-  `nb_10_silver` zusätzlich davon abhängig machen.
-* **Kein Zugriff:** die Startzeit von `pl_net_new_ity_daily` mit Puffer hinter
-  den bekannten SAP-Refresh legen.
+Eine Abhängigkeit bleibt: `df_sap_ingest` liest den Gen1-Dataflow
+`sap_master_data_unit`, der seinen **eigenen** Refresh-Zeitplan hat. Läuft
+dieser später als `pl_net_new_ity_daily`, sind die Betriebsstammdaten (nicht
+die Umsätze) einen Tag alt. Das ist deutlich unkritischer als beim Umsatz –
+Werke, Sektoren und Cause-of-Change ändern sich selten tagesaktuell –, sollte
+aber beim Festlegen der Startzeit bekannt sein.
 
 ### Nach dem ersten vollständigen Lauf prüfen
 

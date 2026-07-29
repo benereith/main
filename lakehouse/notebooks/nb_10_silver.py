@@ -319,20 +319,21 @@ write_delta(con_silver, "silver_contract", mode="overwrite")
 # ===========================================================================
 # 3. SAP-Stammdaten (Betriebe)
 # ===========================================================================
-# bronze_sap_unit wird NICHT von dieser Pipeline befuellt, sondern separat aus
-# SAP gezogen (Shortcut bzw. eigener Dataflow, siehe docs/06_deployment.md,
-# "Die Luecke, die diese Pipeline nicht schliesst"). Fehlt die Tabelle noch,
-# darf das die CRM-Verarbeitung nicht mitreissen: silver_opportunity und
-# silver_contract sind zu diesem Zeitpunkt bereits geschrieben und fachlich
-# vollstaendig. Der Abbruch kaeme sonst NACH getaner Arbeit und liesse die
-# Pipeline scheitern, obwohl der CRM-Teil in Ordnung ist.
+# bronze_sap_unit kommt aus dem Dataflow df_sap_ingest (Abfrage
+# bronze_sap_unit) und wird dort mit ERSETZEN geschrieben - ohne
+# Historisierung, weil Betriebsstammdaten ein Ist-Stand sind und keine
+# Bewegung. nb_05_snapshot fasst die Tabelle deshalb nicht an.
+#
+# Fehlt sie, ist df_sap_ingest nicht gelaufen. Das darf die CRM-Verarbeitung
+# nicht entwerten: silver_opportunity und silver_contract sind an dieser
+# Stelle bereits geschrieben und fachlich vollstaendig.
 if not spark.catalog.tableExists("bronze_sap_unit"):
     raise ValueError(
         "bronze_sap_unit fehlt im Lakehouse.\n"
-        "Diese Tabelle stammt aus SAP und wird nicht von dieser Pipeline "
-        "geschrieben - sie muss als Verknuepfung (Shortcut) auf die "
-        "bestehende SAP-Quelle angelegt werden, bevor nb_10_silver laeuft.\n"
-        "Siehe docs/06_deployment.md, Schritt 1 (SAP-Seite).\n"
+        "Quelle ist der Dataflow df_sap_ingest, Abfrage bronze_sap_unit "
+        "(liest den bestehenden Gen1-Dataflow sap_master_data_unit).\n"
+        "Diesen Dataflow aktualisieren, dann nb_10_silver erneut starten.\n"
+        "Einrichtung: docs/06_deployment.md, Schritt 1.\n"
         "Der CRM-Teil (silver_opportunity, silver_contract) ist bereits "
         "erfolgreich geschrieben."
     )

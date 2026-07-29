@@ -45,14 +45,17 @@ Net New ITY:
 │  opportunity, cgplc_cgcontract,        V_SAP_EXPORTS_        sap_master_  │
 │  account, systemuser, territory, …     cleansed              data_unit    │
 └──────────────┬──────────────────────────┬────────────────────┬────────────┘
-               │  Dataflow Gen2 (täglich) │  Shortcut / Copy   │
+               │  df_crm_ingest           │  df_sap_ingest     │
+               │  (Gen2, täglich)         │  (Gen2, täglich)   │
                ▼                          ▼                    ▼
 ┌───────────────────────────────────────────────────────────────────────────┐
 │ BRONZE   lakehouse_group_controlling / Files+Tables                       │
 │  bronze_crm_opportunity   bronze_crm_contract   bronze_crm_account        │
-│  bronze_crm_systemuser    bronze_crm_territory  bronze_crm_stagehistory   │
+│  bronze_crm_territory     bronze_map_unit_assignment                      │
+│  → historisiert: append-only, snapshot_date je Ladelauf (nb_05_snapshot)  │
+│                                                                           │
 │  bronze_sap_revenue       bronze_sap_unit                                 │
-│  → append-only, snapshot_ts je Ladelauf, keine Transformation             │
+│  → NICHT historisiert: Ersetzen je Lauf, Ist-Stand statt Bewegung         │
 └──────────────┬────────────────────────────────────────────────────────────┘
                │ Notebook nb_10_silver (PySpark)
                ▼

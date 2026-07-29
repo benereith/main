@@ -628,8 +628,11 @@ def fn_map_coch(fy_col, coch_col):
     )
 
 
-# bronze_sap_revenue stammt aus SAP und wird NICHT von dieser Pipeline
-# geschrieben (separater Abzug bzw. Shortcut, siehe docs/06_deployment.md).
+# bronze_sap_revenue kommt aus dem Dataflow df_sap_ingest (Abfrage
+# bronze_sap_revenue, liest V_SAP_EXPORTS_cleansed) und wird dort mit
+# ERSETZEN geschrieben - ohne Historisierung, weil die View bereits der
+# gepflegte Ist-/Planstand je Periode ist.
+#
 # Fehlt die Tabelle, wird nur dieser Abschnitt uebersprungen: die bereits
 # geschriebene gold_fct_net_new_ity bleibt gueltig, und die nachfolgenden
 # CRM-Tabellen (gold_fct_crm_movement, gold_dim_snapshot) entstehen
@@ -640,7 +643,7 @@ if not spark.catalog.tableExists("bronze_sap_revenue"):
         "  WARNUNG: bronze_sap_revenue fehlt - gold_fct_revenue wird NICHT "
         "geschrieben. Budget-, Forecast- und Ist-Kennzahlen bleiben im "
         "Bericht leer; Net New ITY ist davon nicht betroffen. "
-        "Verknuepfung anlegen: docs/06_deployment.md, Schritt 1 (SAP-Seite)."
+        "Dataflow df_sap_ingest aktualisieren (docs/06_deployment.md, Schritt 1)."
     )
 else:
     rev = spark.table("bronze_sap_revenue")
