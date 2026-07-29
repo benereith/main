@@ -19,7 +19,11 @@
 #   gold_fct_net_new_ity, gold_fct_crm_movement
 # ---------------------------------------------------------------------------
 
+# COMMAND ----------
+
 # MAGIC %run nb_00_config
+
+# COMMAND ----------
 
 from pyspark.sql import functions as F
 from pyspark.sql import Window

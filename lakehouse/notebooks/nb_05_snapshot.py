@@ -22,7 +22,11 @@
 # Repositories angepasst.
 # ---------------------------------------------------------------------------
 
+# COMMAND ----------
+
 # MAGIC %run nb_00_config
+
+# COMMAND ----------
 
 from datetime import datetime
 from zoneinfo import ZoneInfo

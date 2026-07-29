@@ -95,6 +95,28 @@ Partition des Tages, bevor es schreibt, und macht den Lauf beliebig oft
 wiederholbar. Ein Dataflow-Append würde bei jedem Retry einen zweiten Snapshot
 desselben Tages anhängen und jede Summe verdoppeln.
 
+### Import – unbedingt so, sonst schlägt `%run` fehl
+
+`nb_05_snapshot`, `nb_10_silver`, `nb_20_gold` und `nb_30_quality` beginnen
+mit einer eigenen Zelle, die nur `%run nb_00_config` enthält – so laden sie
+die Konstanten und Hilfsfunktionen aus `nb_00_config` (u. a. `write_delta`,
+`EXCLUDED_STATE_NAMES`, `add_fiscal_columns`, `name_oder_id`).
+
+**Diese vier Dateien müssen als vollständige Notebook-Objekte importiert
+werden** (Arbeitsbereich → Neu → Notebook importieren, `.py`-Datei
+auswählen), **nicht** durch Kopieren des Textes in eine einzelne, bereits
+bestehende Zelle. Der Grund liegt im Dateiformat: `%run` steht dort als
+eigene Zelle, getrennt durch `# COMMAND ----------`-Marker. Landet der ganze
+Dateiinhalt stattdessen in einer einzigen Zelle, ist die Zeile
+`# MAGIC %run nb_00_config` nur noch ein Kommentar – sie wird nie ausgeführt,
+und jeder Aufruf einer Funktion aus `nb_00_config` bricht mit
+`NameError: name '…' is not defined` ab.
+
+Nach dem Import in jedem der vier Notebooks prüfen: Die erste Codezelle
+enthält ausschließlich `%run nb_00_config` (ohne `# MAGIC`-Präfix, das wird
+beim Import automatisch aufgelöst) und läuft ohne Fehler grün durch, bevor
+die zweite Zelle startet.
+
 **In `nb_00_config` anzupassen:**
 
 ```python
@@ -275,6 +297,8 @@ Zum 1. Oktober:
 
 | Symptom | Ursache | Abhilfe |
 |---|---|---|
+| `NameError: name 'write_delta'/'add_fiscal_columns'/'EXCLUDED_STATE_NAMES' … is not defined` | `nb_00_config` wurde nicht ausgeführt – meist, weil der gesamte Dateiinhalt in einer einzigen Zelle statt als importiertes Notebook mit eigener `%run`-Zelle vorliegt | Notebook neu über „Notebook importieren" mit der `.py`-Datei anlegen (siehe Schritt 2, Abschnitt „Import"); zur Kontrolle die erste Zelle einzeln ausführen – sie muss nur `%run nb_00_config` enthalten und fehlerfrei laufen |
+| `[PARSE_SYNTAX_ERROR] Syntax error at or near 'DECLARE'` in einer Notebookzelle | `lakehouse/03_gold/gold_fct_net_new_ity.sql` (T-SQL) wurde in eine Spark-SQL-Zelle eingefügt | Diese Datei nicht in Notebooks verwenden – sie gehört in den SQL-Editor eines Fabric Warehouse. Für den normalen Lakehouse-Aufbau ausschließlich `nb_20_gold.py` verwenden |
 | `nb_05_snapshot` bricht mit "snapshot_date ist X, erwartet Y" ab | Der Dataflow hat nicht erfolgreich geschrieben, im Staging steht der Vortagsstand | Dataflow-Lauf prüfen und wiederholen. Für eine bewusste Nachladung `allow_stale_snapshot=True` setzen |
 | `nb_05_snapshot` bricht mit "doppelte Werte in …" ab | Der Snapshot-Grain ist verletzt, die Quelle liefert einen Schlüssel mehrfach | Staging-Tabelle prüfen; meist ein geänderter Extraktfilter |
 | Pipeline bricht bei `nb_30_quality` ab | ERROR-Regel verletzt | `SELECT * FROM gold_dq_checks WHERE schweregrad = 'ERROR' AND anzahl_verstoesse > 0 ORDER BY pruef_datum DESC` – jede Zeile nennt den Handlungshinweis |

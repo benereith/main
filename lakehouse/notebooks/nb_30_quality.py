@@ -10,7 +10,11 @@
 # manueller Nacharbeit gefuehrt haben.
 # ---------------------------------------------------------------------------
 
+# COMMAND ----------
+
 # MAGIC %run nb_00_config
+
+# COMMAND ----------
 
 from pyspark.sql import functions as F
 

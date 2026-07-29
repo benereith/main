@@ -1,9 +1,27 @@
 -- ===========================================================================
+-- !!! NICHT IN EIN LAKEHOUSE-/SPARK-NOTEBOOK EINFUEGEN !!!
+-- ===========================================================================
+-- Diese Datei ist T-SQL. Sie gehoert AUSSCHLIESSLICH in den SQL-Abfrage-
+-- editor eines Fabric WAREHOUSE (T-SQL-Engine) - niemals in eine Spark-SQL-
+-- Zelle (%%sql) eines Lakehouse-Notebooks. Spark SQL kennt DECLARE, SELECT
+-- ... INTO und die WINDOW-Klausel in dieser Form nicht; die Datei bricht dort
+-- sofort mit
+--     [PARSE_SYNTAX_ERROR] Syntax error at or near 'DECLARE'
+-- ab. Wer diese Meldung sieht, hat die Datei versehentlich in ein
+-- Spark-Notebook statt in ein Warehouse eingefuegt.
+--
+-- FUER DEN REGULAEREN AUFBAU DER GOLD-SCHICHT (Lakehouse + Notebooks) DIESE
+-- DATEI IGNORIEREN UND STATTDESSEN lakehouse/notebooks/nb_20_gold.py
+-- VERWENDEN. Die Notebook-Pipeline (docs/06_deployment.md, Schritt 2-3) baut
+-- vollstaendig auf nb_20_gold.py auf; diese SQL-Datei wird dort an keiner
+-- Stelle referenziert oder benoetigt.
+-- ===========================================================================
+--
 -- gold_fct_net_new_ity  ·  T-SQL-Variante des Perioden-Fanouts
 -- ===========================================================================
--- Diese Datei ist die ALTERNATIVE zu nb_20_gold.py fuer den Fall, dass die
--- Gold-Schicht in einem Fabric Warehouse (statt in einem Lakehouse mit
--- Spark-Notebooks) gebaut wird. Fachlich identisch, gleiche Spaltennamen,
+-- Diese Datei ist die ALTERNATIVE zu nb_20_gold.py fuer den seltenen Fall,
+-- dass die Gold-Schicht in einem Fabric Warehouse (statt in einem Lakehouse
+-- mit Spark-Notebooks) gebaut wird. Fachlich identisch, gleiche Spaltennamen,
 -- gleiche Vorzeichenkonvention.
 --
 -- Der entscheidende Unterschied zum Altzustand: der Fanout entsteht durch

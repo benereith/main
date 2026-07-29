@@ -17,7 +17,11 @@
 #      impliziter if-Kaskaden in Power Query.
 # ---------------------------------------------------------------------------
 
+# COMMAND ----------
+
 # MAGIC %run nb_00_config
+
+# COMMAND ----------
 
 from pyspark.sql import functions as F
 from pyspark.sql import Window
