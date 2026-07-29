@@ -25,7 +25,7 @@
 | `Szenario Bewertung` | Szenario-Parameter | 3 | 0 | berechnet (DATATABLE) |
 | `Szenario Schwelle` | Szenario-Parameter | 2 | 0 | berechnet (DATATABLE) |
 | `Szenario Verschiebung` | Szenario-Parameter | 3 | 0 | berechnet (DATATABLE) |
-| `_Kennzahlen` | Kennzahlen | 1 | 66 | – |
+| `_Kennzahlen` | Kennzahlen | 1 | 70 | – |
 
 ## Beziehungen
 

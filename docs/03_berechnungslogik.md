@@ -6,11 +6,11 @@
 > nicht hier.
 
 
-Das Modell enthält **66 Kennzahlen** in 10 Ordnern.
+Das Modell enthält **70 Kennzahlen** in 10 Ordnern.
 
 ## Inhalt
 
-- [01 Basis](#01-basis) – 10 Kennzahlen
+- [01 Basis](#01-basis) – 12 Kennzahlen
 - [02 Status](#02-status) – 10 Kennzahlen
 - [03 Zeit](#03-zeit) – 4 Kennzahlen
 - [04 Szenarien](#04-szenarien) – 4 Kennzahlen
@@ -19,7 +19,7 @@ Das Modell enthält **66 Kennzahlen** in 10 Ordnern.
 - [07 CRM-Bewegung](#07-crm-bewegung) – 5 Kennzahlen
 - [08 Datenqualität](#08-datenqualität) – 3 Kennzahlen
 - [09 Titel und Kontext](#09-titel-und-kontext) – 4 Kennzahlen
-- [10 Roll-Budget](#10-roll-budget) – 15 Kennzahlen
+- [10 Roll-Budget](#10-roll-budget) – 17 Kennzahlen
 
 
 ## 01 Basis
@@ -97,16 +97,52 @@ Net New ARO =
 
 01 BASIS
 
-Net New ITY = New Business ITY minus Lost Business ITY, im Filterkontext.
+Net New ITY = INKREMENTELLE Wirkung des gewählten Zeitraums. HFM: MAP141a minus MAP141c (ITY-Ebene).
 
-Die Bewertungsbasis wird über den Datenschnitt 'Szenario Bewertung' gesteuert: CRM-gewichtet  Umsatz × Eintrittswahrscheinlichkeit (Standard) Vollwert       Umsatz ohne Gewichtung – Obergrenze Nur gesichert  nur Won und Lost, ungewichtet – Untergrenze
+WARUM EIN VORJAHRESABZUG Net New misst die VERÄNDERUNG gegenüber dem Vorjahr, nicht den Gesamtumsatz eines Vertrags. Eine Opportunity, die im April 2026 mobilisiert, trägt im FY2025/26 sechs Monate ITY. Im FY2026/27 läuft sie zwölf Monate – neu ist dort aber nur die Differenz, denn die sechs Monate wurden im Vorjahr bereits als New Business gezählt.
 
-Vorzeichen: New positiv, Lost negativ. Die Umkehr passiert einmalig im Lakehouse (amount_signed), nicht in dieser Kennzahl. HFM: MAP141a minus MAP141c (ITY-Ebene).
+Beispiel (ARO 2.000.000 €, Mobilisierung 01.04.2026): FY2025/26   6 × 166.210 €  =    997.260 €   ITY   (MAP141a) FY2026/27  12 × 166.667 €  =  2.000.000 €   brutto davon Vorjahresanteil      =   −997.260 € Net New FY2026/27          =  1.002.740 €   der Roll-Effekt Ohne den Abzug erschienen 2.000.000 € – der Vertrag wäre doppelt gezählt worden, einmal im Jahr der Mobilisierung und noch einmal vollständig im Folgejahr.
+
+SO WIRD ABGEZOGEN Verglichen werden die GLEICHEN Fiskalperioden des Vorjahres und nur die Vorgänge, die im aktuellen Kontext überhaupt vorkommen (_Entitaeten). Beides ist notwendig: · Gleiche Perioden statt ganzes Vorjahr – sonst stimmt die Summe bei einer Monatsauswahl nicht mehr mit der Jahressumme überein. · Nur vorhandene Vorgänge – sonst erzeugt ein Vertrag, der im Vorjahr Zeilen hatte und im gewählten Jahr keine mehr, einen Phantomwert aus dem Nichts. Das trifft vor allem Lost Business, das nach zwölf Perioden aus der Basis fällt.
+
+Die Zerlegung ist sichtbar: [Net New ITY (brutto)] − [Vorjahresanteil] ergibt exakt diese Kennzahl.
+
+Bewertungsbasis und Vorzeichenkonvention: siehe [Net New ITY (brutto)].
 
 **Format:** `#,0\ "€";-#,0\ "€";#,0\ "€"`
 
 ```dax
 Net New ITY =
+VAR _GJ         = MAX ( 'FCT Net New ITY'[GJ Jahr] )
+VAR _Perioden   = VALUES ( 'FCT Net New ITY'[GJ Periode Nr] )
+VAR _Entitaeten = VALUES ( 'FCT Net New ITY'[Entität ID] )
+VAR _Aktuell    = [Net New ITY (brutto)]
+VAR _Vorjahr =
+    CALCULATE (
+        [Net New ITY (brutto)],
+        REMOVEFILTERS ( 'DIM Datum' ),
+        'FCT Net New ITY'[GJ Jahr] = _GJ - 1,
+        _Perioden,
+        _Entitaeten
+    )
+RETURN
+    _Aktuell - _Vorjahr
+```
+
+### `Net New ITY (brutto)`
+
+Bruttosumme der Faktzeilen im Filterkontext, OHNE Vorjahresabzug.
+
+Basis für [Net New ITY] und die Kennzahl für jede Abstimmung: die Differenz zwischen dieser und [Net New ITY] ist genau der Betrag, der im Vorjahr bereits gezählt wurde.
+
+Die Bewertungsbasis steuert der Datenschnitt 'Szenario Bewertung': CRM-gewichtet  Umsatz × Eintrittswahrscheinlichkeit (Standard) Vollwert       Umsatz ohne Gewichtung – Obergrenze Nur gesichert  nur Won und Lost, ungewichtet – Untergrenze
+
+Vorzeichen: New positiv, Lost negativ. Die Umkehr passiert einmalig im Lakehouse (amount_signed), nicht in dieser Kennzahl.
+
+**Format:** `#,0\ "€";-#,0\ "€";#,0\ "€"`
+
+```dax
+Net New ITY (brutto) =
 VAR _Basis = SELECTEDVALUE ( 'Szenario Bewertung'[Bewertungsbasis], "CRM-gewichtet" )
 RETURN
 SWITCH (
@@ -152,6 +188,27 @@ CALCULATE (
     KEEPFILTERS ( 'FCT Net New ITY'[Geschäftsart] = "NEW" ),
     KEEPFILTERS ( 'FCT Net New ITY'[Wertebene] = "ITY" )
 )
+```
+
+### `Vorjahresanteil`
+
+Betrag, der im gewählten Zeitraum bereits im Vorjahr gezählt wurde – der Abzug, den [Net New ITY] vornimmt. Für die Abstimmung sichtbar gemacht: [Net New ITY (brutto)] − [Vorjahresanteil] = [Net New ITY].
+
+**Format:** `#,0\ "€";-#,0\ "€";#,0\ "€"`
+
+```dax
+Vorjahresanteil =
+VAR _GJ         = MAX ( 'FCT Net New ITY'[GJ Jahr] )
+VAR _Perioden   = VALUES ( 'FCT Net New ITY'[GJ Periode Nr] )
+VAR _Entitaeten = VALUES ( 'FCT Net New ITY'[Entität ID] )
+RETURN
+    CALCULATE (
+        [Net New ITY (brutto)],
+        REMOVEFILTERS ( 'DIM Datum' ),
+        'FCT Net New ITY'[GJ Jahr] = _GJ - 1,
+        _Perioden,
+        _Entitaeten
+    )
 ```
 
 ### `Ø Verlust-% (volumengewichtet)`
@@ -883,7 +940,7 @@ Beitrag einer einzelnen Opportunity zum gewählten Geschäftsjahr, gewichtet. F�
 ```dax
 Beitrag Zeitraum (gewichtet) =
 CALCULATE (
-    SUM ( 'FCT Net New ITY'[Betrag] ),
+    [Betrag netto (gewichtet)],
     KEEPFILTERS ( 'FCT Net New ITY'[Geschäftsart] = "NEW" )
 )
 ```
@@ -904,6 +961,54 @@ VAR _Tabelle =
     )
 RETURN
     SUMX ( FILTER ( _Tabelle, [@Beitrag] >= _Aktuell ), [@Beitrag] )
+```
+
+### `Betrag netto (Vollwert)`
+
+Inkrementeller Betrag ohne Gewichtung, mit demselben Vorjahresabzug wie [Net New ITY]. Baustein für die Roll-Kennzahlen, die bewusst NICHT dem Datenschnitt 'Szenario Bewertung' folgen, sondern eine feste Bewertungsbasis brauchen.
+
+**Format:** `#,0\ "€";-#,0\ "€";#,0\ "€"`
+
+```dax
+Betrag netto (Vollwert) =
+VAR _GJ         = MAX ( 'FCT Net New ITY'[GJ Jahr] )
+VAR _Perioden   = VALUES ( 'FCT Net New ITY'[GJ Periode Nr] )
+VAR _Entitaeten = VALUES ( 'FCT Net New ITY'[Entität ID] )
+VAR _Aktuell    = SUM ( 'FCT Net New ITY'[Betrag ungewichtet (vorzeichenbehaftet)] )
+VAR _Vorjahr =
+    CALCULATE (
+        SUM ( 'FCT Net New ITY'[Betrag ungewichtet (vorzeichenbehaftet)] ),
+        REMOVEFILTERS ( 'DIM Datum' ),
+        'FCT Net New ITY'[GJ Jahr] = _GJ - 1,
+        _Perioden,
+        _Entitaeten
+    )
+RETURN
+    _Aktuell - _Vorjahr
+```
+
+### `Betrag netto (gewichtet)`
+
+Inkrementeller Betrag mit CRM-Gewichtung, Vorjahresabzug wie oben.
+
+**Format:** `#,0\ "€";-#,0\ "€";#,0\ "€"`
+
+```dax
+Betrag netto (gewichtet) =
+VAR _GJ         = MAX ( 'FCT Net New ITY'[GJ Jahr] )
+VAR _Perioden   = VALUES ( 'FCT Net New ITY'[GJ Periode Nr] )
+VAR _Entitaeten = VALUES ( 'FCT Net New ITY'[Entität ID] )
+VAR _Aktuell    = SUM ( 'FCT Net New ITY'[Betrag] )
+VAR _Vorjahr =
+    CALCULATE (
+        SUM ( 'FCT Net New ITY'[Betrag] ),
+        REMOVEFILTERS ( 'DIM Datum' ),
+        'FCT Net New ITY'[GJ Jahr] = _GJ - 1,
+        _Perioden,
+        _Entitaeten
+    )
+RETURN
+    _Aktuell - _Vorjahr
 ```
 
 ### `ITY Budget`
@@ -1025,12 +1130,14 @@ DIVIDE ( [Roll gesichert] + [Roll offen (gewichtet)], [Roll Budget] )
 
 Bereits gewonnener Roll-Anteil. Ungewichtet, weil WON keine Wahrscheinlichkeit mehr trägt – der Auftrag liegt vor. Das ist der Sockel, auf dem die Lücke aufsetzt.
 
+Inkrementell gerechnet, weil [Roll Budget] ebenfalls den reinen Roll-Effekt budgetiert und nicht den Gesamtumsatz des Vertrags.
+
 **Format:** `#,0\ "€";-#,0\ "€";#,0\ "€"`
 
 ```dax
 Roll gesichert =
 CALCULATE (
-    SUM ( 'FCT Net New ITY'[Betrag ungewichtet (vorzeichenbehaftet)] ),
+    [Betrag netto (Vollwert)],
     KEEPFILTERS ( 'FCT Net New ITY'[Geschäftsart] = "NEW" ),
     KEEPFILTERS ( 'FCT Net New ITY'[ITY Cluster] = "unknown Roll" ),
     KEEPFILTERS ( 'DIM Status'[Status Code] = "WON" )
@@ -1046,7 +1153,7 @@ Voller Wert des noch offenen Roll-Anteils, ohne Gewichtung. Obergrenze: so viel 
 ```dax
 Roll offen (Vollwert) =
 CALCULATE (
-    SUM ( 'FCT Net New ITY'[Betrag ungewichtet (vorzeichenbehaftet)] ),
+    [Betrag netto (Vollwert)],
     KEEPFILTERS ( 'FCT Net New ITY'[Geschäftsart] = "NEW" ),
     KEEPFILTERS ( 'FCT Net New ITY'[ITY Cluster] = "unknown Roll" ),
     KEEPFILTERS ( 'DIM Status'[Status Code] IN { "EXPECTED_WIN", "PIPELINE", "NO_PROBABILITY" } )
@@ -1062,7 +1169,7 @@ Noch offener Roll-Anteil, gewichtet mit der Win-Wahrscheinlichkeit. Enthält Exp
 ```dax
 Roll offen (gewichtet) =
 CALCULATE (
-    SUM ( 'FCT Net New ITY'[Betrag] ),
+    [Betrag netto (gewichtet)],
     KEEPFILTERS ( 'FCT Net New ITY'[Geschäftsart] = "NEW" ),
     KEEPFILTERS ( 'FCT Net New ITY'[ITY Cluster] = "unknown Roll" ),
     KEEPFILTERS ( 'DIM Status'[Status Code] IN { "EXPECTED_WIN", "PIPELINE", "NO_PROBABILITY" } )
