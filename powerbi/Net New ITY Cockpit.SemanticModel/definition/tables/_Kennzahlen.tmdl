@@ -5,10 +5,8 @@
 table _Kennzahlen
 	lineageTag: a0000000-0000-4000-8000-000000000001
 
-	// =======================================================================
-	// 01 BASIS
-	// =======================================================================
-
+	/// 01 BASIS
+	///
 	/// Net New ITY = New Business ITY minus Lost Business ITY, im Filterkontext.
 	///
 	/// Die Bewertungsbasis wird über den Datenschnitt 'Szenario Bewertung'
@@ -187,10 +185,8 @@ table _Kennzahlen
 		displayFolder: 01 Basis
 		lineageTag: a0000000-0000-4000-8000-000000000110
 
-	// =======================================================================
-	// 02 STATUS – Zerlegung nach Sicherheitsgrad
-	// =======================================================================
-
+	/// 02 STATUS – Zerlegung nach Sicherheitsgrad
+	///
 	/// ITY-Wirkung bereits gewonnener Opportunities (Win-% = 100 %).
 	/// Der belastbarste Teil des New Business.
 	measure 'ITY Won' = CALCULATE ( [New Business ITY], 'DIM Status'[Status Code] = "WON" )
@@ -276,10 +272,8 @@ table _Kennzahlen
 		displayFolder: 02 Status
 		lineageTag: a0000000-0000-4000-8000-000000000210
 
-	// =======================================================================
-	// 03 ZEIT
-	// =======================================================================
-
+	/// 03 ZEIT
+	///
 	/// Net New ITY kumuliert seit Beginn des Geschäftsjahres.
 	///
 	/// Umsetzung über den linearen Monatsindex statt über TOTALYTD: die
@@ -351,10 +345,8 @@ table _Kennzahlen
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
-	// =======================================================================
-	// 04 SZENARIEN – ersetzt das manuelle Shiften
-	// =======================================================================
-
+	/// 04 SZENARIEN – ersetzt das manuelle Shiften
+	///
 	/// Net New ITY unter den gewählten Szenarioannahmen.
 	///
 	/// BERECHNUNG IN ZWEI SCHRITTEN
@@ -469,10 +461,8 @@ table _Kennzahlen
 		displayFolder: 04 Szenarien
 		lineageTag: a0000000-0000-4000-8000-000000000404
 
-	// =======================================================================
-	// 05 BUDGET UND FORECAST (SAP)
-	// =======================================================================
-
+	/// 05 BUDGET UND FORECAST (SAP)
+	///
 	/// Gebuchter Umsatz laut SAP (Version 0).
 	measure 'Umsatz Ist' = ```
 			CALCULATE (
@@ -563,10 +553,8 @@ table _Kennzahlen
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
-	// =======================================================================
-	// 06 QUOTEN NACH GROUP GUIDANCE
-	// =======================================================================
-
+	/// 06 QUOTEN NACH GROUP GUIDANCE
+	///
 	/// New Business in Prozent des organischen Vorjahresumsatzes.
 	/// HFM: MAP111e.
 	measure 'New Business %' = DIVIDE ( [New Business ITY], [Organischer Umsatz Vorjahr] )
@@ -597,10 +585,8 @@ table _Kennzahlen
 		displayFolder: 06 Quoten
 		lineageTag: a0000000-0000-4000-8000-000000000604
 
-	// =======================================================================
-	// 07 CRM-BEWEGUNG
-	// =======================================================================
-
+	/// 07 CRM-BEWEGUNG
+	///
 	/// Summe aller Wertänderungen im CRM im gewählten Zeitraum.
 	measure 'Bewegung Wert' = SUM ( 'FCT CRM-Bewegung'[Wertänderung] )
 		formatString: +#,0\ "€";-#,0\ "€";0\ "€"
@@ -655,10 +641,8 @@ table _Kennzahlen
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
-	// =======================================================================
-	// 08 DATENQUALITÄT
-	// =======================================================================
-
+	/// 08 DATENQUALITÄT
+	///
 	/// Anzahl der Regelverstöße im jüngsten Prüflauf.
 	measure 'DQ Verstöße' = ```
 			VAR _Letzte = CALCULATE ( MAX ( 'DQ Prüfungen'[Prüfdatum] ), ALL ( 'DQ Prüfungen' ) )
@@ -700,13 +684,12 @@ table _Kennzahlen
 		displayFolder: 08 Datenqualität
 		lineageTag: a0000000-0000-4000-8000-000000000803
 
-	// =======================================================================
-	// 09 DYNAMISCHE TITEL UND KONTEXT
-	// =======================================================================
-	// Storytelling with Data, Kapitel 5: Der Titel trägt die Aussage, nicht
-	// die Beschriftung der Achse. Diese Kennzahlen erzeugen Titel, die sich
-	// mit dem Filterkontext ändern und die Botschaft der Grafik benennen.
-
+	/// 09 DYNAMISCHE TITEL UND KONTEXT
+	///
+	/// Storytelling with Data, Kapitel 5: Der Titel trägt die Aussage, nicht
+	/// die Beschriftung der Achse. Diese Kennzahlen erzeugen Titel, die sich
+	/// mit dem Filterkontext ändern und die Botschaft der Grafik benennen.
+	///
 	/// Kernaussage zur Entwicklung des Net New ITY.
 	/// Benennt Richtung und Größenordnung statt nur die Kennzahl zu
 	/// wiederholen.

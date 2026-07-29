@@ -12,9 +12,9 @@ Geprüft wird:
      in einer Weise, die Inhalte verdeckt.
   6. Jede Kennzahl trägt eine Beschreibung (/// Kommentar).
   7. Die im Bericht verwendeten Hexfarben stammen aus der Themendatei.
-  8. TMDL-Kopfkommentare sind gültig: kein //-Kommentar auf oberster Ebene und
-     keine Leerzeile zwischen führendem ///-Block und erstem Objekt (beides
-     lässt den TMDL-Parser mit "InvalidLineType" abbrechen).
+  8. TMDL-Kommentare sind gültig: kein //-Kommentar (TMDL kennt nur ///) und
+     keine Leerzeile zwischen führendem ///-Block und erstem Objekt – beides
+     lässt Power BI Desktop beim Öffnen mit "TDML-Formatfehler" abbrechen.
 
 Aufruf:
     python3 tools/validate_pbip.py
@@ -231,25 +231,26 @@ def pruefe_farben():
 # 7. TMDL-Kopfkommentare: müssen lückenlos zum ersten Objekt gehören
 # ---------------------------------------------------------------------------
 def pruefe_tmdl_kommentare():
-    # Der TMDL-Parser kennt auf oberster Ebene nur Objektzeilen und die
-    # ///-Dokumentation, die UNMITTELBAR davor steht. Zwei Varianten eines
-    # Datei-Kopfkommentars sind dort verboten, beide mit realem Fehlerbild
-    # beim Öffnen in Power BI Desktop:
-    #   ///-Block, danach Leerzeile  -> "Unerwarteter Zeilentyp: Empty"
-    #   //-Zeile auf Spalte 0        -> "Unerwarteter Zeilentyp: Other"
-    # Ein Dateikopf muss deshalb Teil des ///-Blocks des ersten Objekts sein,
-    # ohne trennende Leerzeile. (Eingerückte //-Zeilen INNERHALB eines Objekts,
-    # z. B. Abschnittsbanner in _Kennzahlen.tmdl, sind davon nicht betroffen.)
+    # TMDL kennt KEINEN //-Kommentar - weder auf oberster Ebene noch eingerückt
+    # innerhalb eines Objekts. Zulässig ist ausschliesslich ///-Dokumentation,
+    # und die muss lückenlos unmittelbar vor dem Objekt stehen, das sie
+    # beschreibt. Alle drei Verstöße sind mit realem Fehlerbild aus Power BI
+    # Desktop belegt:
+    #   //-Zeile, Spalte 0    -> "Unerwarteter Zeilentyp: Other"
+    #   //-Zeile, eingerückt  -> "Es wurde ein ungültiger Einzug erkannt"
+    #   ///-Block + Leerzeile -> "Unerwarteter Zeilentyp: Empty"
+    # Abschnittsüberschriften gehören deshalb in den ///-Block der folgenden
+    # Kennzahl, nicht in einen eigenen Kommentarblock.
     for pfad in sorted(glob.glob(os.path.join(MODEL, "**", "*.tmdl"), recursive=True)):
         rel = os.path.relpath(pfad, ROOT)
         zeilen = open(pfad, encoding="utf-8").read().split("\n")
 
         for nr, zeile in enumerate(zeilen, start=1):
-            if zeile.startswith("//") and not zeile.startswith("///"):
+            gestrippt = zeile.strip()
+            if gestrippt.startswith("//") and not gestrippt.startswith("///"):
                 melde_fehler(
-                    f"{rel}: Zeile {nr} ist ein //-Kommentar auf oberster Ebene – "
-                    "TMDL bricht dort mit 'Unerwarteter Zeilentyp: Other' ab; "
-                    "in den ///-Block des ersten Objekts übernehmen"
+                    f"{rel}: Zeile {nr} ist ein //-Kommentar – TMDL kennt nur ///; "
+                    "Text in den ///-Block des folgenden Objekts übernehmen"
                 )
 
         i = 0
