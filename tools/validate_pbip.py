@@ -34,6 +34,12 @@ THEME = os.path.join(REPORT, "StaticResources", "SharedResources", "BaseThemes",
 
 CANVAS_W, CANVAS_H = 1280, 720
 
+# TMDL-Objekttypen, die in TOM KEINE description-Eigenschaft haben. Ein
+# ///-Block davor ist syntaktisch gültig, bricht aber beim Laden in Power BI
+# Desktop ab. Alle übrigen im Modell verwendeten Typen (model, table, column,
+# measure, expression, hierarchy, partition) haben sie.
+OHNE_BESCHREIBUNG = {"relationship", "level", "ref", "annotation", "changedProperty"}
+
 fehler, warnungen = [], []
 
 
@@ -265,6 +271,22 @@ def pruefe_tmdl_kommentare():
                 "'Unerwarteter Zeilentyp: Empty' ab; Leerzeile entfernen, damit "
                 "der Block zum ersten Objekt gehört"
             )
+
+        # /// erzeugt die TOM-Eigenschaft "description". Objekttypen, die diese
+        # Eigenschaft nicht besitzen, lassen Power BI Desktop beim Laden mit
+        # "Die Eigenschaft 'description' ist unbekannt und wird in dieser
+        # Situation nicht erwartet" abbrechen - syntaktisch sieht die Datei
+        # dabei völlig in Ordnung aus.
+        for nr, zeile in enumerate(zeilen, start=1):
+            wort = zeile.strip().split(None, 1)[0] if zeile.strip() else ""
+            if wort in OHNE_BESCHREIBUNG and nr >= 2:
+                if zeilen[nr - 2].strip().startswith("///"):
+                    melde_fehler(
+                        f"{rel}: Zeile {nr} – '{wort}' kennt keine Eigenschaft "
+                        "'description'; der ///-Block davor lässt Power BI "
+                        "Desktop beim Laden abbrechen. Text nach docs/ "
+                        "verlagern (siehe ZWECK in tools/generate_docs.py)"
+                    )
 
 
 # ---------------------------------------------------------------------------

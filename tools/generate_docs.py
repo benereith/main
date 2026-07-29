@@ -254,33 +254,73 @@ def schreibe_datenmodell(tabellen):
         )
 
     zeilen += ["", "## Beziehungen", ""]
+    zeilen += [
+        "Grundregeln, die in den Altmodellen verletzt waren:",
+        "",
+        "1. Nur EINE Richtung. Die Altmodelle hatten elf beidseitig filternde",
+        "   Beziehungen (dim_opp_* zu fct_opp), was Filterpfade unvorhersehbar",
+        "   und Measures nicht mehr lokal nachvollziehbar macht.",
+        "2. Keine Auto-Datumstabellen. Die Altmodelle trugen 12 bis 19",
+        "   LocalDateTable_*-Tabellen mit sich.",
+        "3. Ein Kalender für alle Fakten, verbunden über den Monatsbeginn.",
+        "",
+    ]
     rel_zeilen = open(os.path.join(MODEL, "relationships.tmdl"), encoding="utf-8").read().split("\n")
     zeilen += ["| Von | Nach | Aktiv | Zweck |", "|---|---|---|---|"]
 
-    # TMDL-Aufbau: erst die ///-Kommentare, dann "relationship <name>", dann
-    # die eingerückten Eigenschaften. Ein Datensatz endet, sobald wieder ein
-    # Kommentar oder eine neue relationship-Zeile beginnt.
-    datensaetze, doku, aktuell = [], [], None
+    # Beziehungen sind der einzige Objekttyp im Modell OHNE description-
+    # Eigenschaft: Power BI Desktop bricht beim Laden mit "Die Eigenschaft
+    # 'description' ist unbekannt" ab, sobald ein ///-Block vor einer
+    # relationship steht. Die Zwecktexte stehen deshalb hier statt in der
+    # TMDL-Datei, gekoppelt über den Beziehungsnamen.
+    ZWECK = {
+        "FCT_NetNewITY__DIM_Datum":
+            "Wirkungsperiode des Net New ITY. Der Fakt liegt auf Monatsebene, "
+            "deshalb Verbindung auf den Monatsbeginn.",
+        "FCT_NetNewITY__DIM_Status":
+            "Statusdimension. Filtert die Zerlegung nach Sicherheitsgrad.",
+        "FCT_NetNewITY__DIM_Opportunity":
+            "Opportunity-Stammdaten. Nur New-Business-Zeilen finden einen "
+            "Treffer; Lost-Business-Zeilen laufen ins Leere, was fachlich "
+            "korrekt ist.",
+        "FCT_NetNewITY__DIM_Vertrag":
+            "Vertragsstammdaten. Spiegelbild der Opportunity-Beziehung: nur "
+            "Lost-Business-Zeilen treffen. Deshalb INAKTIV – zwei aktive "
+            "Beziehungen vom selben Schlüssel auf zwei Dimensionen wären ein "
+            "mehrdeutiger Pfad. Aktiviert wird sie in den "
+            "Vertragsvisualisierungen über USERELATIONSHIP.",
+        "FCT_NetNewITY__DIM_Betrieb":
+            "Betriebszuordnung, soweit im CRM gepflegt (cgplc_sapid).",
+        "FCT_Umsatz__DIM_Datum":
+            "SAP-Umsätze an denselben Kalender.",
+        "FCT_Umsatz__DIM_Betrieb":
+            "SAP-Umsätze an die Betriebsdimension.",
+        "FCT_Umsatz__DIM_HFM":
+            "SAP-Umsätze an die Net-New-Hierarchie über das "
+            "Cause-of-Change-Mapping.",
+        "FCT_Bewegung__DIM_Opportunity":
+            "Bewegungsdaten an die Opportunity-Stammdaten, damit in der "
+            "Bewegungsanalyse Kunde, Sektor und Verantwortlicher verfügbar "
+            "sind.",
+        "FCT_Bewegung__DIM_Vertrag":
+            "Bewegungsdaten an die Vertragsstammdaten. Inaktiv aus demselben "
+            "Grund wie bei der Faktentabelle.",
+    }
+
+    datensaetze, aktuell = [], None
     for z in rel_zeilen:
-        if z.startswith("///"):
+        if z.startswith("relationship "):
             if aktuell is not None:
                 datensaetze.append(aktuell)
-                aktuell, doku = None, []
-            doku.append(z[3:].strip())
-        elif z.startswith("relationship "):
-            if aktuell is not None:
-                datensaetze.append(aktuell)
-            aktuell = {"doku": doku[:], "body": []}
-            doku = []
-        elif not z.strip():
-            # Leerzeile beendet einen Kommentarblock. So wird der Dateikopf
-            # nicht faelschlich der ersten Beziehung zugeschlagen.
-            if aktuell is None:
-                doku = []
-        elif aktuell is not None:
+            aktuell = {"name": z.split(None, 1)[1].strip(), "body": []}
+        elif z.strip() and aktuell is not None:
             aktuell["body"].append(z.strip())
     if aktuell is not None:
         datensaetze.append(aktuell)
+
+    fehlend = [d["name"] for d in datensaetze if d["name"] not in ZWECK]
+    if fehlend:
+        print("  WARNUNG: Zwecktext fehlt für " + ", ".join(fehlend))
 
     for d in datensaetze:
         text = "\n".join(d["body"])
@@ -290,7 +330,7 @@ def schreibe_datenmodell(tabellen):
             aktiv = "nein" if "isActive: false" in text else "ja"
             zeilen.append(
                 f"| `{mfrom.group(1).strip()}` | `{mto.group(1).strip()}` | "
-                f"{aktiv} | {' '.join(x for x in d['doku'] if x)} |"
+                f"{aktiv} | {ZWECK.get(d['name'], '')} |"
             )
 
     zeilen += ["", "## Tabellen im Detail", ""]

@@ -94,6 +94,8 @@ Net New ARO =
 
 ### `Net New ITY`
 
+01 BASIS
+
 Net New ITY = New Business ITY minus Lost Business ITY, im Filterkontext.
 
 Die Bewertungsbasis wird über den Datenschnitt 'Szenario Bewertung' gesteuert: CRM-gewichtet  Umsatz × Eintrittswahrscheinlichkeit (Standard) Vollwert       Umsatz ohne Gewichtung – Obergrenze Nur gesichert  nur Won und Lost, ungewichtet – Untergrenze
@@ -257,6 +259,8 @@ CALCULATE ( [New Business ITY], 'DIM Status'[Status Code] = "PIPELINE" )
 
 ### `ITY Won`
 
+02 STATUS – Zerlegung nach Sicherheitsgrad
+
 ITY-Wirkung bereits gewonnener Opportunities (Win-% = 100 %). Der belastbarste Teil des New Business.
 
 **Format:** `#,0\ "€";-#,0\ "€";#,0\ "€"`
@@ -355,6 +359,8 @@ RETURN
 
 ### `Net New ITY YTD`
 
+03 ZEIT
+
 Net New ITY kumuliert seit Beginn des Geschäftsjahres.
 
 Umsetzung über den linearen Monatsindex statt über TOTALYTD: die Standard-Zeitintelligenz kennt nur Kalenderjahre und liefert für ein Oktober-September-Geschäftsjahr falsche Grenzen.
@@ -389,6 +395,8 @@ Net New ITY Δ Vorjahr =
 ## 04 Szenarien
 
 ### `Net New ITY (Szenario)`
+
+04 SZENARIEN – ersetzt das manuelle Shiften
 
 Net New ITY unter den gewählten Szenarioannahmen.
 
@@ -545,6 +553,8 @@ CALCULATE (
 
 ### `Umsatz Ist`
 
+05 BUDGET UND FORECAST (SAP)
+
 Gebuchter Umsatz laut SAP (Version 0).
 
 **Format:** `#,0\ "€";-#,0\ "€";#,0\ "€"`
@@ -621,6 +631,8 @@ DIVIDE ( [Net New ITY], [Organischer Umsatz Vorjahr] )
 
 ### `New Business %`
 
+06 QUOTEN NACH GROUP GUIDANCE
+
 New Business in Prozent des organischen Vorjahresumsatzes. HFM: MAP111e.
 
 **Format:** `0.00\ %;-0.00\ %;0.00\ %`
@@ -670,6 +682,8 @@ CALCULATE (
 ```
 
 ### `Bewegung Wert`
+
+07 CRM-BEWEGUNG
 
 Summe aller Wertänderungen im CRM im gewählten Zeitraum.
 
@@ -747,6 +761,8 @@ RETURN
 
 ### `DQ Verstöße`
 
+08 DATENQUALITÄT
+
 Anzahl der Regelverstöße im jüngsten Prüflauf.
 
 **Format:** `#,0`
@@ -762,6 +778,10 @@ RETURN
 ## 09 Titel und Kontext
 
 ### `Aussage Net New`
+
+09 DYNAMISCHE TITEL UND KONTEXT
+
+Storytelling with Data, Kapitel 5: Der Titel trägt die Aussage, nicht die Beschriftung der Achse. Diese Kennzahlen erzeugen Titel, die sich mit dem Filterkontext ändern und die Botschaft der Grafik benennen.
 
 Kernaussage zur Entwicklung des Net New ITY. Benennt Richtung und Größenordnung statt nur die Kennzahl zu wiederholen.
 

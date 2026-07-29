@@ -29,6 +29,15 @@
 
 ## Beziehungen
 
+Grundregeln, die in den Altmodellen verletzt waren:
+
+1. Nur EINE Richtung. Die Altmodelle hatten elf beidseitig filternde
+   Beziehungen (dim_opp_* zu fct_opp), was Filterpfade unvorhersehbar
+   und Measures nicht mehr lokal nachvollziehbar macht.
+2. Keine Auto-Datumstabellen. Die Altmodelle trugen 12 bis 19
+   LocalDateTable_*-Tabellen mit sich.
+3. Ein Kalender für alle Fakten, verbunden über den Monatsbeginn.
+
 | Von | Nach | Aktiv | Zweck |
 |---|---|---|---|
 | `'FCT Net New ITY'.Periode` | `'DIM Datum'.Datum` | ja | Wirkungsperiode des Net New ITY. Der Fakt liegt auf Monatsebene, deshalb Verbindung auf den Monatsbeginn. |
