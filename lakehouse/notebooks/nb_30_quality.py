@@ -40,6 +40,26 @@ def check(rule_id: str, severity: str, beschreibung: str, df_violations, hinweis
     return n
 
 
+# Fehlende Vorgaengertabelle heisst: der Lauf davor ist gescheitert oder wurde
+# nie ausgefuehrt. Die rohe TABLE_OR_VIEW_NOT_FOUND nennt zwar den Tabellennamen,
+# aber nicht die Ursache - deshalb hier eine Meldung, die auf das verursachende
+# Notebook zeigt statt auf die Qualitaetspruefung, die nur das Opfer ist.
+VORAUSSETZUNGEN = {
+    "gold_fct_net_new_ity": "nb_20_gold",
+    "silver_opportunity": "nb_10_silver",
+    "silver_contract": "nb_10_silver",
+    "silver_dq_reject": "nb_10_silver",
+}
+_fehlend = [t for t in VORAUSSETZUNGEN if not spark.catalog.tableExists(t)]
+if _fehlend:
+    raise ValueError(
+        "Vorgaengertabelle(n) fehlen: " + ", ".join(sorted(_fehlend)) + ".\n"
+        "Verursachendes Notebook: "
+        + ", ".join(sorted({VORAUSSETZUNGEN[t] for t in _fehlend}))
+        + " - dort die Fehlermeldung des letzten Laufs pruefen.\n"
+        "nb_30_quality selbst ist nicht die Ursache; es liest nur."
+    )
+
 fct = spark.table("gold_fct_net_new_ity")
 opp = spark.table("silver_opportunity")
 con = spark.table("silver_contract")

@@ -138,6 +138,21 @@ write_delta(dim_hfm, "gold_dim_hfm_struktur")
 # ===========================================================================
 # 4. gold_dim_unit / gold_dim_opportunity / gold_dim_contract
 # ===========================================================================
+# Wie in nb_30_quality: die rohe TABLE_OR_VIEW_NOT_FOUND nennt nur den
+# Tabellennamen, nicht das Notebook, das sie haette schreiben sollen.
+VORAUSSETZUNGEN = {
+    "silver_unit": "nb_10_silver (Abschnitt 3, braucht bronze_sap_unit)",
+    "silver_opportunity": "nb_10_silver (Abschnitt 1)",
+    "silver_contract": "nb_10_silver (Abschnitt 2)",
+}
+_fehlend = [t for t in VORAUSSETZUNGEN if not spark.catalog.tableExists(t)]
+if _fehlend:
+    raise ValueError(
+        "Vorgaengertabelle(n) fehlen: " + ", ".join(sorted(_fehlend)) + ".\n"
+        + "\n".join(f"  {t} <- {VORAUSSETZUNGEN[t]}" for t in sorted(_fehlend))
+        + "\nnb_10_silver zuerst fehlerfrei durchlaufen lassen."
+    )
+
 unit = spark.table("silver_unit")
 
 DIM_UNIT_SPALTEN = [
@@ -363,7 +378,11 @@ silver_con = spark.table("silver_contract")
 # gefuellt ist - genau die Halb-Befuellung, die zu falschen Filtern fuehrt.
 if "cgplc_accountid" in silver_con.columns:
     silver_con = silver_con.join(
-        spark.table("bronze_crm_account")
+        ergaenze_spalten(
+            spark.table("bronze_crm_account"),
+            {"accountid": "string", "name": "string"},
+            "bronze_crm_account",
+        )
         .select(
             F.col("accountid").alias("cgplc_accountid"),
             F.col("name").alias("account_name"),
@@ -609,57 +628,72 @@ def fn_map_coch(fy_col, coch_col):
     )
 
 
-rev = spark.table("bronze_sap_revenue")
-
-# Monatswert und YTD je Werk/Version/Geschaeftsjahr
-w_ytd = Window.partitionBy("werk", "version", "fy_year").orderBy("fy_period").rowsBetween(
-    Window.unboundedPreceding, Window.currentRow
-)
-
-rev = (
-    rev.withColumn("fy_year", F.col("Fiscal_Year").cast("int"))
-    .withColumn("fy_period", F.col("Period").cast("int"))
-    .withColumn("werk", F.col("Object_group").cast("int"))
-    .withColumn("version", F.col("SAP_Version").cast("string"))
-    .withColumn(
-        "werttyp", F.when(F.col("version") == "0", F.lit("Actual")).otherwise(F.lit("Plan"))
+# bronze_sap_revenue stammt aus SAP und wird NICHT von dieser Pipeline
+# geschrieben (separater Abzug bzw. Shortcut, siehe docs/06_deployment.md).
+# Fehlt die Tabelle, wird nur dieser Abschnitt uebersprungen: die bereits
+# geschriebene gold_fct_net_new_ity bleibt gueltig, und die nachfolgenden
+# CRM-Tabellen (gold_fct_crm_movement, gold_dim_snapshot) entstehen
+# weiterhin. Ein Abbruch an dieser Stelle wuerde sie ohne fachlichen Grund
+# mitreissen - der Net-New-Teil haengt nicht an den SAP-Umsaetzen.
+if not spark.catalog.tableExists("bronze_sap_revenue"):
+    print(
+        "  WARNUNG: bronze_sap_revenue fehlt - gold_fct_revenue wird NICHT "
+        "geschrieben. Budget-, Forecast- und Ist-Kennzahlen bleiben im "
+        "Bericht leer; Net New ITY ist davon nicht betroffen. "
+        "Verknuepfung anlegen: docs/06_deployment.md, Schritt 1 (SAP-Seite)."
     )
-    .withColumn("werttyp_version", F.concat_ws("_", F.col("werttyp"), F.col("version")))
-    .withColumn("betrag_monat", F.col("Value").cast("decimal(19,4)"))
-    # Periodendatum aus FY-Jahr und FY-Periode: P1 = Oktober des FY-Jahres
-    .withColumn(
-        "period_date",
-        F.make_date(
-            F.when(F.col("fy_period") <= 3, F.col("fy_year")).otherwise(F.col("fy_year") + 1),
-            F.when(F.col("fy_period") <= 3, F.col("fy_period") + 9).otherwise(F.col("fy_period") - 3),
-            F.lit(1),
-        ),
-    )
-    .withColumn("betrag_ytd", F.sum("betrag_monat").over(w_ytd))
-)
+else:
+    rev = spark.table("bronze_sap_revenue")
 
-unit_coch = spark.table("silver_unit").select(
-    F.col("betrieb").alias("werk"), "cause_of_change", "cause_of_change_fy",
-    "cause_of_change_ny", "betriebstyp",
-)
-
-rev = (
-    rev.join(unit_coch, "werk", "left")
-    .withColumn("metric_id", fn_map_coch(F.col("fy_year"), F.col("cause_of_change")))
-    .withColumn("metric_id_fy", fn_map_coch(F.col("fy_year"), F.col("cause_of_change_fy")))
-    .withColumn("metric_id_ny", fn_map_coch(F.col("fy_year"), F.col("cause_of_change_ny")))
-    # Vorzeichen: SAP liefert Ertraege negativ. Wir drehen einmal zentral,
-    # damit im Bericht nirgends mehr "*-1" steht.
-    .withColumn("betrag_monat", -F.col("betrag_monat"))
-    .withColumn("betrag_ytd", -F.col("betrag_ytd"))
-    .withColumn("monat_index", (F.col("fy_year") * 12 + F.col("fy_period")).cast("int"))
-    .select(
-        "werk", "fy_year", "fy_period", "monat_index", "period_date",
-        "werttyp", "version", "werttyp_version", "betrag_monat", "betrag_ytd",
-        "metric_id", "metric_id_fy", "metric_id_ny", "betriebstyp",
+    # Monatswert und YTD je Werk/Version/Geschaeftsjahr
+    w_ytd = Window.partitionBy("werk", "version", "fy_year").orderBy("fy_period").rowsBetween(
+        Window.unboundedPreceding, Window.currentRow
     )
-)
-write_delta(rev, "gold_fct_revenue", partition_by=["fy_year"])
+
+    rev = (
+        rev.withColumn("fy_year", F.col("Fiscal_Year").cast("int"))
+        .withColumn("fy_period", F.col("Period").cast("int"))
+        .withColumn("werk", F.col("Object_group").cast("int"))
+        .withColumn("version", F.col("SAP_Version").cast("string"))
+        .withColumn(
+            "werttyp", F.when(F.col("version") == "0", F.lit("Actual")).otherwise(F.lit("Plan"))
+        )
+        .withColumn("werttyp_version", F.concat_ws("_", F.col("werttyp"), F.col("version")))
+        .withColumn("betrag_monat", F.col("Value").cast("decimal(19,4)"))
+        # Periodendatum aus FY-Jahr und FY-Periode: P1 = Oktober des FY-Jahres
+        .withColumn(
+            "period_date",
+            F.make_date(
+                F.when(F.col("fy_period") <= 3, F.col("fy_year")).otherwise(F.col("fy_year") + 1),
+                F.when(F.col("fy_period") <= 3, F.col("fy_period") + 9).otherwise(F.col("fy_period") - 3),
+                F.lit(1),
+            ),
+        )
+        .withColumn("betrag_ytd", F.sum("betrag_monat").over(w_ytd))
+    )
+
+    unit_coch = spark.table("silver_unit").select(
+        F.col("betrieb").alias("werk"), "cause_of_change", "cause_of_change_fy",
+        "cause_of_change_ny", "betriebstyp",
+    )
+
+    rev = (
+        rev.join(unit_coch, "werk", "left")
+        .withColumn("metric_id", fn_map_coch(F.col("fy_year"), F.col("cause_of_change")))
+        .withColumn("metric_id_fy", fn_map_coch(F.col("fy_year"), F.col("cause_of_change_fy")))
+        .withColumn("metric_id_ny", fn_map_coch(F.col("fy_year"), F.col("cause_of_change_ny")))
+        # Vorzeichen: SAP liefert Ertraege negativ. Wir drehen einmal zentral,
+        # damit im Bericht nirgends mehr "*-1" steht.
+        .withColumn("betrag_monat", -F.col("betrag_monat"))
+        .withColumn("betrag_ytd", -F.col("betrag_ytd"))
+        .withColumn("monat_index", (F.col("fy_year") * 12 + F.col("fy_period")).cast("int"))
+        .select(
+            "werk", "fy_year", "fy_period", "monat_index", "period_date",
+            "werttyp", "version", "werttyp_version", "betrag_monat", "betrag_ytd",
+            "metric_id", "metric_id_fy", "metric_id_ny", "betriebstyp",
+        )
+    )
+    write_delta(rev, "gold_fct_revenue", partition_by=["fy_year"])
 
 
 # ===========================================================================

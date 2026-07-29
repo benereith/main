@@ -58,7 +58,37 @@ print(f"Silver-Lauf {RUN_TS}")
 #      Zeilen werden NICHT stillschweigend verworfen, sondern in
 #      gold_dq_checks als Regel DQ-OPP-001 protokolliert (siehe nb_30_quality).
 
+# Erwartete Felder EINMAL absichern, statt an jeder Zugriffsstelle einzeln.
+# Trennung nach Wirkung (Begruendung siehe pruefe_pflichtfelder in
+# nb_00_config): fehlt ein Attribut, bleibt die Kennzahl richtig; fehlt ein
+# Treiberfeld, waere das Ergebnis stillschweigend falsch.
+OPP_PFLICHT = [
+    "opportunityid",
+    "cgplc_openingdate",     # Periodenverteilung
+    "estimatedclosedate",    # Entscheidungszeitpunkt, Cluster-Zuordnung
+    "cgplc_revenueity",      # ITY-Betrag
+    "cgplc_win",             # Gewichtung
+]
+OPP_OPTIONAL = {
+    "name": "string",
+    "statecodename": "string",
+    "cgplc_salesstagename": "string",
+    "cgplc_wondate": "date",
+    "actualclosedate": "date",
+    "createdon": "timestamp",
+    "modifiedon": "timestamp",
+    "cgplc_bgpercent": "double",
+    "cgplc_revenuearo": "decimal(19,4)",
+    "cgplc_revenuearo_base": "decimal(19,4)",
+    "cgplc_revenueity_base": "decimal(19,4)",
+    "accountid": "string",
+    "cgplc_territoryid": "string",
+    "owneridname": "string",
+}
+
 opp_raw = spark.table("bronze_crm_opportunity")
+pruefe_pflichtfelder(opp_raw, "bronze_crm_opportunity", OPP_PFLICHT)
+opp_raw = ergaenze_spalten(opp_raw, OPP_OPTIONAL, "bronze_crm_opportunity")
 
 opp = (
     opp_raw
@@ -79,8 +109,8 @@ opp = (
 )
 
 opp_filtered = opp.filter(
-    (~F.col("statecodename").isin(EXCLUDED_STATE_NAMES))
-    & (~F.col("cgplc_salesstagename").isin(EXCLUDED_SALES_STAGES))
+    nicht_in(opp, "statecodename", EXCLUDED_STATE_NAMES)
+    & nicht_in(opp, "cgplc_salesstagename", EXCLUDED_SALES_STAGES)
     & (F.col("estimatedclosedate") >= F.lit(CY_START))
     & (
         (F.col("cgplc_openingdate") >= F.lit(CY_START))
@@ -136,12 +166,22 @@ opp_silver = (
 # KEIN Join gegen systemuser: die Entitaet ist im Mandanten nicht abrufbar.
 # Der Klarname des Verantwortlichen kommt als owneridname direkt an der
 # Opportunity mit - das genuegt fuer Filter und Anzeige.
-acct = spark.table("bronze_crm_account").select(
+acct_raw = ergaenze_spalten(
+    spark.table("bronze_crm_account"),
+    {"accountid": "string", "name": "string", "cgplc_sapid": "string"},
+    "bronze_crm_account",
+)
+acct = acct_raw.select(
     F.col("accountid"),
     F.col("name").alias("account_name"),
     F.col("cgplc_sapid").alias("account_sap_id"),
 )
-terr = spark.table("bronze_crm_territory").select(
+terr_raw = ergaenze_spalten(
+    spark.table("bronze_crm_territory"),
+    {"territoryid": "string", "name": "string"},
+    "bronze_crm_territory",
+)
+terr = terr_raw.select(
     F.col("territoryid").alias("cgplc_territoryid"),
     F.col("name").alias("territory_name"),
 )
@@ -172,7 +212,27 @@ write_delta(opp_silver, "silver_opportunity", mode="overwrite")
 #   c) Enddatum im Fenster [CY_START, NY_END]
 #      Ausserhalb wirkt der Vertrag nicht auf CY/NY.
 
+CON_PFLICHT = [
+    "cgplc_cgcontractid",
+    "cgplc_lastfyrevenuearo",      # Verlustbetrag
+    "cgplc_retentionprobability",  # Gewichtung
+]
+CON_OPTIONAL = {
+    "cgplc_name": "string",
+    "statuscodename": "string",
+    "cgplc_contractenddate": "date",
+    "cgplc_decisiondate": "date",
+    "cgplc_forecastdecisiondate": "date",
+    "cgplc_operationstartdate": "date",
+    "cgplc_revenuearo": "decimal(19,4)",
+    "cgplc_reasonforriskname": "string",
+}
+
 con_raw = spark.table("bronze_crm_contract")
+pruefe_pflichtfelder(con_raw, "bronze_crm_contract", CON_PFLICHT)
+# Vor dem Ergaenzen merken: danach existiert die Spalte immer (ggf. als NULL).
+HAT_VERTRAGSSTATUS = "statuscodename" in con_raw.columns
+con_raw = ergaenze_spalten(con_raw, CON_OPTIONAL, "bronze_crm_contract")
 
 con = (
     con_raw.withColumn("cgplc_contractenddate", F.to_date("cgplc_contractenddate"))
@@ -184,8 +244,19 @@ con = (
     )
     .withColumn("revenue_aro", F.col("cgplc_revenuearo").cast("decimal(19,4)"))
     .withColumn("last_fy_revenue_aro", F.col("cgplc_lastfyrevenuearo").cast("decimal(19,4)"))
-    .filter(F.col("statuscodename").isin(ACTIVE_CONTRACT_STATUS))
 )
+
+# Einschlussfilter, nicht Ausschluss: ohne statuscodename laesst sich "aktiv"
+# nicht bestimmen. Dann lieber ALLE Vertraege behalten und laut darauf
+# hinweisen - ein stiller Filter auf NULL wuerde das komplette Lost Business
+# verschwinden lassen, und der Bericht saehe dabei voellig unauffaellig aus.
+if HAT_VERTRAGSSTATUS:
+    con = con.filter(F.col("statuscodename").isin(ACTIVE_CONTRACT_STATUS))
+else:
+    print(
+        "  WARNUNG bronze_crm_contract: statuscodename fehlt - Filter auf "
+        "aktive Vertraege entfaellt, ALLE Vertraege gehen in Lost Business ein"
+    )
 
 con = con.withColumn(
     "adj_end_date",
@@ -248,6 +319,24 @@ write_delta(con_silver, "silver_contract", mode="overwrite")
 # ===========================================================================
 # 3. SAP-Stammdaten (Betriebe)
 # ===========================================================================
+# bronze_sap_unit wird NICHT von dieser Pipeline befuellt, sondern separat aus
+# SAP gezogen (Shortcut bzw. eigener Dataflow, siehe docs/06_deployment.md,
+# "Die Luecke, die diese Pipeline nicht schliesst"). Fehlt die Tabelle noch,
+# darf das die CRM-Verarbeitung nicht mitreissen: silver_opportunity und
+# silver_contract sind zu diesem Zeitpunkt bereits geschrieben und fachlich
+# vollstaendig. Der Abbruch kaeme sonst NACH getaner Arbeit und liesse die
+# Pipeline scheitern, obwohl der CRM-Teil in Ordnung ist.
+if not spark.catalog.tableExists("bronze_sap_unit"):
+    raise ValueError(
+        "bronze_sap_unit fehlt im Lakehouse.\n"
+        "Diese Tabelle stammt aus SAP und wird nicht von dieser Pipeline "
+        "geschrieben - sie muss als Verknuepfung (Shortcut) auf die "
+        "bestehende SAP-Quelle angelegt werden, bevor nb_10_silver laeuft.\n"
+        "Siehe docs/06_deployment.md, Schritt 1 (SAP-Seite).\n"
+        "Der CRM-Teil (silver_opportunity, silver_contract) ist bereits "
+        "erfolgreich geschrieben."
+    )
+
 unit = (
     spark.table("bronze_sap_unit")
     .withColumn(

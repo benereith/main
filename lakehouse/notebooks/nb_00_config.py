@@ -200,6 +200,63 @@ def spalte_oder_null(df, name: str, typ: str = "string"):
     return F.col(name).cast(typ) if name in df.columns else F.lit(None).cast(typ)
 
 
+def ergaenze_spalten(df, spalten: dict, quelle: str = ""):
+    """Ergaenzt fehlende OPTIONALE Spalten als typisierte NULL-Spalten.
+
+    WARUM: spalte_oder_null() schuetzt nur die eine Stelle, an der es
+    aufgerufen wird. Sobald irgendwo sonst ein direktes F.col(...) auf ein im
+    Mandanten fehlendes cgplc_-Feld trifft, bricht der Lauf trotzdem mit
+    AnalysisException ab - genau so geschehen bei cgplc_sapid auf
+    bronze_crm_account. Diese Funktion setzt EINMAL direkt nach dem Lesen der
+    Bronze-Tabelle alle erwarteten Spalten, danach ist jeder nachfolgende
+    Zugriff sicher.
+
+    Ergaenzt wird ausschliesslich; vorhandene Spalten bleiben unveraendert.
+    """
+    fehlend = {n: t for n, t in spalten.items() if n not in df.columns}
+    for name, typ in fehlend.items():
+        df = df.withColumn(name, F.lit(None).cast(typ))
+    if fehlend:
+        print(
+            f"  HINWEIS {quelle}: {len(fehlend)} Feld(er) im Mandanten nicht "
+            f"vorhanden, als NULL ergaenzt -> {', '.join(sorted(fehlend))}"
+        )
+    return df
+
+
+def pruefe_pflichtfelder(df, quelle: str, felder: list):
+    """Bricht ab, wenn ein Schluessel- oder Treiberfeld fehlt.
+
+    Abgrenzung zu ergaenze_spalten(): ein fehlendes ATTRIBUT (Kundenname,
+    Sektor, Gebiet) laesst die Kennzahl richtig und nur die Aufrisssicht leer -
+    das darf still durchlaufen. Ein fehlendes TREIBERFELD (Datum, Betrag,
+    Wahrscheinlichkeit) oder ein fehlender Schluessel macht die Berechnung
+    dagegen bedeutungslos: der Bericht zeigte dann lauter Nullen, ohne dass
+    irgendwo ein Fehler sichtbar waere. Deshalb hier lieber laut abbrechen.
+    """
+    fehlend = [f for f in felder if f not in df.columns]
+    if fehlend:
+        raise ValueError(
+            f"{quelle}: Pflichtfeld(er) fehlen: {', '.join(fehlend)}.\n"
+            f"Ohne diese Felder ist die Periodenverteilung bedeutungslos.\n"
+            f"Pruefen: SELECT DISTINCT _fehlende_felder FROM {quelle} "
+            f"WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM {quelle});\n"
+            f"Feldherkunft und Alternativen: docs/04_crm_feldkatalog.md"
+        )
+
+
+def nicht_in(df, spalte: str, werte):
+    """NULL-sicherer Ausschlussfilter.
+
+    ~F.col(x).isin(...) liefert bei NULL ebenfalls NULL, und NULL filtert die
+    Zeile WEG. Fehlt das Feld im Mandanten komplett (alle Werte NULL), wuerde
+    ein gewoehnlicher Ausschlussfilter also den gesamten Datenbestand
+    verwerfen - ohne Fehlermeldung, mit leerem Bericht als Ergebnis. Unbekannt
+    heisst hier deshalb ausdruecklich "nicht ausgeschlossen".
+    """
+    return F.coalesce(~spalte_oder_null(df, spalte).isin(werte), F.lit(True))
+
+
 def name_oder_id(df, spalte: str):
     """Anzeigename eines Dataverse-Lookup-/Optionset-Felds, ersatzweise die ID.
 
