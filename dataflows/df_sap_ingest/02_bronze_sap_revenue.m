@@ -50,7 +50,26 @@ let
     VorhandeneSpalten = Table.ColumnNames(Gefiltert),
     Auswahl = List.Intersect({GewuenschteSpalten, VorhandeneSpalten}),
     Fehlend = List.Difference(GewuenschteSpalten, VorhandeneSpalten),
-    Selektiert = Table.SelectColumns(Gefiltert, Auswahl),
+
+    // Reissleine, siehe 01_bronze_sap_unit.m. Ohne Object_group und Value ist
+    // die Tabelle fuer gold_fct_revenue wertlos; besser hier abbrechen als
+    // eine Tabelle mit zwei Hilfsspalten zu schreiben.
+    Pflicht = {"Fiscal_Year", "Period", "Object_group", "Value"},
+    FehlendPflicht = List.Difference(Pflicht, VorhandeneSpalten),
+    Geprueft =
+        if List.Count(FehlendPflicht) > 0 then
+            error Error.Record(
+                "Quelle liefert keine Umsatzdaten",
+                "Pflichtspalte(n) fehlen: " & Text.Combine(FehlendPflicht, ", ")
+                    & ". Zeigt die Abfrage wirklich auf V_SAP_EXPORTS_cleansed? "
+                    & "Schreibweise der Spalten beachten - nb_20_gold liest sie "
+                    & "woertlich.",
+                "Gefundene Spalten: " & Text.Combine(VorhandeneSpalten, ", ")
+            )
+        else
+            Gefiltert,
+
+    Selektiert = Table.SelectColumns(Geprueft, Auswahl),
 
     MitLadezeit = Table.AddColumn(
         Selektiert, "loaded_at", each DateTime.From(fn_berlin_now()), type datetime

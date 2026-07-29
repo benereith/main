@@ -355,8 +355,52 @@ if not spark.catalog.tableExists("bronze_sap_unit"):
         "erfolgreich geschrieben."
     )
 
+# Tabelle da, aber leer an Inhalt: das passiert, wenn die Quellnavigation in
+# df_sap_ingest nicht auf sap_master_data_unit zeigt. SafeSelect uebernimmt
+# dann keine einzige Fachspalte, und uebrig bleiben nur loaded_at und
+# _fehlende_felder. Die Rohmeldung waere ein UNRESOLVED_COLUMN auf 'betrieb'
+# und wuerde auf dieses Notebook zeigen statt auf den Dataflow.
+unit_raw = spark.table("bronze_sap_unit")
+UNIT_PFLICHT = ["betrieb", "bezeichnung_betrieb", "sektor"]
+_fehlt = [s for s in UNIT_PFLICHT if s not in unit_raw.columns]
+if _fehlt:
+    _diag = ""
+    if "_fehlende_felder" in unit_raw.columns:
+        _werte = [
+            r[0] for r in unit_raw.select("_fehlende_felder").distinct().limit(3).collect()
+        ]
+        _diag = "\nSpalte _fehlende_felder meldet: " + " | ".join(str(w) for w in _werte)
+    raise ValueError(
+        "bronze_sap_unit enthaelt keine Betriebsstammdaten.\n"
+        f"Fehlende Pflichtspalten: {', '.join(_fehlt)}\n"
+        f"Vorhandene Spalten: {', '.join(unit_raw.columns)}\n"
+        "Ursache liegt im Dataflow df_sap_ingest, Abfrage bronze_sap_unit: die "
+        "Platzhalterschritte 'Quelle' und 'Navigation' am Anfang der Abfrage "
+        "muessen ueber 'Daten abrufen -> Dataflows' durch die echte Navigation "
+        "zu sap_master_data_unit ersetzt werden."
+        + _diag
+        + "\nDer CRM-Teil (silver_opportunity, silver_contract) ist bereits "
+        "erfolgreich geschrieben."
+    )
+
+# Optionale Stammdatenfelder ergaenzen, damit ein einzelnes fehlendes Attribut
+# (etwa bundesland) den Lauf nicht kippt - dieselbe Trennung wie bei CRM.
+unit_raw = ergaenze_spalten(
+    unit_raw,
+    {
+        "buchungskreis": "string", "vertragsbeginn": "date", "schliessung": "date",
+        "bezeichnung_vertragsart": "string", "bezeichnung_region": "string",
+        "bezeichnung_management": "string", "bezeichnung_verantwortungsbereich": "string",
+        "bezeichnung_branche": "string", "bezeichnung_kundengruppe": "string",
+        "bundesland": "string", "stadt": "string",
+        "cause_of_change": "int", "bezeichnung_cause_of_change": "string",
+        "cause_of_change_fy": "int", "cause_of_change_ny": "int",
+    },
+    "bronze_sap_unit",
+)
+
 unit = (
-    spark.table("bronze_sap_unit")
+    unit_raw
     .withColumn(
         "werk_bezeichnung",
         F.concat(F.lpad(F.col("betrieb").cast("string"), 4, "0"), F.lit(" - "),

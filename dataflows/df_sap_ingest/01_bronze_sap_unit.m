@@ -68,7 +68,28 @@ let
     VorhandeneSpalten = Table.ColumnNames(Stammdaten),
     Auswahl = List.Intersect({GewuenschteSpalten, VorhandeneSpalten}),
     Fehlend = List.Difference(GewuenschteSpalten, VorhandeneSpalten),
-    Selektiert = Table.SelectColumns(Stammdaten, Auswahl),
+
+    // Reissleine. SafeSelect ist dafuer gedacht, EINZELNE fehlende Felder zu
+    // ueberspringen. Fehlt dagegen der Primaerschluessel "betrieb", zeigt die
+    // Navigation nicht auf die Stammdatentabelle - typischerweise, weil die
+    // Platzhalterzeilen oben nicht ersetzt wurden und noch die Arbeitsbereichs-
+    // liste geliefert wird. Ohne diese Pruefung entstuende eine Tabelle mit
+    // nur loaded_at und _fehlende_felder, und der Fehler faende sich erst
+    // Schritte spaeter in nb_10_silver wieder.
+    Geprueft =
+        if not List.Contains(VorhandeneSpalten, "betrieb") then
+            error Error.Record(
+                "Quelle liefert keine Betriebsstammdaten",
+                "Die Spalte 'betrieb' fehlt - die Navigation zeigt nicht auf "
+                    & "sap_master_data_unit. Die beiden Platzhalterschritte "
+                    & "'Quelle' und 'Navigation' am Anfang dieser Abfrage ueber "
+                    & "'Daten abrufen -> Dataflows' neu erzeugen.",
+                "Gefundene Spalten: " & Text.Combine(VorhandeneSpalten, ", ")
+            )
+        else
+            Stammdaten,
+
+    Selektiert = Table.SelectColumns(Geprueft, Auswahl),
 
     // Ladezeitpunkt zur Nachvollziehbarkeit. KEIN snapshot_date - siehe oben.
     MitLadezeit = Table.AddColumn(
