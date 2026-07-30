@@ -1,11 +1,11 @@
 /// Statusdimension für New- und Lost-Business-Pipeline.
-///
+/// 
 /// Warum als Dimension statt als String-Filter in Measures: In den
 /// Altmodellen wurden Buckets über CALCULATE(..., Sales_Status="Won YTD")
 /// gefiltert. Dadurch waren Sortierung und Farbe je Visualisierung neu zu
 /// pflegen, und ein neuer Bucket erforderte neue Measures. Hier hängen
 /// Reihenfolge, Sicherheitsgrad und Farbrolle an den Daten.
-///
+/// 
 /// Quelle: gold_dim_status.
 table 'DIM Status'
 	lineageTag: b2000000-0000-4000-8000-000000000001
@@ -35,11 +35,13 @@ table 'DIM Status'
 
 	column Sortierung
 		dataType: int64
-		formatString: 0
 		isHidden
+		formatString: 0
 		lineageTag: b2000000-0000-4000-8000-000000000104
-		summarizeBy: none
+		summarizeBy: sum
 		sourceColumn: status_sort
+
+		annotation SummarizationSetBy = Automatic
 
 	/// gesichert / erwartet / unsicher / unbekannt.
 	/// Diese Gruppierung trägt die Kernaussage jeder Pipeline-Grafik: Wie viel
@@ -64,10 +66,10 @@ table 'DIM Status'
 	/// (Datenfarben → bedingte Formatierung → Feldwert).
 	/// So ist die Farbsemantik an die Daten gebunden und kann in keiner
 	/// Visualisierung versehentlich abweichen.
-	///
+	/// 
 	/// Die Werte stammen aus zwei validierten Ein-Ton-Rampen:
-	///   Blau  #86b6ef → #3987e5 → #184f95   (New Business, zunehmende Sicherheit)
-	///   Rot   #eb9998 → #e34948 → #a02222   (Lost Business, zunehmende Sicherheit)
+	/// Blau  #86b6ef → #3987e5 → #184f95   (New Business, zunehmende Sicherheit)
+	/// Rot   #eb9998 → #e34948 → #a02222   (Lost Business, zunehmende Sicherheit)
 	/// Beide Rampen erfüllen Monotonie, Mindestabstand je Stufe und den
 	/// 2:1-Kontrast der hellsten Stufe gegen weißen Hintergrund.
 	column Farbe =
@@ -81,13 +83,23 @@ table 'DIM Status'
 			    "AT_RISK",        "#EB9998",
 			    "#898781"
 			)
-		dataType: string
 		lineageTag: b2000000-0000-4000-8000-000000000107
 		summarizeBy: none
-		isDataTypeInferred
+
+	column status_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 9c944fcd-de4e-4228-acec-33580d5f040a
+		summarizeBy: sum
+		sourceColumn: status_key
+
+		annotation SummarizationSetBy = Automatic
 
 	partition 'DIM Status' = m
 		mode: import
 		source = fnLakehouse("gold_dim_status")
 
 	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

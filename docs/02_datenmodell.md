@@ -10,16 +10,17 @@
 
 | Tabelle | Rolle | Spalten | Kennzahlen | Quelle |
 |---|---|---:|---:|---|
-| `DIM Betrieb` | Dimension | 21 | 0 | `gold_dim_unit` |
-| `DIM Datum` | Dimension | 15 | 0 | `gold_dim_date` |
-| `DIM HFM-Struktur` | Dimension | 10 | 0 | `gold_dim_hfm_struktur` |
-| `DIM Opportunity` | Dimension | 19 | 0 | `gold_dim_opportunity` |
-| `DIM Status` | Dimension | 7 | 0 | `gold_dim_status` |
-| `DIM Vertrag` | Dimension | 18 | 0 | `gold_dim_contract` |
+| `CRM Data` | Prüfung | 4 | 3 | – |
+| `DIM Betrieb` | Dimension | 23 | 3 | `gold_dim_unit` |
+| `DIM Datum` | Dimension | 18 | 0 | `gold_dim_date` |
+| `DIM HFM-Struktur` | Dimension | 11 | 0 | `gold_dim_hfm_struktur` |
+| `DIM Opportunity` | Dimension | 21 | 0 | `gold_dim_opportunity` |
+| `DIM Status` | Dimension | 8 | 0 | `gold_dim_status` |
+| `DIM Vertrag` | Dimension | 19 | 0 | `gold_dim_contract` |
 | `DQ Prüfungen` | Prüfung | 6 | 0 | `gold_dq_checks` |
 | `FCT CRM-Bewegung` | Fakt | 14 | 0 | `gold_fct_crm_movement` |
-| `FCT Net New ITY` | Fakt | 31 | 0 | `gold_fct_net_new_ity` |
-| `FCT Umsatz` | Fakt | 14 | 0 | `gold_fct_revenue` |
+| `FCT Net New ITY` | Fakt | 35 | 0 | `gold_fct_net_new_ity` |
+| `FCT Umsatz` | Fakt | 17 | 0 | `gold_fct_revenue` |
 | `Szenario Anlauf` | Szenario-Parameter | 2 | 0 | berechnet (DATATABLE) |
 | `Szenario Anlaufdauer` | Szenario-Parameter | 2 | 0 | berechnet (DATATABLE) |
 | `Szenario Bewertung` | Szenario-Parameter | 3 | 0 | berechnet (DATATABLE) |
@@ -50,8 +51,20 @@ Grundregeln, die in den Altmodellen verletzt waren:
 | `'FCT Umsatz'.'Metric ID'` | `'DIM HFM-Struktur'.'Metric ID'` | ja | SAP-Umsätze an die Net-New-Hierarchie über das Cause-of-Change-Mapping. |
 | `'FCT CRM-Bewegung'.'Entität ID'` | `'DIM Opportunity'.'Opportunity ID'` | ja | Bewegungsdaten an die Opportunity-Stammdaten, damit in der Bewegungsanalyse Kunde, Sektor und Verantwortlicher verfügbar sind. |
 | `'FCT CRM-Bewegung'.'Entität ID'` | `'DIM Vertrag'.'Vertrag ID'` | nein | Bewegungsdaten an die Vertragsstammdaten. Inaktiv aus demselben Grund wie bei der Faktentabelle. |
+| `'DIM Opportunity'.status_code` | `'DIM Status'.'Status Code'` | nein | Statusdimension an die Opportunity-Stammdaten. INAKTIV – der Fakt verbindet bereits auf DIM Status; eine zweite aktive Beziehung auf dieselbe Dimension wäre ein mehrdeutiger Filterpfad. |
+| `'DIM Vertrag'.status_code` | `'DIM Status'.'Status Code'` | ja | Statusdimension an die Vertragsstammdaten. Erlaubt die Auswertung der Risikostufe direkt auf der Vertragsdimension. |
+| `'FCT Net New ITY'.Entität` | `'CRM Data'.name` | ja | Faktentabelle an die manuell gepflegte Planungsdatei (2026_04_29_Planung_unknown_ITY_Effekt.xlsx), verbunden über den Namen des Vorgangs. Namensbasierte Verbindungen sind empfindlich gegen Umbenennungen im CRM – abweichende Schreibweisen fallen in die Blank-Zeile. |
 
 ## Tabellen im Detail
+
+### `CRM Data`
+
+| Spalte | Typ | Quellspalte | Bedeutung |
+|---|---|---|---|
+| `NB/LB` | string | `NB/LB` | – |
+| `name` | string | `name` | – |
+| `ity_cluster` | string | `ity_cluster` | – |
+| `ity effect` | double | `ity effect` | – |
 
 ### `DIM Betrieb`
 
@@ -62,7 +75,7 @@ SAP-Betriebsstammdaten (Werke). Quelle: gold_dim_unit. Ersetzt SAP_Stammdaten bz
 | `Werk` | int64 | `betrieb` | – |
 | `Werk Bezeichnung` | string | `werk_bezeichnung` | "0123 – Bezeichnung". Führende Nullen, damit die Sortierung stimmt. |
 | `Betriebsname` | string | `bezeichnung_betrieb` | – |
-| `Buchungskreis` | string | `buchungskreis` | – |
+| `Buchungskreis` | int64 | `buchungskreis` | – |
 | `Sektor` | string | `sektor` | – |
 | `HFM Sektor` | string | `hfm_sektor` | Harmonisierter Sektor für die HFM-Meldung (HC / BU / …). |
 | `Betriebstyp` | string | `betriebstyp` | Real-Betriebe / Plan-Betriebe Roll / Plan-Betriebe ITY. Plan-Betriebe sind Platzhalter-Kostenstellen für unknown Business und dürfen in Betriebszählungen nicht mitlaufen. |
@@ -80,6 +93,8 @@ SAP-Betriebsstammdaten (Werke). Quelle: gold_dim_unit. Ersetzt SAP_Stammdaten bz
 | `Stadt` | string | `stadt` | – |
 | `Cause of Change` | int64 | `cause_of_change` | Cause of Change laut SAP-Stammdaten: 1 = bestehend, 2 = New Business, 3 = Roll, 4 = Lost Business, 5 = M&A. |
 | `Cause of Change Bezeichnung` | string | `bezeichnung_cause_of_change` | – |
+| `cause_of_change_fy` | int64 | `cause_of_change_fy` | – |
+| `cause_of_change_ny` | int64 | `cause_of_change_ny` | – |
 
 ### `DIM Datum`
 
@@ -100,8 +115,11 @@ Fiskalkalender der Gruppe (1. Oktober – 30. September). Quelle: gold_dim_date.
 | `Monatsindex` _(technisch)_ | int64 | `monat_index` | LINEARER Monatsindex = GJ-Jahr × 12 + GJ-Periode. Grundlage der Szenario-Verschiebung: "n Monate später" ist damit eine einfache Subtraktion. Ein Schlüssel aus Jahr × 100 + Periode wäre an der Jahresgrenze nicht linear (202512 → 202601) und würde die Verschiebung im Dezember zerreißen. |
 | `GJ Sortierung` _(technisch)_ | int64 | `fy_sort` | Sortierschlüssel GJ-Jahr × 100 + Periode. Nur für Sortierung, nicht für Arithmetik verwenden (siehe Monatsindex). |
 | `Ist Vergangenheit` | boolean | `ist_vergangenheit` | Wahr für alle Tage vor dem heutigen. Trennt im Bericht Ist von Plan, ohne dass jede Visualisierung eine eigene Datumsbedingung braucht. |
-| `GJ Offset` | int64 | `fy_offset` | Abstand zum laufenden Geschäftsjahr: 0 = laufend, +1 = Budgetjahr, −1 = Vorjahr. Grundlage der Standardauswahl im Bericht. Ein fester Filter auf "FY2026/27" müsste jeden Oktober von Hand umgestellt werden – genau die Handarbeit, die dieser Bericht ablösen soll. Ein Filter auf Offset = 1 wandert mit CURRENT_FY mit. |
-| `GJ relativ` | string | `fy_relativ` | Sprechende Fassung von 'GJ Offset' für Datenschnitte: Vorjahr · Laufendes Jahr · Budgetjahr · Folgejahr +2. "Budgetjahr" ist der Zeitraum, auf den sich die Planung richtet – was jetzt gewonnen wird, zahlt dort ein. Das ist die Standardauswahl. |
+| `monat_nr` | int64 | `monat_nr` | – |
+| `monat` | string | `monat` | – |
+| `tag` | int64 | `tag` | – |
+| `quartal` | string | `quartal` | – |
+| `fy_jahr_monat` | string | `fy_jahr_monat` | – |
 
 ### `DIM HFM-Struktur`
 
@@ -121,6 +139,7 @@ Net-New-Hierarchie und Zuordnung zum HFM-Kontenplan. Quelle: gold_dim_hfm_strukt
 | `HFM Konto` | string | `hfm_account` | HFM-Konto, z. B. MAP131, MAP141a, MAP112c. |
 | `HFM Definition` | string | `hfm_beschreibung` | Wortlaut der Kontodefinition aus dem HFM Chart of Accounts. Wird im Bericht als QuickInfo an den Kennzahlen angezeigt – damit steht die Definition dort, wo die Zahl steht. |
 | `Ist Blattknoten` _(technisch)_ | boolean | `is_leaf` | – |
+| `parent_id` | int64 | `parent_id` | – |
 
 ### `DIM Opportunity`
 
@@ -145,10 +164,12 @@ Ersetzt die elf dim_opp_*-Tabellen des Altmodells "CRM Call". Diese waren über 
 | `Mobilisierung` | dateTime | `opening_date` | Mobilisierungs-/Eröffnungsdatum – Startpunkt der Periodenverteilung. |
 | `Gewinndatum` | dateTime | `won_date` | – |
 | `Win %` | double | `win_probability` | – |
-| `ARO Umsatz` | decimal | `revenue_aro` | ARO-Umsatz laut CRM – Basis für HFM MAP131. |
-| `ITY Umsatz` | decimal | `revenue_ity` | ITY-Umsatz laut CRM – Basis für HFM MAP141a. |
+| `ARO Umsatz` | double | `revenue_aro` | ARO-Umsatz laut CRM – Basis für HFM MAP131. |
+| `ITY Umsatz` | double | `revenue_ity` | ITY-Umsatz laut CRM – Basis für HFM MAP141a. |
 | `Bruttomarge %` | double | `bg_percent` | Bruttomarge in Prozent laut CRM. |
 | `ITY Monate` | int64 | `calc_ity_months` | – |
+| `contract_id` | string | `contract_id` | – |
+| `status_code` | string | `status_code` | – |
 
 ### `DIM Status`
 
@@ -166,7 +187,8 @@ Quelle: gold_dim_status.
 | `Sortierung` _(technisch)_ | int64 | `status_sort` | – |
 | `Sicherheitsgrad` | string | `sicherheitsgrad` | gesichert / erwartet / unsicher / unbekannt. Diese Gruppierung trägt die Kernaussage jeder Pipeline-Grafik: Wie viel des Net New ITY ist bereits belastbar? |
 | `Farbrolle` _(technisch)_ | string | `farbrolle` | Farbrolle für das Berichtsthema (nb-won, nb-expected, nb-pipeline, lb-lost, lb-expected, lb-atrisk, neutral). Aufgelöst in StaticResources/SharedResources/BaseThemes/NetNewITY.json. |
-| `Farbe` | string | – | Hex-Farbe zur direkten Bindung in Visualisierungen (Datenfarben → bedingte Formatierung → Feldwert). So ist die Farbsemantik an die Daten gebunden und kann in keiner Visualisierung versehentlich abweichen. Die Werte stammen aus zwei validierten Ein-Ton-Rampen: Blau  #86b6ef → #3987e5 → #184f95   (New Business, zunehmende Sicherheit) Rot   #eb9998 → #e34948 → #a02222   (Lost Business, zunehmende Sicherheit) Beide Rampen erfüllen Monotonie, Mindestabstand je Stufe und den 2:1-Kontrast der hellsten Stufe gegen weißen Hintergrund. |
+| `Farbe` | berechnet | – | Hex-Farbe zur direkten Bindung in Visualisierungen (Datenfarben → bedingte Formatierung → Feldwert). So ist die Farbsemantik an die Daten gebunden und kann in keiner Visualisierung versehentlich abweichen. Die Werte stammen aus zwei validierten Ein-Ton-Rampen: Blau  #86b6ef → #3987e5 → #184f95   (New Business, zunehmende Sicherheit) Rot   #eb9998 → #e34948 → #a02222   (Lost Business, zunehmende Sicherheit) Beide Rampen erfüllen Monotonie, Mindestabstand je Stufe und den 2:1-Kontrast der hellsten Stufe gegen weißen Hintergrund. |
+| `status_key` | int64 | `status_key` | – |
 
 ### `DIM Vertrag`
 
@@ -176,7 +198,7 @@ Bestandsverträge aus dem CRM (Retention-Sicht). Quelle: gold_dim_contract.
 |---|---|---|---|
 | `Vertrag ID` _(technisch)_ | string | `contract_key` | – |
 | `Vertrag` | string | `contract_name` | – |
-| `SAP ID` | int64 | `sap_id` | SAP-Betriebsnummer – Verbindung zur Betriebsdimension und damit zu den tatsächlich gebuchten Umsätzen. |
+| `SAP ID` | string | `sap_id` | SAP-Betriebsnummer – Verbindung zur Betriebsdimension und damit zu den tatsächlich gebuchten Umsätzen. |
 | `Risikogrund` | string | `risk_reason` | Risikogrund laut CRM (cgplc_reasonforriskname). Trägt die Erklärung hinter jedem gefährdeten Vertrag – im Altbericht nur als Rohspalte vorhanden, nie visualisiert. |
 | `Entscheidungsdatum` | dateTime | `decision_date` | Entscheidungsdatum. Laut Group Guidance (S. 2) maßgeblich für die Zuordnung eines Verlusts zu "current year" oder "prior year". |
 | `Erwartetes Entscheidungsdatum` | dateTime | `forecast_decision_date` | – |
@@ -188,10 +210,11 @@ Bestandsverträge aus dem CRM (Retention-Sicht). Quelle: gold_dim_contract.
 | `Vertragsart` | string | `contract_type` | – |
 | `Verantwortlicher` | string | `owner_name` | – |
 | `Retention %` | double | `retention_probability` | Haltewahrscheinlichkeit. Achtung Leserichtung: 100 % = kein Risiko. Die Verlustwahrscheinlichkeit ist 1 − Retention-%. |
-| `ARO Umsatz` | decimal | `revenue_aro` | – |
-| `Vorjahres-ARO` | decimal | `last_fy_revenue_aro` | Vorjahres-ARO – Bemessungsgrundlage für HFM MAP136 (Lost ARO). |
+| `ARO Umsatz` | double | `revenue_aro` | – |
+| `Vorjahres-ARO` | double | `last_fy_revenue_aro` | Vorjahres-ARO – Bemessungsgrundlage für HFM MAP136 (Lost ARO). |
 | `ARO-Status` | string | `ly_aro_status` | "ARO im CRM" / "Kein ARO im CRM". Ohne Vorjahres-ARO wird der Verlust mit 0 € bewertet – dieser Marker macht die Lücke sichtbar. |
 | `ITY Monate` | int64 | `calc_ity_months` | – |
+| `status_code` | string | `status_code` | – |
 
 ### `DQ Prüfungen`
 
@@ -225,15 +248,15 @@ Bewusst NICHT mit 'DIM Datum' verbunden: die Zeitachse dieser Tabelle ist der Er
 | `Geschäftsart` | string | `business_type` | – |
 | `Stichtag` | dateTime | `snapshot_date` | Stichtag, an dem die Änderung festgestellt wurde. |
 | `Vorheriger Stichtag` | dateTime | `prev_snapshot_date` | Stichtag des vorherigen Stands. |
-| `Wert neu` | decimal | `value_new` | Wert nach der Änderung – der GEWICHTETE Beitrag zum Net New ITY, also die Größe, die auch im Bericht als Beitrag erscheint. New Business  : effektiver ITY-Beitrag × Win-Wahrscheinlichkeit, inklusive ARO-Ersatzregel bei Eröffnung im Folgejahr. Lost Business : Vorjahres-ARO × Verlustwahrscheinlichkeit. Bewusst nicht der ungewichtete Rohbetrag: eine reine Änderung der Wahrscheinlichkeit lässt diesen unverändert, sodass die Bewegung mit 0 € ausgewiesen würde, obwohl der Forecastbeitrag sich sehr wohl geändert hat. Bei Eröffnung im Folgejahr stünde dort zusätzlich durchgängig 0 €, weil CRM den ITY-Wert gegen das laufende Jahr rechnet. |
-| `Wert alt` | decimal | `value_old` | Wert vor der Änderung, gleiche Definition wie 'Wert neu'. Leer, solange für den Vorgang nur ein Stichtag vorliegt. |
-| `Wertänderung` | decimal | `value_delta` | Wertänderung. Positiv = Chance gewachsen bzw. Risiko gewachsen – die Leserichtung hängt an der Geschäftsart. |
+| `Wert neu` | double | `value_new` | Wert nach der Änderung. New Business: ITY-Umsatz. Lost Business: Vorjahres-ARO. |
+| `Wert alt` | double | `value_old` | – |
+| `Wertänderung` | double | `value_delta` | Wertänderung. Positiv = Chance gewachsen bzw. Risiko gewachsen – die Leserichtung hängt an der Geschäftsart. |
 | `Wahrscheinlichkeit neu` | double | `probability_new` | – |
 | `Wahrscheinlichkeit alt` | double | `probability_old` | – |
 | `Wahrscheinlichkeitsänderung` | double | `probability_delta` | – |
 | `Status neu` | string | `status_new` | – |
 | `Status alt` | string | `status_old` | – |
-| `Änderungsart` | string | `aenderungsart` | Statuswechsel / Wahrscheinlichkeit / Wert / Termin oder Vertriebsphase. Erlaubt es, im Bericht die relevanten Änderungen zuerst zu zeigen: ein Statuswechsel wiegt schwerer als eine Wertkorrektur. Die Reihenfolge ist eine Rangfolge, keine Aufzählung: ändern sich Status und Wert gleichzeitig, steht "Statuswechsel" – die stärkere Aussage gewinnt. "Termin oder Vertriebsphase" ist der Restfall und benennt ihn ausdrücklich; das frühere "Sonstiges" ließ offen, was sich überhaupt geändert hatte. |
+| `Änderungsart` | string | `aenderungsart` | Statuswechsel / Wahrscheinlichkeit / Wert / Sonstiges. Erlaubt es, im Bericht die relevanten Änderungen zuerst zu zeigen: ein Statuswechsel wiegt schwerer als eine Wertkorrektur. |
 
 ### `FCT Net New ITY`
 
@@ -249,9 +272,8 @@ VORZEICHENKONVENTION – der wichtigste Unterschied zu den Altmodellen: New Busi
 | `Entität` | string | `entity_name` | Bezeichnung der Opportunity bzw. des Vertrags. |
 | `Entitätstyp` | string | `entity_type` | OPPORTUNITY oder CONTRACT. |
 | `Geschäftsart` | string | `business_type` | NEW oder LOST. Steuert Vorzeichen und HFM-Kontenzuordnung. |
-| `Status Code` _(technisch)_ | string | `status_code` | Verknüpfung zu DIM Status (Won / Expected Win / Pipeline / …). |
+| `Status Code` | string | `status_code` | Verknüpfung zu DIM Status (Won / Expected Win / Pipeline / …). |
 | `ITY Cluster` | string | `ity_cluster` | "unknown ITY" oder "unknown Roll" – wann die Entscheidung fällt und wohin sie dadurch wirkt. Bezeichner aus den Altmodellen beibehalten, damit Abstimmungen gegen die Altreports möglich bleiben. unknown Roll → Abschluss im laufenden Geschäftsjahr, Umsatz überwiegend im Folgejahr. Das ist die Größe, die auf der Seite "Roll-Budget" gegen das Budget läuft: was jetzt noch gewonnen werden muss. unknown ITY → Abschluss im Folgejahr, Wirkung innerhalb desselben Jahres. |
-| `ITY Quelle` | string | `ity_quelle` | Herkunft der ITY-Monatsrate. "CRM-ITY" = aus cgplc_revenueity gerechnet, "ARO-Ersatz (Eroeffnung Folgejahr)" = ersatzweise ARO/12. Hintergrund: cgplc_revenueity ist im CRM gegen das LAUFENDE Geschäftsjahr gerechnet. Liegt die Mobilisierung komplett im nächsten Jahr, steht dort systematisch 0 – nicht weil kein Umsatz entsteht, sondern weil er im laufenden Jahr nicht anfällt. nb_20_gold setzt für diese Fälle ARO/12 an, sonst fiele das gesamte erste Vertragsjahr auf null. Regel DQ-NEW-001 zählt, wie viel Volumen darüber läuft. |
 | `Wahrscheinlichkeit` | double | `probability` | Gewinn- bzw. Verlustwahrscheinlichkeit als Dezimalzahl (0–1). New Business  : Win-% aus dem CRM. Lost Business : 1 − Retention-%. |
 | `Periode` _(technisch)_ | dateTime | `period_date` | Erster Tag des Wirkungsmonats. Verbindung zu DIM Datum. |
 | `GJ Jahr` _(technisch)_ | int64 | `fy_year` | – |
@@ -260,10 +282,10 @@ VORZEICHENKONVENTION – der wichtigste Unterschied zu den Altmodellen: New Busi
 | `Periodenindex` | int64 | `period_index` | Laufende Nummer des Monats seit dem auslösenden Ereignis (Mobilisierung bzw. Vertragsende), beginnend bei 1. Niedrigkardinal (1–24) – deshalb kann die Anlaufkurve in DAX ohne Performance-Verlust über diese Spalte iterieren. |
 | `Wertebene` | string | `value_layer` | ITY  = Wirkung im ersten Geschäftsjahr (HFM MAP141a / MAP141c) ARO  = Dauerzustand ab dem zweiten Geschäftsjahr (MAP131 / MAP136) |
 | `HFM Konto` | string | `hfm_account` | HFM-Konto laut Group Guidance (Feb 2025, S. 3). |
-| `Betrag gewichtet` _(technisch)_ | decimal | `amount_weighted` | Monatswert × Wahrscheinlichkeit, immer positiv. |
-| `Betrag ungewichtet` _(technisch)_ | decimal | `amount_unweighted` | Monatswert ohne Wahrscheinlichkeitsgewichtung (Vollwert). Antwortet auf "Was wäre, wenn alles eintritt?". |
-| `Betrag` _(technisch)_ | decimal | `amount_signed` | Gewichteter Monatswert mit Vorzeichen: NEW positiv, LOST negativ. Basis fast aller Measures. |
-| `Betrag ungewichtet (vorzeichenbehaftet)` _(technisch)_ | decimal | `amount_unweighted_signed` | Ungewichteter Monatswert mit Vorzeichen. Basis der Bewertungsbasis "Vollwert" – als eigene Spalte materialisiert, damit auch diese Sicht eine einfache Summe bleibt. |
+| `Betrag gewichtet` _(technisch)_ | double | `amount_weighted` | Monatswert × Wahrscheinlichkeit, immer positiv. |
+| `Betrag ungewichtet` | double | `amount_unweighted` | Monatswert ohne Wahrscheinlichkeitsgewichtung (Vollwert). Antwortet auf "Was wäre, wenn alles eintritt?". |
+| `Betrag` _(technisch)_ | double | `amount_signed` | Gewichteter Monatswert mit Vorzeichen: NEW positiv, LOST negativ. Basis fast aller Measures. |
+| `Betrag ungewichtet (vorzeichenbehaftet)` _(technisch)_ | double | `amount_unweighted_signed` | Ungewichteter Monatswert mit Vorzeichen. Basis der Bewertungsbasis "Vollwert" – als eigene Spalte materialisiert, damit auch diese Sicht eine einfache Summe bleibt. |
 | `Auslösendes Datum` | dateTime | `driver_date` | Auslösendes Datum: Mobilisierung (New) bzw. bereinigtes Vertragsende (Lost). Bereinigt heißt: Vertragsende, ersatzweise Entscheidungsdatum plus drei Monate. |
 | `Entscheidungsdatum` | dateTime | `decision_date` | Entscheidungsdatum laut CRM. Laut Group Guidance (S. 2) maßgeblich für die Zuordnung zu "current year" bzw. "prior year" – NICHT das Mobilisierungs- oder Schließungsdatum. |
 | `Ende 1. GJ` _(technisch)_ | dateTime | `calc_first_fy_end` | Ende des ersten Geschäftsjahres der Entität. Grenze zwischen ITY- und ARO-Phase. |
@@ -276,6 +298,11 @@ VORZEICHENKONVENTION – der wichtigste Unterschied zu den Altmodellen: New Busi
 | `Werk` _(technisch)_ | int64 | `sap_id` | SAP-Betriebsnummer. Verbindung zu DIM Betrieb und damit zu Region, Management und Verantwortungsbereich. Aufgelöst über eine vierstufige Kette (nb_20_gold, Abschnitt 5d): 1. Einzelfall-Ausnahme aus der Mapping-Tabelle 2. cgplc_sapid am Vorgang selbst 3. Mapping über Sektor UND Subsektor 4. Mapping über Sektor allein Die Mapping-Tabelle (Mapping_Planwerke.xlsx) pflegt das Controlling – dort steht, welcher Sektor/Subsektor auf welchem Planbetrieb geplant wird. Die SAP-Nummer des Kontos wird bewusst nicht verwendet: sie ist ein Debitor, kein Betrieb. Welche Stufe gegriffen hat, zeigt 'Werk Zuordnung'. Lücken zählt Regel DQ-MAP-001, fehlende Mapping-Zeilen listet DQ-MAP-002. |
 | `Werk Zuordnung` | string | `werk_zuordnung` | Herkunft der Werk-Zuordnung: Ausnahme (Mapping) / CRM direkt / Mapping Sektor/Subsektor / Mapping Sektor / Nicht zugeordnet. Macht je Vorgang sichtbar, ob eine Zahl auf gepflegten CRM-Daten oder auf der Mapping-Tabelle beruht – und priorisiert damit die Nachpflege: "Nicht zugeordnet" ist die Arbeitsliste. |
 | `Stichtag` _(technisch)_ | dateTime | `snapshot_date` | Stichtag des Ladelaufs. Ermöglicht Snapshot-Vergleiche. |
+| `event_month` | dateTime | `event_month` | – |
+| `fy_label` | string | `fy_label` | – |
+| `fy_sort` | int64 | `fy_sort` | – |
+| `amount_abs` | double | `amount_abs` | – |
+| `loaded_at` | dateTime | `loaded_at` | – |
 
 ### `FCT Umsatz`
 
@@ -293,12 +320,15 @@ Ersetzt die Tabelle Revenues der Altmodelle. Zwei Dinge sind bereinigt: 1. Das V
 | `Werttyp` | string | `werttyp` | Actual oder Plan. |
 | `Version` | string | `version` | SAP-Version. 0 = Ist, 20 = Budget, RGF/R12 = Forecast, 90 = Planung unknown ITY, 35/RFC = Vorjahresforecast. |
 | `Werttyp Version` | string | `werttyp_version` | Kombination Werttyp_Version, z. B. "Actual_0", "Plan_20", "Plan_RGF". Der Schlüssel, über den in den Measures die Szenarien der Planung auseinandergehalten werden. |
-| `Monatswert` _(technisch)_ | decimal | `betrag_monat` | Monatswert (nicht kumuliert), Vorzeichen bereits gedreht: Ertrag positiv. |
-| `Wert kumuliert` _(technisch)_ | decimal | `betrag_ytd` | Kumulierter Wert seit Periode 1 des Geschäftsjahres. Im Lakehouse per Fensterfunktion berechnet, nicht in DAX – das spart bei jedem YTD-Visual eine Kontexttransition. |
+| `Monatswert` _(technisch)_ | double | `betrag_monat` | Monatswert (nicht kumuliert), Vorzeichen bereits gedreht: Ertrag positiv. |
+| `Wert kumuliert` _(technisch)_ | double | `betrag_ytd` | Kumulierter Wert seit Periode 1 des Geschäftsjahres. Im Lakehouse per Fensterfunktion berechnet, nicht in DAX – das spart bei jedem YTD-Visual eine Kontexttransition. |
 | `Metric ID` _(technisch)_ | int64 | `metric_id` | MetricId der Net-New-Hierarchie – aus Cause of Change abgeleitet. Verbindung zu DIM HFM-Struktur. |
 | `Metric ID FY` _(technisch)_ | int64 | `metric_id_fy` | Variante des Mappings auf Basis cause_of_change_fy (Forecast-Sicht). |
 | `Metric ID NY` _(technisch)_ | int64 | `metric_id_ny` | Variante des Mappings auf Basis cause_of_change_ny (Planjahressicht). |
 | `Betriebstyp` | string | `betriebstyp` | – |
+| `cause_of_change` | int64 | `cause_of_change` | Cause of Change des Betriebs, wie in den SAP-Stammdaten gepflegt. Rohwert, aus dem 'Metric ID' abgeleitet wird. |
+| `cause_of_change_fy` | int64 | `cause_of_change_fy` | Cause of Change mit Blick auf das laufende Geschäftsjahr. |
+| `cause_of_change_ny` | int64 | `cause_of_change_ny` | Cause of Change mit Blick auf das FOLGEJAHR – die Sicht, auf der die Budgetlogik aufsetzt (im Altmodell "Mapping CoCh NY"). Liegt bewusst auf dem Fakt und nicht nur auf 'DIM Betrieb': die Budgetkennzahl grenzt über die Kombination aus Betriebstyp und diesem Wert ab. Über zwei Tabellen hinweg ließe sich das weder mit einem einzelnen ALL() ausdrücken noch performant auswerten. |
 
 ### `Szenario Anlauf`
 
@@ -312,8 +342,8 @@ Der Faktor wirkt auf die ersten n Monate ab Mobilisierung, wobei n aus 'Szenario
 
 | Spalte | Typ | Quellspalte | Bedeutung |
 |---|---|---|---|
-| `Faktor` | double | `[Value1]` | Anteil des Planumsatzes, der in der Anlaufphase tatsächlich erreicht wird. 100 % = kein Anlaufeffekt (Basisfall). |
-| `Bezeichnung` | string | `[Value2]` | – |
+| `Faktor` | – | `[Faktor]` | – |
+| `Bezeichnung` | – | `[Bezeichnung]` | – |
 
 ### `Szenario Anlaufdauer`
 
@@ -325,8 +355,8 @@ Zusammen mit dem Faktor bildet dieser Parameter die Anlaufkurve. Beide waren im 
 
 | Spalte | Typ | Quellspalte | Bedeutung |
 |---|---|---|---|
-| `Monate` | int64 | `[Value1]` | – |
-| `Bezeichnung` | string | `[Value2]` | – |
+| `Monate` | – | `[Monate]` | – |
+| `Bezeichnung` | – | `[Bezeichnung]` | – |
 
 ### `Szenario Bewertung`
 
@@ -342,9 +372,9 @@ Die drei Werte spannen den Korridor auf, in dem sich das tatsächliche Net New I
 
 | Spalte | Typ | Quellspalte | Bedeutung |
 |---|---|---|---|
-| `Bewertungsbasis` | string | `[Value1]` | – |
-| `Beschreibung` | string | `[Value2]` | – |
-| `Sortierung` _(technisch)_ | int64 | `[Value3]` | – |
+| `Bewertungsbasis` | – | `[Bewertungsbasis]` | – |
+| `Beschreibung` | – | `[Beschreibung]` | – |
+| `Sortierung` | – | `[Sortierung]` | – |
 
 ### `Szenario Schwelle`
 
@@ -356,8 +386,8 @@ Wirkt über [Net New ITY (ab Schwelle)] auf 'FCT Net New ITY'[Wahrscheinlichkeit
 
 | Spalte | Typ | Quellspalte | Bedeutung |
 |---|---|---|---|
-| `Schwelle` | double | `[Value1]` | – |
-| `Bezeichnung` | string | `[Value2]` | – |
+| `Schwelle` | – | `[Schwelle]` | – |
+| `Bezeichnung` | – | `[Bezeichnung]` | – |
 
 ### `Szenario Verschiebung`
 
@@ -373,9 +403,9 @@ Diese Tabelle ist bewusst NICHT mit dem Modell verbunden (disconnected): sie fil
 
 | Spalte | Typ | Quellspalte | Bedeutung |
 |---|---|---|---|
-| `Monate` | int64 | `[Value1]` | Verschiebung in Monaten. Negativ = früher, positiv = später. Vorbelegung 0 = keine Verschiebung (Basisfall). |
-| `Bezeichnung` | string | `[Value2]` | Beschriftung für den Datenschnitt, z. B. "+2 Monate später". |
-| `Sortierung` _(technisch)_ | int64 | `[Value3]` | – |
+| `Monate` | – | `[Monate]` | – |
+| `Bezeichnung` | – | `[Bezeichnung]` | – |
+| `Sortierung` | – | `[Sortierung]` | – |
 
 ### `_Kennzahlen`
 

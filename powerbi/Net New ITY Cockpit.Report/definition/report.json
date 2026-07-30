@@ -1,17 +1,33 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/report/3.3.0/schema.json",
+  "themeCollection": {
+    "baseTheme": {
+      "name": "NetNewITY",
+      "reportVersionAtImport": {
+        "visual": "2.1.0",
+        "report": "3.0.0",
+        "page": "2.3.0"
+      },
+      "type": "SharedResources"
+    }
+  },
   "filterConfig": {
     "filters": [
       {
-        "name": "cf9b057798a656190562",
+        "name": "6800601c071a71d07ca0",
         "field": {
-          "Column": {
+          "HierarchyLevel": {
             "Expression": {
-              "SourceRef": {
-                "Entity": "DIM Datum"
+              "Hierarchy": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "DIM Datum"
+                  }
+                },
+                "Hierarchy": "Geschäftsjahr"
               }
             },
-            "Property": "GJ relativ"
+            "Level": "GJ Bezeichnung"
           }
         },
         "type": "Categorical",
@@ -19,7 +35,7 @@
           "Version": 2,
           "From": [
             {
-              "Name": "t",
+              "Name": "d",
               "Entity": "DIM Datum",
               "Type": 0
             }
@@ -33,10 +49,10 @@
                       "Column": {
                         "Expression": {
                           "SourceRef": {
-                            "Source": "t"
+                            "Source": "d"
                           }
                         },
-                        "Property": "GJ relativ"
+                        "Property": "GJ Bezeichnung"
                       }
                     }
                   ],
@@ -44,7 +60,116 @@
                     [
                       {
                         "Literal": {
-                          "Value": "'Budgetjahr'"
+                          "Value": "'FY2026/27'"
+                        }
+                      }
+                    ]
+                  ]
+                }
+              },
+              "Annotations": {
+                "filterExpressionMetadata": {
+                  "expressions": [
+                    {
+                      "HierarchyLevel": {
+                        "Expression": {
+                          "Hierarchy": {
+                            "Expression": {
+                              "SourceRef": {
+                                "Entity": "DIM Datum"
+                              }
+                            },
+                            "Hierarchy": "Geschäftsjahr"
+                          }
+                        },
+                        "Level": "GJ Bezeichnung"
+                      }
+                    }
+                  ],
+                  "decomposedIdentities": {
+                    "values": [
+                      [
+                        {
+                          "0": [
+                            {
+                              "Literal": {
+                                "Value": "'FY2026/27'"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    ],
+                    "columns": [
+                      {
+                        "value": {
+                          "Column": {
+                            "Expression": {
+                              "SourceRef": {
+                                "Entity": "DIM Datum"
+                              }
+                            },
+                            "Property": "GJ Bezeichnung"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "valueMap": [
+                    {
+                      "0": "FY2026/27"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "howCreated": "User"
+      },
+      {
+        "name": "33a4683098b509020e4a",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "FCT Net New ITY"
+              }
+            },
+            "Property": "ITY Cluster"
+          }
+        },
+        "type": "Categorical",
+        "filter": {
+          "Version": 2,
+          "From": [
+            {
+              "Name": "f",
+              "Entity": "FCT Net New ITY",
+              "Type": 0
+            }
+          ],
+          "Where": [
+            {
+              "Condition": {
+                "In": {
+                  "Expressions": [
+                    {
+                      "Column": {
+                        "Expression": {
+                          "SourceRef": {
+                            "Source": "f"
+                          }
+                        },
+                        "Property": "ITY Cluster"
+                      }
+                    }
+                  ],
+                  "Values": [
+                    [
+                      {
+                        "Literal": {
+                          "Value": "'unknown ITY'"
                         }
                       }
                     ]
@@ -54,35 +179,10 @@
             }
           ]
         },
-        "howCreated": "User",
-        "displayName": "Geschäftsjahr (Standard: Budgetjahr)"
+        "howCreated": "User"
       }
     ]
   },
-  "themeCollection": {
-    "baseTheme": {
-      "name": "NetNewITY",
-      "reportVersionAtImport": {
-        "visual": "2.1.0",
-        "report": "3.0.0",
-        "page": "2.3.0"
-      },
-      "type": "SharedResources"
-    }
-  },
-  "resourcePackages": [
-    {
-      "name": "SharedResources",
-      "type": "SharedResources",
-      "items": [
-        {
-          "name": "NetNewITY",
-          "path": "BaseThemes/NetNewITY.json",
-          "type": "BaseTheme"
-        }
-      ]
-    }
-  ],
   "objects": {
     "section": [
       {
@@ -103,7 +203,7 @@
           "expanded": {
             "expr": {
               "Literal": {
-                "Value": "false"
+                "Value": "true"
               }
             }
           }
@@ -111,6 +211,19 @@
       }
     ]
   },
+  "resourcePackages": [
+    {
+      "name": "SharedResources",
+      "type": "SharedResources",
+      "items": [
+        {
+          "name": "NetNewITY",
+          "path": "BaseThemes/NetNewITY.json",
+          "type": "BaseTheme"
+        }
+      ]
+    }
+  ],
   "settings": {
     "useStylableVisualContainerHeader": true,
     "exportDataMode": "AllowSummarized",

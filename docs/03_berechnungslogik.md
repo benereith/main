@@ -6,20 +6,146 @@
 > nicht hier.
 
 
-Das Modell enthält **70 Kennzahlen** in 10 Ordnern.
+Das Modell enthält **76 Kennzahlen** in 11 Ordnern.
 
 ## Inhalt
 
+- [(ohne Ordner)](#) – 7 Kennzahlen
 - [01 Basis](#01-basis) – 12 Kennzahlen
 - [02 Status](#02-status) – 10 Kennzahlen
 - [03 Zeit](#03-zeit) – 4 Kennzahlen
 - [04 Szenarien](#04-szenarien) – 4 Kennzahlen
-- [05 Budget und Forecast](#05-budget-und-forecast) – 7 Kennzahlen
+- [05 Budget und Forecast](#05-budget-und-forecast) – 8 Kennzahlen
 - [06 Quoten](#06-quoten) – 4 Kennzahlen
 - [07 CRM-Bewegung](#07-crm-bewegung) – 5 Kennzahlen
 - [08 Datenqualität](#08-datenqualität) – 3 Kennzahlen
 - [09 Titel und Kontext](#09-titel-und-kontext) – 4 Kennzahlen
-- [10 Roll-Budget](#10-roll-budget) – 17 Kennzahlen
+- [10 Roll-Budget](#10-roll-budget) – 15 Kennzahlen
+
+
+## (ohne Ordner)
+
+### `Budget ITY Effect`
+
+Budgetierter unknown-ITY-Effekt aus der gepflegten Planungsdatei 2026_04_29_Planung_unknown_ITY_Effekt.xlsx (SharePoint, 08_Budget).
+
+Bewusst NICHT aus dem Lakehouse, sondern direkt aus der Excel: die Datei ist ein manueller Planungsinput, der im Budgetprozess laufend fortgeschrieben wird. Wer die Zahl abstimmt, muss den Stand der Datei kennen – die Tabelle 'CRM Data' trägt ihn deshalb unverändert.
+
+```dax
+Budget ITY Effect =
+SUM('CRM Data'[ity effect])
+```
+
+### `ITY Target Pipeline`
+
+Pipeline-Ziel: das Dreifache des New-Business-Budgets.
+
+Der Faktor 3 ist eine Erfahrungsregel – rund ein Drittel der Pipeline wird gewonnen, also braucht es das Dreifache des Ziels an Volumen. Er steht hier als Konstante und ist keine aus den Daten abgeleitete Größe; bei geänderter Abschlussquote muss er nachgezogen werden.
+
+```dax
+ITY Target Pipeline =
+[New Business Budget]*3
+```
+
+### `ITY relativ sicher`
+
+Gesicherter plus erwarteter ITY-Anteil, also alles außer der reinen Pipeline. Die Größe, mit der sich belastbar planen lässt: Won und Lost stehen fest, Expected Win und Expected Loss liegen über der Wahrscheinlichkeitsschwelle.
+
+```dax
+ITY relativ sicher =
+[ITY gesichert]+[ITY erwartet]
+```
+
+### `Net New ITY YoY`
+
+Veränderung gegenüber der GLEICHEN Periode des Vorjahres.
+
+Rechnet bewusst auf der Bruttosumme und bringt den Vorjahresbezug selbst mit – nicht über [Net New ITY], das seinerseits bereits den Vorjahresanteil abzieht. Andernfalls wäre der Abzug doppelt drin.
+
+Aufgehoben werden nur die Zeitfilter (GJ Jahr, GJ Periode Nr); Region, Sektor und übrige Filter bleiben erhalten, damit die Kennzahl auch in einer aufgerissenen Sicht stimmt.
+
+**Format:** `0`
+
+```dax
+Net New ITY YoY =
+-- 1. Szenario-Auswahl bestimmen
+VAR _SzenarioBasis = SELECTEDVALUE ( 'Szenario Bewertung'[Bewertungsbasis], "CRM-gewichtet" )
+
+-- 2. Hilfs-Funktion für die Szenario-Berechnung
+VAR _BerechneSzenario = 
+    SWITCH (
+        _SzenarioBasis,
+        "CRM-gewichtet", SUM ( 'FCT Net New ITY'[Betrag] ),
+        "Vollwert",      SUM ( 'FCT Net New ITY'[Betrag ungewichtet (vorzeichenbehaftet)] ),
+        "Nur gesichert",
+            CALCULATE (
+                SUM ( 'FCT Net New ITY'[Betrag ungewichtet (vorzeichenbehaftet)] ),
+                KEEPFILTERS ( 'DIM Status'[Status Code] IN { "WON", "LOST" } )
+            ),
+        SUM ( 'FCT Net New ITY'[Betrag] )
+    )
+
+-- 3. Wert für das aktuelle Jahr
+VAR _AktuellerWert = _BerechneSzenario
+
+-- 4. Aktuelles Jahr und Periode ermitteln (mit Fallback, falls kein Jahr gefiltert ist)
+VAR _AktuellesGJ = 
+    COALESCE (
+        SELECTEDVALUE ( 'DIM Datum'[GJ Jahr] ),
+        MAX ( 'DIM Datum'[GJ Jahr] )
+    )
+
+VAR _AktuellePeriode = SELECTEDVALUE ( 'DIM Datum'[GJ Periode Nr] )
+
+-- 5. Wert für das Vorjahr berechnen (unter Beibehaltung aller anderen Berichtsfilter)
+VAR _VorjahresWert = 
+    CALCULATE (
+        _BerechneSzenario,
+        -- Nur die Zeitfilter aufheben, damit Regionen, etc. erhalten bleiben!
+        REMOVEFILTERS ( 'DIM Datum'[GJ Jahr], 'DIM Datum'[GJ Periode Nr] ),
+        'DIM Datum'[GJ Jahr] = _AktuellesGJ - 1,
+        'DIM Datum'[GJ Periode Nr] = _AktuellePeriode
+    )
+
+-- 6. Finale Rückgabe: Aktueller Wert plus Vorjahr * -1
+RETURN
+    IF (
+        NOT ISBLANK ( _AktuellerWert ) || NOT ISBLANK ( _VorjahresWert ),
+        _AktuellerWert + ( _VorjahresWert * -1 )
+    )
+```
+
+### `New Business Budget`
+
+Budgetierter New-Business-Effekt aus den SAP-Planwerten (Version 90), eingegrenzt auf Betriebe mit Cause of Change 2 in der Folgejahressicht.
+
+ACHTUNG – manueller Zuschlag: die konstanten 4.900.000 € sind eine Korrektur außerhalb der Datenquelle. Sie sind hier nicht herleitbar und müssen bei jeder Budgetrunde geprüft werden; andernfalls schleppt die Kennzahl den Wert einer alten Runde unbemerkt mit.
+
+```dax
+New Business Budget =
+CALCULATE (
+    SUM ( 'FCT Umsatz'[Monatswert] ),
+    KEEPFILTERS ( 'FCT Umsatz'[Werttyp Version] = "Plan_90" ),
+    KEEPFILTERS('DIM Betrieb'[cause_of_change_ny] in {2}))+4900000
+```
+
+### `Unweighted`
+
+Vollwert ohne Wahrscheinlichkeitsgewichtung, vorzeichenbehaftet. Obergrenze der Betrachtung: so viel entstünde, wenn jede Opportunity gewonnen und jeder Risikovertrag verloren würde.
+
+```dax
+Unweighted =
+SUM('FCT Net New ITY'[Betrag ungewichtet (vorzeichenbehaftet)])
+```
+
+### `Unweighted ITY Pipeline`
+
+Ungewichtetes New-Business-Volumen – die Pipeline zum Vollwert, ohne Lost Business. Gegengröße zu [ITY Target Pipeline].
+
+```dax
+Unweighted ITY Pipeline =
+CALCULATE(SUM('FCT Net New ITY'[Betrag ungewichtet (vorzeichenbehaftet)]), 'FCT Net New ITY'[Geschäftsart]="NEW")
+```
 
 
 ## 01 Basis
@@ -103,7 +229,7 @@ WARUM EIN VORJAHRESABZUG Net New misst die VERÄNDERUNG gegenüber dem Vorjahr, 
 
 Beispiel (ARO 2.000.000 €, Mobilisierung 01.04.2026): FY2025/26   6 × 166.210 €  =    997.260 €   ITY   (MAP141a) FY2026/27  12 × 166.667 €  =  2.000.000 €   brutto davon Vorjahresanteil      =   −997.260 € Net New FY2026/27          =  1.002.740 €   der Roll-Effekt Ohne den Abzug erschienen 2.000.000 € – der Vertrag wäre doppelt gezählt worden, einmal im Jahr der Mobilisierung und noch einmal vollständig im Folgejahr.
 
-SO WIRD ABGEZOGEN Verglichen werden die GLEICHEN Fiskalperioden des Vorjahres und nur die Vorgänge, die im aktuellen Kontext überhaupt vorkommen (_Entitaeten). Beides ist notwendig: · Gleiche Perioden statt ganzes Vorjahr – sonst stimmt die Summe bei einer Monatsauswahl nicht mehr mit der Jahressumme überein. · Nur vorhandene Vorgänge – sonst erzeugt ein Vertrag, der im Vorjahr Zeilen hatte und im gewählten Jahr keine mehr, einen Phantomwert aus dem Nichts. Das trifft vor allem Lost Business, das nach zwölf Perioden aus der Basis fällt.
+SO WIRD ABGEZOGEN Verglichen werden die GLEICHEN Fiskalperioden des Vorjahres und nur die Vorgänge, die im aktuellen Kontext überhaupt vorkommen. Beides ist notwendig: · Gleiche Perioden statt ganzes Vorjahr – sonst stimmt die Summe bei einer Monatsauswahl nicht mehr mit der Jahressumme überein. · Nur vorhandene Vorgänge – sonst erzeugt ein Vertrag, der im Vorjahr Zeilen hatte und im gewählten Jahr keine mehr, einen Phantomwert aus dem Nichts. Das trifft vor allem Lost Business, das nach zwölf Perioden aus der Basis fällt.
 
 Die Zerlegung ist sichtbar: [Net New ITY (brutto)] − [Vorjahresanteil] ergibt exakt diese Kennzahl.
 
@@ -562,6 +688,73 @@ Wirkung der Szenarioannahmen gegenüber dem Basisfall. Positiv bedeutet: das Sze
 
 ## 05 Budget und Forecast
 
+### `Budget Net New (SAP)`
+
+Budgetwert aus den Umsatzdaten nach der Logik des Altmodells ([SAP_Value] auf der Tabelle Revenues). Zwei Summanden:
+
+1. LAUFENDES Geschäftsjahr, Budget (Version 90). 2. VORJAHR, Forecast (Versionen RGF und R12) – dort steht für das Budgetjahr noch kein Plan, der Forecast ist die beste Schätzung.
+
+Beide Teile grenzen über die Folgejahressicht des Cause of Change ab ("Mapping CoCh NY" im Altmodell, hier 'Metric ID NY') und lassen Metric 99 = Like for Like außen vor – das ist definitionsgemäß kein Net New.
+
+Im Vorjahresteil zusätzlich ausgeschlossen: Plan-Betriebe vom Typ ITY mit Cause of Change 4. Diese Kombination ist im Vorjahresforecast bereits anderweitig erfasst und würde doppelt zählen.
+
+WARUM SUMMARIZE + AVERAGE STATT EINER EINFACHEN SUMME Aus dem Altmodell übernommen: liefert die Quelle je Werk, Periode, Geschäftsjahr und Werttyp mehr als eine Zeile, summierte eine einfache SUM die Dubletten mit auf. Der Mittelwert je Gruppe kollabiert sie stattdessen auf ihren Wert. Seit der Entdopplung von unit_coch in nb_20_gold sollten keine Dubletten mehr entstehen – die Konstruktion bleibt als Absicherung erhalten, weil ein Rückfall sonst wieder nur als stillschweigend zu hohe Zahl sichtbar würde.
+
+**Format:** `#,0\ "€";-#,0\ "€";#,0\ "€"`
+
+```dax
+Budget Net New (SAP) =
+VAR _GJ      = MAX ( 'FCT Umsatz'[GJ Jahr] )
+VAR _Vorjahr = _GJ - 1
+
+VAR _Entdoppelt =
+    SUMMARIZE (
+        'FCT Umsatz',
+        'FCT Umsatz'[Werk],
+        'FCT Umsatz'[GJ Periode Nr],
+        'FCT Umsatz'[GJ Jahr],
+        'FCT Umsatz'[Werttyp Version]
+    )
+
+VAR _BudgetLaufend =
+    CALCULATE (
+        SUMX ( _Entdoppelt, CALCULATE ( AVERAGE ( 'FCT Umsatz'[Monatswert] ) ) ),
+        KEEPFILTERS ( 'FCT Umsatz'[Werttyp Version] = "Plan_90" ),
+        KEEPFILTERS ( 'FCT Umsatz'[Metric ID NY] <> 99 ),
+        'FCT Umsatz'[GJ Jahr] = _GJ
+    )
+
+VAR _ForecastVorjahr =
+    CALCULATE (
+        SUMX ( _Entdoppelt, CALCULATE ( AVERAGE ( 'FCT Umsatz'[Monatswert] ) ) ),
+        KEEPFILTERS ( 'FCT Umsatz'[Werttyp Version] IN { "Plan_RGF", "Plan_R12" } ),
+        KEEPFILTERS ( 'FCT Umsatz'[Metric ID NY] <> 99 ),
+        'FCT Umsatz'[GJ Jahr] = _Vorjahr,
+        FILTER (
+            ALL ( 'FCT Umsatz'[Betriebstyp], 'FCT Umsatz'[cause_of_change_ny] ),
+            NOT (
+                'FCT Umsatz'[Betriebstyp] = "Plan-Betriebe ITY"
+                    && 'FCT Umsatz'[cause_of_change_ny] = 4
+            )
+        )
+    )
+
+RETURN
+    _BudgetLaufend + _ForecastVorjahr
+```
+
+### `Net ITY Budget`
+
+Budgetierter unknown-ITY-Effekt (SAP-Version 90, Planbetriebe). Der Wert, gegen den die CRM-Approximation gestellt wird.
+
+```dax
+Net ITY Budget =
+CALCULATE (
+    SUM ( 'FCT Umsatz'[Monatswert] ),
+    KEEPFILTERS ( 'FCT Umsatz'[Werttyp Version] = "Plan_90" ),
+    KEEPFILTERS('DIM Betrieb'[cause_of_change_ny] in {4,2}))+4900000-6842682.23
+```
+
 ### `Organischer Umsatz Vorjahr`
 
 Organischer Vorjahresumsatz – Bezugsgröße aller Prozentkennzahlen der Group Guidance (MAP111e, MAP112e). Definition laut Guidance: Vorjahresumsatz, bereinigt um Zu- und Verkäufe, zu aktuellen Wechselkursen.
@@ -591,7 +784,7 @@ Budgetierter Umsatz (SAP-Version 20).
 Umsatz Budget =
 CALCULATE (
     SUM ( 'FCT Umsatz'[Monatswert] ),
-    KEEPFILTERS ( 'FCT Umsatz'[Werttyp Version] = "Plan_20" )
+    KEEPFILTERS ( 'FCT Umsatz'[Werttyp Version] = "Plan_90" )
 )
 ```
 
@@ -625,21 +818,6 @@ CALCULATE (
 )
 ```
 
-### `Unknown ITY Budget`
-
-Budgetierter unknown-ITY-Effekt (SAP-Version 90, Planbetriebe). Der Wert, gegen den die CRM-Approximation gestellt wird.
-
-**Format:** `#,0\ "€";-#,0\ "€";#,0\ "€"`
-
-```dax
-Unknown ITY Budget =
-CALCULATE (
-    SUM ( 'FCT Umsatz'[Monatswert] ),
-    KEEPFILTERS ( 'FCT Umsatz'[Werttyp Version] = "Plan_90" ),
-    KEEPFILTERS ( 'FCT Umsatz'[Betriebstyp] <> "Real-Betriebe" )
-)
-```
-
 ### `Zielerreichung`
 
 Zielerreichung der CRM-Approximation gegenüber Budget.
@@ -648,7 +826,7 @@ Zielerreichung der CRM-Approximation gegenüber Budget.
 
 ```dax
 Zielerreichung =
-DIVIDE ( [Net New ITY (Szenario)], [Unknown ITY Budget] )
+DIVIDE ( [Net New ITY (Szenario)], [Net ITY Budget] )
 ```
 
 ### `Δ CRM zu Budget`
@@ -659,7 +837,7 @@ Abweichung der CRM-Approximation vom Budget. Positiv = das CRM zeigt mehr Net Ne
 
 ```dax
 Δ CRM zu Budget =
-[Net New ITY (Szenario)] - [Unknown ITY Budget]
+[Net New ITY (Szenario)] - [Net ITY Budget]
 ```
 
 
@@ -846,14 +1024,14 @@ Kernaussage zur Entwicklung des Net New ITY. Benennt Richtung und Größenordnun
 ```dax
 Aussage Net New =
 VAR _Wert = [Net New ITY (Szenario)]
-VAR _Budget = [Unknown ITY Budget]
+VAR _Budget = [Net ITY Budget]
 VAR _Delta = _Wert - _Budget
 VAR _Richtung = IF ( _Delta >= 0, "über", "unter" )
 RETURN
     IF (
         ISBLANK ( _Budget ),
         "Net New ITY: " & FORMAT ( _Wert, "#,0 €" ),
-        "Net New ITY liegt " & FORMAT ( ABS ( _Delta ), "#,0 €" ) & " "
+        "Net New ITY liegt " & FORMAT( ABS ( _Delta ), "#,0 €" ) & " "
             & _Richtung & " Budget ("
             & FORMAT ( [Zielerreichung], "0 %" ) & " Zielerreichung)"
     )
@@ -940,7 +1118,7 @@ Beitrag einer einzelnen Opportunity zum gewählten Geschäftsjahr, gewichtet. F�
 ```dax
 Beitrag Zeitraum (gewichtet) =
 CALCULATE (
-    [Betrag netto (gewichtet)],
+    SUM ( 'FCT Net New ITY'[Betrag] ),
     KEEPFILTERS ( 'FCT Net New ITY'[Geschäftsart] = "NEW" )
 )
 ```
@@ -956,74 +1134,11 @@ Beitrag kumuliert =
 VAR _Aktuell = [Beitrag Zeitraum (gewichtet)]
 VAR _Tabelle =
     ADDCOLUMNS (
-        ALLSELECTED ( 'FCT Net New ITY'[Entität Name] ),
+        ALLSELECTED ( 'FCT Net New ITY'[Entität] ),
         "@Beitrag", [Beitrag Zeitraum (gewichtet)]
     )
 RETURN
     SUMX ( FILTER ( _Tabelle, [@Beitrag] >= _Aktuell ), [@Beitrag] )
-```
-
-### `Betrag netto (Vollwert)`
-
-Inkrementeller Betrag ohne Gewichtung, mit demselben Vorjahresabzug wie [Net New ITY]. Baustein für die Roll-Kennzahlen, die bewusst NICHT dem Datenschnitt 'Szenario Bewertung' folgen, sondern eine feste Bewertungsbasis brauchen.
-
-**Format:** `#,0\ "€";-#,0\ "€";#,0\ "€"`
-
-```dax
-Betrag netto (Vollwert) =
-VAR _GJ         = MAX ( 'FCT Net New ITY'[GJ Jahr] )
-VAR _Perioden   = VALUES ( 'FCT Net New ITY'[GJ Periode Nr] )
-VAR _Entitaeten = VALUES ( 'FCT Net New ITY'[Entität ID] )
-VAR _Aktuell    = SUM ( 'FCT Net New ITY'[Betrag ungewichtet (vorzeichenbehaftet)] )
-VAR _Vorjahr =
-    CALCULATE (
-        SUM ( 'FCT Net New ITY'[Betrag ungewichtet (vorzeichenbehaftet)] ),
-        REMOVEFILTERS ( 'DIM Datum' ),
-        'FCT Net New ITY'[GJ Jahr] = _GJ - 1,
-        _Perioden,
-        _Entitaeten
-    )
-RETURN
-    _Aktuell - _Vorjahr
-```
-
-### `Betrag netto (gewichtet)`
-
-Inkrementeller Betrag mit CRM-Gewichtung, Vorjahresabzug wie oben.
-
-**Format:** `#,0\ "€";-#,0\ "€";#,0\ "€"`
-
-```dax
-Betrag netto (gewichtet) =
-VAR _GJ         = MAX ( 'FCT Net New ITY'[GJ Jahr] )
-VAR _Perioden   = VALUES ( 'FCT Net New ITY'[GJ Periode Nr] )
-VAR _Entitaeten = VALUES ( 'FCT Net New ITY'[Entität ID] )
-VAR _Aktuell    = SUM ( 'FCT Net New ITY'[Betrag] )
-VAR _Vorjahr =
-    CALCULATE (
-        SUM ( 'FCT Net New ITY'[Betrag] ),
-        REMOVEFILTERS ( 'DIM Datum' ),
-        'FCT Net New ITY'[GJ Jahr] = _GJ - 1,
-        _Perioden,
-        _Entitaeten
-    )
-RETURN
-    _Aktuell - _Vorjahr
-```
-
-### `ITY Budget`
-
-Budgetseite: ITY-Anteil des unknown-ITY-Budgets (Planbetriebe Typ ITY). Entscheidungen dazu fallen erst im Budgetjahr selbst.
-
-**Format:** `#,0\ "€";-#,0\ "€";#,0\ "€"`
-
-```dax
-ITY Budget =
-CALCULATE (
-    SUM ( 'FCT Umsatz'[Monatswert] ),
-    KEEPFILTERS ( 'FCT Umsatz'[Werttyp Version] = "Plan_90" ),
-    KEEPFILTERS ( 'FCT Umsatz'[Betriebstyp] = "Plan-Betriebe ITY" )
-)
 ```
 
 ### `ITY CRM (Budgetjahr)`
@@ -1130,14 +1245,12 @@ DIVIDE ( [Roll gesichert] + [Roll offen (gewichtet)], [Roll Budget] )
 
 Bereits gewonnener Roll-Anteil. Ungewichtet, weil WON keine Wahrscheinlichkeit mehr trägt – der Auftrag liegt vor. Das ist der Sockel, auf dem die Lücke aufsetzt.
 
-Inkrementell gerechnet, weil [Roll Budget] ebenfalls den reinen Roll-Effekt budgetiert und nicht den Gesamtumsatz des Vertrags.
-
 **Format:** `#,0\ "€";-#,0\ "€";#,0\ "€"`
 
 ```dax
 Roll gesichert =
 CALCULATE (
-    [Betrag netto (Vollwert)],
+    SUM ( 'FCT Net New ITY'[Betrag ungewichtet (vorzeichenbehaftet)] ),
     KEEPFILTERS ( 'FCT Net New ITY'[Geschäftsart] = "NEW" ),
     KEEPFILTERS ( 'FCT Net New ITY'[ITY Cluster] = "unknown Roll" ),
     KEEPFILTERS ( 'DIM Status'[Status Code] = "WON" )
@@ -1153,7 +1266,7 @@ Voller Wert des noch offenen Roll-Anteils, ohne Gewichtung. Obergrenze: so viel 
 ```dax
 Roll offen (Vollwert) =
 CALCULATE (
-    [Betrag netto (Vollwert)],
+    SUM ( 'FCT Net New ITY'[Betrag ungewichtet (vorzeichenbehaftet)] ),
     KEEPFILTERS ( 'FCT Net New ITY'[Geschäftsart] = "NEW" ),
     KEEPFILTERS ( 'FCT Net New ITY'[ITY Cluster] = "unknown Roll" ),
     KEEPFILTERS ( 'DIM Status'[Status Code] IN { "EXPECTED_WIN", "PIPELINE", "NO_PROBABILITY" } )
@@ -1169,7 +1282,7 @@ Noch offener Roll-Anteil, gewichtet mit der Win-Wahrscheinlichkeit. Enthält Exp
 ```dax
 Roll offen (gewichtet) =
 CALCULATE (
-    [Betrag netto (gewichtet)],
+    SUM ( 'FCT Net New ITY'[Betrag] ),
     KEEPFILTERS ( 'FCT Net New ITY'[Geschäftsart] = "NEW" ),
     KEEPFILTERS ( 'FCT Net New ITY'[ITY Cluster] = "unknown Roll" ),
     KEEPFILTERS ( 'DIM Status'[Status Code] IN { "EXPECTED_WIN", "PIPELINE", "NO_PROBABILITY" } )
@@ -1183,4 +1296,19 @@ Reicht dieser Vorgang zusammen mit allen größeren aus, um die Lücke zu schlie
 ```dax
 Schließt Lücke =
 IF ( [Beitrag kumuliert] >= [Roll Lücke], "Ja", "Nein" )
+```
+
+### `Unknown ITY Budget`
+
+Budgetseite: ITY-Anteil des unknown-ITY-Budgets (Planbetriebe Typ ITY). Entscheidungen dazu fallen erst im Budgetjahr selbst.
+
+**Format:** `#,0\ "€";-#,0\ "€";#,0\ "€"`
+
+```dax
+Unknown ITY Budget =
+CALCULATE (
+    SUM ( 'FCT Umsatz'[Monatswert] ),
+    KEEPFILTERS ( 'FCT Umsatz'[Werttyp Version] = "Plan_90" ),
+    KEEPFILTERS ( 'FCT Umsatz'[Betriebstyp] = "Plan-Betriebe ITY" )
+)
 ```

@@ -1,13 +1,13 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.8.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.11.0/schema.json",
   "name": "5269596977afb8080c3c",
   "position": {
     "x": 184,
     "y": 100,
-    "z": 1018,
+    "z": 2000,
     "height": 96,
     "width": 1080,
-    "tabOrder": 1018
+    "tabOrder": 2000
   },
   "visual": {
     "visualType": "cardVisual",
@@ -23,11 +23,11 @@
                       "Entity": "_Kennzahlen"
                     }
                   },
-                  "Property": "Net New ITY (Szenario)"
+                  "Property": "Net New ITY"
                 }
               },
-              "queryRef": "_Kennzahlen.Net New ITY (Szenario)",
-              "nativeQueryRef": "Net New ITY (Szenario)"
+              "queryRef": "_Kennzahlen.Net New ITY",
+              "nativeQueryRef": "Net New ITY"
             },
             {
               "field": {
@@ -79,6 +79,20 @@
                       "Entity": "_Kennzahlen"
                     }
                   },
+                  "Property": "Net ITY Budget"
+                }
+              },
+              "queryRef": "_Kennzahlen.Unknown ITY Budget",
+              "nativeQueryRef": "Net ITY Budget"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Kennzahlen"
+                    }
+                  },
                   "Property": "Δ CRM zu Budget"
                 }
               },
@@ -87,40 +101,27 @@
             }
           ]
         }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "_Kennzahlen"
+                  }
+                },
+                "Property": "Net New ITY"
+              }
+            },
+            "direction": "Descending"
+          }
+        ],
+        "isDefaultSort": true
       }
     },
     "objects": {
-      "callout": [
-        {
-          "properties": {
-            "show": {
-              "expr": {
-                "Literal": {
-                  "Value": "true"
-                }
-              }
-            },
-            "fontSize": {
-              "expr": {
-                "Literal": {
-                  "Value": "22.0D"
-                }
-              }
-            },
-            "color": {
-              "solid": {
-                "color": {
-                  "expr": {
-                    "Literal": {
-                      "Value": "'#0B0B0B'"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      ],
       "label": [
         {
           "properties": {
@@ -137,18 +138,28 @@
                   "Value": "9.0D"
                 }
               }
+            }
+          }
+        },
+        {
+          "properties": {
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "13D"
+                }
+              }
             },
-            "color": {
-              "solid": {
-                "color": {
-                  "expr": {
-                    "Literal": {
-                      "Value": "'#52514E'"
-                    }
-                  }
+            "textWrap": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
                 }
               }
             }
+          },
+          "selector": {
+            "id": "default"
           }
         }
       ]
@@ -169,5 +180,93 @@
       ]
     },
     "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "fdd4a1809969821ea482",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Kennzahlen"
+              }
+            },
+            "Property": "New Business ITY"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "0eb68218c21d102e2a87",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Kennzahlen"
+              }
+            },
+            "Property": "Lost Business ITY"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "dfbf745199ee845a7612",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Kennzahlen"
+              }
+            },
+            "Property": "Sicherungsgrad"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "bcea6ac69c03c25b1475",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Kennzahlen"
+              }
+            },
+            "Property": "Δ CRM zu Budget"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "1b3db6bdc0d9657d5a01",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Kennzahlen"
+              }
+            },
+            "Property": "Net ITY Budget"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "3f3614b7209a70e044ae",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Kennzahlen"
+              }
+            },
+            "Property": "Net New ITY"
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
   }
 }

@@ -1,53 +1,55 @@
 /// Gebuchte und geplante Umsätze aus SAP. Quelle: gold_fct_revenue.
 /// Granularität: Werk × Geschäftsjahr × Periode × Werttyp/Version.
-///
+/// 
 /// Ersetzt die Tabelle Revenues der Altmodelle. Zwei Dinge sind bereinigt:
-///   1. Das Vorzeichen wird einmal im Lakehouse gedreht (SAP liefert Erträge
-///      negativ), nicht mehr in jedem zweiten Measure.
-///   2. Das Cause-of-Change-Mapping auf die Net-New-Hierarchie ist eine
-///      Funktion im Lakehouse statt dreier identischer M-Kaskaden.
+/// 1. Das Vorzeichen wird einmal im Lakehouse gedreht (SAP liefert Erträge
+/// negativ), nicht mehr in jedem zweiten Measure.
+/// 2. Das Cause-of-Change-Mapping auf die Net-New-Hierarchie ist eine
+/// Funktion im Lakehouse statt dreier identischer M-Kaskaden.
 table 'FCT Umsatz'
 	lineageTag: c3000000-0000-4000-8000-000000000001
 
 	column Werk
 		dataType: int64
-		formatString: 0
 		isHidden
+		formatString: 0
 		lineageTag: c3000000-0000-4000-8000-000000000101
 		summarizeBy: none
 		sourceColumn: werk
 
 	column 'GJ Jahr'
 		dataType: int64
-		formatString: 0
 		isHidden
+		formatString: 0
 		lineageTag: c3000000-0000-4000-8000-000000000102
 		summarizeBy: none
 		sourceColumn: fy_year
 
 	column 'GJ Periode Nr'
 		dataType: int64
-		formatString: 0
 		isHidden
+		formatString: 0
 		lineageTag: c3000000-0000-4000-8000-000000000103
 		summarizeBy: none
 		sourceColumn: fy_period
 
 	column Monatsindex
 		dataType: int64
-		formatString: 0
 		isHidden
+		formatString: 0
 		lineageTag: c3000000-0000-4000-8000-000000000104
 		summarizeBy: none
 		sourceColumn: monat_index
 
 	column Periode
 		dataType: dateTime
-		formatString: dd.mm.yyyy
 		isHidden
+		formatString: dd.mm.yyyy
 		lineageTag: c3000000-0000-4000-8000-000000000105
 		summarizeBy: none
 		sourceColumn: period_date
+
+		annotation UnderlyingDateTimeDataType = Date
 
 	/// Actual oder Plan.
 	column Werttyp
@@ -75,9 +77,9 @@ table 'FCT Umsatz'
 
 	/// Monatswert (nicht kumuliert), Vorzeichen bereits gedreht: Ertrag positiv.
 	column Monatswert
-		dataType: decimal
-		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		dataType: double
 		isHidden
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		lineageTag: c3000000-0000-4000-8000-000000000109
 		summarizeBy: sum
 		sourceColumn: betrag_monat
@@ -88,9 +90,9 @@ table 'FCT Umsatz'
 	/// Fensterfunktion berechnet, nicht in DAX – das spart bei jedem
 	/// YTD-Visual eine Kontexttransition.
 	column 'Wert kumuliert'
-		dataType: decimal
-		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		dataType: double
 		isHidden
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		lineageTag: c3000000-0000-4000-8000-000000000110
 		summarizeBy: sum
 		sourceColumn: betrag_ytd
@@ -101,8 +103,8 @@ table 'FCT Umsatz'
 	/// Verbindung zu DIM HFM-Struktur.
 	column 'Metric ID'
 		dataType: int64
-		formatString: 0
 		isHidden
+		formatString: 0
 		lineageTag: c3000000-0000-4000-8000-000000000111
 		summarizeBy: none
 		sourceColumn: metric_id
@@ -110,8 +112,8 @@ table 'FCT Umsatz'
 	/// Variante des Mappings auf Basis cause_of_change_fy (Forecast-Sicht).
 	column 'Metric ID FY'
 		dataType: int64
-		formatString: 0
 		isHidden
+		formatString: 0
 		lineageTag: c3000000-0000-4000-8000-000000000112
 		summarizeBy: none
 		sourceColumn: metric_id_fy
@@ -119,8 +121,8 @@ table 'FCT Umsatz'
 	/// Variante des Mappings auf Basis cause_of_change_ny (Planjahressicht).
 	column 'Metric ID NY'
 		dataType: int64
-		formatString: 0
 		isHidden
+		formatString: 0
 		lineageTag: c3000000-0000-4000-8000-000000000113
 		summarizeBy: none
 		sourceColumn: metric_id_ny
@@ -131,8 +133,42 @@ table 'FCT Umsatz'
 		summarizeBy: none
 		sourceColumn: betriebstyp
 
+	/// Cause of Change des Betriebs, wie in den SAP-Stammdaten gepflegt.
+	/// Rohwert, aus dem 'Metric ID' abgeleitet wird.
+	column cause_of_change
+		dataType: int64
+		formatString: 0
+		lineageTag: c3000000-0000-4000-8000-000000000115
+		summarizeBy: none
+		sourceColumn: cause_of_change
+
+	/// Cause of Change mit Blick auf das laufende Geschäftsjahr.
+	column cause_of_change_fy
+		dataType: int64
+		formatString: 0
+		lineageTag: c3000000-0000-4000-8000-000000000116
+		summarizeBy: none
+		sourceColumn: cause_of_change_fy
+
+	/// Cause of Change mit Blick auf das FOLGEJAHR – die Sicht, auf der die
+	/// Budgetlogik aufsetzt (im Altmodell "Mapping CoCh NY").
+	///
+	/// Liegt bewusst auf dem Fakt und nicht nur auf 'DIM Betrieb': die
+	/// Budgetkennzahl grenzt über die Kombination aus Betriebstyp und diesem
+	/// Wert ab. Über zwei Tabellen hinweg ließe sich das weder mit einem
+	/// einzelnen ALL() ausdrücken noch performant auswerten.
+	column cause_of_change_ny
+		dataType: int64
+		formatString: 0
+		lineageTag: c3000000-0000-4000-8000-000000000117
+		summarizeBy: none
+		sourceColumn: cause_of_change_ny
+
 	partition 'FCT Umsatz' = m
 		mode: import
 		source = fnLakehouse("gold_fct_revenue")
 
 	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

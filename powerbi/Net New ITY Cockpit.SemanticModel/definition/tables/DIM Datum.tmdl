@@ -16,6 +16,8 @@ table 'DIM Datum'
 
 		annotation SummarizationSetBy = User
 
+		annotation UnderlyingDateTimeDataType = Date
+
 	/// Kalenderjahr.
 	column Kalenderjahr
 		dataType: int64
@@ -32,6 +34,8 @@ table 'DIM Datum'
 		lineageTag: b1000000-0000-4000-8000-000000000103
 		summarizeBy: none
 		sourceColumn: monat_erster
+
+		annotation UnderlyingDateTimeDataType = Date
 
 	/// Geschäftsjahr als Zahl = Kalenderjahr des FY-Beginns.
 	/// 2025 bedeutet FY2025/26.
@@ -86,8 +90,8 @@ table 'DIM Datum'
 
 	column 'GJ Quartal Nr'
 		dataType: int64
-		formatString: 0
 		isHidden
+		formatString: 0
 		lineageTag: b1000000-0000-4000-8000-000000000110
 		summarizeBy: none
 		sourceColumn: fy_quartal_nr
@@ -99,8 +103,8 @@ table 'DIM Datum'
 	/// Verschiebung im Dezember zerreißen.
 	column Monatsindex
 		dataType: int64
-		formatString: 0
 		isHidden
+		formatString: 0
 		lineageTag: b1000000-0000-4000-8000-000000000111
 		summarizeBy: none
 		sourceColumn: monat_index
@@ -109,8 +113,8 @@ table 'DIM Datum'
 	/// für Arithmetik verwenden (siehe Monatsindex).
 	column 'GJ Sortierung'
 		dataType: int64
-		formatString: 0
 		isHidden
+		formatString: 0
 		lineageTag: b1000000-0000-4000-8000-000000000112
 		summarizeBy: none
 		sourceColumn: fy_sort
@@ -124,33 +128,49 @@ table 'DIM Datum'
 		summarizeBy: none
 		sourceColumn: ist_vergangenheit
 
-	/// Abstand zum laufenden Geschäftsjahr: 0 = laufend, +1 = Budgetjahr,
-	/// −1 = Vorjahr.
-	///
-	/// Grundlage der Standardauswahl im Bericht. Ein fester Filter auf
-	/// "FY2026/27" müsste jeden Oktober von Hand umgestellt werden – genau die
-	/// Handarbeit, die dieser Bericht ablösen soll. Ein Filter auf Offset = 1
-	/// wandert mit CURRENT_FY mit.
-	column 'GJ Offset'
+	column monat_nr
 		dataType: int64
-		formatString: +0;-0;0
-		lineageTag: b1000000-0000-4000-8000-000000000114
-		summarizeBy: none
-		sourceColumn: fy_offset
+		formatString: 0
+		lineageTag: 53439c16-b474-4fa2-b5c8-43ba06068c78
+		summarizeBy: sum
+		sourceColumn: monat_nr
 
-	/// Sprechende Fassung von 'GJ Offset' für Datenschnitte:
-	/// Vorjahr · Laufendes Jahr · Budgetjahr · Folgejahr +2.
-	///
-	/// "Budgetjahr" ist der Zeitraum, auf den sich die Planung richtet – was
-	/// jetzt gewonnen wird, zahlt dort ein. Das ist die Standardauswahl.
-	column 'GJ relativ'
+		annotation SummarizationSetBy = Automatic
+
+	column monat
 		dataType: string
-		lineageTag: b1000000-0000-4000-8000-000000000115
+		lineageTag: 959bc072-1d2e-4f9a-95d0-a4ebfaa79684
 		summarizeBy: none
-		sourceColumn: fy_relativ
-		sortByColumn: 'GJ Offset'
+		sourceColumn: monat
 
-	hierarchy 'Geschäftsjahr'
+		annotation SummarizationSetBy = Automatic
+
+	column tag
+		dataType: int64
+		formatString: 0
+		lineageTag: 126c8209-e87f-4729-9662-c4dc1e396e9d
+		summarizeBy: sum
+		sourceColumn: tag
+
+		annotation SummarizationSetBy = Automatic
+
+	column quartal
+		dataType: string
+		lineageTag: cddcd6cb-cb53-4d60-a43b-c2d587de89f1
+		summarizeBy: none
+		sourceColumn: quartal
+
+		annotation SummarizationSetBy = Automatic
+
+	column fy_jahr_monat
+		dataType: string
+		lineageTag: ae0c4222-d098-49d9-bf18-ede449cb35f9
+		summarizeBy: none
+		sourceColumn: fy_jahr_monat
+
+		annotation SummarizationSetBy = Automatic
+
+	hierarchy Geschäftsjahr
 		lineageTag: b1000000-0000-4000-8000-000000000201
 
 		level 'GJ Bezeichnung'
@@ -170,3 +190,6 @@ table 'DIM Datum'
 		source = fnLakehouse("gold_dim_date")
 
 	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

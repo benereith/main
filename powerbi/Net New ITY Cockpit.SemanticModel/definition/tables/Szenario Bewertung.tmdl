@@ -1,43 +1,37 @@
 /// SZENARIO-PARAMETER 4 von 4 · Bewertungsbasis und Wahrscheinlichkeitsschwelle
-///
+/// 
 /// Zwei Stellschrauben in einer Tabelle:
-///
+/// 
 /// 1. BEWERTUNGSBASIS – wie wird der CRM-Wert in Geld übersetzt?
-///    · "CRM-gewichtet"     Umsatz × Wahrscheinlichkeit (Standard, entspricht
-///                          weighted_ity / weighted_ly_aro der Altmodelle)
-///    · "Vollwert"          Umsatz ohne Gewichtung – die Obergrenze
-///    · "Nur gesichert"     ausschließlich Won bzw. Lost, ungewichtet – die
-///                          belastbare Untergrenze
-///
-///    Die drei Werte spannen den Korridor auf, in dem sich das tatsächliche
-///    Net New ITY bewegen wird. Im Altbericht existierte nur die mittlere
-///    Variante, weshalb die Bandbreite nie sichtbar war.
-///
+/// · "CRM-gewichtet"     Umsatz × Wahrscheinlichkeit (Standard, entspricht
+/// weighted_ity / weighted_ly_aro der Altmodelle)
+/// · "Vollwert"          Umsatz ohne Gewichtung – die Obergrenze
+/// · "Nur gesichert"     ausschließlich Won bzw. Lost, ungewichtet – die
+/// belastbare Untergrenze
+/// 
+/// Die drei Werte spannen den Korridor auf, in dem sich das tatsächliche
+/// Net New ITY bewegen wird. Im Altbericht existierte nur die mittlere
+/// Variante, weshalb die Bandbreite nie sichtbar war.
+/// 
 /// 2. SCHWELLE – ab welcher Wahrscheinlichkeit zählt eine Opportunity?
-///    Filtert 'FCT Net New ITY'[Wahrscheinlichkeit]. Vorbelegung 0 % = alles.
+/// Filtert 'FCT Net New ITY'[Wahrscheinlichkeit]. Vorbelegung 0 % = alles.
 table 'Szenario Bewertung'
 	lineageTag: d4000000-0000-4000-8000-000000000001
 
 	column Bewertungsbasis
-		dataType: string
-		lineageTag: d4000000-0000-4000-8000-000000000101
-		summarizeBy: none
-		sourceColumn: [Value1]
-		sortByColumn: Sortierung
+		lineageTag: ac5b7337-8f38-4683-983b-e5230ec16500
+		isNameInferred
+		sourceColumn: [Bewertungsbasis]
 
 	column Beschreibung
-		dataType: string
-		lineageTag: d4000000-0000-4000-8000-000000000102
-		summarizeBy: none
-		sourceColumn: [Value2]
+		lineageTag: 01acd69c-5b60-45e6-9c94-27467a432700
+		isNameInferred
+		sourceColumn: [Beschreibung]
 
 	column Sortierung
-		dataType: int64
-		formatString: 0
-		isHidden
-		lineageTag: d4000000-0000-4000-8000-000000000103
-		summarizeBy: none
-		sourceColumn: [Value3]
+		lineageTag: 82405477-dc54-4d69-b245-3b28d5eb8d6e
+		isNameInferred
+		sourceColumn: [Sortierung]
 
 	partition 'Szenario Bewertung' = calculated
 		mode: import
@@ -54,3 +48,4 @@ table 'Szenario Bewertung'
 				)
 
 	annotation PBI_Id = SzenarioBewertung
+

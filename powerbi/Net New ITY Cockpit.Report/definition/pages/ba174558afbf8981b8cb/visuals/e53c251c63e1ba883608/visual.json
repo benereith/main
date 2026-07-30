@@ -1,5 +1,5 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.8.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.11.0/schema.json",
   "name": "e53c251c63e1ba883608",
   "position": {
     "x": 641,
@@ -72,35 +72,8 @@
                 }
               },
               "queryRef": "_Kennzahlen.Beitrag Zeitraum (gewichtet)",
-              "nativeQueryRef": "Beitrag Zeitraum (gewichtet)"
-            },
-            {
-              "field": {
-                "Measure": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "_Kennzahlen"
-                    }
-                  },
-                  "Property": "Beitrag kumuliert"
-                }
-              },
-              "queryRef": "_Kennzahlen.Beitrag kumuliert",
-              "nativeQueryRef": "Beitrag kumuliert"
-            },
-            {
-              "field": {
-                "Measure": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "_Kennzahlen"
-                    }
-                  },
-                  "Property": "Schließt Lücke"
-                }
-              },
-              "queryRef": "_Kennzahlen.Schließt Lücke",
-              "nativeQueryRef": "Schließt Lücke"
+              "nativeQueryRef": "Beitrag Zeitraum (gewichtet)",
+              "active": false
             }
           ]
         }
@@ -326,7 +299,8 @@
               }
             }
           ]
-        }
+        },
+        "howCreated": "User"
       }
     ]
   }

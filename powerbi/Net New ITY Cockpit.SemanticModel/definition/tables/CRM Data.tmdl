@@ -1,0 +1,143 @@
+table 'CRM Data'
+	lineageTag: 5af530fe-3d99-42ef-abd5-98d2172b06ce
+
+	/// Budgetierter unknown-ITY-Effekt aus der gepflegten Planungsdatei
+	/// 2026_04_29_Planung_unknown_ITY_Effekt.xlsx (SharePoint, 08_Budget).
+	///
+	/// Bewusst NICHT aus dem Lakehouse, sondern direkt aus der Excel: die
+	/// Datei ist ein manueller Planungsinput, der im Budgetprozess laufend
+	/// fortgeschrieben wird. Wer die Zahl abstimmt, muss den Stand der Datei
+	/// kennen – die Tabelle 'CRM Data' trägt ihn deshalb unverändert.
+	measure 'Budget ITY Effect' = SUM('CRM Data'[ity effect])
+		lineageTag: 5aced962-9c69-42e2-94e7-d5557c2bba61
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	/// Gesicherter plus erwarteter ITY-Anteil, also alles außer der reinen
+	/// Pipeline. Die Größe, mit der sich belastbar planen lässt: Won und
+	/// Lost stehen fest, Expected Win und Expected Loss liegen über der
+	/// Wahrscheinlichkeitsschwelle.
+	measure 'ITY relativ sicher' = [ITY gesichert]+[ITY erwartet]
+		lineageTag: ad97217e-a36f-4b68-9ada-1066b94f16c8
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	/// Vollwert ohne Wahrscheinlichkeitsgewichtung, vorzeichenbehaftet.
+	/// Obergrenze der Betrachtung: so viel entstünde, wenn jede Opportunity
+	/// gewonnen und jeder Risikovertrag verloren würde.
+	measure Unweighted = SUM('FCT Net New ITY'[Betrag ungewichtet (vorzeichenbehaftet)])
+		lineageTag: 6d00cba6-d684-41e9-9d85-c0000e3be650
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column NB/LB
+		dataType: string
+		lineageTag: 9afadf4e-f7a0-4d55-880c-84fb6bff0b6a
+		summarizeBy: none
+		sourceColumn: NB/LB
+
+		annotation SummarizationSetBy = Automatic
+
+	column name
+		dataType: string
+		lineageTag: 236413e1-82ce-453e-aebc-fb885cb601ed
+		summarizeBy: none
+		sourceColumn: name
+
+		annotation SummarizationSetBy = Automatic
+
+	column ity_cluster
+		dataType: string
+		lineageTag: 086fcf35-a4d7-4a9b-8715-5f18908b46c0
+		summarizeBy: none
+		sourceColumn: ity_cluster
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'ity effect'
+		dataType: double
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: b03e469a-c1ea-4c9b-bac3-e5ed782eb688
+		summarizeBy: none
+		sourceColumn: ity effect
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'CRM Data' = m
+		mode: import
+		source = ```
+				let
+				    // 1. Datenquelle ansteuern
+				    Quelle = SharePoint.Contents("https://cpgplc.sharepoint.com/sites/GroupControlling", [ApiVersion = 15]),
+				    #"Shared Documents" = Quelle{[Name="Shared Documents"]}[Content],
+				    #"Group Controlling" = #"Shared Documents"{[Name="Group Controlling"]}[Content],
+				    #"Net New ITY" = #"Group Controlling"{[Name="Net New ITY"]}[Content],
+				    #"08_Budget" = #"Net New ITY"{[Name="08_Budget"]}[Content],
+				    #"File" = #"08_Budget"{[Name="2026_04_29_Planung_unknown_ITY_Effekt.xlsx"]}[Content],
+				
+				    // 2. Excel einlesen & filtern
+				    #"Imported Excel" = Excel.Workbook(#"File"),
+				    #"Filtered Sheets" = Table.SelectRows(#"Imported Excel", each ([Name] = "LB Rohdaten" or [Name] = "NB Rohdaten")),
+				    #"Expanded Data" = Table.ExpandTableColumn(#"Filtered Sheets", "Data", {"Column1","Column2","Column3","Column4","Column5","Column6","Column7","Column8","Column9","Column10","Column11"}),
+				    #"Promoted Headers" = Table.PromoteHeaders(#"Expanded Data", [PromoteAllScalars=true]),
+				    
+				    // 6. - 9. Typisierung & Bereinigung
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"NB Rohdaten", type text}, {"bezeichnung_management", type text}, {"bezeichnung_region", type text}, {"Werk - Bezeichnung", type text}, {"ity_cluster", type text}, {"name", type text}, {"Info", type text}, {"FY_JahrMonat", type text}, {"ity_effect", type number}}),
+				    #"Filtered Rows" = Table.SelectRows(#"Changed Type", each ([bezeichnung_management] <> null and [bezeichnung_management] <> "" and [bezeichnung_management] <> "bezeichnung_management")),
+				    #"Renamed Columns" = Table.RenameColumns(#"Filtered Rows", {{"NB Rohdaten", "NB/LB"}}),
+				    #"Selected Columns" = Table.SelectColumns(#"Renamed Columns", {"NB/LB", "bezeichnung_management", "bezeichnung_region", "Werk - Bezeichnung", "ity_cluster", "name", "Info", "FY_JahrMonat", "ity_effect"}),
+				    #"Extracted Month" = Table.TransformColumns(#"Selected Columns", {{"FY_JahrMonat", each Number.From(Text.End(_, 2)), Int64.Type}}),
+				    
+				    // 10. Daten sauber vorsortieren
+				    #"Sorted Rows" = Table.Sort(#"Extracted Month", {{"NB/LB", Order.Ascending}, {"bezeichnung_management", Order.Ascending}, {"name", Order.Ascending}, {"FY_JahrMonat", Order.Ascending}}),
+				
+				    // --- NEU: Das Raster EINMALIG global definieren ---
+				    GlobalePeriodenBasis = Table.TransformColumnTypes(Table.FromList({1..12}, Splitter.SplitByNothing(), {"FY_JahrMonat"}, null, ExtraValues.Error), {{"FY_JahrMonat", Int64.Type}}),
+				
+				    // 11. GRUPPIERUNG & LÜCKENLOSE ERWEITERUNG
+				    #"Grouped" = Table.Group(#"Sorted Rows", {"NB/LB", "bezeichnung_management", "name"}, {
+				        {"Data", (t as table) =>
+				            let
+				                JoinBasis = Table.NestedJoin(GlobalePeriodenBasis, {"FY_JahrMonat"}, t, {"FY_JahrMonat"}, "Inhalt", JoinKind.LeftOuter),
+				                ExpandedInhalt = Table.ExpandTableColumn(JoinBasis, "Inhalt", {"bezeichnung_region", "Werk - Bezeichnung", "ity_cluster", "Info", "ity_effect"}),
+				                FillTextCols = Table.FillDown(Table.FillUp(ExpandedInhalt, {"bezeichnung_region", "Werk - Bezeichnung", "ity_cluster", "Info"}), {"bezeichnung_region", "Werk - Bezeichnung", "ity_cluster", "Info"}),
+				                SortBeforeFill = Table.Sort(FillTextCols, {{"FY_JahrMonat", Order.Ascending}}),
+				                ReplaceNullEffects = Table.ReplaceValue(SortBeforeFill, null, 0, Replacer.ReplaceValue, {"ity_effect"}),
+				                
+				                // Performantere YTD-Berechnung über List.Generate
+				                EffekteListe = ReplaceNullEffects[ity_effect],
+				                YTDBerechnung = List.Skip(List.Generate(
+				                    () => [Summe = 0, Index = 0],
+				                    each [Index] <= List.Count(EffekteListe),
+				                    each [Summe = [Summe] + EffekteListe{[Index]}, Index = [Index] + 1],
+				                    each [Summe]
+				                ), 1),
+				                
+				                TableMitYTD = Table.FromColumns(
+				                    Table.ToColumns(ReplaceNullEffects) & {YTDBerechnung},
+				                    Table.ColumnNames(ReplaceNullEffects) & {"ity_effect_cum"}
+				                )
+				            in TableMitYTD
+				        }
+				    }),
+				
+				    // 12. & 13. Entpacken und FP&A Logik
+				    #"Expanded" = Table.ExpandTableColumn(#"Grouped", "Data", {"bezeichnung_region", "Werk - Bezeichnung", "ity_cluster", "Info", "FY_JahrMonat", "ity_effect", "ity_effect_cum"}),
+				    #"Geänderter Typ" = Table.TransformColumnTypes(#"Expanded",{{"bezeichnung_region", type text}, {"Werk - Bezeichnung", type text}, {"ity_cluster", type text}, {"Info", type text}, {"FY_JahrMonat", Int64.Type}, {"ity_effect", Currency.Type}, {"ity_effect_cum", Currency.Type}}),
+				    #"Hinzugefügte benutzerdefinierte Spalte" = Table.AddColumn(#"Geänderter Typ", "Geschäftsjahr", each 2026),
+				    #"Eingefügte erste Zeichen" = Table.AddColumn(#"Hinzugefügte benutzerdefinierte Spalte", "Werk", each Text.Start([#"Werk - Bezeichnung"], 4)),
+				    #"Geänderter Typ1" = Table.TransformColumnTypes(#"Eingefügte erste Zeichen",{{"Werk", Int64.Type}, {"Geschäftsjahr", Int64.Type}}),
+				    #"Eingefügte letzte Zeichen" = Table.AddColumn(#"Geänderter Typ1", "Eröffnungsdatum", each try Date.FromText(Text.End([Info], 10)) otherwise null, type date),
+				    #"Hinzugefügte benutzerdefinierte Spalte1" = Table.AddColumn(#"Eingefügte letzte Zeichen", "Neueröffnung_CRM", each if [Eröffnungsdatum] >= #date(2025, 10, 1) and [#"NB/LB"]="NB Rohdaten" then 1 else 0),
+				    #"Geänderter Typ3" = Table.TransformColumnTypes(#"Hinzugefügte benutzerdefinierte Spalte1",{{"Neueröffnung_CRM", Int64.Type}}),
+				    #"Hinzugefügte benutzerdefinierte Spalte2" = Table.AddColumn(#"Geänderter Typ3", "Eröffnungsperiode", each if [Eröffnungsdatum] = null then null else if Date.Month([Eröffnungsdatum]) >= 10 then Date.Month([Eröffnungsdatum]) - 9 else Date.Month([Eröffnungsdatum]) + 3),
+				    #"Geänderter Typ4" = Table.TransformColumnTypes(#"Hinzugefügte benutzerdefinierte Spalte2",{{"Eröffnungsperiode", Int64.Type}}),
+				    #"Gruppierte Zeilen" = Table.Group(#"Geänderter Typ4", {"NB/LB", "name", "ity_cluster"}, {{"ity effect", each List.Sum([ity_effect]), type nullable number}})
+				in
+				    #"Gruppierte Zeilen"
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

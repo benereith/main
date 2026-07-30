@@ -1,5 +1,5 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.8.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.11.0/schema.json",
   "name": "fa2615e2e3f2dc56119e",
   "position": {
     "x": 184,
@@ -65,7 +65,7 @@
                       "Entity": "_Kennzahlen"
                     }
                   },
-                  "Property": "Unknown ITY Budget"
+                  "Property": "Net ITY Budget"
                 }
               },
               "queryRef": "_Kennzahlen.Unknown ITY Budget",
@@ -90,37 +90,6 @@
       }
     },
     "objects": {
-      "callout": [
-        {
-          "properties": {
-            "show": {
-              "expr": {
-                "Literal": {
-                  "Value": "true"
-                }
-              }
-            },
-            "fontSize": {
-              "expr": {
-                "Literal": {
-                  "Value": "22.0D"
-                }
-              }
-            },
-            "color": {
-              "solid": {
-                "color": {
-                  "expr": {
-                    "Literal": {
-                      "Value": "'#0B0B0B'"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      ],
       "label": [
         {
           "properties": {
@@ -135,17 +104,6 @@
               "expr": {
                 "Literal": {
                   "Value": "9.0D"
-                }
-              }
-            },
-            "color": {
-              "solid": {
-                "color": {
-                  "expr": {
-                    "Literal": {
-                      "Value": "'#52514E'"
-                    }
-                  }
                 }
               }
             }

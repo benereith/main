@@ -1,13 +1,13 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.8.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.11.0/schema.json",
   "name": "b285a70eaa7ec8495f56",
   "position": {
-    "x": 728,
-    "y": 448,
-    "z": 4552,
-    "height": 224,
-    "width": 536,
-    "tabOrder": 4552
+    "x": 829.44971537001891,
+    "y": 448.12144212523719,
+    "z": 1000,
+    "height": 223.45351043643262,
+    "width": 434.7628083491461,
+    "tabOrder": 1000
   },
   "visual": {
     "visualType": "clusteredBarChart",
@@ -261,5 +261,51 @@
       ]
     },
     "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "45df411054c7d26a9b1e",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "DIM Betrieb"
+              }
+            },
+            "Property": "HFM Sektor"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "eae5f5a0a41953e17c35",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Kennzahlen"
+              }
+            },
+            "Property": "New Business ITY"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "e6010a10bd6ae052303d",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Kennzahlen"
+              }
+            },
+            "Property": "Lost Business ITY"
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
   }
 }

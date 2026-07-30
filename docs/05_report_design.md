@@ -43,7 +43,7 @@ Aus dem Layout entfernt:
 * Datenbeschriftungen an jedem Punkt einer Linie – dort, wo die Form die
   Aussage trägt, stört jede Zahl
 * Die "Duplikat von …"-Seiten der Altberichte. Von 51 Seiten in drei Berichten
-  bleiben **10 Seiten** in einem.
+  bleiben **11 Seiten** in einem.
 
 Behalten: horizontale Hilfslinien in `#E1E0D9`. Sie helfen beim Ablesen von
 Größenordnungen und sind hell genug, um nicht mit Daten verwechselt zu werden.
@@ -172,6 +172,7 @@ im Theme definiert ist.
 
 ## 3. Die Seiten
 
+
 ### 3.1 Cockpit
 
 **Frage:** Wie ist die Lage?
@@ -184,7 +185,20 @@ Die Anordnung folgt der Leserichtung: erst die Aussage, dann die Zahlen, dann
 der Verlauf, dann das Detail. Wer nach fünf Sekunden abbricht, hat trotzdem das
 Wichtigste gelesen.
 
-### 3.2 Net-New-Brücke
+### 3.2 Leading KPIs
+
+**Frage:** Reicht die Pipeline, um das Ziel zu erreichen?
+
+Vorlaufindikatoren statt Ergebnisgrößen. Ein Tacho stellt
+`[Unweighted ITY Pipeline]` gegen `[ITY Target Pipeline]` – das Dreifache des
+New-Business-Budgets, nach der Erfahrungsregel, dass etwa ein Drittel der
+Pipeline gewonnen wird. Daneben die Vorgangstabelle mit Entscheidungs- und
+Mobilisierungsdatum sowie Datenschnitte auf Verantwortlichen und
+Geschäftsjahr.
+
+Diese Seite ist von Hand entstanden und nicht im Generator hinterlegt.
+
+### 3.3 Net-New-Brücke
 
 **Frage:** Woraus setzt sich die Zahl zusammen?
 
@@ -193,7 +207,7 @@ Effekte zur ausgewiesenen Summe. Darunter die Zuordnung zum HFM-Kontenplan und
 die Sektorsicht – New und Lost getrennt, damit sich gegenläufige Effekte nicht
 gegenseitig verdecken.
 
-### 3.3 Szenarien
+### 3.4 Szenarien
 
 **Frage:** Was wäre, wenn?
 
@@ -209,43 +223,6 @@ wohin die Annahmen den Effekt verschieben.
 Im Altmodell erforderte jede dieser Einstellungen eine Änderung in Power Query
 und einen vollständigen Refresh. Details zur Umsetzung:
 `docs/03_berechnungslogik.md`, Ordner *04 Szenarien*.
-
-### 3.4 Roll-Budget
-
-**Frage:** Was muss im laufenden Jahr noch gewonnen werden, damit das
-Roll-Budget des Budgetjahres steht?
-
-Die operative Konsequenz aus dem Cockpit, deshalb direkt dahinter. Der Umsatz
-eines Budgetjahres aus Neugeschäft zerfällt in zwei Teile:
-
-| Teil | Entscheidung fällt | Beeinflussbar? |
-|---|---|---|
-| **Roll** | im vorhergehenden Jahr | ja – jetzt |
-| **ITY** | im Budgetjahr selbst | erst später |
-
-Die Trennung liegt auf dem Fakt als `ITY Cluster` und auf der Budgetseite als
-Betriebstyp der Planbetriebe (SAP-Version 90, `Plan-Betriebe Roll` bzw.
-`Plan-Betriebe ITY`) – sie musste also nicht erfunden werden, sie war in
-beiden Quellen schon da, wurde aber in keinem Altmodell gegeneinander gestellt.
-
-Aufbau:
-
-1. Die Antwort als Satz (`[Aussage Roll-Lücke]`) – nennt Betrag und ob die
-   offene Pipeline ihn im Erwartungswert deckt.
-2. Fünf Kopfzahlen, die sich als Rechnung lesen: Budget → Gesichertes → Lücke
-   → offene Pipeline → Deckungsgrad.
-3. Links Budget, Gesichertes und Pipeline auf gemeinsamer Achse. Der *Abstand*
-   ist die Botschaft, deshalb Balken und keine Kacheln.
-4. Rechts die Rangliste der offenen Roll-Vorgänge, absteigend nach Beitrag,
-   mit kumulierter Summe und der Spalte `Schließt Lücke`. Ab der ersten
-   „Ja"-Zeile ist das Minimalpaket beisammen – das ist die eigentliche
-   Handlungsinformation und der Grund für die Seite.
-5. Unten die Netto-Sicht des gewählten Jahres: Roll, ITY und Lost Business
-   nebeneinander über die Perioden.
-
-`[Roll Lücke]` rechnet bewusst gegen `[Roll gesichert]`, nicht gegen die
-gewichtete Pipeline: die Frage lautet „was muss noch kommen", nicht „was
-erwarten wir im Mittel".
 
 ### 3.5 New Business
 
@@ -296,7 +273,44 @@ Tabelle mit Namen und Grund.
 Aus jeder Tabelle per Rechtsklick erreichbar. Zeigt die Periodenverteilung eines
 einzelnen Vorgangs und dessen vollständige CRM-Historie.
 
-### 3.10 Definitionen
+### 3.10 Roll-Budget
+
+**Frage:** Was muss im laufenden Jahr noch gewonnen werden, damit das
+Roll-Budget des Budgetjahres steht?
+
+Die operative Konsequenz aus dem Cockpit, deshalb direkt dahinter. Der Umsatz
+eines Budgetjahres aus Neugeschäft zerfällt in zwei Teile:
+
+| Teil | Entscheidung fällt | Beeinflussbar? |
+|---|---|---|
+| **Roll** | im vorhergehenden Jahr | ja – jetzt |
+| **ITY** | im Budgetjahr selbst | erst später |
+
+Die Trennung liegt auf dem Fakt als `ITY Cluster` und auf der Budgetseite als
+Betriebstyp der Planbetriebe (SAP-Version 90, `Plan-Betriebe Roll` bzw.
+`Plan-Betriebe ITY`) – sie musste also nicht erfunden werden, sie war in
+beiden Quellen schon da, wurde aber in keinem Altmodell gegeneinander gestellt.
+
+Aufbau:
+
+1. Die Antwort als Satz (`[Aussage Roll-Lücke]`) – nennt Betrag und ob die
+   offene Pipeline ihn im Erwartungswert deckt.
+2. Fünf Kopfzahlen, die sich als Rechnung lesen: Budget → Gesichertes → Lücke
+   → offene Pipeline → Deckungsgrad.
+3. Links Budget, Gesichertes und Pipeline auf gemeinsamer Achse. Der *Abstand*
+   ist die Botschaft, deshalb Balken und keine Kacheln.
+4. Rechts die Rangliste der offenen Roll-Vorgänge, absteigend nach Beitrag,
+   mit kumulierter Summe und der Spalte `Schließt Lücke`. Ab der ersten
+   „Ja"-Zeile ist das Minimalpaket beisammen – das ist die eigentliche
+   Handlungsinformation und der Grund für die Seite.
+5. Unten die Netto-Sicht des gewählten Jahres: Roll, ITY und Lost Business
+   nebeneinander über die Perioden.
+
+`[Roll Lücke]` rechnet bewusst gegen `[Roll gesichert]`, nicht gegen die
+gewichtete Pipeline: die Frage lautet „was muss noch kommen", nicht „was
+erwarten wir im Mittel".
+
+### 3.11 Definitionen
 
 HFM-Kontendefinitionen im Wortlaut der Group Guidance und die
 Statusdefinitionen mit Farbzuordnung. Damit steht die Definition im Bericht und

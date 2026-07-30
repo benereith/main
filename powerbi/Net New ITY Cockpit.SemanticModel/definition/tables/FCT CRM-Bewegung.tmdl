@@ -1,13 +1,13 @@
 /// Veränderungen im CRM zwischen zwei Ladeläufen. Quelle: gold_fct_crm_movement.
-///
+/// 
 /// Diese Tabelle ist die Antwort auf die Anforderung, Entwicklungen im CRM
 /// schnell zeigen zu können. Granularität: eine Zeile je Entität und
 /// Änderungszeitpunkt – mit Vorher- und Nachher-Wert.
-///
+/// 
 /// Die Historie entsteht in nb_10_silver: pro Tag wird ein Snapshot geschrieben,
 /// aber nur dann eine neue Zeile erzeugt, wenn sich eine der überwachten Größen
 /// tatsächlich geändert hat. Jede Zeile bedeutet also eine echte Änderung.
-///
+/// 
 /// Bewusst NICHT mit 'DIM Datum' verbunden: die Zeitachse dieser Tabelle ist
 /// der Erhebungsstichtag, nicht die Wirkungsperiode. Eine Verbindung würde
 /// beide Zeitbegriffe vermischen.
@@ -21,7 +21,7 @@ table 'FCT CRM-Bewegung'
 		summarizeBy: none
 		sourceColumn: entity_id
 
-	column 'Entitätstyp'
+	column Entitätstyp
 		dataType: string
 		lineageTag: c2000000-0000-4000-8000-000000000102
 		summarizeBy: none
@@ -41,6 +41,8 @@ table 'FCT CRM-Bewegung'
 		summarizeBy: none
 		sourceColumn: snapshot_date
 
+		annotation UnderlyingDateTimeDataType = Date
+
 	/// Stichtag des vorherigen Stands.
 	column 'Vorheriger Stichtag'
 		dataType: dateTime
@@ -49,19 +51,12 @@ table 'FCT CRM-Bewegung'
 		summarizeBy: none
 		sourceColumn: prev_snapshot_date
 
-	/// Wert nach der Änderung – der GEWICHTETE Beitrag zum Net New ITY, also
-	/// die Größe, die auch im Bericht als Beitrag erscheint.
-	///   New Business  : effektiver ITY-Beitrag × Win-Wahrscheinlichkeit,
-	///                   inklusive ARO-Ersatzregel bei Eröffnung im Folgejahr.
-	///   Lost Business : Vorjahres-ARO × Verlustwahrscheinlichkeit.
-	///
-	/// Bewusst nicht der ungewichtete Rohbetrag: eine reine Änderung der
-	/// Wahrscheinlichkeit lässt diesen unverändert, sodass die Bewegung mit
-	/// 0 € ausgewiesen würde, obwohl der Forecastbeitrag sich sehr wohl
-	/// geändert hat. Bei Eröffnung im Folgejahr stünde dort zusätzlich
-	/// durchgängig 0 €, weil CRM den ITY-Wert gegen das laufende Jahr rechnet.
+		annotation UnderlyingDateTimeDataType = Date
+
+	/// Wert nach der Änderung. New Business: ITY-Umsatz.
+	/// Lost Business: Vorjahres-ARO.
 	column 'Wert neu'
-		dataType: decimal
+		dataType: double
 		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		lineageTag: c2000000-0000-4000-8000-000000000106
 		summarizeBy: sum
@@ -69,10 +64,8 @@ table 'FCT CRM-Bewegung'
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
-	/// Wert vor der Änderung, gleiche Definition wie 'Wert neu'.
-	/// Leer, solange für den Vorgang nur ein Stichtag vorliegt.
 	column 'Wert alt'
-		dataType: decimal
+		dataType: double
 		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		lineageTag: c2000000-0000-4000-8000-000000000107
 		summarizeBy: sum
@@ -83,7 +76,7 @@ table 'FCT CRM-Bewegung'
 	/// Wertänderung. Positiv = Chance gewachsen bzw. Risiko gewachsen –
 	/// die Leserichtung hängt an der Geschäftsart.
 	column Wertänderung
-		dataType: decimal
+		dataType: double
 		formatString: +#,0\ "€";-#,0\ "€";0\ "€"
 		lineageTag: c2000000-0000-4000-8000-000000000108
 		summarizeBy: sum
@@ -105,7 +98,7 @@ table 'FCT CRM-Bewegung'
 		summarizeBy: none
 		sourceColumn: probability_old
 
-	column 'Wahrscheinlichkeitsänderung'
+	column Wahrscheinlichkeitsänderung
 		dataType: double
 		formatString: +0.0\ %;-0.0\ %;0.0\ %
 		lineageTag: c2000000-0000-4000-8000-000000000111
@@ -124,15 +117,9 @@ table 'FCT CRM-Bewegung'
 		summarizeBy: none
 		sourceColumn: status_old
 
-	/// Statuswechsel / Wahrscheinlichkeit / Wert / Termin oder Vertriebsphase.
+	/// Statuswechsel / Wahrscheinlichkeit / Wert / Sonstiges.
 	/// Erlaubt es, im Bericht die relevanten Änderungen zuerst zu zeigen:
 	/// ein Statuswechsel wiegt schwerer als eine Wertkorrektur.
-	///
-	/// Die Reihenfolge ist eine Rangfolge, keine Aufzählung: ändern sich
-	/// Status und Wert gleichzeitig, steht "Statuswechsel" – die stärkere
-	/// Aussage gewinnt. "Termin oder Vertriebsphase" ist der Restfall und
-	/// benennt ihn ausdrücklich; das frühere "Sonstiges" ließ offen, was sich
-	/// überhaupt geändert hatte.
 	column Änderungsart
 		dataType: string
 		lineageTag: c2000000-0000-4000-8000-000000000114
@@ -144,3 +131,6 @@ table 'FCT CRM-Bewegung'
 		source = fnLakehouse("gold_fct_crm_movement")
 
 	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

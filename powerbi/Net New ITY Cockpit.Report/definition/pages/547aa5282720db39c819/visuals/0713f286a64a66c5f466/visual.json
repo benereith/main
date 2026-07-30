@@ -1,5 +1,5 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.8.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.11.0/schema.json",
   "name": "0713f286a64a66c5f466",
   "position": {
     "x": 184,
@@ -270,5 +270,149 @@
       ]
     },
     "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "64cd31a9a28ed938596c",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "FCT CRM-Bewegung"
+              }
+            },
+            "Property": "Stichtag"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "f9dfa4a3b565eebe5a89",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "DIM Opportunity"
+              }
+            },
+            "Property": "Opportunity"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "fbed20a12020e8614523",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "FCT CRM-Bewegung"
+              }
+            },
+            "Property": "Änderungsart"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "d1d82297708090b61e70",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "FCT CRM-Bewegung"
+              }
+            },
+            "Property": "Status alt"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "a3ddd1184acb103c8126",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "FCT CRM-Bewegung"
+              }
+            },
+            "Property": "Status neu"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "1173f1322d50e3869633",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "FCT CRM-Bewegung"
+              }
+            },
+            "Property": "Wahrscheinlichkeit alt"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "51592ce90e1752013b52",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "FCT CRM-Bewegung"
+              }
+            },
+            "Property": "Wahrscheinlichkeit neu"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "a1b98579c7012ac30c12",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "FCT CRM-Bewegung"
+              }
+            },
+            "Property": "Wert alt"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "dbfcaf06eca3bc065425",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "FCT CRM-Bewegung"
+              }
+            },
+            "Property": "Wert neu"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "d5df767075b6413b7001",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Kennzahlen"
+              }
+            },
+            "Property": "Bewegung Wert"
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
   }
 }

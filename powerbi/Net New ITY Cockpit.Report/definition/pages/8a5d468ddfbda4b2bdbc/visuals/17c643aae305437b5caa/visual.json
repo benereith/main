@@ -1,13 +1,13 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.8.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.11.0/schema.json",
   "name": "17c643aae305437b5caa",
   "position": {
     "x": 1056,
     "y": 26,
-    "z": 365,
+    "z": 1000,
     "height": 56,
     "width": 208,
-    "tabOrder": 365
+    "tabOrder": 1000
   },
   "visual": {
     "visualType": "slicer",
@@ -17,17 +17,22 @@
           "projections": [
             {
               "field": {
-                "Column": {
+                "HierarchyLevel": {
                   "Expression": {
-                    "SourceRef": {
-                      "Entity": "DIM Datum"
+                    "Hierarchy": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "DIM Datum"
+                        }
+                      },
+                      "Hierarchy": "Geschäftsjahr"
                     }
                   },
-                  "Property": "GJ relativ"
+                  "Level": "GJ Bezeichnung"
                 }
               },
-              "queryRef": "DIM Datum.GJ relativ",
-              "nativeQueryRef": "GJ relativ",
+              "queryRef": "DIM Datum.Geschäftsjahr.GJ Bezeichnung",
+              "nativeQueryRef": "Geschäftsjahr GJ Bezeichnung",
               "active": true
             }
           ]
@@ -76,6 +81,108 @@
                 "Literal": {
                   "Value": "false"
                 }
+              }
+            }
+          }
+        }
+      ],
+      "general": [
+        {
+          "properties": {
+            "filter": {
+              "filter": {
+                "Version": 2,
+                "From": [
+                  {
+                    "Name": "d",
+                    "Entity": "DIM Datum",
+                    "Type": 0
+                  }
+                ],
+                "Where": [
+                  {
+                    "Condition": {
+                      "In": {
+                        "Expressions": [
+                          {
+                            "Column": {
+                              "Expression": {
+                                "SourceRef": {
+                                  "Source": "d"
+                                }
+                              },
+                              "Property": "GJ Bezeichnung"
+                            }
+                          }
+                        ],
+                        "Values": [
+                          [
+                            {
+                              "Literal": {
+                                "Value": "'FY2026/27'"
+                              }
+                            }
+                          ]
+                        ]
+                      }
+                    },
+                    "Annotations": {
+                      "filterExpressionMetadata": {
+                        "expressions": [
+                          {
+                            "HierarchyLevel": {
+                              "Expression": {
+                                "Hierarchy": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Entity": "DIM Datum"
+                                    }
+                                  },
+                                  "Hierarchy": "Geschäftsjahr"
+                                }
+                              },
+                              "Level": "GJ Bezeichnung"
+                            }
+                          }
+                        ],
+                        "decomposedIdentities": {
+                          "values": [
+                            [
+                              {
+                                "0": [
+                                  {
+                                    "Literal": {
+                                      "Value": "'FY2026/27'"
+                                    }
+                                  }
+                                ]
+                              }
+                            ]
+                          ],
+                          "columns": [
+                            {
+                              "value": {
+                                "Column": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Entity": "DIM Datum"
+                                    }
+                                  },
+                                  "Property": "GJ Bezeichnung"
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        "valueMap": [
+                          {
+                            "0": "FY2026/27"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
               }
             }
           }
@@ -129,11 +236,11 @@
         }
       ]
     },
-    "drillFilterOtherVisuals": true,
     "syncGroup": {
       "groupName": "geschaeftsjahr",
       "fieldChanges": false,
       "filterChanges": true
-    }
+    },
+    "drillFilterOtherVisuals": true
   }
 }

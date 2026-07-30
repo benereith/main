@@ -1,12 +1,12 @@
 /// Zentrale Faktentabelle: Perioden-Fanout aus CRM-Opportunities (New Business)
 /// und CRM-Bestandsverträgen (Lost Business).
-///
+/// 
 /// Granularität: eine Zeile je Entität und Monat.
 /// Quelle: gold_fct_net_new_ity (siehe lakehouse/notebooks/nb_20_gold.py).
-///
+/// 
 /// VORZEICHENKONVENTION – der wichtigste Unterschied zu den Altmodellen:
-///   New Business  -> Betrag positiv
-///   Lost Business -> Betrag negativ
+/// New Business  -> Betrag positiv
+/// Lost Business -> Betrag negativ
 /// Damit ist Net New ITY = SUM('Betrag gewichtet (vorzeichenbehaftet)').
 /// In den Altmodellen wurde das Vorzeichen an mindestens fünf Stellen
 /// unterschiedlich gedreht (M: *-1 in fct_opp/fct_retention; DAX: *-1 in
@@ -24,14 +24,14 @@ table 'FCT Net New ITY'
 		sourceColumn: entity_id
 
 	/// Bezeichnung der Opportunity bzw. des Vertrags.
-	column 'Entität'
+	column Entität
 		dataType: string
 		lineageTag: c1000000-0000-4000-8000-000000000102
 		summarizeBy: none
 		sourceColumn: entity_name
 
 	/// OPPORTUNITY oder CONTRACT.
-	column 'Entitätstyp'
+	column Entitätstyp
 		dataType: string
 		lineageTag: c1000000-0000-4000-8000-000000000103
 		summarizeBy: none
@@ -47,39 +47,25 @@ table 'FCT Net New ITY'
 	/// Verknüpfung zu DIM Status (Won / Expected Win / Pipeline / …).
 	column 'Status Code'
 		dataType: string
-		isHidden
 		lineageTag: c1000000-0000-4000-8000-000000000105
 		summarizeBy: none
 		sourceColumn: status_code
 
+		changedProperty = IsHidden
+
 	/// "unknown ITY" oder "unknown Roll" – wann die Entscheidung fällt und
 	/// wohin sie dadurch wirkt. Bezeichner aus den Altmodellen beibehalten,
 	/// damit Abstimmungen gegen die Altreports möglich bleiben.
-	///
+	/// 
 	/// unknown Roll → Abschluss im laufenden Geschäftsjahr, Umsatz überwiegend
-	///   im Folgejahr. Das ist die Größe, die auf der Seite "Roll-Budget"
-	///   gegen das Budget läuft: was jetzt noch gewonnen werden muss.
+	/// im Folgejahr. Das ist die Größe, die auf der Seite "Roll-Budget"
+	/// gegen das Budget läuft: was jetzt noch gewonnen werden muss.
 	/// unknown ITY → Abschluss im Folgejahr, Wirkung innerhalb desselben Jahres.
 	column 'ITY Cluster'
 		dataType: string
 		lineageTag: c1000000-0000-4000-8000-000000000106
 		summarizeBy: none
 		sourceColumn: ity_cluster
-
-	/// Herkunft der ITY-Monatsrate. "CRM-ITY" = aus cgplc_revenueity gerechnet,
-	/// "ARO-Ersatz (Eroeffnung Folgejahr)" = ersatzweise ARO/12.
-	///
-	/// Hintergrund: cgplc_revenueity ist im CRM gegen das LAUFENDE
-	/// Geschäftsjahr gerechnet. Liegt die Mobilisierung komplett im nächsten
-	/// Jahr, steht dort systematisch 0 – nicht weil kein Umsatz entsteht,
-	/// sondern weil er im laufenden Jahr nicht anfällt. nb_20_gold setzt für
-	/// diese Fälle ARO/12 an, sonst fiele das gesamte erste Vertragsjahr auf
-	/// null. Regel DQ-NEW-001 zählt, wie viel Volumen darüber läuft.
-	column 'ITY Quelle'
-		dataType: string
-		lineageTag: c1000000-0000-4000-8000-000000000131
-		summarizeBy: none
-		sourceColumn: ity_quelle
 
 	/// Gewinn- bzw. Verlustwahrscheinlichkeit als Dezimalzahl (0–1).
 	/// New Business  : Win-% aus dem CRM.
@@ -88,43 +74,53 @@ table 'FCT Net New ITY'
 		dataType: double
 		formatString: 0.0\ %;-0.0\ %;0.0\ %
 		lineageTag: c1000000-0000-4000-8000-000000000107
-		summarizeBy: none
+		summarizeBy: sum
 		sourceColumn: probability
+
+		annotation SummarizationSetBy = Automatic
 
 	/// Erster Tag des Wirkungsmonats. Verbindung zu DIM Datum.
 	column Periode
 		dataType: dateTime
-		formatString: dd.mm.yyyy
 		isHidden
+		formatString: dd.mm.yyyy
 		lineageTag: c1000000-0000-4000-8000-000000000108
 		summarizeBy: none
 		sourceColumn: period_date
 
+		annotation UnderlyingDateTimeDataType = Date
+
 	column 'GJ Jahr'
 		dataType: int64
-		formatString: 0
 		isHidden
+		formatString: 0
 		lineageTag: c1000000-0000-4000-8000-000000000109
-		summarizeBy: none
+		summarizeBy: sum
 		sourceColumn: fy_year
+
+		annotation SummarizationSetBy = Automatic
 
 	column 'GJ Periode Nr'
 		dataType: int64
-		formatString: 0
 		isHidden
+		formatString: 0
 		lineageTag: c1000000-0000-4000-8000-000000000110
-		summarizeBy: none
+		summarizeBy: sum
 		sourceColumn: fy_period
+
+		annotation SummarizationSetBy = Automatic
 
 	/// Linearer Monatsindex, deckungsgleich mit 'DIM Datum'[Monatsindex].
 	/// Zielspalte der Szenario-Verschiebung.
 	column Monatsindex
 		dataType: int64
-		formatString: 0
 		isHidden
+		formatString: 0
 		lineageTag: c1000000-0000-4000-8000-000000000111
-		summarizeBy: none
+		summarizeBy: sum
 		sourceColumn: monat_index
+
+		annotation SummarizationSetBy = Automatic
 
 	/// Laufende Nummer des Monats seit dem auslösenden Ereignis
 	/// (Mobilisierung bzw. Vertragsende), beginnend bei 1.
@@ -134,8 +130,10 @@ table 'FCT Net New ITY'
 		dataType: int64
 		formatString: 0
 		lineageTag: c1000000-0000-4000-8000-000000000112
-		summarizeBy: none
+		summarizeBy: sum
 		sourceColumn: period_index
+
+		annotation SummarizationSetBy = Automatic
 
 	/// ITY  = Wirkung im ersten Geschäftsjahr (HFM MAP141a / MAP141c)
 	/// ARO  = Dauerzustand ab dem zweiten Geschäftsjahr (MAP131 / MAP136)
@@ -154,9 +152,9 @@ table 'FCT Net New ITY'
 
 	/// Monatswert × Wahrscheinlichkeit, immer positiv.
 	column 'Betrag gewichtet'
-		dataType: decimal
-		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		dataType: double
 		isHidden
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		lineageTag: c1000000-0000-4000-8000-000000000115
 		summarizeBy: sum
 		sourceColumn: amount_weighted
@@ -166,21 +164,22 @@ table 'FCT Net New ITY'
 	/// Monatswert ohne Wahrscheinlichkeitsgewichtung (Vollwert).
 	/// Antwortet auf "Was wäre, wenn alles eintritt?".
 	column 'Betrag ungewichtet'
-		dataType: decimal
+		dataType: double
 		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
-		isHidden
 		lineageTag: c1000000-0000-4000-8000-000000000116
 		summarizeBy: sum
 		sourceColumn: amount_unweighted
+
+		changedProperty = IsHidden
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
 	/// Gewichteter Monatswert mit Vorzeichen: NEW positiv, LOST negativ.
 	/// Basis fast aller Measures.
-	column 'Betrag'
-		dataType: decimal
-		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+	column Betrag
+		dataType: double
 		isHidden
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		lineageTag: c1000000-0000-4000-8000-000000000117
 		summarizeBy: sum
 		sourceColumn: amount_signed
@@ -191,9 +190,9 @@ table 'FCT Net New ITY'
 	/// "Vollwert" – als eigene Spalte materialisiert, damit auch diese Sicht
 	/// eine einfache Summe bleibt.
 	column 'Betrag ungewichtet (vorzeichenbehaftet)'
-		dataType: decimal
-		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		dataType: double
 		isHidden
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		lineageTag: c1000000-0000-4000-8000-000000000128
 		summarizeBy: sum
 		sourceColumn: amount_unweighted_signed
@@ -210,6 +209,8 @@ table 'FCT Net New ITY'
 		summarizeBy: none
 		sourceColumn: driver_date
 
+		annotation UnderlyingDateTimeDataType = Date
+
 	/// Entscheidungsdatum laut CRM. Laut Group Guidance (S. 2) maßgeblich für
 	/// die Zuordnung zu "current year" bzw. "prior year" – NICHT das
 	/// Mobilisierungs- oder Schließungsdatum.
@@ -220,36 +221,42 @@ table 'FCT Net New ITY'
 		summarizeBy: none
 		sourceColumn: decision_date
 
+		annotation UnderlyingDateTimeDataType = Date
+
 	/// Ende des ersten Geschäftsjahres der Entität. Grenze zwischen ITY- und
 	/// ARO-Phase.
 	column 'Ende 1. GJ'
 		dataType: dateTime
-		formatString: dd.mm.yyyy
 		isHidden
+		formatString: dd.mm.yyyy
 		lineageTag: c1000000-0000-4000-8000-000000000120
 		summarizeBy: none
 		sourceColumn: calc_first_fy_end
+
+		annotation UnderlyingDateTimeDataType = Date
 
 	/// Anzahl Monate der ITY-Phase. Teiler bei der Verteilung des ITY-Werts.
 	column 'ITY Monate'
 		dataType: int64
 		formatString: 0
 		lineageTag: c1000000-0000-4000-8000-000000000121
-		summarizeBy: none
+		summarizeBy: sum
 		sourceColumn: calc_ity_months
 
+		annotation SummarizationSetBy = Automatic
+
 	/// KONFORME ATTRIBUTE (Sektor bis Verantwortlicher)
-	///
+	/// 
 	/// Diese fünf Merkmale liegen bewusst auf dem Fakt und nicht nur in den
 	/// Dimensionen, weil sie für BEIDE Geschäftsarten gefüllt sind.
-	///
+	/// 
 	/// Grund: 'DIM Opportunity' und 'DIM Vertrag' sind getrennte Dimensionen.
 	/// Ein Datenschnitt auf 'DIM Opportunity'[Sektor] filtert nur die
 	/// New-Zeilen – die Lost-Zeilen hängen an dieser Dimension gar nicht und
 	/// laufen unverändert durch. Das Ergebnis wäre ein "Net New ITY im Sektor
 	/// Healthcare", das das gesamte Lost Business aller Sektoren enthält:
 	/// falsch, ohne Fehlermeldung.
-	///
+	/// 
 	/// Für seitenübergreifende Datenschnitte deshalb IMMER diese Spalten
 	/// verwenden, nicht die gleichnamigen der Dimensionen. Die
 	/// Dimensionsspalten bleiben für Detailsichten innerhalb einer
@@ -291,30 +298,30 @@ table 'FCT Net New ITY'
 
 	/// SAP-Betriebsnummer. Verbindung zu DIM Betrieb und damit zu Region,
 	/// Management und Verantwortungsbereich.
-	///
+	/// 
 	/// Aufgelöst über eine vierstufige Kette (nb_20_gold, Abschnitt 5d):
-	///   1. Einzelfall-Ausnahme aus der Mapping-Tabelle
-	///   2. cgplc_sapid am Vorgang selbst
-	///   3. Mapping über Sektor UND Subsektor
-	///   4. Mapping über Sektor allein
+	/// 1. Einzelfall-Ausnahme aus der Mapping-Tabelle
+	/// 2. cgplc_sapid am Vorgang selbst
+	/// 3. Mapping über Sektor UND Subsektor
+	/// 4. Mapping über Sektor allein
 	/// Die Mapping-Tabelle (Mapping_Planwerke.xlsx) pflegt das Controlling –
 	/// dort steht, welcher Sektor/Subsektor auf welchem Planbetrieb geplant
 	/// wird. Die SAP-Nummer des Kontos wird bewusst nicht verwendet: sie ist
 	/// ein Debitor, kein Betrieb.
-	///
+	/// 
 	/// Welche Stufe gegriffen hat, zeigt 'Werk Zuordnung'. Lücken zählt
 	/// Regel DQ-MAP-001, fehlende Mapping-Zeilen listet DQ-MAP-002.
-	column 'Werk'
+	column Werk
 		dataType: int64
-		formatString: 0
 		isHidden
+		formatString: 0
 		lineageTag: c1000000-0000-4000-8000-000000000126
 		summarizeBy: none
 		sourceColumn: sap_id
 
 	/// Herkunft der Werk-Zuordnung: Ausnahme (Mapping) / CRM direkt /
 	/// Mapping Sektor/Subsektor / Mapping Sektor / Nicht zugeordnet.
-	///
+	/// 
 	/// Macht je Vorgang sichtbar, ob eine Zahl auf gepflegten CRM-Daten oder
 	/// auf der Mapping-Tabelle beruht – und priorisiert damit die Nachpflege:
 	/// "Nicht zugeordnet" ist die Arbeitsliste.
@@ -327,14 +334,66 @@ table 'FCT Net New ITY'
 	/// Stichtag des Ladelaufs. Ermöglicht Snapshot-Vergleiche.
 	column Stichtag
 		dataType: dateTime
-		formatString: dd.mm.yyyy
 		isHidden
+		formatString: dd.mm.yyyy
 		lineageTag: c1000000-0000-4000-8000-000000000127
 		summarizeBy: none
 		sourceColumn: snapshot_date
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column event_month
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 25e45a3f-8584-4d59-87fe-40f98ba99e95
+		summarizeBy: none
+		sourceColumn: event_month
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column fy_label
+		dataType: string
+		lineageTag: cfccd7be-0c54-4e4d-aa06-ea8958542dd7
+		summarizeBy: none
+		sourceColumn: fy_label
+
+		annotation SummarizationSetBy = Automatic
+
+	column fy_sort
+		dataType: int64
+		formatString: 0
+		lineageTag: e80b0514-85e5-4973-85ef-e7713843e6f7
+		summarizeBy: sum
+		sourceColumn: fy_sort
+
+		annotation SummarizationSetBy = Automatic
+
+	column amount_abs
+		dataType: double
+		lineageTag: 28e6400e-07fc-433f-807c-42869a33c20b
+		summarizeBy: sum
+		sourceColumn: amount_abs
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column loaded_at
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 8722c846-b7c1-4ac7-9baf-cf03d607c059
+		summarizeBy: none
+		sourceColumn: loaded_at
+
+		annotation SummarizationSetBy = Automatic
 
 	partition 'FCT Net New ITY' = m
 		mode: import
 		source = fnLakehouse("gold_fct_net_new_ity")
 
 	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

@@ -305,6 +305,21 @@ def schreibe_datenmodell(tabellen):
         "FCT_Bewegung__DIM_Vertrag":
             "Bewegungsdaten an die Vertragsstammdaten. Inaktiv aus demselben "
             "Grund wie bei der Faktentabelle.",
+        # Von Power BI Desktop automatisch erkannt und in der Handpflege
+        # behalten. Die Namen stammen aus der Automatik und sind deshalb GUIDs.
+        "AutoDetected_cb0a1f76-6f3a-4065-8c98-7d6931cbef6f":
+            "Statusdimension an die Opportunity-Stammdaten. INAKTIV – der Fakt "
+            "verbindet bereits auf DIM Status; eine zweite aktive Beziehung "
+            "auf dieselbe Dimension wäre ein mehrdeutiger Filterpfad.",
+        "AutoDetected_aa35d239-d5fa-4733-b80f-1a2aa31df5d9":
+            "Statusdimension an die Vertragsstammdaten. Erlaubt die Auswertung "
+            "der Risikostufe direkt auf der Vertragsdimension.",
+        "32d35c76-9da2-be4f-3965-51a27761000d":
+            "Faktentabelle an die manuell gepflegte Planungsdatei "
+            "(2026_04_29_Planung_unknown_ITY_Effekt.xlsx), verbunden über den "
+            "Namen des Vorgangs. Namensbasierte Verbindungen sind empfindlich "
+            "gegen Umbenennungen im CRM – abweichende Schreibweisen fallen in "
+            "die Blank-Zeile.",
     }
 
     datensaetze, aktuell = [], None

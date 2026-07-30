@@ -1,13 +1,13 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.8.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.11.0/schema.json",
   "name": "2f91c8c1feaa274e5b4b",
   "position": {
     "x": 184,
     "y": 100,
-    "z": 1018,
+    "z": 0,
     "height": 340,
     "width": 1080,
-    "tabOrder": 1018
+    "tabOrder": 0
   },
   "visual": {
     "visualType": "waterfallChart",
@@ -195,8 +195,14 @@
                   "Value": "false"
                 }
               }
-            },
-            "gridlineShow": {
+            }
+          }
+        }
+      ],
+      "legend": [
+        {
+          "properties": {
+            "showTitle": {
               "expr": {
                 "Literal": {
                   "Value": "false"
@@ -300,5 +306,37 @@
       ]
     },
     "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "20432304ca72973b0b00",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "DIM Status"
+              }
+            },
+            "Property": "Status"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "c19c9cc9410e00db7e19",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Kennzahlen"
+              }
+            },
+            "Property": "Net New ITY"
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
   }
 }

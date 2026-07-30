@@ -1,28 +1,24 @@
 /// SZENARIO-PARAMETER · Mindest-Eintrittswahrscheinlichkeit
-///
+/// 
 /// Filtert Opportunities und Risikoverträge unterhalb einer wählbaren
 /// Wahrscheinlichkeit aus der Betrachtung. Beantwortet die Frage, die in
 /// jedem CRM-Call gestellt wird: "Wie sieht es aus, wenn wir nur das zählen,
 /// was mindestens zu X Prozent sicher ist?"
-///
+/// 
 /// Wirkt über [Net New ITY (ab Schwelle)] auf
 /// 'FCT Net New ITY'[Wahrscheinlichkeit].
 table 'Szenario Schwelle'
 	lineageTag: d5000000-0000-4000-8000-000000000001
 
 	column Schwelle
-		dataType: double
-		formatString: 0\ %;-0\ %;0\ %
-		lineageTag: d5000000-0000-4000-8000-000000000101
-		summarizeBy: none
-		sourceColumn: [Value1]
+		lineageTag: 6cd8b1c0-3f87-4ca4-964c-721bad742389
+		isNameInferred
+		sourceColumn: [Schwelle]
 
 	column Bezeichnung
-		dataType: string
-		lineageTag: d5000000-0000-4000-8000-000000000102
-		summarizeBy: none
-		sourceColumn: [Value2]
-		sortByColumn: Schwelle
+		lineageTag: 5ec6ce72-2059-45cc-a610-23f97ca54441
+		isNameInferred
+		sourceColumn: [Bezeichnung]
 
 	partition 'Szenario Schwelle' = calculated
 		mode: import
@@ -42,3 +38,4 @@ table 'Szenario Schwelle'
 				)
 
 	annotation PBI_Id = SzenarioSchwelle
+

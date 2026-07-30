@@ -1,12 +1,12 @@
 /// SZENARIO-PARAMETER 2 von 4 · Anlauffaktor
-///
+/// 
 /// Beantwortet: "Was passiert, wenn neue Betriebe in den ersten Monaten nur
 /// einen Teil des geplanten Umsatzes erreichen?"
-///
+/// 
 /// Im Altmodell steckte der Faktor als Konstante 0,8 in einer
 /// Power-Query-Spalte (Betrag_Szenario_Anlauf), zusammen mit einer fest
 /// verdrahteten Anlaufdauer von drei Monaten. Beides ist jetzt einstellbar.
-///
+/// 
 /// Der Faktor wirkt auf die ersten n Monate ab Mobilisierung, wobei n aus
 /// 'Szenario Anlaufdauer'[Monate] kommt. Angewandt wird er über
 /// 'FCT Net New ITY'[Periodenindex] – einer Spalte mit 24 verschiedenen
@@ -14,21 +14,15 @@
 table 'Szenario Anlauf'
 	lineageTag: d2000000-0000-4000-8000-000000000001
 
-	/// Anteil des Planumsatzes, der in der Anlaufphase tatsächlich erreicht
-	/// wird. 100 % = kein Anlaufeffekt (Basisfall).
 	column Faktor
-		dataType: double
-		formatString: 0\ %;-0\ %;0\ %
-		lineageTag: d2000000-0000-4000-8000-000000000101
-		summarizeBy: none
-		sourceColumn: [Value1]
+		lineageTag: ca55fa98-3d6b-4651-8bb1-09508aa7a37e
+		isNameInferred
+		sourceColumn: [Faktor]
 
 	column Bezeichnung
-		dataType: string
-		lineageTag: d2000000-0000-4000-8000-000000000102
-		summarizeBy: none
-		sourceColumn: [Value2]
-		sortByColumn: Faktor
+		lineageTag: e79112b8-31f0-4532-97f3-c7a38ed27560
+		isNameInferred
+		sourceColumn: [Bezeichnung]
 
 	partition 'Szenario Anlauf' = calculated
 		mode: import
@@ -47,3 +41,4 @@ table 'Szenario Anlauf'
 				)
 
 	annotation PBI_Id = SzenarioAnlauf
+

@@ -1,13 +1,13 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.8.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.11.0/schema.json",
   "name": "c510f75df3561337ac3b",
   "position": {
-    "x": 184,
-    "y": 204,
-    "z": 2058,
-    "height": 264,
-    "width": 669,
-    "tabOrder": 2058
+    "x": 184.59203036053131,
+    "y": 204.02277039848195,
+    "z": 3000,
+    "height": 264.7438330170778,
+    "width": 1079.6204933586337,
+    "tabOrder": 3000
   },
   "visual": {
     "visualType": "lineChart",
@@ -42,11 +42,11 @@
                       "Entity": "_Kennzahlen"
                     }
                   },
-                  "Property": "Net New ITY (Szenario)"
+                  "Property": "Net New ITY"
                 }
               },
-              "queryRef": "_Kennzahlen.Net New ITY (Szenario)",
-              "nativeQueryRef": "Net New ITY (Szenario)"
+              "queryRef": "_Kennzahlen.Net New ITY",
+              "nativeQueryRef": "Net New ITY"
             },
             {
               "field": {
@@ -56,11 +56,39 @@
                       "Entity": "_Kennzahlen"
                     }
                   },
-                  "Property": "Unknown ITY Budget"
+                  "Property": "New Business ITY"
                 }
               },
-              "queryRef": "_Kennzahlen.Unknown ITY Budget",
-              "nativeQueryRef": "Unknown ITY Budget"
+              "queryRef": "_Kennzahlen.New Business ITY",
+              "nativeQueryRef": "New Business ITY"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Kennzahlen"
+                    }
+                  },
+                  "Property": "Lost Business ITY"
+                }
+              },
+              "queryRef": "_Kennzahlen.Lost Business ITY",
+              "nativeQueryRef": "Lost Business ITY"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "CRM Data"
+                    }
+                  },
+                  "Property": "ITY relativ sicher"
+                }
+              },
+              "queryRef": "CRM Data.ITY relativ sicher",
+              "nativeQueryRef": "ITY relativ sicher"
             }
           ]
         }
@@ -93,7 +121,7 @@
             "position": {
               "expr": {
                 "Literal": {
-                  "Value": "'TopLeft'"
+                  "Value": "'Top'"
                 }
               }
             },
@@ -214,44 +242,6 @@
             }
           }
         }
-      ],
-      "dataPoint": [
-        {
-          "properties": {
-            "fill": {
-              "solid": {
-                "color": {
-                  "expr": {
-                    "Literal": {
-                      "Value": "'#3987E5'"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "selector": {
-            "metadata": "_Kennzahlen.Net New ITY (Szenario)"
-          }
-        },
-        {
-          "properties": {
-            "fill": {
-              "solid": {
-                "color": {
-                  "expr": {
-                    "Literal": {
-                      "Value": "'#898781'"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "selector": {
-            "metadata": "_Kennzahlen.Unknown ITY Budget"
-          }
-        }
       ]
     },
     "visualContainerObjects": {
@@ -347,5 +337,79 @@
       ]
     },
     "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "da7274782e378cb52668",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "DIM Datum"
+              }
+            },
+            "Property": "Periode Label"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "e701b3418e9d496b290a",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Kennzahlen"
+              }
+            },
+            "Property": "New Business ITY"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "e427033d394dcad07a6c",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Kennzahlen"
+              }
+            },
+            "Property": "Lost Business ITY"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "505032210752056a5ea5",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Kennzahlen"
+              }
+            },
+            "Property": "Net New ITY"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "53180afc852285d44900",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "CRM Data"
+              }
+            },
+            "Property": "ITY relativ sicher"
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
   }
 }

@@ -55,6 +55,36 @@ def melde_warnung(m):
     warnungen.append(m)
 
 
+def nur_tmdl_struktur(zeilen):
+    """Blendet Ausdrucksblöcke aus, lässt die TMDL-Struktur stehen.
+
+    In ```-Blöcken steht DAX oder M, keine TMDL-Syntax. Dort ist `//` ein
+    völlig legitimer Kommentar der jeweiligen Sprache – die Power-Query-
+    Abfrage der Tabelle 'CRM Data' benutzt ihn durchgehend. Ohne diese
+    Trennung meldete die //-Prüfung genau diese Zeilen als TMDL-Fehler und
+    hätte eine korrekte Datei blockiert.
+
+    Zeilenzahl bleibt erhalten (ausgeblendete Zeilen werden leer), damit die
+    Zeilennummern in den Meldungen weiter stimmen.
+    """
+    ergebnis = []
+    im_block = False
+    for zeile in zeilen:
+        gestrippt = zeile.strip()
+        if not im_block and gestrippt.endswith("```") and gestrippt != "```":
+            # Öffnende Zeile, z. B.  source = ```   oder   measure 'X' = ```
+            im_block = True
+            ergebnis.append("")
+            continue
+        if im_block:
+            if gestrippt == "```":
+                im_block = False
+            ergebnis.append("")
+            continue
+        ergebnis.append(zeile)
+    return ergebnis
+
+
 # ---------------------------------------------------------------------------
 # 1. Modell einlesen
 # ---------------------------------------------------------------------------
@@ -254,8 +284,9 @@ def pruefe_tmdl_kommentare():
     for pfad in sorted(glob.glob(os.path.join(MODEL, "**", "*.tmdl"), recursive=True)):
         rel = os.path.relpath(pfad, ROOT)
         zeilen = open(pfad, encoding="utf-8").read().split("\n")
+        struktur = nur_tmdl_struktur(zeilen)
 
-        for nr, zeile in enumerate(zeilen, start=1):
+        for nr, zeile in enumerate(struktur, start=1):
             gestrippt = zeile.strip()
             if gestrippt.startswith("//") and not gestrippt.startswith("///"):
                 melde_fehler(

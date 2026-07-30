@@ -1,6 +1,6 @@
 /// Net-New-Hierarchie und Zuordnung zum HFM-Kontenplan.
 /// Quelle: gold_dim_hfm_struktur.
-///
+/// 
 /// Übernimmt DIM_Struktur der Altmodelle und ergänzt sie um die
 /// Forward-Indikatoren MAP131/MAP136/MAP141a/MAP141c aus der Group Guidance
 /// (Feb 2025, S. 3) – diese fehlten dort, obwohl der gesamte Bericht sie misst.
@@ -9,9 +9,9 @@ table 'DIM HFM-Struktur'
 
 	column 'Metric ID'
 		dataType: int64
-		formatString: 0
-		isKey
 		isHidden
+		isKey
+		formatString: 0
 		lineageTag: b6000000-0000-4000-8000-000000000101
 		summarizeBy: none
 		sourceColumn: metric_id
@@ -25,8 +25,8 @@ table 'DIM HFM-Struktur'
 
 	column Sortierung
 		dataType: int64
-		formatString: 0
 		isHidden
+		formatString: 0
 		lineageTag: b6000000-0000-4000-8000-000000000103
 		summarizeBy: none
 		sourceColumn: sort
@@ -73,11 +73,20 @@ table 'DIM HFM-Struktur'
 
 	column 'Ist Blattknoten'
 		dataType: boolean
-		formatString: """Ja"";""Ja"";""Nein"""
 		isHidden
+		formatString: """Ja"";""Ja"";""Nein"""
 		lineageTag: b6000000-0000-4000-8000-000000000110
 		summarizeBy: none
 		sourceColumn: is_leaf
+
+	column parent_id
+		dataType: int64
+		formatString: 0
+		lineageTag: 674ea553-d4c0-4100-b12a-1f5728e533e4
+		summarizeBy: none
+		sourceColumn: parent_id
+
+		annotation SummarizationSetBy = Automatic
 
 	hierarchy 'Net New Hierarchie'
 		lineageTag: b6000000-0000-4000-8000-000000000201
@@ -103,3 +112,6 @@ table 'DIM HFM-Struktur'
 		source = fnLakehouse("gold_dim_hfm_struktur")
 
 	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

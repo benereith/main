@@ -1,26 +1,22 @@
 /// SZENARIO-PARAMETER 3 von 4 · Dauer der Anlaufphase
-///
+/// 
 /// Legt fest, über wie viele Monate ab Mobilisierung der Anlauffaktor aus
 /// 'Szenario Anlauf'[Faktor] wirkt. 0 = kein Anlaufeffekt (Basisfall).
-///
+/// 
 /// Zusammen mit dem Faktor bildet dieser Parameter die Anlaufkurve. Beide
 /// waren im Altmodell hart codiert (0,8 über drei Monate).
 table 'Szenario Anlaufdauer'
 	lineageTag: d3000000-0000-4000-8000-000000000001
 
 	column Monate
-		dataType: int64
-		formatString: 0
-		lineageTag: d3000000-0000-4000-8000-000000000101
-		summarizeBy: none
-		sourceColumn: [Value1]
+		lineageTag: 3d0ffa38-cad0-464c-bad7-7757c0d874ee
+		isNameInferred
+		sourceColumn: [Monate]
 
 	column Bezeichnung
-		dataType: string
-		lineageTag: d3000000-0000-4000-8000-000000000102
-		summarizeBy: none
-		sourceColumn: [Value2]
-		sortByColumn: Monate
+		lineageTag: 58cfdd79-3f07-4cc5-a519-91ce80a4d6de
+		isNameInferred
+		sourceColumn: [Bezeichnung]
 
 	partition 'Szenario Anlaufdauer' = calculated
 		mode: import
@@ -40,3 +36,4 @@ table 'Szenario Anlaufdauer'
 				)
 
 	annotation PBI_Id = SzenarioAnlaufdauer
+

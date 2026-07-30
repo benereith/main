@@ -760,9 +760,18 @@ else:
         .withColumn("betrag_ytd", F.sum("betrag_monat").over(w_ytd))
     )
 
-    unit_coch = spark.table("silver_unit").select(
-        F.col("betrieb").alias("werk"), "cause_of_change", "cause_of_change_fy",
-        "cause_of_change_ny", "betriebstyp",
+    # dropDuplicates ist hier NICHT optional: silver_unit fuehrt je Betrieb
+    # potenziell mehrere Zeilen, und dieser Join steht auf der Mengenseite der
+    # Umsaetze. Ohne Entdopplung vervielfacht er jede Umsatzzeile - lautlos,
+    # weil das Ergebnis wie echte Daten aussieht. gold_dim_unit entdoppelt
+    # bereits; hier fehlte es.
+    unit_coch = (
+        spark.table("silver_unit")
+        .select(
+            F.col("betrieb").alias("werk"), "cause_of_change", "cause_of_change_fy",
+            "cause_of_change_ny", "betriebstyp",
+        )
+        .dropDuplicates(["werk"])
     )
 
     rev = (
@@ -785,6 +794,13 @@ else:
             "werk", "fy_year", "fy_period", "monat_index", "period_date",
             "werttyp", "version", "werttyp_version", "betrag_monat", "betrag_ytd",
             "metric_id", "metric_id_fy", "metric_id_ny", "betriebstyp",
+            # Die rohen Cause-of-Change-Werte bleiben am Fakt, nicht nur die
+            # daraus abgeleiteten metric_id*. Die Budgetlogik grenzt ueber die
+            # Kombination Betriebstyp + cause_of_change_ny ab; laege eine der
+            # beiden Spalten nur auf DIM Betrieb, muesste die Kennzahl den
+            # Filter ueber zwei Tabellen legen - in DAX weder mit einem
+            # einzelnen ALL() ausdrueckbar noch performant.
+            "cause_of_change", "cause_of_change_fy", "cause_of_change_ny",
         )
     )
     write_delta(rev, "gold_fct_revenue", partition_by=["fy_year"])

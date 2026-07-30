@@ -1,15 +1,17 @@
 /// Verbindungsparameter und geteilte Ausdrücke.
-///
+/// 
 /// ALLE Stichtage stehen genau hier. In den Altmodellen lagen sie als
 /// Est_Close_Date_A/E, Est_Opening_Date_A/E und Geschäftsjahresbeginn parallel
 /// in drei Modellen und konnten auseinanderlaufen.
-///
+/// 
 /// SQL-Endpunkt des Lakehouse. Für Deployment über Umgebungen als
 /// Verbindungsparameter im Fabric-Arbeitsbereich überschreiben.
 expression LakehouseServer = "3w3wftkijo6ujehh4fb2eleovu-sdjibi3hrggujev7dt4yjznhu4.datawarehouse.fabric.microsoft.com" meta [IsParameterQuery = true, IsParameterQueryRequired = true, Type = type text]
 	lineageTag: 8a1f0001-0000-4000-8000-000000000001
 
 	annotation PBI_ResultType = Text
+
+	annotation PBI_NavigationStepName = Navigation
 
 /// Name der Lakehouse-Datenbank.
 expression LakehouseDatabase = "lakehouse_group_controlling" meta [IsParameterQuery = true, IsParameterQueryRequired = true, Type = type text]
@@ -42,3 +44,4 @@ expression fnLakehouse =
 	lineageTag: 8a1f0004-0000-4000-8000-000000000004
 
 	annotation PBI_ResultType = Function
+

@@ -1,13 +1,13 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.8.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.11.0/schema.json",
   "name": "39778e3f5778343fb0db",
   "position": {
     "x": 840,
     "y": 26,
-    "z": 344,
+    "z": 0,
     "height": 56,
     "width": 208,
-    "tabOrder": 344
+    "tabOrder": 0
   },
   "visual": {
     "visualType": "slicer",
@@ -20,20 +20,49 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "FCT Net New ITY"
+                      "Entity": "DIM Opportunity"
                     }
                   },
-                  "Property": "Sektor"
+                  "Property": "Vertriebsgebiet"
                 }
               },
-              "queryRef": "FCT Net New ITY.Sektor",
-              "nativeQueryRef": "Sektor",
+              "queryRef": "DIM Opportunity.Vertriebsgebiet",
+              "nativeQueryRef": "Vertriebsgebiet",
               "active": true
             }
           ]
         }
       }
     },
+    "expansionStates": [
+      {
+        "roles": [
+          "Values"
+        ],
+        "levels": [
+          {
+            "queryRefs": [
+              "DIM Opportunity.Vertriebsgebiet"
+            ],
+            "isCollapsed": true,
+            "identityKeys": [
+              {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "DIM Opportunity"
+                    }
+                  },
+                  "Property": "Vertriebsgebiet"
+                }
+              }
+            ],
+            "isPinned": true
+          }
+        ],
+        "root": {}
+      }
+    ],
     "objects": {
       "data": [
         {
@@ -80,6 +109,11 @@
             }
           }
         }
+      ],
+      "general": [
+        {
+          "properties": {}
+        }
       ]
     },
     "visualContainerObjects": {
@@ -96,7 +130,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Sektor'"
+                  "Value": "'Vertriebsgebiet'"
                 }
               }
             },
@@ -129,11 +163,11 @@
         }
       ]
     },
-    "drillFilterOtherVisuals": true,
     "syncGroup": {
       "groupName": "sektor_konform",
       "fieldChanges": false,
       "filterChanges": true
-    }
+    },
+    "drillFilterOtherVisuals": true
   }
 }
