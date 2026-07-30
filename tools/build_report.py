@@ -13,8 +13,25 @@ PAGES. Der Generator erzeugt daraus die vollständige Ordnerstruktur. Damit ist
 der Bericht diffbar, das Designsystem an genau einer Stelle definiert, und eine
 neue Seite kostet zehn Zeilen statt zehn Dateien.
 
-Aufruf:
-    python3 tools/build_report.py
+!!! ACHTUNG - DIESER LAUF ZERSTOERT HANDARBEIT !!!
+Der Generator erzeugt ALLE Seiten neu. Jede Änderung, die in Power BI Desktop
+an einer Visualisierung vorgenommen wurde, ist danach weg - ohne Rückfrage und
+ohne dass es im Bericht auffällt.
+
+Der Bericht wird in diesem Projekt VON HAND gepflegt. Der Generator ist damit
+kein Routinewerkzeug mehr, sondern ein Sonderfall: er wird nur ausgeführt, wenn
+jemand ihn ausdrücklich anfordert und weiß, dass die aktuellen Seiten dabei
+verworfen werden.
+
+Deshalb läuft er nicht ohne ausdrückliche Bestätigung:
+
+    python3 tools/build_report.py --seiten-neu-erzeugen
+
+Ohne dieses Argument bricht er ab und schreibt nichts. Vorher lohnt sich
+
+    git status && git diff --stat
+
+um zu sehen, ob im Bericht ungesicherte Handarbeit steht.
 
 Ergebnis:
     powerbi/Net New ITY Cockpit.Report/definition/...
@@ -24,6 +41,11 @@ import hashlib
 import json
 import os
 import shutil
+import sys
+
+# Ohne dieses Argument schreibt der Generator nichts. Absichtlich sperrig
+# formuliert - wer es tippt, hat die Konsequenz gelesen.
+BESTAETIGUNG = "--seiten-neu-erzeugen"
 
 # ---------------------------------------------------------------------------
 # Pfade
@@ -1404,4 +1426,17 @@ def schreibe():
 
 
 if __name__ == "__main__":
+    if BESTAETIGUNG not in sys.argv:
+        print(
+            "Abgebrochen - es wurde nichts geschrieben.\n\n"
+            "Dieser Generator erzeugt ALLE Berichtsseiten neu und verwirft dabei\n"
+            "jede Änderung, die in Power BI Desktop von Hand gemacht wurde.\n"
+            "Der Bericht wird in diesem Projekt von Hand gepflegt; der Generator\n"
+            "ist der Sonderfall, nicht die Routine.\n\n"
+            "Wenn das gewollt ist:\n"
+            f"    python3 tools/build_report.py {BESTAETIGUNG}\n\n"
+            "Vorher prüfen, ob im Bericht ungesicherte Handarbeit steht:\n"
+            "    git status && git diff --stat"
+        )
+        sys.exit(1)
     schreibe()

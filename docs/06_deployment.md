@@ -287,17 +287,30 @@ In den Arbeitsbereich veröffentlichen, danach:
 
 ### Änderungen am Bericht
 
-Layout- und Seitenänderungen gehören in `tools/build_report.py`, nicht in die
-generierten JSON-Dateien:
+**Der Bericht wird von Hand in Power BI Desktop gepflegt.** Layout, Visuals
+und Formatierung werden dort geändert und die PBIP-Dateien anschließend
+committet:
 
 ```bash
-python3 tools/build_report.py      # Seiten neu erzeugen
-python3 tools/validate_pbip.py     # prüfen
+python3 tools/validate_pbip.py     # prüft Feldverweise, Geometrie, Farben
 ```
 
+`tools/build_report.py` erzeugt **alle** Seiten neu und verwirft dabei jede
+Handänderung – ohne Rückfrage und ohne dass es im Bericht auffällt. Er ist
+deshalb kein Routinewerkzeug, sondern ein Sonderfall für einen bewussten
+Neuaufbau, und läuft nur mit ausdrücklicher Bestätigung:
+
+```bash
+python3 tools/build_report.py --seiten-neu-erzeugen
+```
+
+Ohne dieses Argument bricht er ab und schreibt nichts. Vor einem Lauf prüfen,
+ob im Bericht ungesicherte Handarbeit steht (`git status`, `git diff --stat`).
+
 Der Generator verwendet stabile Bezeichner: derselbe Seitenname erzeugt
-denselben Ordnernamen. Ein erneuter Lauf ohne inhaltliche Änderung erzeugt
-daher keinen Git-Diff.
+denselben Ordnernamen. Ein Lauf ohne inhaltliche Änderung an `build_report.py`
+erzeugt daher keinen Git-Diff – überschreibt aber trotzdem alles, was in
+Power BI Desktop dazugekommen ist.
 
 Wer stattdessen direkt in Power BI Desktop arbeitet, überschreibt beim nächsten
 Generatorlauf seine Änderungen. In dem Fall entweder die Änderung in den

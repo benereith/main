@@ -162,7 +162,8 @@ Farbe allein – wer die Farbe nicht unterscheiden kann, liest den Text.
 
 * Theme: `powerbi/Net New ITY Cockpit.Report/StaticResources/SharedResources/BaseThemes/NetNewITY.json`
 * Datenbindung: `DIM Status[Farbe]` (berechnete Spalte im Semantikmodell)
-* Generator: `tools/build_report.py`, Konstante `C`
+* Generator: `tools/build_report.py`, Konstante `C` – erzeugt alle Seiten
+  neu und verwirft Handarbeit, läuft nur mit `--seiten-neu-erzeugen`
 
 `tools/validate_pbip.py` prüft, dass im Bericht keine Farbe vorkommt, die nicht
 im Theme definiert ist.

@@ -88,7 +88,8 @@ powerbi/
   ...SemanticModel/      TMDL: 16 Tabellen, 51 Kennzahlen
   ...Report/             PBIR: 9 Seiten
 tools/
-  build_report.py        erzeugt die PBIR-Struktur aus einer Deklaration
+  build_report.py        baut die PBIR-Struktur neu auf (Sonderfall,
+                         ueberschreibt Handarbeit, siehe docs/06)
   generate_docs.py       erzeugt docs/02 und docs/03 aus dem TMDL
   validate_pbip.py       prüft Referenzen, Layout, Dokumentation, Farben
 ```
@@ -125,10 +126,14 @@ Vollständige Einrichtung inklusive Dataflows, Notebooks und Pipeline:
 ### Nach Änderungen
 
 ```bash
-python3 tools/build_report.py          # Seitenlayout neu erzeugen
 python3 tools/generate_docs.py         # Doku aus dem Modell neu erzeugen
 python3 tools/validate_pbip.py         # muss fehlerfrei durchlaufen
 ```
+
+Der Bericht wird **von Hand in Power BI Desktop** gepflegt.
+`tools/build_report.py` erzeugt alle Seiten neu und verwirft dabei jede
+Handänderung; er läuft deshalb nur mit `--seiten-neu-erzeugen` und ist ein
+Sonderfall, keine Routine.
 
 `validate_pbip.py` schlägt unter anderem fehl, wenn eine Kennzahl keine
 Beschreibung hat. Das ist beabsichtigt.
