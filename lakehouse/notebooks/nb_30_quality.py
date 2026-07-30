@@ -351,6 +351,44 @@ if "ity_quelle" in fct.columns:
     print(f"       -> {betroffen:,} Opportunities, {volumen:,.0f} EUR gewichtet")
 
 # ---------------------------------------------------------------------------
+# DQ-REV-001  Geschaeftsjahr ohne Net-New-Zuordnung
+# ---------------------------------------------------------------------------
+# Jede Mapping-Variante rechnet gegen ein Bezugsjahr (nb_20_gold, fn_map_coch).
+# Passt das Bezugsjahr nicht zu den vorhandenen Umsatzjahren, trifft KEINE der
+# Jahresbedingungen und alles faellt auf 99 = Like for Like durch.
+#
+# Das ist der heimtueckischste Fehler dieser Strecke, weil 99 ein GUELTIGER
+# Wert ist: es gibt keine Exception, keine leere Spalte, nur ein Budgetjahr,
+# das plötzlich vollstaendig aus dem Net New verschwindet. Genau so
+# geschehen - fuer FY2026 lieferte die Zuordnung nur noch 6 und 99.
+#
+# Geprueft wird deshalb: gibt es fuer ein Geschaeftsjahr ueberhaupt Umsaetze,
+# muss mindestens eine Zeile auf eine ANDERE Metrik als 99 zeigen.
+if spark.catalog.tableExists("gold_fct_revenue"):
+    rev_q = spark.table("gold_fct_revenue")
+    for spalte, bezug in [
+        ("metric_id", "laufendes Geschaeftsjahr"),
+        ("metric_id_fy", "laufendes Geschaeftsjahr"),
+        ("metric_id_ny", "Folgejahr"),
+    ]:
+        ohne_zuordnung = (
+            rev_q.groupBy("fy_year")
+            .agg(
+                F.count("*").alias("zeilen"),
+                F.sum(F.when(F.col(spalte) != 99, 1).otherwise(0)).alias("zugeordnet"),
+            )
+            .filter((F.col("zeilen") > 0) & (F.col("zugeordnet") == 0))
+        )
+        check(
+            f"DQ-REV-001-{spalte}", "WARNING",
+            f"Geschaeftsjahr mit Umsaetzen, aber ohne Net-New-Zuordnung in {spalte}",
+            ohne_zuordnung,
+            f"Bezugsjahr der Variante {spalte} ({bezug}) passt nicht zu den "
+            "geladenen Umsatzjahren - fn_map_coch in nb_20_gold pruefen. "
+            "Bei Jahren ausserhalb des Bezugsrahmens ist das erwartbar.",
+        )
+
+# ---------------------------------------------------------------------------
 # DQ-SIL-001  Grain der Silver-Schicht verletzt
 # ---------------------------------------------------------------------------
 # Silver ist die GEGENWART: genau ein Datensatz je Geschaeftsschluessel. Steht

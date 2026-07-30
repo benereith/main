@@ -692,23 +692,49 @@ write_delta(fct, "gold_fct_net_new_ity", partition_by=["fy_year"])
 # CoC-Mapping auf die Net-New-Hierarchie.
 #
 # fn_map_coch ersetzt drei identische M-Funktionen aus den Altmodellen.
-# Die Zuordnung folgt DIM_Struktur:
+#
+# CAUSE OF CHANGE (SAP-Stammdaten) - Bedeutung der Codes:
+#   1 = im VORJAHR gewonnen   -> Roll ins Bezugsjahr
+#   2 = im Bezugsjahr gewonnen -> New Business ITY
+#   3 = im VORJAHR verloren   -> Lost Business Roll
+#   4 = im Bezugsjahr verloren -> Lost Business ITY
+#   5 = M&A                   -> keine Net-New-Groesse
+#
+# Zielmetriken laut DIM_Struktur:
 #   1 = PY revenue from contracts won PY      (MAP111a)
 #   2 = CY revenue from contracts won PY      (MAP111b)
 #   4 = New Business ITY                      (MAP111c)
 #   6 = Lost Business Roll                    (MAP112a)
 #   7 = PY revenue from contracts lost CY     (MAP112b)
 #   8 = CY revenue from contracts lost CY     (MAP112c)
-#  99 = Like for Like
-def fn_map_coch(fy_col, coch_col):
-    """Cause-of-Change -> MetricId der Net-New-Hierarchie."""
+#  99 = Like for Like  (auch der Auffangwert fuer alles Uebrige)
+def fn_map_coch(fy_col, coch_col, bezugsjahr):
+    """Cause-of-Change -> MetricId der Net-New-Hierarchie.
+
+    BEZUGSJAHR IST EIN PARAMETER, KEINE KONSTANTE
+    "CY" und "PY" in den Metriknamen sind relativ: ob eine Umsatzzeile als
+    "current year" oder "prior year" zaehlt, haengt davon ab, aus welchem Jahr
+    heraus man schaut. Genau dieser Bezug unterscheidet die drei Varianten
+    cause_of_change / _fy / _ny voneinander.
+
+    Frueher standen hier fest PRIOR_FY und CURRENT_FY. Damit traf fuer jede
+    Zeile eines anderen Geschaeftsjahres KEINE der Jahresbedingungen, und alles
+    fiel auf 99 durch - fuer das Budgetjahr blieben nur die beiden
+    jahresunabhaengigen Faelle uebrig (coch 3 -> 6 und der Auffangwert 99).
+    Das gesamte Planjahr war damit unzugeordnet, ohne dass es einen Fehler
+    gab: 99 = "Like for Like" ist ein gueltiger Wert.
+
+    coch == 3 bleibt bewusst jahresunabhaengig: Metrik 6 (Lost Business Roll,
+    MAP112a) ist selbst schon eine Roll-Groesse und kennt keine CY/PY-Teilung.
+    """
+    vorjahr = bezugsjahr - 1
     return (
         F.when(coch_col == 3, F.lit(6))
-        .when((fy_col == PRIOR_FY) & (coch_col == 1), F.lit(1))
-        .when((fy_col == CURRENT_FY) & (coch_col == 1), F.lit(2))
-        .when((fy_col == CURRENT_FY) & (coch_col == 2), F.lit(4))
-        .when((fy_col == PRIOR_FY) & (coch_col == 4), F.lit(7))
-        .when((fy_col == CURRENT_FY) & (coch_col == 4), F.lit(8))
+        .when((fy_col == vorjahr) & (coch_col == 1), F.lit(1))
+        .when((fy_col == bezugsjahr) & (coch_col == 1), F.lit(2))
+        .when((fy_col == bezugsjahr) & (coch_col == 2), F.lit(4))
+        .when((fy_col == vorjahr) & (coch_col == 4), F.lit(7))
+        .when((fy_col == bezugsjahr) & (coch_col == 4), F.lit(8))
         .otherwise(F.lit(99))
     )
 
@@ -776,9 +802,23 @@ else:
 
     rev = (
         rev.join(unit_coch, "werk", "left")
-        .withColumn("metric_id", fn_map_coch(F.col("fy_year"), F.col("cause_of_change")))
-        .withColumn("metric_id_fy", fn_map_coch(F.col("fy_year"), F.col("cause_of_change_fy")))
-        .withColumn("metric_id_ny", fn_map_coch(F.col("fy_year"), F.col("cause_of_change_ny")))
+        # Jede Variante bekommt das Bezugsjahr, aus dessen Sicht sie gepflegt
+        # ist. cause_of_change und _fy blicken aus dem LAUFENDEN Jahr, _ny aus
+        # dem FOLGEJAHR - deshalb liefert nur _ny fuer Zeilen des Budgetjahres
+        # eine sinnvolle Zuordnung. Die Budgetkennzahlen setzen genau darauf
+        # auf ("Mapping CoCh NY" im Altmodell).
+        .withColumn(
+            "metric_id",
+            fn_map_coch(F.col("fy_year"), F.col("cause_of_change"), CURRENT_FY),
+        )
+        .withColumn(
+            "metric_id_fy",
+            fn_map_coch(F.col("fy_year"), F.col("cause_of_change_fy"), CURRENT_FY),
+        )
+        .withColumn(
+            "metric_id_ny",
+            fn_map_coch(F.col("fy_year"), F.col("cause_of_change_ny"), NEXT_FY),
+        )
         # KEINE Vorzeichenumkehr. V_SAP_EXPORTS_cleansed liefert Ertraege
         # bereits mit dem fachlich richtigen Vorzeichen - die Bereinigung
         # passiert in der View, nicht hier. Eine frueher an dieser Stelle

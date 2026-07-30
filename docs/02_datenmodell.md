@@ -91,7 +91,7 @@ SAP-Betriebsstammdaten (Werke). Quelle: gold_dim_unit. Ersetzt SAP_Stammdaten bz
 | `Kundengruppe` | string | `bezeichnung_kundengruppe` | – |
 | `Bundesland` | string | `bundesland` | – |
 | `Stadt` | string | `stadt` | – |
-| `Cause of Change` | int64 | `cause_of_change` | Cause of Change laut SAP-Stammdaten: 1 = bestehend, 2 = New Business, 3 = Roll, 4 = Lost Business, 5 = M&A. |
+| `Cause of Change` | int64 | `cause_of_change` | Cause of Change laut SAP-Stammdaten. Alle Codes sind relativ zu einem BEZUGSJAHR zu lesen – "Vorjahr" heißt das Jahr vor dem Bezugsjahr: 1 = im Vorjahr gewonnen    → rollt ins Bezugsjahr (Metrik 1 bzw. 2) 2 = im Bezugsjahr gewonnen → New Business ITY (Metrik 4) 3 = im Vorjahr verloren    → Lost Business Roll (Metrik 6) 4 = im Bezugsjahr verloren → Lost Business ITY (Metrik 7 bzw. 8) 5 = M&A                    → keine Net-New-Größe (99) Welches Bezugsjahr gilt, hängt an der Variante: diese Spalte und cause_of_change_fy blicken aus dem laufenden Geschäftsjahr, cause_of_change_ny aus dem Folgejahr. Die Umsetzung steht in nb_20_gold, fn_map_coch. |
 | `Cause of Change Bezeichnung` | string | `bezeichnung_cause_of_change` | – |
 | `cause_of_change_fy` | int64 | `cause_of_change_fy` | – |
 | `cause_of_change_ny` | int64 | `cause_of_change_ny` | – |
