@@ -770,10 +770,16 @@ else:
         .withColumn("metric_id", fn_map_coch(F.col("fy_year"), F.col("cause_of_change")))
         .withColumn("metric_id_fy", fn_map_coch(F.col("fy_year"), F.col("cause_of_change_fy")))
         .withColumn("metric_id_ny", fn_map_coch(F.col("fy_year"), F.col("cause_of_change_ny")))
-        # Vorzeichen: SAP liefert Ertraege negativ. Wir drehen einmal zentral,
-        # damit im Bericht nirgends mehr "*-1" steht.
-        .withColumn("betrag_monat", -F.col("betrag_monat"))
-        .withColumn("betrag_ytd", -F.col("betrag_ytd"))
+        # KEINE Vorzeichenumkehr. V_SAP_EXPORTS_cleansed liefert Ertraege
+        # bereits mit dem fachlich richtigen Vorzeichen - die Bereinigung
+        # passiert in der View, nicht hier. Eine frueher an dieser Stelle
+        # stehende Umkehr (*-1) drehte die Werte ein zweites Mal und machte
+        # Umsaetze negativ.
+        #
+        # NICHT VERWECHSELN mit der Vorzeichenkonvention der Faktentabelle
+        # gold_fct_net_new_ity (Abschnitt 5): dort wird Lost Business bewusst
+        # negativ gesetzt, damit Net New = einfache Summe ist. Das betrifft
+        # CRM-Werte, nicht die SAP-Umsaetze hier.
         .withColumn("monat_index", (F.col("fy_year") * 12 + F.col("fy_period")).cast("int"))
         .select(
             "werk", "fy_year", "fy_period", "monat_index", "period_date",

@@ -17,6 +17,8 @@ Geprüft wird:
      lässt Power BI Desktop beim Öffnen mit "TDML-Formatfehler" abbrechen.
   9. Jeder lineageTag kommt im Modell genau einmal vor. Ein doppelt vergebener
      Tag lässt Power BI Desktop das Modell komplett verweigern.
+ 10. Jede sourceColumn kommt in den Notebooks vor. Fehlt sie, scheitert die
+     Aktualisierung der ganzen Tabelle und der Bericht zeigt nur "--".
 
 Aufruf:
     python3 tools/validate_pbip.py
@@ -328,6 +330,53 @@ def pruefe_lineage_tags():
 
 
 # ---------------------------------------------------------------------------
+# 10. Jede sourceColumn muss von einem Notebook erzeugt werden
+# ---------------------------------------------------------------------------
+def pruefe_sourcecolumns():
+    # Wenn das Modell eine Spalte erwartet, die die Gold-Schicht nicht liefert,
+    # scheitert die Aktualisierung der GESAMTEN Tabelle. Im Bericht sieht das
+    # nicht nach einem Fehler aus, sondern nach fehlenden Daten: alle Kacheln
+    # zeigen "--", und oben steht nur "Einige Tabellen enthalten
+    # unvollstaendige oder keine Daten". Ursache und Symptom liegen dabei weit
+    # auseinander - die Kennzahl scheint kaputt, tatsaechlich fehlt eine
+    # einzige Spalte.
+    #
+    # Genau dieser Fall trat auf, als das Modell fy_relativ und ity_quelle
+    # erwartete, in Fabric aber noch die vorige Fassung von nb_20_gold lief.
+    #
+    # WARNUNG statt Fehler: die Suche ist eine Textsuche ueber die Notebooks
+    # und kann Spalten uebersehen, die dynamisch erzeugt werden.
+    notebooks = glob.glob(os.path.join(ROOT, "lakehouse", "notebooks", "*.py"))
+    if not notebooks:
+        return
+    quelltext = "\n".join(open(p, encoding="utf-8").read() for p in notebooks)
+
+    fehlend = []
+    for pfad in sorted(glob.glob(os.path.join(MODEL, "tables", "*.tmdl"))):
+        text = open(pfad, encoding="utf-8").read()
+        # Nur Tabellen prüfen, die tatsächlich aus dem Lakehouse geladen werden.
+        # Szenario-Tabellen (DATATABLE) und die Measure-Tabelle haben keine
+        # Entsprechung in den Notebooks - dort wäre jede Meldung ein Fehlalarm.
+        if "fnLakehouse" not in text:
+            continue
+        tabelle = os.path.basename(pfad)[:-5]
+        for m in re.finditer(r"^\s*sourceColumn:\s*(\S+)\s*$", text, re.M):
+            spalte = m.group(1)
+            # Einfache Textsuche ohne Anführungszeichen: Spaltennamen stehen in
+            # den Notebooks teils als F.col("x"), teils in Schema-Strings wie
+            # "a string, b int" - beides muss als Treffer gelten.
+            if not re.search(rf"\b{re.escape(spalte)}\b", quelltext):
+                fehlend.append(f"{tabelle}[{spalte}]")
+
+    if fehlend:
+        melde_warnung(
+            "sourceColumn nicht in den Notebooks gefunden – falls die Spalte "
+            "wirklich fehlt, scheitert die Aktualisierung der ganzen Tabelle "
+            "und der Bericht zeigt nur '--': " + ", ".join(fehlend)
+        )
+
+
+# ---------------------------------------------------------------------------
 def main():
     print("Prüfe PBIP-Projekt …\n")
     tabellen = lies_modell()
@@ -342,6 +391,7 @@ def main():
     pruefe_farben()
     pruefe_tmdl_kommentare()
     pruefe_lineage_tags()
+    pruefe_sourcecolumns()
 
     print()
     if warnungen:

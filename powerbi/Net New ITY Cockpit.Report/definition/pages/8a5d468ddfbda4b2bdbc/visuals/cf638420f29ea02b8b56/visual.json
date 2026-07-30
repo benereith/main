@@ -1,6 +1,6 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.8.0/schema.json",
-  "name": "8121d241845c05c71d8e",
+  "name": "cf638420f29ea02b8b56",
   "position": {
     "x": 861,
     "y": 204,
@@ -10,7 +10,7 @@
     "tabOrder": 2126
   },
   "visual": {
-    "visualType": "stackedColumnChart",
+    "visualType": "columnChart",
     "query": {
       "queryState": {
         "Category": {

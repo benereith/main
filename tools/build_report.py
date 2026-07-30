@@ -457,7 +457,12 @@ def seite_cockpit():
     # "wie belastbar ist die Linie links?" direkt daneben.
     vis.append(
         visual(
-            "stackedColumnChart",
+            # "columnChart" IST die gestapelte Saeule. Der Name
+            # "stackedColumnChart" existiert als eingebauter Typ NICHT - Power
+            # BI haelt ihn fuer ein Custom Visual und zeigt statt der Grafik
+            # "Um dieses benutzerdefinierte Visual anzuzeigen, muessen Sie es
+            # zunaechst diesem Bericht hinzufuegen".
+            "columnChart",
             CONTENT_X + int(CONTENT_W * 0.62) + 8, y,
             CONTENT_W - int(CONTENT_W * 0.62) - 8, h_haupt,
             roles={
