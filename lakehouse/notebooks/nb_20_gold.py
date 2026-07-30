@@ -796,7 +796,14 @@ else:
 # Speist die Berichtsseite "CRM-Bewegung". Grain: eine Zeile je Entitaet und
 # Aenderungszeitpunkt, mit Vorher-/Nachher-Wert der ueberwachten Groessen.
 def build_movement(hist_table, key_col, entity_type, business_type, value_col, prob_col):
-    h = spark.table(hist_table)
+    # Die Historientabelle waechst per Append. Wird eine neue ueberwachte
+    # Groesse aufgenommen, fehlt sie in den bereits geschriebenen Zeilen -
+    # bis nb_10_silver das naechste Mal mit mergeSchema angehaengt hat.
+    # Ohne diese Absicherung braeche ein isolierter Gold-Lauf mit
+    # UNRESOLVED_COLUMN ab.
+    h = ergaenze_spalten(
+        spark.table(hist_table), {value_col: "decimal(19,4)"}, hist_table
+    )
     w = Window.partitionBy(key_col).orderBy("snapshot_date")
     return (
         h.withColumn("prev_value", F.lag(value_col).over(w))
@@ -823,18 +830,32 @@ def build_movement(hist_table, key_col, entity_type, business_type, value_col, p
             F.when(F.col("status_new") != F.col("status_old"), F.lit("Statuswechsel"))
             .when(F.abs(F.col("probability_delta")) > 0.001, F.lit("Wahrscheinlichkeit"))
             .when(F.abs(F.col("value_delta")) > 0.01, F.lit("Wert"))
-            .otherwise(F.lit("Sonstiges")),
+            # Eine Zeile entsteht nur, wenn sich eine ueberwachte Groesse
+            # geaendert hat. Trifft keiner der drei Faelle oben zu, war es
+            # eines der uebrigen Felder - Termine oder Vertriebsphase.
+            # "Sonstiges" allein liess den Leser genau hier ratlos zurueck.
+            .otherwise(F.lit("Termin oder Vertriebsphase")),
         )
     )
 
 
+# WELCHER WERT die Bewegung traegt, ist die entscheidende Festlegung hier:
+# es muss die GEWICHTETE Groesse sein, also die, die im Bericht als Beitrag
+# erscheint. Mit den ungewichteten Rohbetraegen (revenue_ity,
+# last_fy_revenue_aro) zeigte die Tabelle bei einer reinen
+# Wahrscheinlichkeitsaenderung eine Wertbewegung von 0 - fachlich falsch,
+# denn der Forecastbeitrag aendert sich sehr wohl.
+#
+# weighted_ity_effektiv enthaelt zusaetzlich die ARO-Ersatzregel. Ohne sie
+# stuenden dort bei Eroeffnung im Folgejahr durchgaengig 0 EUR, weil CRM den
+# ITY-Wert gegen das laufende Geschaeftsjahr rechnet.
 mv_new = build_movement(
     "silver_opportunity_history", "opportunityid", "OPPORTUNITY", "NEW",
-    "revenue_ity", "win_probability",
+    "weighted_ity_effektiv", "win_probability",
 )
 mv_lost = build_movement(
     "silver_contract_history", "cgplc_cgcontractid", "CONTRACT", "LOST",
-    "last_fy_revenue_aro", "retention_probability",
+    "weighted_ly_aro", "retention_probability",
 )
 write_delta(mv_new.unionByName(mv_lost), "gold_fct_crm_movement")
 

@@ -225,15 +225,15 @@ Bewusst NICHT mit 'DIM Datum' verbunden: die Zeitachse dieser Tabelle ist der Er
 | `Geschäftsart` | string | `business_type` | – |
 | `Stichtag` | dateTime | `snapshot_date` | Stichtag, an dem die Änderung festgestellt wurde. |
 | `Vorheriger Stichtag` | dateTime | `prev_snapshot_date` | Stichtag des vorherigen Stands. |
-| `Wert neu` | decimal | `value_new` | Wert nach der Änderung. New Business: ITY-Umsatz. Lost Business: Vorjahres-ARO. |
-| `Wert alt` | decimal | `value_old` | – |
+| `Wert neu` | decimal | `value_new` | Wert nach der Änderung – der GEWICHTETE Beitrag zum Net New ITY, also die Größe, die auch im Bericht als Beitrag erscheint. New Business  : effektiver ITY-Beitrag × Win-Wahrscheinlichkeit, inklusive ARO-Ersatzregel bei Eröffnung im Folgejahr. Lost Business : Vorjahres-ARO × Verlustwahrscheinlichkeit. Bewusst nicht der ungewichtete Rohbetrag: eine reine Änderung der Wahrscheinlichkeit lässt diesen unverändert, sodass die Bewegung mit 0 € ausgewiesen würde, obwohl der Forecastbeitrag sich sehr wohl geändert hat. Bei Eröffnung im Folgejahr stünde dort zusätzlich durchgängig 0 €, weil CRM den ITY-Wert gegen das laufende Jahr rechnet. |
+| `Wert alt` | decimal | `value_old` | Wert vor der Änderung, gleiche Definition wie 'Wert neu'. Leer, solange für den Vorgang nur ein Stichtag vorliegt. |
 | `Wertänderung` | decimal | `value_delta` | Wertänderung. Positiv = Chance gewachsen bzw. Risiko gewachsen – die Leserichtung hängt an der Geschäftsart. |
 | `Wahrscheinlichkeit neu` | double | `probability_new` | – |
 | `Wahrscheinlichkeit alt` | double | `probability_old` | – |
 | `Wahrscheinlichkeitsänderung` | double | `probability_delta` | – |
 | `Status neu` | string | `status_new` | – |
 | `Status alt` | string | `status_old` | – |
-| `Änderungsart` | string | `aenderungsart` | Statuswechsel / Wahrscheinlichkeit / Wert / Sonstiges. Erlaubt es, im Bericht die relevanten Änderungen zuerst zu zeigen: ein Statuswechsel wiegt schwerer als eine Wertkorrektur. |
+| `Änderungsart` | string | `aenderungsart` | Statuswechsel / Wahrscheinlichkeit / Wert / Termin oder Vertriebsphase. Erlaubt es, im Bericht die relevanten Änderungen zuerst zu zeigen: ein Statuswechsel wiegt schwerer als eine Wertkorrektur. Die Reihenfolge ist eine Rangfolge, keine Aufzählung: ändern sich Status und Wert gleichzeitig, steht "Statuswechsel" – die stärkere Aussage gewinnt. "Termin oder Vertriebsphase" ist der Restfall und benennt ihn ausdrücklich; das frühere "Sonstiges" ließ offen, was sich überhaupt geändert hatte. |
 
 ### `FCT Net New ITY`
 

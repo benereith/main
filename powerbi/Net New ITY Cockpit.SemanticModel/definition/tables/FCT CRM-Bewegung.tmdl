@@ -49,8 +49,17 @@ table 'FCT CRM-Bewegung'
 		summarizeBy: none
 		sourceColumn: prev_snapshot_date
 
-	/// Wert nach der Änderung. New Business: ITY-Umsatz.
-	/// Lost Business: Vorjahres-ARO.
+	/// Wert nach der Änderung – der GEWICHTETE Beitrag zum Net New ITY, also
+	/// die Größe, die auch im Bericht als Beitrag erscheint.
+	///   New Business  : effektiver ITY-Beitrag × Win-Wahrscheinlichkeit,
+	///                   inklusive ARO-Ersatzregel bei Eröffnung im Folgejahr.
+	///   Lost Business : Vorjahres-ARO × Verlustwahrscheinlichkeit.
+	///
+	/// Bewusst nicht der ungewichtete Rohbetrag: eine reine Änderung der
+	/// Wahrscheinlichkeit lässt diesen unverändert, sodass die Bewegung mit
+	/// 0 € ausgewiesen würde, obwohl der Forecastbeitrag sich sehr wohl
+	/// geändert hat. Bei Eröffnung im Folgejahr stünde dort zusätzlich
+	/// durchgängig 0 €, weil CRM den ITY-Wert gegen das laufende Jahr rechnet.
 	column 'Wert neu'
 		dataType: decimal
 		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
@@ -60,6 +69,8 @@ table 'FCT CRM-Bewegung'
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
+	/// Wert vor der Änderung, gleiche Definition wie 'Wert neu'.
+	/// Leer, solange für den Vorgang nur ein Stichtag vorliegt.
 	column 'Wert alt'
 		dataType: decimal
 		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
@@ -113,9 +124,15 @@ table 'FCT CRM-Bewegung'
 		summarizeBy: none
 		sourceColumn: status_old
 
-	/// Statuswechsel / Wahrscheinlichkeit / Wert / Sonstiges.
+	/// Statuswechsel / Wahrscheinlichkeit / Wert / Termin oder Vertriebsphase.
 	/// Erlaubt es, im Bericht die relevanten Änderungen zuerst zu zeigen:
 	/// ein Statuswechsel wiegt schwerer als eine Wertkorrektur.
+	///
+	/// Die Reihenfolge ist eine Rangfolge, keine Aufzählung: ändern sich
+	/// Status und Wert gleichzeitig, steht "Statuswechsel" – die stärkere
+	/// Aussage gewinnt. "Termin oder Vertriebsphase" ist der Restfall und
+	/// benennt ihn ausdrücklich; das frühere "Sonstiges" ließ offen, was sich
+	/// überhaupt geändert hatte.
 	column Änderungsart
 		dataType: string
 		lineageTag: c2000000-0000-4000-8000-000000000114

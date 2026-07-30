@@ -185,6 +185,36 @@ opp_silver = (
         "calc_ity_months",
         months_between_inclusive(F.col("calc_start_date"), F.col("calc_first_fy_end")),
     )
+    # --- Effektiver ITY-Beitrag --------------------------------------------
+    # Der Betrag, den die Opportunity tatsaechlich zum Net New ITY ihres
+    # ERSTEN Geschaeftsjahres beitraegt - gewichtet und inklusive der
+    # ARO-Ersatzregel. Er ist damit deckungsgleich mit dem, was nb_20_gold
+    # fuer value_layer = "ITY" aufsummiert.
+    #
+    # WOZU: die Bewegungsanalyse (gold_fct_crm_movement) verglich bisher
+    # revenue_ity - den UNGEWICHTETEN CRM-Wert. Eine Aenderung der
+    # Win-Wahrscheinlichkeit von 80 auf 95 Prozent bewegte diesen Wert nicht,
+    # die Spalte "Bewegung Wert" blieb auf 0, obwohl sich der Beitrag zum
+    # Forecast sehr wohl geaendert hatte. Bei Eroeffnung im Folgejahr stand
+    # dort zusaetzlich durchgaengig 0, weil CRM den ITY-Wert gegen das
+    # laufende Jahr rechnet.
+    #
+    # Bedingung und Ersatzwert sind identisch zu nb_20_gold, Abschnitt 5a
+    # (ITY_LEER_WEIL_FOLGEJAHR). Aendert sich die Regel dort, muss sie hier
+    # mitgezogen werden - DQ-FCT-003 vergleicht beide Seiten gegeneinander.
+    .withColumn(
+        "ity_ersatz_aro",
+        (F.col("calc_start_date") > F.lit(CY_END))
+        & (F.coalesce(F.col("revenue_ity"), F.lit(0.0)) == 0),
+    )
+    .withColumn(
+        "weighted_ity_effektiv",
+        F.when(
+            F.col("ity_ersatz_aro"),
+            F.coalesce(F.col("weighted_aro"), F.lit(0.0)) / F.lit(12.0)
+            * F.col("calc_ity_months"),
+        ).otherwise(F.coalesce(F.col("weighted_ity"), F.lit(0.0))),
+    )
     .withColumn("snapshot_date", F.lit(RUN_DATE))
     .withColumn("loaded_at", F.lit(RUN_TS))
 )
@@ -465,13 +495,20 @@ write_delta(unit, "silver_unit", mode="overwrite")
 #   retention_probability, last_fy_revenue_aro, adj_end_date,
 #   cgplc_reasonforriskname
 
+# weighted_ity_effektiv bzw. weighted_ly_aro sind die GEWICHTETEN Groessen -
+# genau die, die im Bericht als Beitrag erscheinen. Ohne sie zeigte die
+# Bewegungsanalyse eine Wahrscheinlichkeitsaenderung zwar an, meldete daneben
+# aber eine Wertaenderung von 0: die ungewichteten Rohbetraege
+# (revenue_ity, last_fy_revenue_aro) bleiben bei einer reinen
+# Wahrscheinlichkeitsaenderung naemlich unveraendert.
 TRACKED_OPP = [
-    "win_probability", "revenue_aro", "revenue_ity", "estimatedclosedate",
-    "cgplc_openingdate", "cgplc_salesstagename", "status_code",
+    "win_probability", "revenue_aro", "revenue_ity", "weighted_ity_effektiv",
+    "estimatedclosedate", "cgplc_openingdate", "cgplc_salesstagename",
+    "status_code",
 ]
 TRACKED_CON = [
-    "retention_probability", "last_fy_revenue_aro", "adj_end_date",
-    "cgplc_reasonforriskname", "status_code",
+    "retention_probability", "last_fy_revenue_aro", "weighted_ly_aro",
+    "adj_end_date", "cgplc_reasonforriskname", "status_code",
 ]
 
 
