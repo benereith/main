@@ -29,7 +29,7 @@
 # gegen die ALTE Fassung - der Abbruch kommt dann erst spaeter als NameError
 # auf eine Funktion, die es dort noch nicht gibt. Diese Pruefung zieht den
 # Fehler an den Anfang und sagt, was zu tun ist.
-BENOETIGTE_CONFIG_VERSION = 2
+BENOETIGTE_CONFIG_VERSION = 3
 if globals().get("CONFIG_VERSION", 1) < BENOETIGTE_CONFIG_VERSION:
     raise ValueError(
         f"nb_00_config ist veraltet (v{globals().get('CONFIG_VERSION', 1)}, "
@@ -103,7 +103,9 @@ OPP_OPTIONAL = {
     "owneridname": "string",
 }
 
-opp_raw = spark.table("bronze_crm_opportunity")
+opp_raw = nur_letzter_snapshot(
+    spark.table("bronze_crm_opportunity"), "bronze_crm_opportunity"
+)
 pruefe_pflichtfelder(opp_raw, "bronze_crm_opportunity", OPP_PFLICHT)
 opp_raw = ergaenze_spalten(opp_raw, OPP_OPTIONAL, "bronze_crm_opportunity")
 
@@ -192,7 +194,7 @@ opp_silver = (
 # Der Klarname des Verantwortlichen kommt als owneridname direkt an der
 # Opportunity mit - das genuegt fuer Filter und Anzeige.
 acct_raw = ergaenze_spalten(
-    spark.table("bronze_crm_account"),
+    nur_letzter_snapshot(spark.table("bronze_crm_account"), "bronze_crm_account"),
     {"accountid": "string", "name": "string", "cgplc_sapid": "string"},
     "bronze_crm_account",
 )
@@ -202,7 +204,7 @@ acct = acct_raw.select(
     F.col("cgplc_sapid").alias("account_sap_id"),
 )
 terr_raw = ergaenze_spalten(
-    spark.table("bronze_crm_territory"),
+    nur_letzter_snapshot(spark.table("bronze_crm_territory"), "bronze_crm_territory"),
     {"territoryid": "string", "name": "string"},
     "bronze_crm_territory",
 )
@@ -253,7 +255,9 @@ CON_OPTIONAL = {
     "cgplc_reasonforriskname": "string",
 }
 
-con_raw = spark.table("bronze_crm_contract")
+con_raw = nur_letzter_snapshot(
+    spark.table("bronze_crm_contract"), "bronze_crm_contract"
+)
 pruefe_pflichtfelder(con_raw, "bronze_crm_contract", CON_PFLICHT)
 # Vor dem Ergaenzen merken: danach existiert die Spalte immer (ggf. als NULL).
 HAT_VERTRAGSSTATUS = "statuscodename" in con_raw.columns

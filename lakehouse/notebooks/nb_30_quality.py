@@ -22,7 +22,7 @@
 # gegen die ALTE Fassung - der Abbruch kommt dann erst spaeter als NameError
 # auf eine Funktion, die es dort noch nicht gibt. Diese Pruefung zieht den
 # Fehler an den Anfang und sagt, was zu tun ist.
-BENOETIGTE_CONFIG_VERSION = 2
+BENOETIGTE_CONFIG_VERSION = 3
 if globals().get("CONFIG_VERSION", 1) < BENOETIGTE_CONFIG_VERSION:
     raise ValueError(
         f"nb_00_config ist veraltet (v{globals().get('CONFIG_VERSION', 1)}, "
@@ -349,6 +349,39 @@ if "ity_quelle" in fct.columns:
     betroffen = ersatz.select("entity_id").distinct().count()
     volumen = ersatz.agg(F.sum("amount_weighted")).collect()[0][0] or 0
     print(f"       -> {betroffen:,} Opportunities, {volumen:,.0f} EUR gewichtet")
+
+# ---------------------------------------------------------------------------
+# DQ-SIL-001  Grain der Silver-Schicht verletzt
+# ---------------------------------------------------------------------------
+# Silver ist die GEGENWART: genau ein Datensatz je Geschaeftsschluessel. Steht
+# ein Schluessel mehrfach da, wurde die Bronze-Historie ungefiltert gelesen -
+# bronze_* ist append-only, nach n Ladelaeufen also n Zeilen je Vorgang.
+#
+# Genau dieser Fehler ist aufgetreten und hat gold_fct_net_new_ity am zweiten
+# Ladetag verdoppelt. Er war von aussen nicht erkennbar: Gold schreibt ein
+# einheitliches snapshot_date = RUN_DATE, die doppelten Zeilen sehen also aus
+# wie echte Daten. Keine der bisherigen Regeln konnte das fangen - DQ-SNP-001
+# prueft die Bronze-Seite, wo die Dopplung fachlich RICHTIG ist.
+#
+# ERROR, nicht WARNING: jede Summe im Bericht waere um den Faktor n falsch.
+for tabelle, schluessel in [
+    ("silver_opportunity", "opportunityid"),
+    ("silver_contract", "cgplc_cgcontractid"),
+]:
+    if not spark.catalog.tableExists(tabelle):
+        continue
+    mehrfach = (
+        spark.table(tabelle).groupBy(schluessel).count().filter(F.col("count") > 1)
+    )
+    check(
+        f"DQ-SIL-001-{schluessel}", "ERROR",
+        f"{tabelle}: Schluessel {schluessel} kommt mehrfach vor "
+        f"(Silver muss genau eine Zeile je Vorgang fuehren)",
+        mehrfach,
+        "nb_10_silver liest die Bronze-Tabelle ohne nur_letzter_snapshot() - "
+        "ohne diesen Filter vervielfacht sich jede Summe mit der Zahl der "
+        "bisherigen Ladelaeufe.",
+    )
 
 # ---------------------------------------------------------------------------
 # DQ-SNP-001  Mehrere Ladelaeufe je Stichtag

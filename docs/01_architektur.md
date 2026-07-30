@@ -62,7 +62,8 @@ Net New ITY:
 ┌───────────────────────────────────────────────────────────────────────────┐
 │ SILVER  – typisiert, bereinigt, dedupliziert, fachlich gefiltert          │
 │  silver_opportunity   silver_contract   silver_revenue   silver_unit      │
-│  → SCD2-Snapshot-Historie (valid_from/valid_to/is_current)                │
+│  → GEGENWART: genau EINE Zeile je Vorgang (nur_letzter_snapshot)          │
+│  → Veränderung liegt getrennt in silver_*_history                         │
 │  → Business Rules der Group Guidance (Feb 2025) angewandt                 │
 └──────────────┬────────────────────────────────────────────────────────────┘
                │ Notebook nb_20_gold (PySpark)
@@ -93,6 +94,31 @@ Net New ITY:
 │ BERICHT  "Net New ITY Cockpit"  – 10 Seiten, Storytelling-with-Data       │
 └───────────────────────────────────────────────────────────────────────────┘
 ```
+
+### Die Schichtgrenze zwischen Bronze und Silver
+
+Die wichtigste Regel des Modells, weil ihre Verletzung nicht auffällt:
+
+| Schicht | Enthält | Zeilen je Vorgang |
+|---|---|---|
+| `bronze_crm_*` | **Historie**, append-only – ein vollständiger Tagesstand je Ladelauf | *n* (Zahl der Ladeläufe) |
+| `silver_*` | **Gegenwart** | genau 1 |
+| `silver_*_history` | **Veränderung**, aus den Silver-Ständen aufgebaut | 1 je echter Änderung |
+
+`nb_10_silver` muss deshalb jede Bronze-Lesestelle durch
+`nur_letzter_snapshot()` klammern (Funktion in `nb_00_config`). Ohne diesen
+Filter liest Silver die volle Historie und **jede Summe vervielfacht sich mit
+der Zahl der bisherigen Ladeläufe** – am zweiten Tag also exakt das Doppelte.
+
+Das ist genau einmal passiert und war von außen nicht erkennbar: Gold schreibt
+ein einheitliches `snapshot_date = RUN_DATE`, die doppelten Zeilen sind im
+Ergebnis nicht von echten Daten zu unterscheiden. Regel `DQ-SIL-001`
+(`docs/08_datenqualitaet.md`) prüft den Grain seitdem und bricht die Pipeline
+ab, bevor das Semantikmodell aktualisiert wird.
+
+`bronze_sap_*` ist von der Regel ausgenommen: diese Tabellen werden je Lauf
+ersetzt statt historisiert und tragen deshalb kein `snapshot_date`.
+`nur_letzter_snapshot()` gibt sie unverändert zurück.
 
 ## 3. Auslagerungsentscheidungen
 

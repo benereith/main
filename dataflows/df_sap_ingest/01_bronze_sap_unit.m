@@ -20,25 +20,25 @@
 // ===========================================================================
 //
 // EINRICHTUNG DER QUELLE
-// Die Navigation zu einem Gen1-Dataflow enthaelt Arbeitsbereichs- und
-// Dataflow-GUIDs, die je Mandant verschieden sind. Sie lassen sich nicht
-// sinnvoll fest eintragen. Vorgehen im Dataflow-Editor:
+// Die Navigation enthaelt Arbeitsbereichs- und Dataflow-GUIDs des Mandanten.
+// Sie sind unten eingetragen und muessen nur angefasst werden, wenn der
+// Gen1-Dataflow in einen anderen Arbeitsbereich umzieht. Dann im
+// Dataflow-Editor neu erzeugen lassen:
 //   Daten abrufen -> Dataflows -> Arbeitsbereich waehlen ->
 //   sap_master_data_unit -> Entitaet waehlen
-// Power Query erzeugt dabei genau die beiden ersten Schritte unten. Danach
-// den erzeugten Code durch diese Datei ersetzen und nur Quelle/Navigation
-// stehen lassen.
 // ===========================================================================
 let
-    // --- Von "Daten abrufen" erzeugte Schritte -----------------------------
-    // Beide Zeilen beim Einrichten durch die generierte Navigation ersetzen.
+    // --- Navigation zum Gen1-Dataflow --------------------------------------
+    // Die GUIDs sind mandantenspezifisch. Beim Umzug in einen anderen
+    // Arbeitsbereich ueber "Daten abrufen -> Dataflows" neu erzeugen lassen.
     Quelle = PowerPlatform.Dataflows(null),
     Navigation = Quelle{[Id = "Workspaces"]}[Data],
+    Arbeitsbereich = Navigation{[workspaceId = "ddc66bda-5a20-49f0-be6e-b68e17a1cc90"]}[Data],
+    Dataflow = Arbeitsbereich{[dataflowId = "a65e47b1-6a8b-4cf2-8131-c90e55bf14c7"]}[Data],
 
-    // Ab hier unveraendert lassen.
     // Die Stammdaten kommen bereits typisiert aus dem Gen1-Dataflow; ein
     // erneutes Table.TransformColumnTypes wuerde nur Fehlerquellen schaffen.
-    Stammdaten = Navigation,
+    Stammdaten = Dataflow{[entity = "sap_master_data_unit", version = ""]}[Data],
 
     // Nur die Spalten, die Silver/Gold tatsaechlich brauchen. Fehlende Felder
     // werden uebersprungen statt zu einem Abbruch zu fuehren - dasselbe
@@ -81,9 +81,9 @@ let
             error Error.Record(
                 "Quelle liefert keine Betriebsstammdaten",
                 "Die Spalte 'betrieb' fehlt - die Navigation zeigt nicht auf "
-                    & "sap_master_data_unit. Die beiden Platzhalterschritte "
-                    & "'Quelle' und 'Navigation' am Anfang dieser Abfrage ueber "
-                    & "'Daten abrufen -> Dataflows' neu erzeugen.",
+                    & "sap_master_data_unit. Die Navigationsschritte am Anfang "
+                    & "dieser Abfrage ueber 'Daten abrufen -> Dataflows' neu "
+                    & "erzeugen (Arbeitsbereichs-/Dataflow-GUID pruefen).",
                 "Gefundene Spalten: " & Text.Combine(VorhandeneSpalten, ", ")
             )
         else

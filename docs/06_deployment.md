@@ -239,6 +239,16 @@ LIMIT  3;
 SELECT regel_id, anzahl_verstoesse, beschreibung
 FROM   gold_dq_checks
 WHERE  pruef_datum = current_date() AND schweregrad = 'ERROR' AND anzahl_verstoesse > 0;
+
+-- Genau EINE Zeile je Vorgang in Silver?
+-- Muss 0 Zeilen liefern. Trifft es zu, liest nb_10_silver die Bronze-Historie
+-- ungefiltert und jede Summe ist um den Faktor der bisherigen Ladelaeufe zu
+-- hoch (Regel DQ-SIL-001, docs/01_architektur.md, Abschnitt Schichtgrenze).
+SELECT opportunityid, COUNT(*) AS n
+FROM   silver_opportunity GROUP BY opportunityid HAVING COUNT(*) > 1
+UNION ALL
+SELECT cgplc_cgcontractid, COUNT(*)
+FROM   silver_contract GROUP BY cgplc_cgcontractid HAVING COUNT(*) > 1;
 ```
 
 Erst wenn diese drei Abfragen den erwarteten Tagesstand zeigen und die letzte

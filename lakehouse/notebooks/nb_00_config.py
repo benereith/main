@@ -200,6 +200,40 @@ def spalte_oder_null(df, name: str, typ: str = "string"):
     return F.col(name).cast(typ) if name in df.columns else F.lit(None).cast(typ)
 
 
+def nur_letzter_snapshot(df, quelle: str = ""):
+    """Reduziert eine historisierte Bronze-Tabelle auf den juengsten Stichtag.
+
+    WARUM DAS ZWINGEND NOETIG IST
+    Die bronze_*-Tabellen sind append-only: nb_05_snapshot haengt je Ladelauf
+    einen vollstaendigen Tagesstand an. Nach n Laeufen steht JEDE Opportunity
+    n-mal in der Tabelle. Wer sie ohne Filter liest, bekommt keinen Fehler,
+    sondern das n-Fache jeder Summe - am zweiten Tag also exakt das Doppelte.
+
+    Genau dieser Fehler ist aufgetreten: silver_opportunity und
+    silver_contract lasen die volle Historie, und ab dem zweiten Ladelauf
+    verdoppelte sich gold_fct_net_new_ity. Auffallen konnte es nicht, weil
+    Gold seinerseits ein einheitliches snapshot_date = RUN_DATE schreibt - die
+    Dopplung entsteht eine Schicht frueher und ist im Ergebnis nicht mehr von
+    echten Daten zu unterscheiden.
+
+    ARBEITSTEILUNG DER SCHICHTEN
+      bronze_*  Historie. Jeder Tagesstand bleibt erhalten.
+      silver_*  GEGENWART. Genau ein Datensatz je Geschaeftsschluessel.
+      *_history Veraenderung. Wird aus den Silver-Snapshots aufgebaut
+                (append_history), nicht aus der Bronze-Historie gelesen.
+    Diese Funktion ist die Grenze zwischen der ersten und der zweiten Zeile.
+    """
+    if "snapshot_date" not in df.columns:
+        # bronze_sap_* werden bewusst nicht historisiert (Ersetzen je Lauf).
+        return df
+
+    letzter = df.agg(F.max("snapshot_date")).collect()[0][0]
+    gefiltert = df.filter(F.col("snapshot_date") == F.lit(letzter))
+    if quelle:
+        print(f"  {quelle}: Stand {letzter}")
+    return gefiltert
+
+
 def ergaenze_spalten(df, spalten: dict, quelle: str = ""):
     """Ergaenzt fehlende OPTIONALE Spalten als typisierte NULL-Spalten.
 
@@ -297,7 +331,7 @@ def write_delta(df, table_name: str, mode: str = "overwrite", partition_by=None)
 # HILFSFUNKTIONEN HOCHZAEHLEN - dann meldet ein veraltetes nb_00_config in
 # Fabric sich selbst, statt die abhaengigen Notebooks mitten im Lauf mit
 # einem NameError auf eine noch unbekannte Funktion abbrechen zu lassen.
-CONFIG_VERSION = 2
+CONFIG_VERSION = 3
 
 print(
     f"Konfiguration geladen (v{CONFIG_VERSION}) | "

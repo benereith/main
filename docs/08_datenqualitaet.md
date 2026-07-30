@@ -219,6 +219,35 @@ Vorgänge zählt.
 **Behebung:** Je gelisteter Kombination eine Zeile (`sektor`, `subsektor`,
 `werk`) in der Excel-Datei anlegen
 
+### Schichtgrenzen
+
+#### DQ-SIL-001 · Grain der Silver-Schicht verletzt · ERROR
+
+Ein Geschäftsschlüssel (`opportunityid`, `cgplc_cgcontractid`) kommt in
+`silver_opportunity` bzw. `silver_contract` **mehrfach** vor.
+
+Silver ist die **Gegenwart**: genau ein Datensatz je Vorgang. Steht ein
+Schlüssel mehrfach da, wurde die Bronze-Historie ungefiltert gelesen –
+`bronze_*` ist append-only, nach *n* Ladeläufen also *n* Zeilen je Vorgang.
+
+**Warum es eine eigene Regel braucht.** Genau dieser Fehler hat
+`gold_fct_net_new_ity` am zweiten Ladetag verdoppelt, und keine der übrigen
+Regeln konnte ihn fangen:
+
+* Von außen unsichtbar – Gold schreibt ein einheitliches
+  `snapshot_date = RUN_DATE`, die doppelten Zeilen sehen aus wie echte Daten.
+  Nach `snapshot_date` zu filtern half deshalb nicht.
+* `DQ-SNP-001` prüft die **Bronze**-Seite, wo mehrere Snapshots je Schlüssel
+  fachlich **richtig** sind. Die Verletzung liegt eine Schicht später.
+* `DQ-FCT-003` (Rekonstruktion des ITY-Werts) schlug nicht an, weil Fanout
+  und Vergleichswert gleichermaßen dupliziert waren.
+
+**Zuständig:** Data Engineering
+**Behebung:** In `nb_10_silver` jede `spark.table("bronze_*")`-Lesestelle
+durch `nur_letzter_snapshot(...)` klammern. Die Funktion steht in
+`nb_00_config` und ist die Grenze zwischen Historie (Bronze) und Gegenwart
+(Silver).
+
 ---
 
 ## Auswertung

@@ -19,22 +19,51 @@
 let
     // Servername des SAP-Warehouse. Beim Einrichten einmal eintragen bzw. als
     // Dataflow-Parameter hinterlegen, damit DEV/PROD getauscht werden kann.
-    SapServer = "SAP-WAREHOUSE-SERVER-HIER-EINTRAGEN",
+    SapServer = "3w3wftkijo6ujehh4fb2eleovu-tuq7lxe5lznu7hpei5nzy67o3e.datawarehouse.fabric.microsoft.com",
 
     Quelle = Sql.Database(SapServer, "Reporting"),
     View = Quelle{[Schema = "dbo", Item = "V_SAP_EXPORTS_cleansed"]}[Data],
 
-    // --- Mengenbegrenzung an der Quelle -----------------------------------
-    // Die View reicht historisch weit zurueck; der Bericht braucht Vorjahr,
-    // laufendes Jahr und Folgejahr. Der Filter steht bewusst VOR allen
-    // weiteren Schritten, damit er als WHERE an SQL Server durchgereicht wird
-    // (Query Folding) und nicht erst nach dem Laden greift. Genau das ging in
-    // den Altmodellen verloren und machte die Aktualisierung langsam.
+    // Kontenhierarchie aus derselben Quelle - liefert die Ertragsabgrenzung.
+    HierarchieTabelle = Quelle{[Schema = "dbo", Item = "tab_accounts_hierarchy"]}[Data],
+
+    // --- Mengenbegrenzung und Abgrenzung an der Quelle ---------------------
+    // Alle Filter stehen bewusst VOR allen weiteren Schritten, damit sie als
+    // WHERE bzw. JOIN an SQL Server durchgereicht werden (Query Folding) und
+    // nicht erst nach dem Laden greifen. Genau das ging in den Altmodellen
+    // verloren und machte die Aktualisierung langsam.
     AktuellesGJ = 2025,   // 2025 = FY2025/26. Mit CURRENT_FY in
                           // lakehouse/notebooks/nb_00_config.py gleichhalten.
-    Gefiltert = Table.SelectRows(
+
+    // 1. Geschaeftsjahre: Vorjahr, laufendes Jahr, Folgejahr.
+    //    Das Vorjahr wird gebraucht, weil [Net New ITY] den Vorjahresanteil
+    //    abzieht - ohne FY-1 im Extrakt waere dieser Abzug immer 0.
+    GefiltertNachJahr = Table.SelectRows(
         View,
         each [Fiscal_Year] >= AktuellesGJ - 1 and [Fiscal_Year] <= AktuellesGJ + 1
+    ),
+
+    // 2. Nur Ergebnisobjekte (Object_type = "OR"). Andere Objektarten sind
+    //    keine Betriebe und wuerden die Werk-Zuordnung verfaelschen.
+    GefiltertNachObjectType = Table.SelectRows(
+        GefiltertNachJahr, each [Object_type] = "OR"
+    ),
+
+    // 3./4. Kontenhierarchie anhaengen, um auf Ertragskonten abzugrenzen.
+    EingebetteterJoin = Table.NestedJoin(
+        GefiltertNachObjectType, {"Account"},
+        HierarchieTabelle, {"Kostenart"},
+        "hier", JoinKind.LeftOuter
+    ),
+    ExpandierteHierarchie = Table.ExpandTableColumn(
+        EingebetteterJoin, "hier", {"Level_2_Key"}, {"Level_2_Key"}
+    ),
+
+    // 5. Nur Total Revenue. Ohne diese Abgrenzung liefe der gesamte
+    //    Kontenplan in die Umsatzkennzahlen - inklusive Kosten.
+    Gefiltert = Table.SelectRows(
+        ExpandierteHierarchie,
+        each [Level_2_Key] = "IS10000_T - Total Revenue inkl. IFRS/ NEUTRA/MGMT"
     ),
 
     // Nur die von nb_20_gold gelesenen Spalten. Schreibweise beibehalten.

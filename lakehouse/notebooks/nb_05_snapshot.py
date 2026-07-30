@@ -34,7 +34,7 @@
 # gegen die ALTE Fassung - der Abbruch kommt dann erst spaeter als NameError
 # auf eine Funktion, die es dort noch nicht gibt. Diese Pruefung zieht den
 # Fehler an den Anfang und sagt, was zu tun ist.
-BENOETIGTE_CONFIG_VERSION = 2
+BENOETIGTE_CONFIG_VERSION = 3
 if globals().get("CONFIG_VERSION", 1) < BENOETIGTE_CONFIG_VERSION:
     raise ValueError(
         f"nb_00_config ist veraltet (v{globals().get('CONFIG_VERSION', 1)}, "
