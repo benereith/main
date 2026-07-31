@@ -248,6 +248,59 @@ durch `nur_letzter_snapshot(...)` klammern. Die Funktion steht in
 `nb_00_config` und ist die Grenze zwischen Historie (Bronze) und Gegenwart
 (Silver).
 
+#### DQ-HIS-001 · Lücke in der Gold-Historie · INFO
+
+Zwischen zwei aufeinanderfolgenden Stichtagen in `gold_fct_net_new_ity` liegt
+mehr als ein Tag – innerhalb des vollständig aufbewahrten Fensters
+(`GOLD_HISTORIE_TAGE`, Vorbelegung 90 Tage). Jenseits davon sind Lücken
+gewollt: dort bleiben nur die Monatsletzten erhalten.
+
+Eine Lücke bedeutet, dass die Pipeline an diesem Tag nicht gelaufen ist. Im
+Datenschnitt „Stand vom …" fällt das nicht auf – dort fehlt einfach ein Datum.
+Wer dann „vor einer Woche" auswählt, vergleicht unbemerkt gegen einen älteren
+Stand.
+
+**Zuständig:** Data Engineering
+**Behebung:** Nichts nachträglich zu reparieren – ein Stand lässt sich nicht
+rückwirkend berechnen, weil die CRM-Werte des Tages nur in `bronze_*` liegen
+und der Fanout darauf nicht mehr angewendet wird. Zu tun ist deshalb zweierlei:
+den Fehlschlag im Pipeline-Verlauf nachvollziehen, und beim Vergleich den
+nächstgelegenen vorhandenen Stichtag wählen.
+
+---
+
+### Budgetannahmen
+
+#### DQ-BUD-001 · Budgetzeile ohne verwertbare Periode · WARNING
+
+Eine Zeile aus `2026_04_29_Planung_unknown_ITY_Effekt.xlsx` trägt in
+`FY_JahrMonat` keine Periode zwischen 1 und 12. `nb_10_silver` behält solche
+Zeilen nicht; ohne diese Regel geschähe das lautlos, und im Bericht fehlte
+schlicht Budget, ohne dass jemand den Betrag vermissen könnte.
+
+Maßgeblich sind die **letzten beiden Zeichen** des Feldes – so hat es die
+Altabfrage gelesen, und dabei bleibt es.
+
+**Zuständig:** Controlling (Pflege der Datei)
+**Behebung:** Schreibweise in der Excel angleichen. Häufigste Ursache sind
+Zwischensummen- oder Kommentarzeilen, die in den Rohdatenblättern stehen.
+
+#### DQ-BUD-002 · Budgetjahr passt nicht zur CRM-Pipeline · WARNING
+
+`gold_fct_budget_ity` führt ein Geschäftsjahr, zu dem `gold_fct_net_new_ity`
+keine Zeilen hat. Budget und Pipeline laufen dann aneinander vorbei: beide
+Kennzahlen sind für sich richtig, der Vergleich im Bericht bleibt leer – und
+zwar ohne jedes Fehlerbild, weil eine leere Kachel wie „kein Budget geplant"
+aussieht.
+
+**Fast immer dieselbe Ursache:** die zwei Konventionen für dasselbe Jahr. Die
+Excel bezeichnet ihr Geschäftsjahr mit dem **Endjahr** (dort steht 2026),
+dieses Repository durchgehend mit dem **Beginnjahr** (dort also 2025).
+
+**Zuständig:** Data Engineering
+**Behebung:** `BUDGET_FY` in `nb_00_config.py` prüfen und `nb_20_gold`
+erneut laufen lassen. Bei einer neuen Budgetrunde mit `CURRENT_FY` mitziehen.
+
 ---
 
 ## Auswertung

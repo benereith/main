@@ -120,6 +120,26 @@ ab, bevor das Semantikmodell aktualisiert wird.
 ersetzt statt historisiert und tragen deshalb kein `snapshot_date`.
 `nur_letzter_snapshot()` gibt sie unverändert zurück.
 
+### Die zweite historisierte Schicht: Gold
+
+`gold_fct_net_new_ity` wird ebenfalls **ergänzt statt ersetzt** – ein
+vollständiger Tagesstand je Ladelauf. Das ist bewusst eine Ausnahme von der
+üblichen Rollenteilung, in der Gold nur die Gegenwart trägt, und sie hat einen
+Grund, den keine andere Schicht erfüllen kann:
+
+> Die Bronze-Historie enthält die CRM-**Rohstände**. Was der Bericht daraus
+> rechnet – gewichtet, über die Perioden verteilt, um den Vorjahresanteil
+> bereinigt – entsteht erst in Gold. Wer wissen will, wie die *Pipeline* vor
+> zwei Wochen aussah, kann das aus Bronze nicht rekonstruieren, ohne den
+> gesamten Fanout nachzurechnen.
+
+Damit gilt für diese eine Gold-Tabelle dieselbe Leseregel wie für Bronze: **nie
+ohne Stichtagsfilter summieren.** Abgesichert ist das in den Notebooks über
+`nur_letzter_snapshot()` und im Semantikmodell über `[Net New ITY (brutto)]`,
+das immer genau einen Stichtag setzt. Aufbewahrt werden die letzten 90 Tage
+vollständig und ältere Stände als Monatsletzte; Begründung und Betrieb:
+`docs/06_deployment.md`, Abschnitt „Die Gold-Historie".
+
 ## 3. Auslagerungsentscheidungen
 
 Leitregel: **Alles, was nicht vom Filterkontext des Nutzers abhängt, gehört in die
@@ -135,6 +155,7 @@ Gold-Schicht. Alles, was der Nutzer im Bericht variieren können muss, bleibt DA
 | Status-Buckets (Won / Expected Win / Pipeline …) | M `if`-Kaskade | **Gold + `gold_dim_status`** | Als Dimension referenzierbar, sortierbar, farblich gebunden |
 | CoC-Mapping auf HFM-Konten | M-Funktion `fn_MapCoCh`, 3× dupliziert | **Gold, eine Funktion** | Single Source of Truth |
 | YTD-Kumulation SAP | SQL-Window (bereits) | **Gold beibehalten** | war schon richtig |
+| Budgetannahmen unknown ITY (Excel) | M im Semantikmodell (`CRM Data`): Periodenraster, YTD, Werkableitung | **Dataflow → Bronze → Gold** | Bericht hing an der Erreichbarkeit einer SharePoint-Datei; kein Stichtag; derselbe Fanout existierte im Lakehouse bereits |
 | Fiskalkalender | M, 3× dupliziert | **Gold `gold_dim_date`** | einmalig |
 | Snapshot-Historisierung | teilweise | **Silver SCD2** | ermöglicht Bewegungsanalyse |
 | **Anlauf-Faktor / -Dauer** | M-Spalte (0,8 / 3 Monate) | **DAX + What-if-Parameter** | Nutzer muss variieren können |

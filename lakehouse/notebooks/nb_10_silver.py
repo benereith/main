@@ -29,7 +29,7 @@
 # gegen die ALTE Fassung - der Abbruch kommt dann erst spaeter als NameError
 # auf eine Funktion, die es dort noch nicht gibt. Diese Pruefung zieht den
 # Fehler an den Anfang und sagt, was zu tun ist.
-BENOETIGTE_CONFIG_VERSION = 3
+BENOETIGTE_CONFIG_VERSION = 4
 if globals().get("CONFIG_VERSION", 1) < BENOETIGTE_CONFIG_VERSION:
     raise ValueError(
         f"nb_00_config ist veraltet (v{globals().get('CONFIG_VERSION', 1)}, "
@@ -548,6 +548,105 @@ def append_history(df, table_name: str, key_col: str, tracked_cols: list):
 
 append_history(opp_silver, "silver_opportunity_history", "opportunityid", TRACKED_OPP)
 append_history(con_silver, "silver_contract_history", "cgplc_cgcontractid", TRACKED_CON)
+
+
+# ===========================================================================
+# 5. Budgetannahmen unknown ITY (silver_budget_ity)
+# ===========================================================================
+# Quelle: bronze_budget_ity, historisiert aus der gepflegten Planungsdatei
+# 2026_04_29_Planung_unknown_ITY_Effekt.xlsx (siehe
+# dataflows/df_map_unit_assignment/02_stg_budget_ity.m).
+#
+# Hier passiert ausschliesslich Typisierung und Ableitung je Zeile. Das
+# Periodenraster und die Kumulation folgen in nb_20_gold, Abschnitt 5e - aus
+# demselben Grund, aus dem der CRM-Fanout dort liegt und nicht in Power Query.
+#
+# Fehlt die Tabelle, wird der Abschnitt uebersprungen: die CRM-Silberschicht
+# haengt nicht am Budget, und ein Abbruch hier wuerde den gesamten Lauf ohne
+# fachlichen Grund mitreissen.
+if not spark.catalog.tableExists("bronze_budget_ity"):
+    print(
+        "  ! bronze_budget_ity fehlt - silver_budget_ity wird NICHT geschrieben. "
+        "Die Budgetkennzahlen bleiben im Bericht leer, Net New ITY ist nicht "
+        "betroffen. Abfrage stg_budget_ity im Dataflow df_map_unit_assignment "
+        "pruefen (docs/06_deployment.md, Schritt 1)."
+    )
+else:
+    budget_raw = nur_letzter_snapshot(spark.table("bronze_budget_ity"), "bronze_budget_ity")
+    pruefe_pflichtfelder(
+        budget_raw, "bronze_budget_ity", ["name", "fy_jahrmonat", "ity_effect"]
+    )
+    budget_raw = ergaenze_spalten(
+        budget_raw,
+        {
+            "nb_lb": "string",
+            "bezeichnung_management": "string",
+            "bezeichnung_region": "string",
+            "werk_bezeichnung": "string",
+            "ity_cluster": "string",
+            "Info": "string",
+        },
+        "bronze_budget_ity",
+    )
+
+    budget_silver = (
+        budget_raw
+        # NB Rohdaten / LB Rohdaten -> dieselben Bezeichner, die die
+        # Faktentabelle fuehrt. Ohne diese Angleichung liesse sich Budget nicht
+        # nach Geschaeftsart gegen die CRM-Pipeline stellen.
+        .withColumn(
+            "business_type",
+            F.when(F.upper(F.col("nb_lb")).startswith("LB"), F.lit("LOST")).otherwise(
+                F.lit("NEW")
+            ),
+        )
+        # FY-Periode: die letzten beiden Ziffern von fy_jahrmonat, wie in der
+        # Altabfrage. Der Rohwert bleibt daneben stehen, damit eine geaenderte
+        # Schreibweise in der Datei nachvollziehbar ist und nicht als stille
+        # Fehlzuordnung endet.
+        #
+        # Ueber regexp_extract statt substring+cast: ein nicht numerischer Wert
+        # ergibt so zuverlaessig NULL und damit einen gezaehlten Verstoss
+        # (DQ-BUD-001), waehrend ein Cast je nach ANSI-Einstellung der Runtime
+        # auch abbrechen koennte - mitten im Lauf, wegen einer Kommentarzeile.
+        .withColumn(
+            "fy_period",
+            F.regexp_extract(F.trim(F.col("fy_jahrmonat")), r"(\d{1,2})$", 1).cast("int"),
+        )
+        # Das Bezugsjahr steht NICHT in der Datei (dort nur eine Konstante der
+        # Altabfrage), sondern in nb_00_config als BUDGET_FY.
+        .withColumn("fy_year", F.lit(BUDGET_FY).cast("int"))
+        # Betriebsnummer aus "1234 - Klartext". Ueber die fuehrenden Ziffern
+        # statt ueber die ersten vier Zeichen: eine drei- oder fuenfstellige
+        # Nummer haette die Altfassung stillschweigend verstuemmelt, und im
+        # Bericht waere daraus ein falscher Betrieb geworden - schlimmer als
+        # gar keiner. Passt nichts, bleibt das Feld leer und der Vorgang faellt
+        # in Organisationssichten sichtbar in die Leerzeile.
+        .withColumn(
+            "betrieb",
+            F.regexp_extract(F.trim(F.col("werk_bezeichnung")), r"^(\d+)", 1).cast("int"),
+        )
+        # Das Eroeffnungsdatum steht am Ende des Freitextfelds Info.
+        .withColumn(
+            "eroeffnungsdatum",
+            F.to_date(F.substring(F.trim(F.col("Info")), -10, 10), "dd.MM.yyyy"),
+        )
+        .withColumn("ity_effect", F.col("ity_effect").cast("decimal(19,4)"))
+        .select(
+            "business_type", "name", "ity_cluster",
+            F.col("bezeichnung_management").alias("management"),
+            F.col("bezeichnung_region").alias("region"),
+            "werk_bezeichnung", "betrieb",
+            F.col("Info").alias("info"),
+            "eroeffnungsdatum", "fy_jahrmonat", "fy_year", "fy_period",
+            "ity_effect", "snapshot_date",
+        )
+        # Eine Zeile ohne gueltige Periode laesst sich weder verteilen noch
+        # kumulieren. Sie wird nicht still verworfen, sondern von
+        # DQ-BUD-001 gezaehlt.
+        .filter(F.col("fy_period").between(1, 12))
+    )
+    write_delta(budget_silver, "silver_budget_ity")
 
 # DQ-Ausschuss ablegen
 write_delta(

@@ -49,7 +49,15 @@ relationship AutoDetected_aa35d239-d5fa-4733-b80f-1a2aa31df5d9
 	fromColumn: 'DIM Vertrag'.status_code
 	toColumn: 'DIM Status'.'Status Code'
 
-relationship 32d35c76-9da2-be4f-3965-51a27761000d
-	fromColumn: 'FCT Net New ITY'.Entität
-	toColumn: 'CRM Data'.name
+relationship FCT_NetNewITY__DIM_Stichtag
+	fromColumn: 'FCT Net New ITY'.Stichtag
+	toColumn: 'DIM Stichtag'.Stichtag
+
+relationship FCT_BudgetITY__DIM_Datum
+	fromColumn: 'FCT Budget ITY'.Periode
+	toColumn: 'DIM Datum'.Datum
+
+relationship FCT_BudgetITY__DIM_Betrieb
+	fromColumn: 'FCT Budget ITY'.Werk
+	toColumn: 'DIM Betrieb'.Werk
 

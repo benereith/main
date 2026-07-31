@@ -1,0 +1,107 @@
+/// Stichtagsdimension: die im Lakehouse aufbewahrten Stände der Pipeline.
+///
+/// WOZU
+/// 'FCT Net New ITY' enthält seit der Einführung der Gold-Historie nicht mehr
+/// einen einzigen Stand, sondern je Ladelauf einen vollständigen Tagesstand.
+/// Diese Tabelle ist die eindeutige Seite der Beziehung darauf und macht
+/// daraus eine Auswahl: „Stand vom 12.“ statt „alle Stände addiert“.
+///
+/// WIE SIE WIRKT
+/// Kein Measure liest die Faktentabelle ungefiltert. [Net New ITY (brutto)]
+/// – die Basis praktisch aller Kennzahlen – setzt immer genau einen Stichtag
+/// und greift dafür auf [Stichtag Auswahl] zurück:
+///   · genau ein Stichtag im Datenschnitt gewählt -> dieser Stand
+///   · nichts oder mehreres gewählt              -> der jüngste Stand
+/// Damit gibt es keine Auswahl, in der sich mehrere Stände aufaddieren
+/// könnten. Ohne diese Klammer wäre jede Summe des Berichts um die Zahl der
+/// aufbewahrten Tage zu hoch – derselbe Fehler, der die Silberschicht schon
+/// einmal getroffen hat, nur eine Ebene höher.
+///
+/// WELCHE STÄNDE VERFÜGBAR SIND
+/// Die letzten 90 Tage vollständig, ältere nur noch als Monatsletzte
+/// (GOLD_HISTORIE_TAGE in lakehouse/notebooks/nb_00_config.py). Ausgefallene
+/// Ladeläufe hinterlassen Lücken; sie zählt Regel DQ-HIS-001.
+///
+/// Quelle: gold_dim_snapshot.
+table 'DIM Stichtag'
+	lineageTag: b8000000-0000-4000-8000-000000000001
+
+	/// Tag, an dem der Stand berechnet wurde. Verbindung zu
+	/// 'FCT Net New ITY'[Stichtag].
+	column Stichtag
+		dataType: dateTime
+		formatString: dd.mm.yyyy
+		lineageTag: b8000000-0000-4000-8000-000000000101
+		summarizeBy: none
+		sourceColumn: snapshot_date
+		sortByColumn: Sortierung
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	/// Beschriftung für den Datenschnitt, z. B. „12.03.2026".
+	column 'Stichtag Bezeichnung'
+		dataType: string
+		lineageTag: b8000000-0000-4000-8000-000000000102
+		summarizeBy: none
+		sourceColumn: snapshot_label
+		sortByColumn: Sortierung
+
+	/// Wahr für den jüngsten vorhandenen Stand. Trägt den Standardfilter des
+	/// Berichts: ohne Auswahl zeigt jede Seite den tagesaktuellen Stand.
+	column 'Ist aktuell'
+		dataType: boolean
+		formatString: """WAHR"";""WAHR"";""FALSCH"""
+		lineageTag: b8000000-0000-4000-8000-000000000103
+		summarizeBy: none
+		sourceColumn: ist_aktuell
+
+	/// Abstand in Tagen zum jüngsten Stand. Erlaubt relative Auswahlen
+	/// („Stand vor 7 Tagen") ohne ein festes Datum im Bericht zu verdrahten –
+	/// ein solcher Filter wandert mit, statt jede Woche nachgezogen zu werden.
+	column 'Alter in Tagen'
+		dataType: int64
+		formatString: 0
+		lineageTag: b8000000-0000-4000-8000-000000000104
+		summarizeBy: none
+		sourceColumn: alter_tage
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Wahr, wenn der Stichtag der letzte Tag seines Monats ist. Diese Stände
+	/// bleiben dauerhaft erhalten und sind deshalb die Bezugspunkte, auf die
+	/// sich eine Abstimmung berufen kann.
+	column Monatsstand
+		dataType: boolean
+		formatString: """WAHR"";""WAHR"";""FALSCH"""
+		lineageTag: b8000000-0000-4000-8000-000000000105
+		summarizeBy: none
+		sourceColumn: ist_monatsende
+
+	/// Tagesaktuell / Monatsstand / Tagesstand – die Gruppierung für den
+	/// Datenschnitt, damit die dauerhaft aufbewahrten Monatsstände nicht in
+	/// der Tagesliste untergehen.
+	column Standsart
+		dataType: string
+		lineageTag: b8000000-0000-4000-8000-000000000106
+		summarizeBy: none
+		sourceColumn: snapshot_art
+
+	/// Sortierschlüssel, absteigend nach Datum: der jüngste Stand steht im
+	/// Datenschnitt oben, wo er gebraucht wird.
+	column Sortierung
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: b8000000-0000-4000-8000-000000000107
+		summarizeBy: none
+		sourceColumn: snapshot_sort
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'DIM Stichtag' = m
+		mode: import
+		source = fnLakehouse("gold_dim_snapshot")
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation

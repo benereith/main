@@ -34,7 +34,7 @@
 # gegen die ALTE Fassung - der Abbruch kommt dann erst spaeter als NameError
 # auf eine Funktion, die es dort noch nicht gibt. Diese Pruefung zieht den
 # Fehler an den Anfang und sagt, was zu tun ist.
-BENOETIGTE_CONFIG_VERSION = 3
+BENOETIGTE_CONFIG_VERSION = 4
 if globals().get("CONFIG_VERSION", 1) < BENOETIGTE_CONFIG_VERSION:
     raise ValueError(
         f"nb_00_config ist veraltet (v{globals().get('CONFIG_VERSION', 1)}, "
@@ -63,10 +63,17 @@ allow_stale_snapshot = False
 spark.conf.set("spark.sql.session.timeZone", "Europe/Berlin")
 
 # (Staging-Tabelle, Zieltabelle, Geschaeftsschluessel)
+#
+# stg_budget_ity durchlaeuft dieselbe Historisierung wie das Mapping und aus
+# demselben Grund: es ist ein manueller Input in offizielle Budgetzahlen. Ohne
+# Snapshot laesst sich nicht mehr feststellen, welcher Stand der Planungsdatei
+# in einer bereits kommunizierten Zahl steckt. Kein Geschaeftsschluessel, weil
+# der Grain aus mehreren Feldern besteht (Vorgang + Periode).
 SNAPSHOT_TABELLEN = [
     ("stg_crm_opportunity", "bronze_crm_opportunity", "opportunityid"),
     ("stg_crm_contract", "bronze_crm_contract", "cgplc_cgcontractid"),
     ("stg_map_unit_assignment", "bronze_map_unit_assignment", None),
+    ("stg_budget_ity", "bronze_budget_ity", None),
 ]
 
 

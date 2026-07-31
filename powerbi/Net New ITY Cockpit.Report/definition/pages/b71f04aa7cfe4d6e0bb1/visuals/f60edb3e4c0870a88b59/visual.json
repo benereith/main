@@ -48,13 +48,13 @@
                 "Measure": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "CRM Data"
+                      "Entity": "_Kennzahlen"
                     }
                   },
                   "Property": "Unweighted"
                 }
               },
-              "queryRef": "CRM Data.Unweighted",
+              "queryRef": "_Kennzahlen.Unweighted",
               "nativeQueryRef": "Unweighted"
             },
             {
@@ -257,7 +257,7 @@
           "Measure": {
             "Expression": {
               "SourceRef": {
-                "Entity": "CRM Data"
+                "Entity": "_Kennzahlen"
               }
             },
             "Property": "Unweighted"

@@ -314,12 +314,23 @@ def schreibe_datenmodell(tabellen):
         "AutoDetected_aa35d239-d5fa-4733-b80f-1a2aa31df5d9":
             "Statusdimension an die Vertragsstammdaten. Erlaubt die Auswertung "
             "der Risikostufe direkt auf der Vertragsdimension.",
-        "32d35c76-9da2-be4f-3965-51a27761000d":
-            "Faktentabelle an die manuell gepflegte Planungsdatei "
-            "(2026_04_29_Planung_unknown_ITY_Effekt.xlsx), verbunden über den "
-            "Namen des Vorgangs. Namensbasierte Verbindungen sind empfindlich "
-            "gegen Umbenennungen im CRM – abweichende Schreibweisen fallen in "
-            "die Blank-Zeile.",
+        "FCT_NetNewITY__DIM_Stichtag":
+            "Stichtagsdimension. Die Faktentabelle führt je Ladelauf einen "
+            "vollständigen Tagesstand; erst über diese Beziehung lässt sich "
+            "genau ein Stand auswählen, statt alle zu summieren. Die "
+            "Einschränkung setzt [Net New ITY (brutto)] und damit jede darauf "
+            "aufbauende Kennzahl.",
+        "FCT_BudgetITY__DIM_Datum":
+            "Budgetannahmen an denselben Kalender wie Pipeline und "
+            "SAP-Umsätze. Erst dadurch wirkt ein Zeitfilter auf Budget und "
+            "CRM-Pipeline gleichzeitig.",
+        "FCT_BudgetITY__DIM_Betrieb":
+            "Budgetannahmen an die Betriebsdimension, über die aus "
+            "„Werk – Bezeichnung“ gelesene Betriebsnummer. Ersetzt zusammen "
+            "mit der Datumsbeziehung die frühere namensbasierte Verbindung "
+            "zwischen Faktentabelle und Planungsdatei: Freitextnamen sind auf "
+            "Monatsebene nicht eindeutig und waren schon vorher empfindlich "
+            "gegen Umbenennungen im CRM.",
     }
 
     datensaetze, aktuell = [], None

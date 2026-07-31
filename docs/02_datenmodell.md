@@ -10,14 +10,15 @@
 
 | Tabelle | Rolle | Spalten | Kennzahlen | Quelle |
 |---|---|---:|---:|---|
-| `CRM Data` | Prüfung | 4 | 3 | – |
 | `DIM Betrieb` | Dimension | 23 | 3 | `gold_dim_unit` |
 | `DIM Datum` | Dimension | 18 | 0 | `gold_dim_date` |
 | `DIM HFM-Struktur` | Dimension | 11 | 0 | `gold_dim_hfm_struktur` |
 | `DIM Opportunity` | Dimension | 21 | 0 | `gold_dim_opportunity` |
 | `DIM Status` | Dimension | 8 | 0 | `gold_dim_status` |
+| `DIM Stichtag` | Dimension | 7 | 0 | `gold_dim_snapshot` |
 | `DIM Vertrag` | Dimension | 19 | 0 | `gold_dim_contract` |
 | `DQ Prüfungen` | Prüfung | 6 | 0 | `gold_dq_checks` |
+| `FCT Budget ITY` | Fakt | 14 | 0 | `gold_fct_budget_ity` |
 | `FCT CRM-Bewegung` | Fakt | 14 | 0 | `gold_fct_crm_movement` |
 | `FCT Net New ITY` | Fakt | 35 | 0 | `gold_fct_net_new_ity` |
 | `FCT Umsatz` | Fakt | 17 | 0 | `gold_fct_revenue` |
@@ -26,7 +27,7 @@
 | `Szenario Bewertung` | Szenario-Parameter | 3 | 0 | berechnet (DATATABLE) |
 | `Szenario Schwelle` | Szenario-Parameter | 2 | 0 | berechnet (DATATABLE) |
 | `Szenario Verschiebung` | Szenario-Parameter | 3 | 0 | berechnet (DATATABLE) |
-| `_Kennzahlen` | Kennzahlen | 1 | 70 | – |
+| `_Kennzahlen` | Kennzahlen | 1 | 77 | – |
 
 ## Beziehungen
 
@@ -53,18 +54,11 @@ Grundregeln, die in den Altmodellen verletzt waren:
 | `'FCT CRM-Bewegung'.'Entität ID'` | `'DIM Vertrag'.'Vertrag ID'` | nein | Bewegungsdaten an die Vertragsstammdaten. Inaktiv aus demselben Grund wie bei der Faktentabelle. |
 | `'DIM Opportunity'.status_code` | `'DIM Status'.'Status Code'` | nein | Statusdimension an die Opportunity-Stammdaten. INAKTIV – der Fakt verbindet bereits auf DIM Status; eine zweite aktive Beziehung auf dieselbe Dimension wäre ein mehrdeutiger Filterpfad. |
 | `'DIM Vertrag'.status_code` | `'DIM Status'.'Status Code'` | ja | Statusdimension an die Vertragsstammdaten. Erlaubt die Auswertung der Risikostufe direkt auf der Vertragsdimension. |
-| `'FCT Net New ITY'.Entität` | `'CRM Data'.name` | ja | Faktentabelle an die manuell gepflegte Planungsdatei (2026_04_29_Planung_unknown_ITY_Effekt.xlsx), verbunden über den Namen des Vorgangs. Namensbasierte Verbindungen sind empfindlich gegen Umbenennungen im CRM – abweichende Schreibweisen fallen in die Blank-Zeile. |
+| `'FCT Net New ITY'.Stichtag` | `'DIM Stichtag'.Stichtag` | ja | Stichtagsdimension. Die Faktentabelle führt je Ladelauf einen vollständigen Tagesstand; erst über diese Beziehung lässt sich genau ein Stand auswählen, statt alle zu summieren. Die Einschränkung setzt [Net New ITY (brutto)] und damit jede darauf aufbauende Kennzahl. |
+| `'FCT Budget ITY'.Periode` | `'DIM Datum'.Datum` | ja | Budgetannahmen an denselben Kalender wie Pipeline und SAP-Umsätze. Erst dadurch wirkt ein Zeitfilter auf Budget und CRM-Pipeline gleichzeitig. |
+| `'FCT Budget ITY'.Werk` | `'DIM Betrieb'.Werk` | ja | Budgetannahmen an die Betriebsdimension, über die aus „Werk – Bezeichnung“ gelesene Betriebsnummer. Ersetzt zusammen mit der Datumsbeziehung die frühere namensbasierte Verbindung zwischen Faktentabelle und Planungsdatei: Freitextnamen sind auf Monatsebene nicht eindeutig und waren schon vorher empfindlich gegen Umbenennungen im CRM. |
 
 ## Tabellen im Detail
-
-### `CRM Data`
-
-| Spalte | Typ | Quellspalte | Bedeutung |
-|---|---|---|---|
-| `NB/LB` | string | `NB/LB` | – |
-| `name` | string | `name` | – |
-| `ity_cluster` | string | `ity_cluster` | – |
-| `ity effect` | double | `ity effect` | – |
 
 ### `DIM Betrieb`
 
@@ -190,6 +184,28 @@ Quelle: gold_dim_status.
 | `Farbe` | berechnet | – | Hex-Farbe zur direkten Bindung in Visualisierungen (Datenfarben → bedingte Formatierung → Feldwert). So ist die Farbsemantik an die Daten gebunden und kann in keiner Visualisierung versehentlich abweichen. Die Werte stammen aus zwei validierten Ein-Ton-Rampen: Blau  #86b6ef → #3987e5 → #184f95   (New Business, zunehmende Sicherheit) Rot   #eb9998 → #e34948 → #a02222   (Lost Business, zunehmende Sicherheit) Beide Rampen erfüllen Monotonie, Mindestabstand je Stufe und den 2:1-Kontrast der hellsten Stufe gegen weißen Hintergrund. |
 | `status_key` | int64 | `status_key` | – |
 
+### `DIM Stichtag`
+
+Stichtagsdimension: die im Lakehouse aufbewahrten Stände der Pipeline.
+
+WOZU 'FCT Net New ITY' enthält seit der Einführung der Gold-Historie nicht mehr einen einzigen Stand, sondern je Ladelauf einen vollständigen Tagesstand. Diese Tabelle ist die eindeutige Seite der Beziehung darauf und macht daraus eine Auswahl: „Stand vom 12.“ statt „alle Stände addiert“.
+
+WIE SIE WIRKT Kein Measure liest die Faktentabelle ungefiltert. [Net New ITY (brutto)] – die Basis praktisch aller Kennzahlen – setzt immer genau einen Stichtag und greift dafür auf [Stichtag Auswahl] zurück: · genau ein Stichtag im Datenschnitt gewählt -> dieser Stand · nichts oder mehreres gewählt              -> der jüngste Stand Damit gibt es keine Auswahl, in der sich mehrere Stände aufaddieren könnten. Ohne diese Klammer wäre jede Summe des Berichts um die Zahl der aufbewahrten Tage zu hoch – derselbe Fehler, der die Silberschicht schon einmal getroffen hat, nur eine Ebene höher.
+
+WELCHE STÄNDE VERFÜGBAR SIND Die letzten 90 Tage vollständig, ältere nur noch als Monatsletzte (GOLD_HISTORIE_TAGE in lakehouse/notebooks/nb_00_config.py). Ausgefallene Ladeläufe hinterlassen Lücken; sie zählt Regel DQ-HIS-001.
+
+Quelle: gold_dim_snapshot.
+
+| Spalte | Typ | Quellspalte | Bedeutung |
+|---|---|---|---|
+| `Stichtag` | dateTime | `snapshot_date` | Tag, an dem der Stand berechnet wurde. Verbindung zu 'FCT Net New ITY'[Stichtag]. |
+| `Stichtag Bezeichnung` | string | `snapshot_label` | Beschriftung für den Datenschnitt, z. B. „12.03.2026". |
+| `Ist aktuell` | boolean | `ist_aktuell` | Wahr für den jüngsten vorhandenen Stand. Trägt den Standardfilter des Berichts: ohne Auswahl zeigt jede Seite den tagesaktuellen Stand. |
+| `Alter in Tagen` | int64 | `alter_tage` | Abstand in Tagen zum jüngsten Stand. Erlaubt relative Auswahlen („Stand vor 7 Tagen") ohne ein festes Datum im Bericht zu verdrahten – ein solcher Filter wandert mit, statt jede Woche nachgezogen zu werden. |
+| `Monatsstand` | boolean | `ist_monatsende` | Wahr, wenn der Stichtag der letzte Tag seines Monats ist. Diese Stände bleiben dauerhaft erhalten und sind deshalb die Bezugspunkte, auf die sich eine Abstimmung berufen kann. |
+| `Standsart` | string | `snapshot_art` | Tagesaktuell / Monatsstand / Tagesstand – die Gruppierung für den Datenschnitt, damit die dauerhaft aufbewahrten Monatsstände nicht in der Tagesliste untergehen. |
+| `Sortierung` _(technisch)_ | int64 | `snapshot_sort` | Sortierschlüssel, absteigend nach Datum: der jüngste Stand steht im Datenschnitt oben, wo er gebraucht wird. |
+
 ### `DIM Vertrag`
 
 Bestandsverträge aus dem CRM (Retention-Sicht). Quelle: gold_dim_contract.
@@ -230,6 +246,35 @@ Diese Tabelle macht sichtbar, was in den Altmodellen unsichtbar war: Opportuniti
 | `Verstöße` | int64 | `anzahl_verstoesse` | – |
 | `Handlungshinweis` | string | `hinweis` | Konkrete Handlungsanweisung – wer im CRM was nachpflegen muss. |
 | `Prüfdatum` | dateTime | `pruef_datum` | – |
+
+### `FCT Budget ITY`
+
+Budgetannahmen zum unknown-ITY-Effekt aus der gepflegten Planungsdatei 2026_04_29_Planung_unknown_ITY_Effekt.xlsx (SharePoint, 08_Budget).
+
+Granularität: eine Zeile je Vorgang und Geschäftsjahresperiode, lückenlos über alle zwölf Perioden. Quelle: gold_fct_budget_ity (lakehouse/notebooks/nb_20_gold.py, 5e).
+
+FRÜHER: TABELLE 'CRM Data', DIREKT AUS DER EXCEL Die Vorgängertabelle las die Datei bei jeder Modellaktualisierung selbst von SharePoint und führte dabei die vollständige Fachlogik in Power Query aus – Periodenraster, YTD-Kumulation, Werkableitung, Eröffnungsregel. Das hatte drei Folgen, die alle nichts mit der Datei zu tun hatten: · Der Bericht hing an SharePoint. Eine gesperrte oder umbenannte Datei ließ die Modellaktualisierung scheitern – nicht den Ladelauf, in den der Fehler gehört. · Kein Stichtag. Welcher Stand der Datei in einer bereits kommunizierten Zahl steckte, war nicht mehr feststellbar. · Der Perioden-Fanout lag ein zweites Mal in Power Query, obwohl derselbe Fanout im Lakehouse längst existierte. Der Weg über das Lakehouse behebt alle drei: die Datei wird täglich historisiert (bronze_budget_ity), gerechnet wird einmal, und die Aktualisierung des Modells liest nur noch eine Tabelle.
+
+WAS SICH FACHLICH GEÄNDERT HAT Die alte Abfrage verdichtete zum Schluss auf Vorgangsebene und warf die Monatswerte weg. Sie bleiben jetzt erhalten – erst damit lässt sich Budget gegen die CRM-Pipeline je Periode stellen. Aggregieren kann das Modell selbst; wiederherstellen kann es die Perioden nicht.
+
+WARUM DIE BEZIEHUNG ÜBER DEN NAMEN ENTFALLEN IST 'CRM Data' hing über 'FCT Net New ITY'[Entität] -> 'CRM Data'[name] am CRM-Fakt: eine Verknüpfung zweier Faktentabellen über einen Freitext, die nur solange trug, wie die Excel auf Vorgangsebene verdichtet war. Auf Monatsebene ist der Name nicht mehr eindeutig, und die Beziehung wäre nicht nur unsauber, sondern schlicht ungültig. Verknüpft wird stattdessen über die gemeinsamen Dimensionen – Periode über DIM Datum, Werk über DIM Betrieb. Beides wirkt auf Budget und Pipeline gleichzeitig, ein Zeit- oder Organisationsfilter also auf beide Seiten. Für den Vergleich einzelner Vorgänge stehen 'Vorgang' hier und 'Entität' dort nebeneinander, ohne dass eine Beziehung eine Eindeutigkeit behauptet, die es nicht gibt.
+
+| Spalte | Typ | Quellspalte | Bedeutung |
+|---|---|---|---|
+| `Geschäftsart` | string | `business_type` | NEW oder LOST – abgeleitet aus dem Blatt der Excel („NB Rohdaten" / „LB Rohdaten") und bewusst auf dieselben Bezeichner gebracht, die 'FCT Net New ITY'[Geschäftsart] führt. Ohne diese Angleichung ließe sich Budget nicht nach Geschäftsart gegen die Pipeline stellen. |
+| `Vorgang` | string | `name` | Bezeichnung des geplanten Vorgangs, wie in der Planungsdatei gepflegt. |
+| `ITY Cluster` | string | `ity_cluster` | unknown ITY oder unknown Roll – dieselbe Einteilung wie am CRM-Fakt. |
+| `Management` | string | `management` | Managementeinheit laut Planungsdatei. |
+| `Region` | string | `region` | Region laut Planungsdatei. |
+| `Werk` _(technisch)_ | int64 | `betrieb` | SAP-Betriebsnummer, aus den ersten vier Zeichen von „Werk – Bezeichnung" gelesen. Verbindung zu DIM Betrieb und damit zu Region, Management und Verantwortungsbereich der übrigen Auswertungen. |
+| `Periode` _(technisch)_ | dateTime | `period_date` | Erster Tag des Wirkungsmonats, aus Geschäftsjahr und -periode gerechnet (P1 = Oktober). Verbindung zu DIM Datum – damit wirkt jeder Zeitfilter des Berichts auf Budget und Pipeline gleichermaßen. |
+| `GJ Jahr` _(technisch)_ | int64 | `fy_year` | – |
+| `GJ Periode Nr` _(technisch)_ | int64 | `fy_period` | – |
+| `Budgetwert` _(technisch)_ | double | `ity_effect` | Budgetierter ITY-Effekt des Monats. |
+| `Budgetwert kumuliert` _(technisch)_ | double | `ity_effect_ytd` | Budgetierter ITY-Effekt kumuliert ab Periode 1 des Budgetjahres. Im Lakehouse als Fensterfunktion gerechnet, nicht als DAX-Kumulation: die Reihe ist über die zwölf Perioden lückenlos aufgefüllt und schreibt deshalb auch in Monaten ohne gepflegten Wert fort, statt zu springen. |
+| `Eröffnungsdatum` | dateTime | `eroeffnungsdatum` | Geplantes Eröffnungsdatum, aus dem Freitextfeld „Info" der Excel gelesen (die letzten zehn Zeichen). |
+| `Neueröffnung` | boolean | `ist_neueroeffnung` | Wahr für New Business, dessen Eröffnung im laufenden Geschäftsjahr liegt. Die Altabfrage trug diese Grenze als festes Datum (01.10.2025); hier ist es CY_START aus nb_00_config und wandert mit dem Geschäftsjahr mit. |
+| `Dateistand` | dateTime | `snapshot_date` | Stand der Planungsdatei, aus dem diese Zeilen stammen. Beantwortet beim Abstimmen die Frage, die vorher offen bleiben musste: welcher Stand der Excel steckt in dieser Zahl? |
 
 ### `FCT CRM-Bewegung`
 

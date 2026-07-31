@@ -34,7 +34,7 @@ davon soll mitreißen, wenn eine andere klemmt. Begründung ausführlich in
 | Dataflow | Ordner | Abfragen (Ziel = Dateiname ohne Nummer) | Modus |
 |---|---|---|---|
 | `df_crm_ingest` | `dataflows/df_crm_ingest/` | `stg_crm_opportunity`, `stg_crm_contract`, `stg_crm_account`, `stg_crm_territory` | Ersetzen |
-| `df_map_unit_assignment` | `dataflows/df_map_unit_assignment/` | `stg_map_unit_assignment` | Ersetzen |
+| `df_map_unit_assignment` | `dataflows/df_map_unit_assignment/` | `stg_map_unit_assignment`, `stg_budget_ity` | Ersetzen |
 | `df_sap_ingest` | `dataflows/df_sap_ingest/` | `bronze_sap_unit`, `bronze_sap_revenue` | Ersetzen |
 
 **Warum die SAP-Abfragen direkt nach `bronze_*` schreiben und nicht nach
@@ -65,6 +65,27 @@ beiden Ordnern.
 Die Entitäten `systemuser` und `audit` werden bewusst **nicht** extrahiert –
 beide sind im Mandanten nicht verfügbar (Begründung und Konsequenzen:
 `docs/04_crm_feldkatalog.md`, Abschnitt „Bewusst nicht extrahiert").
+
+Der Dataflow `df_map_unit_assignment` trägt **beide** vom Controlling
+gepflegten Excel-Dateien aus dem SharePoint-Ordner `08_Budget`. Sie teilen
+Quelle und Fehlerfall; ein eigener Dataflow je Datei brächte eine weitere
+Pipeline-Aktivität, ohne etwas zu entkoppeln.
+
+`stg_budget_ity` lädt `2026_04_29_Planung_unknown_ITY_Effekt.xlsx` – die
+Budgetannahmen zum unknown-ITY-Effekt. **Diese Datei hing bis zuletzt direkt
+am Semantikmodell**: die Tabelle `CRM Data` las sie bei jeder Aktualisierung
+selbst von SharePoint und führte dabei die gesamte Periodenlogik in Power
+Query aus. Damit war der Bericht von der Erreichbarkeit einer Datei abhängig,
+und welcher Dateistand in einer Zahl steckte, ließ sich nicht mehr
+feststellen. Beides erledigt jetzt der Ladelauf; das Modell liest nur noch
+`gold_fct_budget_ity`.
+
+**Vor dem ersten Lauf zu prüfen:** `BUDGET_FY` in `nb_00_config.py`. Die Excel
+bezeichnet ihr Geschäftsjahr mit dem **Endjahr** (dort steht 2026), dieses
+Repository durchgehend mit dem **Beginnjahr** (dort also 2025). Ein falscher
+Wert erzeugt keinen Fehler – Budget und CRM-Pipeline liegen dann nur in
+verschiedenen Jahren, und der Vergleich im Bericht bleibt leer. Regel
+`DQ-BUD-002` meldet genau diesen Fall.
 
 `stg_map_unit_assignment` lädt die vom Controlling gepflegte Datei
 `Mapping_Planwerke.xlsx` (SharePoint, `08_Budget`) – dieselbe Datei, die das
@@ -177,8 +198,8 @@ df_sap_ingest aktualisieren            ─┘         │                 │   
 | 1 | `df_crm_ingest` aktualisieren | Dataflow-Aktualisierung | – | Dataverse | `stg_crm_opportunity`, `stg_crm_contract`, `stg_crm_account`, `stg_crm_territory` |
 | 2 | `df_map_unit_assignment` aktualisieren | Dataflow-Aktualisierung | – | SharePoint | `stg_map_unit_assignment` |
 | 3 | `df_sap_ingest` aktualisieren | Dataflow-Aktualisierung | – | SAP-Warehouse `Reporting`, Gen1-Dataflow `sap_master_data_unit` | `bronze_sap_unit`, `bronze_sap_revenue` |
-| 4 | `nb_05_snapshot` | Notebook | 1 **und** 2, je Succeeded | alle `stg_*` | `bronze_crm_*`, `bronze_map_unit_assignment` |
-| 5 | `nb_10_silver` | Notebook | 4 **und** 3, je Succeeded | `bronze_crm_*`, **`bronze_sap_unit`** | `silver_opportunity`, `silver_contract`, `silver_unit`, `silver_*_history`, `silver_dq_reject` |
+| 4 | `nb_05_snapshot` | Notebook | 1 **und** 2, je Succeeded | alle `stg_*` | `bronze_crm_*`, `bronze_map_unit_assignment`, `bronze_budget_ity` |
+| 5 | `nb_10_silver` | Notebook | 4 **und** 3, je Succeeded | `bronze_crm_*`, **`bronze_sap_unit`**, `bronze_budget_ity` | `silver_opportunity`, `silver_contract`, `silver_unit`, `silver_*_history`, `silver_budget_ity`, `silver_dq_reject` |
 | 6 | `nb_20_gold` | Notebook | 5, Succeeded | `silver_*`, `bronze_map_unit_assignment`, **`bronze_sap_revenue`** | `gold_dim_*`, `gold_fct_*` |
 | 7 | `nb_30_quality` | Notebook | 6, Succeeded | `gold_fct_net_new_ity`, `silver_*` | `gold_dq_checks` |
 | 8 | Semantikmodell aktualisieren | native Aktivität, sonst Web-Aktivität gegen die Enhanced-Refresh-REST-API | 7, Succeeded | – | Import-Tabellen des Modells |
@@ -225,7 +246,10 @@ SELECT 'bronze_crm_contract', COUNT(DISTINCT snapshot_date)
 FROM   bronze_crm_contract WHERE snapshot_date = current_date()
 UNION ALL
 SELECT 'bronze_map_unit_assignment', COUNT(DISTINCT snapshot_date)
-FROM   bronze_map_unit_assignment WHERE snapshot_date = current_date();
+FROM   bronze_map_unit_assignment WHERE snapshot_date = current_date()
+UNION ALL
+SELECT 'bronze_budget_ity', COUNT(DISTINCT snapshot_date)
+FROM   bronze_budget_ity WHERE snapshot_date = current_date();
 -- jede Zeile muss n = 1 zeigen; 0 heißt der Dataflow/nb_05 ist nicht durchgelaufen
 
 -- Ist der Gold-Fakt für denselben Tag geschrieben?
@@ -254,6 +278,78 @@ FROM   silver_contract GROUP BY cgplc_cgcontractid HAVING COUNT(*) > 1;
 Erst wenn diese drei Abfragen den erwarteten Tagesstand zeigen und die letzte
 leer bleibt, hat die Pipeline **alle** Daten korrekt geladen. Die vollständige
 Regelliste inklusive Handlungsanweisungen: `docs/08_datenqualitaet.md`.
+
+---
+
+## Die Gold-Historie
+
+`gold_fct_net_new_ity` wird seit der Einführung der Rückschau **nicht mehr
+ersetzt, sondern ergänzt**: jeder Ladelauf legt einen vollständigen Tagesstand
+daneben. Erst dadurch lässt sich im Bericht abrufen, wie die Pipeline an einem
+früheren Tag aussah – die Bronze-Historie enthält zwar die CRM-Rohstände, aber
+nicht das daraus gerechnete Ergebnis.
+
+### Was das für jeden Leser der Tabelle bedeutet
+
+Ab sofort gilt für `gold_fct_net_new_ity` dasselbe wie für `bronze_*`:
+
+> **Wer sie ohne Stichtagsfilter summiert, bekommt die Summe aller Stände.**
+
+Das ist derselbe Fehler, der die Silberschicht schon einmal getroffen hat
+(Regel `DQ-SIL-001`), nur eine Ebene höher – und wieder ohne Fehlerbild, weil
+das Ergebnis wie echte Daten aussieht. Abgesichert ist er an zwei Stellen:
+
+| Wo | Wodurch |
+|---|---|
+| Notebooks | `nur_letzter_snapshot()` – `nb_30_quality` prüft ausschließlich den heutigen Stand |
+| Semantikmodell | `[Net New ITY (brutto)]` setzt immer genau einen Stichtag; jede weitere Kennzahl läuft darüber |
+| Eigene SQL-Abfragen | `WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM gold_fct_net_new_ity)` – **selbst hinzufügen** |
+
+### Aufbewahrung
+
+Ohne Fenster wüchse die Tabelle linear mit den Tagen; der Fanout erzeugt je
+Vorgang bis zu 24 Monatszeilen. `GOLD_HISTORIE_TAGE` in `nb_00_config.py`
+(Vorbelegung 90) steuert deshalb:
+
+* die letzten 90 Tage bleiben **vollständig** – der Zeitraum, in dem „wie sah
+  es letzte Woche aus?" gefragt wird;
+* jeder **Monatsletzte** bleibt **dauerhaft** – das sind die Stände, auf die
+  sich Abstimmungen und Budgetrunden später berufen.
+
+Ältere Tagesstände löscht `beschneide_historie()` am Ende jedes Gold-Laufs.
+Der Monatsletzte wird über `last_day()` bestimmt und nicht als „jüngster Stand
+des Monats": fällt der Lauf am Monatsende aus, soll die Lücke sichtbar bleiben
+und nicht durch einen zufällig älteren Stand kaschiert werden, der dann
+dauerhaft als Monatsstand gilt.
+
+### Einmalig bei einem bestehenden Lakehouse
+
+Die Tabelle war bisher nach `fy_year` partitioniert und wurde je Lauf ersetzt.
+Der Wechsel funktioniert ohne Eingriff – `schreibe_snapshot()` hängt an die
+bestehende Tabelle an –, die Partitionierung bleibt dann aber auf `fy_year`,
+und jedes Löschen alter Stände muss die ganze Tabelle durchsuchen. Wer das
+sauber haben will, verwirft die Tabelle einmal vor dem nächsten Gold-Lauf:
+
+```sql
+DROP TABLE gold_fct_net_new_ity;
+```
+
+Der nächste Lauf legt sie nach `snapshot_date` partitioniert neu an. Verloren
+geht dabei nichts, was noch existiert – vor der Umstellung enthielt die Tabelle
+ohnehin nur den Stand des letzten Laufs. Die Historie beginnt in beiden Fällen
+mit dem ersten Lauf nach der Umstellung.
+
+```sql
+-- Welche Stände sind abrufbar, und wie groß ist die Historie?
+SELECT snapshot_date, COUNT(*) AS zeilen
+FROM   gold_fct_net_new_ity
+GROUP  BY snapshot_date
+ORDER  BY snapshot_date DESC;
+```
+
+Ausgefallene Ladeläufe hinterlassen Lücken in dieser Reihe. Sie sind im
+Datenschnitt nicht zu erkennen – dort fehlt einfach ein Datum – und werden
+deshalb von Regel `DQ-HIS-001` gezählt.
 
 ---
 

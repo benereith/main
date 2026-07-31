@@ -328,6 +328,36 @@ nicht in einer separaten Datei, die niemand öffnet.
 | Drillthrough | Von jeder Detailtabelle auf die Detailseite |
 | QuickInfo | HFM-Kontendefinition an den Kennzahlen der Brücke |
 | Export | Zusammengefasste Daten erlaubt, Rohdatenexport gesperrt |
+| Stichtag | Datenschnitt *Stand vom …* in derselben Filterzeile, seitenübergreifend synchronisiert – siehe unten |
+
+### 4.1 Der Stichtag – Rückschau auf die Pipeline
+
+Der Datenschnitt geht auf `'DIM Stichtag'[Stichtag Bezeichnung]`, als
+**Einfachauswahl** mit der Option „Auswahl aufheben" – ohne Auswahl zeigt der
+Bericht den tagesaktuellen Stand. Die Liste ist absteigend sortiert, der
+jüngste Stand steht oben.
+
+**Warum Einfachauswahl.** Eine Pipeline aus zwei Tagen gibt es nicht; das wäre
+derselbe Vorgang doppelt. Die Kennzahlen fangen eine Mehrfachauswahl zwar ab
+und fallen auf den jüngsten Stand zurück – aber ein Datenschnitt, der eine
+Auswahl zulässt, die er dann ignoriert, ist irreführend.
+
+**Nicht zu verwechseln mit dem Zeitfilter.** `'DIM Datum'` grenzt die
+**Wirkungsperioden** ein („was fällt im März an?"), `'DIM Stichtag'` den
+**Berechnungsstand** („wie sah es am 12. aus?"). Beide sind unabhängig
+kombinierbar; die Beschriftungen halten das auseinander („Zeitraum" gegen
+„Stand vom").
+
+**Auf jeder Seite lesbar.** Die Fußzeilenkennzahl `[Stand der Daten]` benennt
+den gezeigten Stand und schreibt bei einer Rückschau ausdrücklich
+„Historischer Stand …" dazu. Ein exportiertes Bild ist damit auch außerhalb des
+Berichts eindeutig – ohne diesen Zusatz wäre ein Stand vom Vormonat nicht von
+der aktuellen Lage zu unterscheiden.
+
+**Zum Vergleich nebeneinander:** `[Net New ITY (tagesaktuell)]` bleibt beim
+heutigen Stand, während `[Net New ITY (historischer Stand)]` der Auswahl folgt.
+In einer Karte oder Tabelle nebeneinander gestellt, zeigt die Differenz
+unmittelbar, was seit dem gewählten Tag passiert ist.
 
 ---
 

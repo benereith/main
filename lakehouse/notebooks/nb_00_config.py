@@ -66,6 +66,40 @@ NY_END = date(NEXT_FY + 1, FY_START_MONTH - 1, 30)      # 2027-09-30
 # Entspricht dem Cut-off #date(2027,9,30) aus fct_opp / fct_retention.
 FANOUT_END = NY_END
 
+# Geschaeftsjahr, auf das sich die gepflegte Budgetdatei bezieht - in der
+# Konvention DIESES Repositories (Kalenderjahr des FY-BEGINNS).
+#
+# ACHTUNG, ZWEI KONVENTIONEN: Die Excel selbst traegt in ihrer Spalte
+# "Geschäftsjahr" den Wert 2026 und bezeichnet damit dasselbe Jahr, das hier
+# 2025 heisst. Der Beleg steht in der Datei: als "Neueroeffnung" gilt dort
+# alles ab dem 01.10.2025, und das ist der erste Tag von FY2025/26.
+# Die Altabfrage schrieb die 2026 als Konstante in den Datenstrom - genau die
+# Sorte Jahreskonstante, die dieses Repository sonst abgeloest hat.
+#
+# BEI EINER NEUEN BUDGETRUNDE mit CURRENT_FY hochziehen bzw. auf das Jahr
+# setzen, fuer das die Datei geplant ist. Ein falscher Wert faellt nicht als
+# Fehler auf, sondern nur daran, dass Budget und CRM-Pipeline in verschiedenen
+# Geschaeftsjahren liegen und die Budgetkennzahlen leer bleiben.
+BUDGET_FY = CURRENT_FY
+
+# ===========================================================================
+# 1a. Aufbewahrung der Gold-Historie
+# ===========================================================================
+# gold_fct_net_new_ity wird je Ladelauf um einen vollstaendigen Tagesstand
+# ERGAENZT statt ersetzt (siehe schreibe_snapshot). Nur so laesst sich im
+# Bericht ein frueherer Stand der Pipeline abrufen.
+#
+# Unbegrenzt waechst die Tabelle allerdings linear mit den Tagen: der Fanout
+# erzeugt je Vorgang bis zu 24 Monatszeilen, taeglich neu. Deshalb ein
+# Aufbewahrungsfenster:
+#   · die letzten GOLD_HISTORIE_TAGE Tage vollstaendig - das ist der Bereich,
+#     in dem "wie sah die Pipeline letzte Woche aus?" gefragt wird;
+#   · jeder Monatsletzte dauerhaft - Monatsstaende sind die Bezugspunkte, auf
+#     die sich Abstimmungen und Budgetrunden spaeter berufen.
+# Beides zusammen haelt die Tabelle in einer festen Groessenordnung, ohne die
+# Vergleichspunkte zu verlieren, die tatsaechlich gebraucht werden.
+GOLD_HISTORIE_TAGE = 90
+
 # ===========================================================================
 # 2. Fachliche Schwellen
 # ===========================================================================
@@ -327,14 +361,101 @@ def write_delta(df, table_name: str, mode: str = "overwrite", partition_by=None)
     print(f"  -> {table_name}: {df.count():,} Zeilen ({mode})")
 
 
+def schreibe_snapshot(df, table_name: str, snapshot_date, partition_by=None,
+                      behalte_tage: int | None = None):
+    """Haengt einen Tagesstand an eine historisierte GOLD-Tabelle an.
+
+    WOZU
+    Eine mit overwrite geschriebene Gold-Tabelle kennt nur den heutigen Stand.
+    Die Frage "wie sah die Pipeline am 12. des Monats aus?" ist damit nicht
+    beantwortbar - die Bronze-Historie enthaelt zwar die CRM-Rohstaende, aber
+    nicht das, was der Bericht daraus rechnet. Genau diese Rueckschau braucht
+    der Bericht, deshalb liegt die Historie hier und nicht nur eine Schicht
+    tiefer.
+
+    IDEMPOTENZ
+    Wie nb_05_snapshot: die Partition des Stichtags wird geloescht, bevor
+    geschrieben wird. Ein zweiter Lauf am selben Tag ersetzt den Tagesstand,
+    statt ihn ein zweites Mal anzuhaengen - sonst verdoppelte sich jede Summe
+    dieses Tages, ohne dass irgendwo ein Fehler entstuende.
+
+    LESEREGEL FUER ALLE NACHGELAGERTEN SCHICHTEN
+    Ab hier gilt fuer diese Tabelle dasselbe wie fuer bronze_*: wer sie ohne
+    Stichtagsfilter summiert, bekommt die Summe ALLER Staende. Im Notebook
+    uebernimmt das nur_letzter_snapshot(), im Semantikmodell die Kennzahl
+    [Net New ITY (brutto)] ueber 'DIM Stichtag'.
+    """
+    from delta.tables import DeltaTable
+
+    df = df.withColumn("snapshot_date", F.lit(snapshot_date))
+
+    if spark.catalog.tableExists(table_name):
+        DeltaTable.forName(spark, table_name).delete(
+            F.col("snapshot_date") == F.lit(snapshot_date)
+        )
+        write_delta(df, table_name, mode="append")
+    else:
+        write_delta(df, table_name, mode="overwrite",
+                    partition_by=partition_by or ["snapshot_date"])
+
+    if behalte_tage is not None:
+        beschneide_historie(table_name, behalte_tage)
+
+
+def beschneide_historie(table_name: str, behalte_tage: int):
+    """Loescht alte Tagesstaende, behaelt aber jeden Monatsletzten dauerhaft.
+
+    Begruendung des Fensters siehe GOLD_HISTORIE_TAGE. Der Monatsletzte wird
+    ueber last_day() bestimmt, nicht ueber "der juengste Stand des Monats":
+    faellt ein Ladelauf am Monatsende aus, soll die Luecke sichtbar bleiben
+    und nicht durch einen zufaellig aelteren Stand kaschiert werden, der dann
+    dauerhaft als Monatsstand gilt.
+    """
+    from delta.tables import DeltaTable
+
+    if not spark.catalog.tableExists(table_name):
+        return
+
+    tabelle = DeltaTable.forName(spark, table_name)
+    grenze = F.date_sub(F.current_date(), behalte_tage)
+    veraltet = (F.col("snapshot_date") < grenze) & (
+        F.col("snapshot_date") != F.last_day(F.col("snapshot_date"))
+    )
+    vorher = spark.table(table_name).select("snapshot_date").distinct().count()
+    tabelle.delete(veraltet)
+    nachher = spark.table(table_name).select("snapshot_date").distinct().count()
+    if vorher != nachher:
+        print(
+            f"  {table_name}: {vorher - nachher} Tagesstand/-staende aelter als "
+            f"{behalte_tage} Tage entfernt, {nachher} verbleiben"
+        )
+
+
+def fy_period_to_date(fy_year_col, fy_period_col):
+    """FY-Jahr + FY-Periode -> erster Tag des Kalendermonats.
+
+    Umkehrung von add_fiscal_columns: P1 = Oktober des FY-Jahres, P4 = Januar
+    des Folgejahres. Steht hier, weil sowohl die SAP-Umsaetze (nb_20_gold,
+    Abschnitt 5c) als auch die Budgetdatei (Abschnitt 5e) ihre Perioden als
+    Nummer 1-12 fuehren und beide denselben Datumsbezug brauchen.
+    """
+    return F.make_date(
+        F.when(fy_period_col <= 3, fy_year_col).otherwise(fy_year_col + 1),
+        F.when(fy_period_col <= 3, fy_period_col + 9).otherwise(fy_period_col - 3),
+        F.lit(1),
+    )
+
+
 # Wird von den abhaengigen Notebooks geprueft. BEI JEDER AENDERUNG AN DEN
 # HILFSFUNKTIONEN HOCHZAEHLEN - dann meldet ein veraltetes nb_00_config in
 # Fabric sich selbst, statt die abhaengigen Notebooks mitten im Lauf mit
 # einem NameError auf eine noch unbekannte Funktion abbrechen zu lassen.
-CONFIG_VERSION = 3
+CONFIG_VERSION = 4
 
 print(
     f"Konfiguration geladen (v{CONFIG_VERSION}) | "
     f"CY = FY{CURRENT_FY}/{str(CURRENT_FY + 1)[2:]} "
-    f"({CY_START} - {CY_END}) | Fanout-Ende {FANOUT_END}"
+    f"({CY_START} - {CY_END}) | Fanout-Ende {FANOUT_END} | "
+    f"Budgetjahr FY{BUDGET_FY}/{str(BUDGET_FY + 1)[2:]} | "
+    f"Gold-Historie {GOLD_HISTORIE_TAGE} Tage + Monatsletzte"
 )

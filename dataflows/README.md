@@ -14,7 +14,7 @@ einen eigenen.
 | Dataflow | Abfragen | Quelle | Warum zusammen bzw. getrennt |
 |---|---|---|---|
 | `df_crm_ingest` | `stg_crm_opportunity`, `stg_crm_contract`, `stg_crm_account`, `stg_crm_territory` | Dataverse (`cpgplc.crm.dynamics.com`) | Gleiche Verbindung, gleicher Gateway, gleicher Zeitplan. Ein CRM-Verbindungsproblem betrifft ohnehin alle vier gleichzeitig – ein gemeinsamer Fehlschlag ist ehrlicher als vier separate, die zufällig gleichzeitig rot werden |
-| `df_map_unit_assignment` | `stg_map_unit_assignment` | SharePoint / Excel | Andere Quelle, andere Fehlerdomäne. Ein SharePoint-Hänger soll den CRM-Ingest nicht blockieren, und ein CRM-Verbindungsabbruch soll nicht verhindern, dass die gepflegte Mapping-Tabelle geladen wird |
+| `df_map_unit_assignment` | `stg_map_unit_assignment`, `stg_budget_ity` | SharePoint / Excel, Ordner `08_Budget` | Andere Quelle, andere Fehlerdomäne. Ein SharePoint-Hänger soll den CRM-Ingest nicht blockieren, und ein CRM-Verbindungsabbruch soll nicht verhindern, dass die gepflegten Excel-Dateien geladen werden. Beide Abfragen lesen aus demselben Ordner derselben Bibliothek – nach der Faustregel oben gehören sie damit zusammen, und ein vierter Dataflow brächte nur eine weitere Pipeline-Aktivität, ohne einen Fehlerfall zu entkoppeln |
 | `df_sap_ingest` | `bronze_sap_unit`, `bronze_sap_revenue` | SAP-Warehouse `Reporting`, Gen1-Dataflow `sap_master_data_unit` | Dritte Quelle mit eigenem Gateway. Schreibt als einziger Dataflow direkt nach `bronze_*` statt nach `stg_*`, weil SAP-Daten **nicht historisiert** werden – Begründung unten |
 
 Eine einzige Abfrage **alles in einem Dataflow abzubilden** (auch die Mapping-
@@ -39,6 +39,7 @@ df_map_unit_assignment/
   00_fn_berlin_now.m            eigene Kopie - Dataflow Gen2 teilt Funktionen
                                  nicht ueber Dataflow-Grenzen hinweg
   01_stg_map_unit_assignment.m
+  02_stg_budget_ity.m           Budgetannahmen unknown ITY
 
 df_sap_ingest/
   00_fn_berlin_now.m            eigene Kopie, siehe oben
@@ -80,5 +81,12 @@ beantworten, wenn jeder Tagesstand erhalten bleibt. SAP dagegen liefert einen
 aus `V_SAP_EXPORTS_cleansed`. Ein Tagessnapshot darüber würde dieselben
 Buchungen täglich vervielfachen, ohne eine Frage zu beantworten, die nicht
 schon über `fy_year`/`fy_period` beantwortbar wäre.
+
+Die beiden Excel-Abfragen werden aus einem dritten Grund historisiert: sie
+sind **manuelle Inputs in offizielle Budgetzahlen**. Ohne Snapshot lässt sich
+nach der nächsten Pflegerunde nicht mehr feststellen, welcher Stand von
+`Mapping_Planwerke.xlsx` bzw. `2026_04_29_Planung_unknown_ITY_Effekt.xlsx` in
+einer bereits kommunizierten Zahl steckte – die Budgetrunde wäre nicht mehr
+reproduzierbar.
 
 Details und Begründung: `docs/06_deployment.md`, Schritt 1–2.

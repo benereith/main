@@ -1,0 +1,193 @@
+/// Budgetannahmen zum unknown-ITY-Effekt aus der gepflegten Planungsdatei
+/// 2026_04_29_Planung_unknown_ITY_Effekt.xlsx (SharePoint, 08_Budget).
+///
+/// Granularität: eine Zeile je Vorgang und Geschäftsjahresperiode,
+/// lückenlos über alle zwölf Perioden.
+/// Quelle: gold_fct_budget_ity (lakehouse/notebooks/nb_20_gold.py, 5e).
+///
+/// FRÜHER: TABELLE 'CRM Data', DIREKT AUS DER EXCEL
+/// Die Vorgängertabelle las die Datei bei jeder Modellaktualisierung selbst
+/// von SharePoint und führte dabei die vollständige Fachlogik in Power Query
+/// aus – Periodenraster, YTD-Kumulation, Werkableitung, Eröffnungsregel. Das
+/// hatte drei Folgen, die alle nichts mit der Datei zu tun hatten:
+///   · Der Bericht hing an SharePoint. Eine gesperrte oder umbenannte Datei
+///     ließ die Modellaktualisierung scheitern – nicht den Ladelauf, in den
+///     der Fehler gehört.
+///   · Kein Stichtag. Welcher Stand der Datei in einer bereits
+///     kommunizierten Zahl steckte, war nicht mehr feststellbar.
+///   · Der Perioden-Fanout lag ein zweites Mal in Power Query, obwohl
+///     derselbe Fanout im Lakehouse längst existierte.
+/// Der Weg über das Lakehouse behebt alle drei: die Datei wird täglich
+/// historisiert (bronze_budget_ity), gerechnet wird einmal, und die
+/// Aktualisierung des Modells liest nur noch eine Tabelle.
+///
+/// WAS SICH FACHLICH GEÄNDERT HAT
+/// Die alte Abfrage verdichtete zum Schluss auf Vorgangsebene und warf die
+/// Monatswerte weg. Sie bleiben jetzt erhalten – erst damit lässt sich Budget
+/// gegen die CRM-Pipeline je Periode stellen. Aggregieren kann das Modell
+/// selbst; wiederherstellen kann es die Perioden nicht.
+///
+/// WARUM DIE BEZIEHUNG ÜBER DEN NAMEN ENTFALLEN IST
+/// 'CRM Data' hing über 'FCT Net New ITY'[Entität] -> 'CRM Data'[name] am
+/// CRM-Fakt: eine Verknüpfung zweier Faktentabellen über einen Freitext, die
+/// nur solange trug, wie die Excel auf Vorgangsebene verdichtet war. Auf
+/// Monatsebene ist der Name nicht mehr eindeutig, und die Beziehung wäre
+/// nicht nur unsauber, sondern schlicht ungültig.
+/// Verknüpft wird stattdessen über die gemeinsamen Dimensionen – Periode
+/// über DIM Datum, Werk über DIM Betrieb. Beides wirkt auf Budget und
+/// Pipeline gleichzeitig, ein Zeit- oder Organisationsfilter also auf beide
+/// Seiten. Für den Vergleich einzelner Vorgänge stehen 'Vorgang' hier und
+/// 'Entität' dort nebeneinander, ohne dass eine Beziehung eine
+/// Eindeutigkeit behauptet, die es nicht gibt.
+table 'FCT Budget ITY'
+	lineageTag: c4000000-0000-4000-8000-000000000001
+
+	/// NEW oder LOST – abgeleitet aus dem Blatt der Excel („NB Rohdaten" /
+	/// „LB Rohdaten") und bewusst auf dieselben Bezeichner gebracht, die
+	/// 'FCT Net New ITY'[Geschäftsart] führt. Ohne diese Angleichung ließe
+	/// sich Budget nicht nach Geschäftsart gegen die Pipeline stellen.
+	column Geschäftsart
+		dataType: string
+		lineageTag: c4000000-0000-4000-8000-000000000101
+		summarizeBy: none
+		sourceColumn: business_type
+
+	/// Bezeichnung des geplanten Vorgangs, wie in der Planungsdatei gepflegt.
+	column Vorgang
+		dataType: string
+		lineageTag: c4000000-0000-4000-8000-000000000102
+		summarizeBy: none
+		sourceColumn: name
+
+	/// unknown ITY oder unknown Roll – dieselbe Einteilung wie am CRM-Fakt.
+	column 'ITY Cluster'
+		dataType: string
+		lineageTag: c4000000-0000-4000-8000-000000000103
+		summarizeBy: none
+		sourceColumn: ity_cluster
+
+	/// Managementeinheit laut Planungsdatei.
+	column Management
+		dataType: string
+		lineageTag: c4000000-0000-4000-8000-000000000104
+		summarizeBy: none
+		sourceColumn: management
+
+	/// Region laut Planungsdatei.
+	column Region
+		dataType: string
+		lineageTag: c4000000-0000-4000-8000-000000000105
+		summarizeBy: none
+		sourceColumn: region
+
+	/// SAP-Betriebsnummer, aus den ersten vier Zeichen von „Werk –
+	/// Bezeichnung" gelesen. Verbindung zu DIM Betrieb und damit zu Region,
+	/// Management und Verantwortungsbereich der übrigen Auswertungen.
+	column Werk
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: c4000000-0000-4000-8000-000000000106
+		summarizeBy: none
+		sourceColumn: betrieb
+
+	/// Erster Tag des Wirkungsmonats, aus Geschäftsjahr und -periode
+	/// gerechnet (P1 = Oktober). Verbindung zu DIM Datum – damit wirkt jeder
+	/// Zeitfilter des Berichts auf Budget und Pipeline gleichermaßen.
+	column Periode
+		dataType: dateTime
+		isHidden
+		formatString: dd.mm.yyyy
+		lineageTag: c4000000-0000-4000-8000-000000000107
+		summarizeBy: none
+		sourceColumn: period_date
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column 'GJ Jahr'
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: c4000000-0000-4000-8000-000000000108
+		summarizeBy: sum
+		sourceColumn: fy_year
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'GJ Periode Nr'
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: c4000000-0000-4000-8000-000000000109
+		summarizeBy: sum
+		sourceColumn: fy_period
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Budgetierter ITY-Effekt des Monats.
+	column Budgetwert
+		dataType: double
+		isHidden
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		lineageTag: c4000000-0000-4000-8000-000000000110
+		summarizeBy: sum
+		sourceColumn: ity_effect
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Budgetierter ITY-Effekt kumuliert ab Periode 1 des Budgetjahres.
+	/// Im Lakehouse als Fensterfunktion gerechnet, nicht als DAX-Kumulation:
+	/// die Reihe ist über die zwölf Perioden lückenlos aufgefüllt und
+	/// schreibt deshalb auch in Monaten ohne gepflegten Wert fort, statt zu
+	/// springen.
+	column 'Budgetwert kumuliert'
+		dataType: double
+		isHidden
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		lineageTag: c4000000-0000-4000-8000-000000000111
+		summarizeBy: sum
+		sourceColumn: ity_effect_ytd
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Geplantes Eröffnungsdatum, aus dem Freitextfeld „Info" der Excel
+	/// gelesen (die letzten zehn Zeichen).
+	column Eröffnungsdatum
+		dataType: dateTime
+		formatString: dd.mm.yyyy
+		lineageTag: c4000000-0000-4000-8000-000000000112
+		summarizeBy: none
+		sourceColumn: eroeffnungsdatum
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	/// Wahr für New Business, dessen Eröffnung im laufenden Geschäftsjahr
+	/// liegt. Die Altabfrage trug diese Grenze als festes Datum (01.10.2025);
+	/// hier ist es CY_START aus nb_00_config und wandert mit dem
+	/// Geschäftsjahr mit.
+	column Neueröffnung
+		dataType: boolean
+		formatString: """WAHR"";""WAHR"";""FALSCH"""
+		lineageTag: c4000000-0000-4000-8000-000000000113
+		summarizeBy: none
+		sourceColumn: ist_neueroeffnung
+
+	/// Stand der Planungsdatei, aus dem diese Zeilen stammen. Beantwortet
+	/// beim Abstimmen die Frage, die vorher offen bleiben musste: welcher
+	/// Stand der Excel steckt in dieser Zahl?
+	column Dateistand
+		dataType: dateTime
+		formatString: dd.mm.yyyy
+		lineageTag: c4000000-0000-4000-8000-000000000114
+		summarizeBy: none
+		sourceColumn: snapshot_date
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	partition 'FCT Budget ITY' = m
+		mode: import
+		source = fnLakehouse("gold_fct_budget_ity")
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation

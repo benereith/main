@@ -22,7 +22,7 @@
 # gegen die ALTE Fassung - der Abbruch kommt dann erst spaeter als NameError
 # auf eine Funktion, die es dort noch nicht gibt. Diese Pruefung zieht den
 # Fehler an den Anfang und sagt, was zu tun ist.
-BENOETIGTE_CONFIG_VERSION = 3
+BENOETIGTE_CONFIG_VERSION = 4
 if globals().get("CONFIG_VERSION", 1) < BENOETIGTE_CONFIG_VERSION:
     raise ValueError(
         f"nb_00_config ist veraltet (v{globals().get('CONFIG_VERSION', 1)}, "
@@ -34,6 +34,7 @@ if globals().get("CONFIG_VERSION", 1) < BENOETIGTE_CONFIG_VERSION:
 
 
 from pyspark.sql import functions as F
+from pyspark.sql import Window
 
 RUN_TS = spark.sql("SELECT current_timestamp() AS ts").collect()[0]["ts"]
 RUN_DATE = RUN_TS.date()
@@ -77,7 +78,12 @@ if _fehlend:
         "nb_30_quality selbst ist nicht die Ursache; es liest nur."
     )
 
-fct = spark.table("gold_fct_net_new_ity")
+# gold_fct_net_new_ity ist seit der Einfuehrung der Gold-Historie append-only:
+# je Ladelauf steht ein vollstaendiger Tagesstand darin. Ohne diesen Filter
+# pruefte jede Regel unten alle Staende gemeinsam - Verstoesse, die laengst
+# behoben sind, wuerden auf ewig weitergemeldet, und die Zaehlungen waeren um
+# den Faktor der aufbewahrten Tage zu hoch. Geprueft wird der HEUTIGE Stand.
+fct = nur_letzter_snapshot(spark.table("gold_fct_net_new_ity"), "gold_fct_net_new_ity")
 opp = spark.table("silver_opportunity")
 con = spark.table("silver_contract")
 rej = spark.table("silver_dq_reject")
@@ -481,6 +487,86 @@ check(
     .select("sector", "subsector").distinct(),
     "Fuer jede gelistete Kombination eine Zeile in Mapping_Planwerke.xlsx anlegen "
     "(sektor, subsektor, werk).",
+)
+
+# ---------------------------------------------------------------------------
+# DQ-BUD-001  Budgetzeile ohne verwertbare Periode
+# ---------------------------------------------------------------------------
+# nb_10_silver behaelt nur Zeilen mit einer FY-Periode zwischen 1 und 12. Alles
+# andere - leeres FY_JahrMonat, geaenderte Schreibweise, Zwischensummenzeile -
+# faellt heraus. Ohne diese Regel geschaehe das lautlos, und im Bericht fehlte
+# schlicht Budget, ohne dass jemand den Betrag vermissen koennte.
+if spark.catalog.tableExists("bronze_budget_ity"):
+    roh = nur_letzter_snapshot(spark.table("bronze_budget_ity"), "bronze_budget_ity")
+    # Dieselbe Ableitung wie in nb_10_silver, damit die Regel genau die Zeilen
+    # zaehlt, die dort herausfallen.
+    # NULL-sicher formuliert: eine nicht interpretierbare Schreibweise ergibt
+    # NULL, und ~NULL waere wieder NULL - die Zeile fiele aus der Pruefung
+    # heraus, statt als Verstoss zu zaehlen.
+    _periode = F.regexp_extract(F.trim(F.col("fy_jahrmonat")), r"(\d{1,2})$", 1).cast("int")
+    ohne_periode = roh.withColumn("_fy_period", _periode).filter(
+        F.col("_fy_period").isNull() | ~F.col("_fy_period").between(1, 12)
+    )
+    check(
+        "DQ-BUD-001", "WARNING",
+        "Zeilen der Budgetdatei ohne verwertbare FY-Periode (1-12)",
+        ohne_periode,
+        "Spalte FY_JahrMonat in 2026_04_29_Planung_unknown_ITY_Effekt.xlsx "
+        "pruefen: massgeblich sind die letzten beiden Zeichen als Periode 1-12.",
+    )
+
+# ---------------------------------------------------------------------------
+# DQ-BUD-002  Budgetjahr passt nicht zur CRM-Pipeline
+# ---------------------------------------------------------------------------
+# BUDGET_FY in nb_00_config sagt, auf welches Geschaeftsjahr sich die
+# Planungsdatei bezieht. Steht dort ein Jahr, zu dem die Faktentabelle keine
+# Zeilen fuehrt, laufen Budget und Pipeline aneinander vorbei: beide Kennzahlen
+# sind fuer sich richtig, der Vergleich im Bericht aber leer - und zwar ohne
+# jedes Fehlerbild, weil eine leere Kachel wie "kein Budget geplant" aussieht.
+if spark.catalog.tableExists("gold_fct_budget_ity"):
+    budget_jahre = {
+        r[0] for r in spark.table("gold_fct_budget_ity").select("fy_year").distinct().collect()
+    }
+    crm_jahre = {r[0] for r in fct.select("fy_year").distinct().collect()}
+    check(
+        "DQ-BUD-002", "WARNING",
+        "Budgetjahr ohne passende Zeilen in der CRM-Faktentabelle",
+        spark.table("gold_fct_budget_ity").filter(~F.col("fy_year").isin(list(crm_jahre))),
+        f"BUDGET_FY in nb_00_config steht auf {sorted(budget_jahre)}, die "
+        f"Faktentabelle fuehrt {sorted(crm_jahre)}. Konvention beachten: "
+        "BUDGET_FY ist das Kalenderjahr des FY-BEGINNS, die Excel selbst "
+        "bezeichnet dasselbe Jahr mit dem Endjahr.",
+    )
+
+# ---------------------------------------------------------------------------
+# DQ-HIS-001  Luecke in der Gold-Historie
+# ---------------------------------------------------------------------------
+# Die Stichtagsauswahl im Bericht ist nur so verlaesslich wie die Reihe der
+# Staende dahinter. Ein ausgefallener Ladelauf hinterlaesst eine Luecke, die im
+# Datenschnitt nicht auffaellt - dort fehlt einfach ein Datum. Wer dann "vor
+# einer Woche" auswaehlt, vergleicht unbemerkt gegen einen aelteren Stand.
+#
+# Gezaehlt werden nur Luecken innerhalb des vollstaendig aufbewahrten Fensters;
+# aelter als GOLD_HISTORIE_TAGE sind Luecken gewollt (nur Monatsletzte).
+stichtage = (
+    spark.table("gold_fct_net_new_ity")
+    .select("snapshot_date")
+    .distinct()
+    .filter(F.col("snapshot_date") >= F.date_sub(F.current_date(), GOLD_HISTORIE_TAGE))
+)
+w_stichtag = Window.orderBy("snapshot_date")
+luecken = (
+    stichtage.withColumn("vorheriger", F.lag("snapshot_date").over(w_stichtag))
+    .filter(F.col("vorheriger").isNotNull())
+    .filter(F.datediff(F.col("snapshot_date"), F.col("vorheriger")) > 1)
+)
+check(
+    "DQ-HIS-001", "INFO",
+    "Luecke zwischen zwei aufeinanderfolgenden Stichtagen der Gold-Historie",
+    luecken,
+    "An diesen Tagen ist die Pipeline pl_net_new_ity_daily nicht gelaufen. "
+    "Ein historischer Stand ist dort nicht abrufbar - fuer den Vergleich den "
+    "naechstgelegenen vorhandenen Stichtag waehlen.",
 )
 
 # ---------------------------------------------------------------------------

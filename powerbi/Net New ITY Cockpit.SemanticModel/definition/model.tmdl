@@ -25,18 +25,20 @@ model Model
 
 annotation __PBI_TimeIntelligenceEnabled = 0
 
-annotation PBI_QueryOrder = ["LakehouseServer","LakehouseDatabase","AktuellesGeschaeftsjahr","fnLakehouse","DIM Datum","DIM Betrieb","DIM Status","DIM Opportunity","DIM Vertrag","DIM HFM-Struktur","FCT Net New ITY","FCT Umsatz","FCT CRM-Bewegung","DQ Prüfungen","_Kennzahlen","CRM Data"]
+annotation PBI_QueryOrder = ["LakehouseServer","LakehouseDatabase","AktuellesGeschaeftsjahr","fnLakehouse","DIM Datum","DIM Betrieb","DIM Status","DIM Stichtag","DIM Opportunity","DIM Vertrag","DIM HFM-Struktur","FCT Net New ITY","FCT Umsatz","FCT Budget ITY","FCT CRM-Bewegung","DQ Prüfungen","_Kennzahlen"]
 
 annotation PBI_ProTooling = ["DevMode"]
 
 ref table 'DIM Datum'
 ref table 'DIM Betrieb'
 ref table 'DIM Status'
+ref table 'DIM Stichtag'
 ref table 'DIM Opportunity'
 ref table 'DIM Vertrag'
 ref table 'DIM HFM-Struktur'
 ref table 'FCT Net New ITY'
 ref table 'FCT Umsatz'
+ref table 'FCT Budget ITY'
 ref table 'FCT CRM-Bewegung'
 ref table 'DQ Prüfungen'
 ref table 'Szenario Verschiebung'
@@ -45,7 +47,6 @@ ref table 'Szenario Anlaufdauer'
 ref table 'Szenario Bewertung'
 ref table 'Szenario Schwelle'
 ref table _Kennzahlen
-ref table 'CRM Data'
 
 ref cultureInfo de-DE
 

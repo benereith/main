@@ -31,7 +31,7 @@
 # gegen die ALTE Fassung - der Abbruch kommt dann erst spaeter als NameError
 # auf eine Funktion, die es dort noch nicht gibt. Diese Pruefung zieht den
 # Fehler an den Anfang und sagt, was zu tun ist.
-BENOETIGTE_CONFIG_VERSION = 3
+BENOETIGTE_CONFIG_VERSION = 4
 if globals().get("CONFIG_VERSION", 1) < BENOETIGTE_CONFIG_VERSION:
     raise ValueError(
         f"nb_00_config ist veraltet (v{globals().get('CONFIG_VERSION', 1)}, "
@@ -677,11 +677,36 @@ fct = (
     .withColumn("amount_abs", F.abs(F.col("amount_weighted")).cast("decimal(19,4)"))
     .withColumn("amount_weighted", F.col("amount_weighted").cast("decimal(19,4)"))
     .withColumn("amount_unweighted", F.col("amount_unweighted").cast("decimal(19,4)"))
-    .withColumn("snapshot_date", F.lit(RUN_DATE))
     .withColumn("loaded_at", F.lit(RUN_TS))
 )
 
-write_delta(fct, "gold_fct_net_new_ity", partition_by=["fy_year"])
+# --- 5f. Historisiert schreiben --------------------------------------------
+# Bis hierher ist fct der Stand von HEUTE. Geschrieben wird er als
+# TAGESSTAND NEBEN die bisherigen, nicht an ihre Stelle:
+#
+#   overwrite (vorher)  Gold kennt nur den heutigen Stand. Die Frage "wie sah
+#                       die Pipeline am 12. aus?" ist unbeantwortbar - die
+#                       Bronze-Historie enthaelt zwar die CRM-Rohstaende, aber
+#                       nicht das daraus gerechnete Ergebnis.
+#   Snapshot (jetzt)    Jeder Tagesstand bleibt erhalten und ist im Bericht
+#                       ueber 'DIM Stichtag' auswaehlbar.
+#
+# ZWEI DINGE, DIE DARAN HAENGEN
+#   1. Die Partition des Stichtags wird vor dem Schreiben geloescht. Ein
+#      zweiter Lauf am selben Tag ersetzt den Tagesstand, statt ihn ein
+#      zweites Mal anzuhaengen.
+#   2. AB JETZT MUSS JEDER LESER EINEN STICHTAG SETZEN. Wer diese Tabelle
+#      ungefiltert summiert, bekommt die Summe ALLER Staende - derselbe
+#      Fehler, der die Silberschicht schon einmal getroffen hat, nur eine
+#      Ebene hoeher. Im Notebook uebernimmt das nur_letzter_snapshot(), im
+#      Semantikmodell die Kennzahl [Net New ITY (brutto)].
+#
+# Partitioniert wird nach snapshot_date statt nach fy_year: der Stichtag ist
+# jetzt das Feld, ueber das jede Abfrage und jedes Loeschen laeuft.
+schreibe_snapshot(
+    fct, "gold_fct_net_new_ity", RUN_DATE,
+    partition_by=["snapshot_date"], behalte_tage=GOLD_HISTORIE_TAGE,
+)
 
 
 # ===========================================================================
@@ -847,6 +872,102 @@ else:
 
 
 # ===========================================================================
+# 5e. gold_fct_budget_ity - Budgetannahmen zum unknown-ITY-Effekt
+# ===========================================================================
+# Ersetzt die Modelltabelle 'CRM Data', die die Planungsdatei
+# 2026_04_29_Planung_unknown_ITY_Effekt.xlsx bei jeder Modellaktualisierung
+# direkt von SharePoint las und dabei die gesamte Periodenlogik in Power Query
+# ausfuehrte. Hier steht sie einmal, neben dem CRM-Fanout, mit demselben
+# Datumsbezug und demselben Stichtagsbegriff.
+#
+# WAS DIE ALTABFRAGE TAT UND WAS DAVON BLEIBT
+#   Periodenraster 1-12 je Vorgang     -> bleibt (Join gegen die Periodenliste)
+#   YTD-Kumulation ueber List.Generate -> bleibt, als Fensterfunktion
+#   Geschaeftsjahr als Konstante 2026  -> ersetzt durch BUDGET_FY
+#   Werk aus "1234 - Klartext"         -> bleibt, schon in nb_10_silver
+#   Eroeffnungsdatum aus dem Freitext  -> bleibt, schon in nb_10_silver
+#   Gruppierung auf Vorgangsebene      -> ENTFAELLT. Sie warf die Monatswerte
+#                                         weg, die der Bericht braucht, um
+#                                         Budget gegen die CRM-Pipeline je
+#                                         Periode zu stellen. Aggregieren kann
+#                                         das Modell selbst.
+#
+# Grain: eine Zeile je (Geschaeftsart, Vorgang, FY-Periode) - lueckenlos ueber
+# alle zwoelf Perioden, damit die kumulierte Sicht auch in Monaten ohne
+# gepflegten Wert fortschreibt statt zu springen.
+if not spark.catalog.tableExists("silver_budget_ity"):
+    print(
+        "  WARNUNG: silver_budget_ity fehlt - gold_fct_budget_ity wird NICHT "
+        "geschrieben. Die Budgetkennzahl bleibt im Bericht leer; Net New ITY "
+        "ist davon nicht betroffen. Abfrage stg_budget_ity im Dataflow "
+        "df_map_unit_assignment pruefen (docs/06_deployment.md, Schritt 1)."
+    )
+else:
+    budget = spark.table("silver_budget_ity")
+
+    # Das Periodenraster EINMAL global, nicht je Gruppe - der Grund, aus dem
+    # die Altabfrage GlobalePeriodenBasis eingefuehrt hat, gilt hier genauso.
+    perioden = spark.sql("SELECT explode(sequence(1, 12)) AS fy_period")
+
+    # Vorgangsebene: die Attribute, die je Vorgang konstant sind. Sie werden
+    # ueber das Raster gezogen, damit auch aufgefuellte Perioden vollstaendig
+    # attributiert sind (in der Altabfrage: FillDown/FillUp).
+    vorgaenge = budget.groupBy("business_type", "name").agg(
+        F.max("ity_cluster").alias("ity_cluster"),
+        F.max("management").alias("management"),
+        F.max("region").alias("region"),
+        F.max("werk_bezeichnung").alias("werk_bezeichnung"),
+        F.max("betrieb").alias("betrieb"),
+        F.max("info").alias("info"),
+        F.max("eroeffnungsdatum").alias("eroeffnungsdatum"),
+        F.max("fy_year").alias("fy_year"),
+        F.max("snapshot_date").alias("snapshot_date"),
+    )
+
+    # Mehrere Zeilen desselben Vorgangs in derselben Periode werden summiert -
+    # in der Datei kommen sie vor, und ein Join ohne Verdichtung wuerde das
+    # Raster vervielfachen statt es zu fuellen.
+    werte = budget.groupBy("business_type", "name", "fy_period").agg(
+        F.sum("ity_effect").alias("ity_effect")
+    )
+
+    w_ytd = Window.partitionBy("business_type", "name").orderBy("fy_period").rowsBetween(
+        Window.unboundedPreceding, Window.currentRow
+    )
+
+    fct_budget = (
+        vorgaenge.crossJoin(perioden)
+        .join(werte, ["business_type", "name", "fy_period"], "left")
+        .withColumn("ity_effect", F.coalesce(F.col("ity_effect"), F.lit(0)).cast("decimal(19,4)"))
+        .withColumn("ity_effect_ytd", F.sum("ity_effect").over(w_ytd).cast("decimal(19,4)"))
+        .withColumn("period_date", fy_period_to_date(F.col("fy_year"), F.col("fy_period")))
+        .withColumn("monat_index", (F.col("fy_year") * 12 + F.col("fy_period")).cast("int"))
+        .withColumn("fy_sort", F.col("fy_year") * 100 + F.col("fy_period"))
+        .withColumn(
+            "fy_label",
+            F.concat(F.lit("FY"), F.col("fy_year").cast("string"), F.lit("/"),
+                     F.substring((F.col("fy_year") + 1).cast("string"), 3, 2)),
+        )
+        # Neueroeffnung: uebernommen aus der Altabfrage - New Business, dessen
+        # Eroeffnung im laufenden Geschaeftsjahr liegt. Die dort fest
+        # eingetragene Grenze 01.10.2025 ist hier CY_START und wandert mit.
+        .withColumn(
+            "ist_neueroeffnung",
+            (F.col("business_type") == "NEW") & (F.col("eroeffnungsdatum") >= F.lit(CY_START)),
+        )
+        .withColumn("loaded_at", F.lit(RUN_TS))
+        .select(
+            "business_type", "name", "ity_cluster", "management", "region",
+            "werk_bezeichnung", "betrieb", "info", "eroeffnungsdatum",
+            "ist_neueroeffnung", "fy_year", "fy_period", "fy_label", "fy_sort",
+            "monat_index", "period_date", "ity_effect", "ity_effect_ytd",
+            "snapshot_date", "loaded_at",
+        )
+    )
+    write_delta(fct_budget, "gold_fct_budget_ity", partition_by=["fy_year"])
+
+
+# ===========================================================================
 # 6. gold_fct_crm_movement - Was hat sich seit dem letzten Snapshot geaendert?
 # ===========================================================================
 # Speist die Berichtsseite "CRM-Bewegung". Grain: eine Zeile je Entitaet und
@@ -919,18 +1040,46 @@ write_delta(mv_new.unionByName(mv_lost), "gold_fct_crm_movement")
 # ===========================================================================
 # 7. gold_dim_snapshot - Liste der verfuegbaren Stichtage
 # ===========================================================================
+# Die Stichtagsdimension des Berichts. Sie traegt zwei Aufgaben:
+#   · Datenschnitt "Stand vom ..." auf der Berichtsseite,
+#   · und - wichtiger - sie ist die EINDEUTIGE Seite der Beziehung zu
+#     gold_fct_net_new_ity. Erst dadurch laesst sich die Faktentabelle im
+#     Modell auf genau einen Stand einschraenken, statt alle zu summieren.
+#
+# Massgeblich sind allein die Stichtage der Faktentabelle: nur zu ihnen
+# existiert ein vollstaendiger Stand. gold_fct_crm_movement wird bewusst nicht
+# mehr hinzugemischt - dort steht ein Stichtag schon dann, wenn sich irgendein
+# ueberwachtes Feld geaendert hat, und ein auswaehlbarer Stand ohne Zahlen
+# dahinter waere eine leere Seite ohne erkennbaren Grund.
+letzter_stichtag = (
+    spark.table("gold_fct_net_new_ity").agg(F.max("snapshot_date")).collect()[0][0]
+)
 snaps = (
-    spark.table("gold_fct_crm_movement")
-    .select(F.col("snapshot_date").alias("snapshot_date"))
-    .union(spark.table("gold_fct_net_new_ity").select("snapshot_date"))
+    spark.table("gold_fct_net_new_ity")
+    .select("snapshot_date")
     .distinct()
+    .withColumn("snapshot_label", F.date_format("snapshot_date", "dd.MM.yyyy"))
+    .withColumn("ist_aktuell", F.col("snapshot_date") == F.lit(letzter_stichtag))
+    # Alter in Tagen: erlaubt relative Auswahlen ("Stand vor 7 Tagen") ohne
+    # ein festes Datum im Bericht zu verdrahten.
     .withColumn(
-        "snapshot_label", F.date_format("snapshot_date", "dd.MM.yyyy")
+        "alter_tage", F.datediff(F.lit(letzter_stichtag), F.col("snapshot_date")).cast("int")
     )
+    # Monatsletzte bleiben dauerhaft erhalten (beschneide_historie) und sind
+    # damit die Staende, auf die sich Abstimmungen berufen koennen.
+    .withColumn("ist_monatsende", F.col("snapshot_date") == F.last_day(F.col("snapshot_date")))
     .withColumn(
-        "ist_aktuell",
-        F.col("snapshot_date")
-        == F.lit(spark.table("gold_fct_net_new_ity").agg(F.max("snapshot_date")).collect()[0][0]),
+        "snapshot_art",
+        F.when(F.col("ist_aktuell"), F.lit("Tagesaktuell"))
+        .when(F.col("ist_monatsende"), F.lit("Monatsstand"))
+        .otherwise(F.lit("Tagesstand")),
+    )
+    # Absteigende Sortierung: der juengste Stand steht im Datenschnitt oben.
+    # Bewusst ueber datediff statt unix_date - letzteres gibt es erst ab
+    # Spark 3.5, und die Fabric-Runtime ist nicht ueberall dieselbe.
+    .withColumn(
+        "snapshot_sort",
+        (-F.datediff(F.col("snapshot_date"), F.lit(date(1970, 1, 1)))).cast("int"),
     )
 )
 write_delta(snaps, "gold_dim_snapshot")

@@ -6,35 +6,25 @@
 > nicht hier.
 
 
-Das Modell enthält **76 Kennzahlen** in 11 Ordnern.
+Das Modell enthält **80 Kennzahlen** in 12 Ordnern.
 
 ## Inhalt
 
-- [(ohne Ordner)](#) – 7 Kennzahlen
-- [01 Basis](#01-basis) – 12 Kennzahlen
-- [02 Status](#02-status) – 10 Kennzahlen
+- [(ohne Ordner)](#) – 4 Kennzahlen
+- [01 Basis](#01-basis) – 13 Kennzahlen
+- [02 Status](#02-status) – 11 Kennzahlen
 - [03 Zeit](#03-zeit) – 4 Kennzahlen
 - [04 Szenarien](#04-szenarien) – 4 Kennzahlen
-- [05 Budget und Forecast](#05-budget-und-forecast) – 8 Kennzahlen
+- [05 Budget und Forecast](#05-budget-und-forecast) – 9 Kennzahlen
 - [06 Quoten](#06-quoten) – 4 Kennzahlen
 - [07 CRM-Bewegung](#07-crm-bewegung) – 5 Kennzahlen
 - [08 Datenqualität](#08-datenqualität) – 3 Kennzahlen
 - [09 Titel und Kontext](#09-titel-und-kontext) – 4 Kennzahlen
 - [10 Roll-Budget](#10-roll-budget) – 15 Kennzahlen
+- [11 Stichtag und Historie](#11-stichtag-und-historie) – 4 Kennzahlen
 
 
 ## (ohne Ordner)
-
-### `Budget ITY Effect`
-
-Budgetierter unknown-ITY-Effekt aus der gepflegten Planungsdatei 2026_04_29_Planung_unknown_ITY_Effekt.xlsx (SharePoint, 08_Budget).
-
-Bewusst NICHT aus dem Lakehouse, sondern direkt aus der Excel: die Datei ist ein manueller Planungsinput, der im Budgetprozess laufend fortgeschrieben wird. Wer die Zahl abstimmt, muss den Stand der Datei kennen – die Tabelle 'CRM Data' trägt ihn deshalb unverändert.
-
-```dax
-Budget ITY Effect =
-SUM('CRM Data'[ity effect])
-```
 
 ### `ITY Target Pipeline`
 
@@ -45,15 +35,6 @@ Der Faktor 3 ist eine Erfahrungsregel – rund ein Drittel der Pipeline wird gew
 ```dax
 ITY Target Pipeline =
 [New Business Budget]*3
-```
-
-### `ITY relativ sicher`
-
-Gesicherter plus erwarteter ITY-Anteil, also alles außer der reinen Pipeline. Die Größe, mit der sich belastbar planen lässt: Won und Lost stehen fest, Expected Win und Expected Loss liegen über der Wahrscheinlichkeitsschwelle.
-
-```dax
-ITY relativ sicher =
-[ITY gesichert]+[ITY erwartet]
 ```
 
 ### `Net New ITY YoY`
@@ -127,15 +108,6 @@ CALCULATE (
     SUM ( 'FCT Umsatz'[Monatswert] ),
     KEEPFILTERS ( 'FCT Umsatz'[Werttyp Version] = "Plan_90" ),
     KEEPFILTERS('DIM Betrieb'[cause_of_change_ny] in {2}))+4900000
-```
-
-### `Unweighted`
-
-Vollwert ohne Wahrscheinlichkeitsgewichtung, vorzeichenbehaftet. Obergrenze der Betrachtung: so viel entstünde, wenn jede Opportunity gewonnen und jeder Risikovertrag verloren würde.
-
-```dax
-Unweighted =
-SUM('FCT Net New ITY'[Betrag ungewichtet (vorzeichenbehaftet)])
 ```
 
 ### `Unweighted ITY Pipeline`
@@ -263,24 +235,29 @@ Basis für [Net New ITY] und die Kennzahl für jede Abstimmung: die Differenz zw
 
 Die Bewertungsbasis steuert der Datenschnitt 'Szenario Bewertung': CRM-gewichtet  Umsatz × Eintrittswahrscheinlichkeit (Standard) Vollwert       Umsatz ohne Gewichtung – Obergrenze Nur gesichert  nur Won und Lost, ungewichtet – Untergrenze
 
-Vorzeichen: New positiv, Lost negativ. Die Umkehr passiert einmalig im Lakehouse (amount_signed), nicht in dieser Kennzahl.
+Vorzeichen: New positiv, Lost negativ. Die Umkehr passiert einmalig im Lakehouse (amount_signed), nicht in dieser Kennzahl. GENAU EIN STICHTAG – die Klammer um alles Weitere 'FCT Net New ITY' führt seit der Gold-Historie je Ladelauf einen vollständigen Tagesstand. Eine ungefilterte Summe wäre deshalb die Summe ALLER Stände und damit um die Zahl der aufbewahrten Tage zu hoch – ohne Fehlerbild, weil das Ergebnis wie echte Daten aussieht. Diese Kennzahl setzt den Stichtag deshalb selbst, und weil praktisch jede andere Kennzahl über sie läuft, gilt die Einschränkung modellweit. Welcher Stand gilt, entscheidet [Stichtag Auswahl].
 
 **Format:** `#,0\ "€";-#,0\ "€";#,0\ "€"`
 
 ```dax
 Net New ITY (brutto) =
+VAR _Stichtag = [Stichtag Auswahl]
 VAR _Basis = SELECTEDVALUE ( 'Szenario Bewertung'[Bewertungsbasis], "CRM-gewichtet" )
 RETURN
-SWITCH (
-    _Basis,
-    "CRM-gewichtet", SUM ( 'FCT Net New ITY'[Betrag] ),
-    "Vollwert",      SUM ( 'FCT Net New ITY'[Betrag ungewichtet (vorzeichenbehaftet)] ),
-    "Nur gesichert",
-        CALCULATE (
-            SUM ( 'FCT Net New ITY'[Betrag ungewichtet (vorzeichenbehaftet)] ),
-            KEEPFILTERS ( 'DIM Status'[Status Code] IN { "WON", "LOST" } )
-        ),
-    SUM ( 'FCT Net New ITY'[Betrag] )
+CALCULATE (
+    SWITCH (
+        _Basis,
+        "CRM-gewichtet", SUM ( 'FCT Net New ITY'[Betrag] ),
+        "Vollwert",      SUM ( 'FCT Net New ITY'[Betrag ungewichtet (vorzeichenbehaftet)] ),
+        "Nur gesichert",
+            CALCULATE (
+                SUM ( 'FCT Net New ITY'[Betrag ungewichtet (vorzeichenbehaftet)] ),
+                KEEPFILTERS ( 'DIM Status'[Status Code] IN { "WON", "LOST" } )
+            ),
+        SUM ( 'FCT Net New ITY'[Betrag] )
+    ),
+    REMOVEFILTERS ( 'DIM Stichtag' ),
+    'FCT Net New ITY'[Stichtag] = _Stichtag
 )
 ```
 
@@ -313,6 +290,22 @@ CALCULATE (
     [Net New ITY],
     KEEPFILTERS ( 'FCT Net New ITY'[Geschäftsart] = "NEW" ),
     KEEPFILTERS ( 'FCT Net New ITY'[Wertebene] = "ITY" )
+)
+```
+
+### `Unweighted`
+
+Vollwert ohne Wahrscheinlichkeitsgewichtung, vorzeichenbehaftet. Obergrenze der Betrachtung: so viel entstünde, wenn jede Opportunity gewonnen und jeder Risikovertrag verloren würde.
+
+Läuft bewusst über [Net New ITY (brutto)] mit der Bewertungsbasis „Vollwert" statt über eine eigene SUM: nur so gilt auch hier die Stichtagsklammer, die eine ungefilterte Summe über alle Stände verhindert.
+
+**Format:** `#,0\ "€";-#,0\ "€";#,0\ "€"`
+
+```dax
+Unweighted =
+CALCULATE (
+    [Net New ITY (brutto)],
+    'Szenario Bewertung'[Bewertungsbasis] = "Vollwert"
 )
 ```
 
@@ -474,6 +467,17 @@ Gesicherter Anteil: Won plus Lost. Die Zahl, die man ohne weitere Annahmen beric
 ```dax
 ITY gesichert =
 [ITY Won] + [ITY Lost]
+```
+
+### `ITY relativ sicher`
+
+Gesicherter plus erwarteter ITY-Anteil, also alles außer der reinen Pipeline. Die Größe, mit der sich belastbar planen lässt: Won und Lost stehen fest, Expected Win und Expected Loss liegen über der Wahrscheinlichkeitsschwelle.
+
+**Format:** `#,0\ "€";-#,0\ "€";#,0\ "€"`
+
+```dax
+ITY relativ sicher =
+[ITY gesichert] + [ITY erwartet]
 ```
 
 ### `ITY unsicher`
@@ -687,6 +691,19 @@ Wirkung der Szenarioannahmen gegenüber dem Basisfall. Positiv bedeutet: das Sze
 
 
 ## 05 Budget und Forecast
+
+### `Budget ITY Effect`
+
+Budgetierter unknown-ITY-Effekt aus der gepflegten Planungsdatei 2026_04_29_Planung_unknown_ITY_Effekt.xlsx.
+
+Lag zuvor auf der Tabelle 'CRM Data', die die Excel bei jeder Modellaktualisierung selbst von SharePoint las. Die Datei läuft jetzt über den Ladelauf (dataflows/df_map_unit_assignment/02_stg_budget_ity.m -> bronze_budget_ity -> gold_fct_budget_ity) und wird dabei historisiert: welcher Dateistand in einer Zahl steckt, zeigt 'FCT Budget ITY'[Dateistand].
+
+**Format:** `#,0\ "€";-#,0\ "€";#,0\ "€"`
+
+```dax
+Budget ITY Effect =
+SUM ( 'FCT Budget ITY'[Budgetwert] )
+```
 
 ### `Budget Net New (SAP)`
 
@@ -1071,11 +1088,26 @@ RETURN
 
 Stand der Daten und Zustand der Prüfungen – gehört auf jede Seite, damit ein exportiertes Bild seinen eigenen Stichtag mitführt.
 
+Nennt seit der Gold-Historie den GEZEIGTEN Stand, nicht mehr nur den jüngsten vorhandenen. Ein Bild, das eine Rückschau zeigt, muss das auf dem Bild selbst sagen – sonst ist ein exportierter Stand vom Vormonat nicht mehr von der aktuellen Lage zu unterscheiden.
+
 ```dax
 Stand der Daten =
-VAR _Stand = CALCULATE ( MAX ( 'FCT Net New ITY'[Stichtag] ), ALL ( 'FCT Net New ITY' ) )
+VAR _Gezeigt = [Stichtag Auswahl]
+VAR _Aktuell = [Stichtag aktuell]
+VAR _Praefix =
+    IF (
+        _Gezeigt = _Aktuell,
+        "Datenstand ",
+        "Historischer Stand "
+    )
 RETURN
-    "Datenstand " & FORMAT ( _Stand, "DD.MM.YYYY" ) & " · Datenqualität: " & [DQ Status]
+    _Praefix & FORMAT ( _Gezeigt, "DD.MM.YYYY" )
+        & IF (
+            _Gezeigt = _Aktuell,
+            "",
+            " (aktuell: " & FORMAT ( _Aktuell, "DD.MM.YYYY" ) & ")"
+        )
+        & " · Datenqualität: " & [DQ Status]
 ```
 
 
@@ -1311,4 +1343,86 @@ CALCULATE (
     KEEPFILTERS ( 'FCT Umsatz'[Werttyp Version] = "Plan_90" ),
     KEEPFILTERS ( 'FCT Umsatz'[Betriebstyp] = "Plan-Betriebe ITY" )
 )
+```
+
+
+## 11 Stichtag und Historie
+
+### `Net New ITY (historischer Stand)`
+
+Net New ITY nach dem im Datenschnitt gewählten STAND – die Rückschau.
+
+Zeigt die Pipeline so, wie sie an dem gewählten Tag berechnet wurde: mit den Werten, Wahrscheinlichkeiten und Status, die an diesem Tag im CRM standen. Das ist etwas anderes als ein Zeitfilter auf 'DIM Datum' – der grenzt die WIRKUNGSPERIODEN ein, hier geht es um den BERECHNUNGSSTAND.
+
+Ohne Auswahl liefert sie denselben Wert wie [Net New ITY (tagesaktuell)]; ein Vergleich beider Kennzahlen ist dann erwartungs- gemäß null und kein Hinweis auf einen Fehler.
+
+Verfügbar sind die letzten 90 Tage vollständig und ältere Stände als Monatsletzte (GOLD_HISTORIE_TAGE in nb_00_config.py). Fehlt ein Tag, ist die Pipeline an diesem Tag nicht gelaufen – Regel DQ-HIS-001.
+
+**Format:** `#,0\ "€";-#,0\ "€";#,0\ "€"`
+
+```dax
+Net New ITY (historischer Stand) =
+VAR _Stichtag = [Stichtag Auswahl]
+RETURN
+    CALCULATE (
+        [Net New ITY],
+        REMOVEFILTERS ( 'DIM Stichtag' ),
+        'DIM Stichtag'[Stichtag] = _Stichtag
+    )
+```
+
+### `Net New ITY (tagesaktuell)`
+
+Net New ITY nach dem STAND VON HEUTE – ignoriert die Stichtagsauswahl.
+
+Die Kennzahl für die Frage „wo stehen wir jetzt?". Sie bleibt stabil, während im Datenschnitt ein historischer Stand gewählt ist, und ist damit die Bezugsgröße jedes Vergleichs: nebeneinander gestellt mit [Net New ITY (historischer Stand)] ergibt sich unmittelbar, was sich seit dem gewählten Tag bewegt hat.
+
+Fachlich identisch mit [Net New ITY], inklusive Bewertungsbasis und Vorjahresabzug – der einzige Unterschied ist der feste Stichtag.
+
+**Format:** `#,0\ "€";-#,0\ "€";#,0\ "€"`
+
+```dax
+Net New ITY (tagesaktuell) =
+CALCULATE ( [Net New ITY], REMOVEFILTERS ( 'DIM Stichtag' ) )
+```
+
+### `Stichtag Auswahl`
+
+Der Stand, den der Bericht gerade zeigt – die Entscheidung, auf der jede Kennzahl aufsetzt.
+
+genau ein Stichtag im Datenschnitt gewählt -> dieser Stand nichts oder mehreres gewählt              -> [Stichtag aktuell]
+
+Der Rückfall auf den jüngsten Stand ist bewusst und nicht bloß Fehlerbehandlung: eine Auswahl aus zwei Ständen dürfte sonst deren Summe zeigen. Eine Pipeline aus zwei Tagen gibt es aber nicht – das wäre derselbe Vorgang doppelt.
+
+**Format:** `dd.mm.yyyy`
+
+```dax
+Stichtag Auswahl =
+VAR _Gewaehlt = SELECTEDVALUE ( 'DIM Stichtag'[Stichtag] )
+RETURN
+    IF ( ISBLANK ( _Gewaehlt ), [Stichtag aktuell], _Gewaehlt )
+```
+
+### `Stichtag aktuell`
+
+11 STICHTAG UND HISTORIE
+
+Der jüngste im Lakehouse vorhandene Stand – unabhängig davon, was im Datenschnitt 'DIM Stichtag' ausgewählt ist.
+
+Ersatzweise aus der Faktentabelle gelesen: fehlt 'DIM Stichtag' oder ist sie leer, weil gold_dim_snapshot nicht geschrieben wurde, bliebe sonst der gesamte Bericht leer. So fällt er auf den tagesaktuellen Stand zurück und verliert nur die Auswahlmöglichkeit.
+
+**Format:** `dd.mm.yyyy`
+
+```dax
+Stichtag aktuell =
+VAR _AusDimension =
+    CALCULATE ( MAX ( 'DIM Stichtag'[Stichtag] ), REMOVEFILTERS ( 'DIM Stichtag' ) )
+RETURN
+    COALESCE (
+        _AusDimension,
+        CALCULATE (
+            MAX ( 'FCT Net New ITY'[Stichtag] ),
+            REMOVEFILTERS ( 'FCT Net New ITY' )
+        )
+    )
 ```

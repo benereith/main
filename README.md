@@ -47,17 +47,18 @@ Maßgeblich für die Zuordnung zu laufendem oder Vorjahr ist laut Guidance das
 | Berichte | 3 | 1 |
 | Seiten | 51 (davon 22 Duplikate) | 9 |
 | Semantikmodelle | 3 | 1 |
-| Tabellen | 87 | 16 |
-| Kennzahlen | ~109, überwiegend undokumentiert | 51, jede mit Beschreibung |
+| Tabellen | 87 | 18 |
+| Kennzahlen | ~109, überwiegend undokumentiert | 80, jede mit Beschreibung |
 | Auto-Datumstabellen | 32 | 0 |
 | Perioden-Fanout | 3 verschiedene Umsetzungen | 1, im Lakehouse |
 | Szenarien | fest verdrahtet in Power Query | 5 Regler im Bericht |
-| Excel im Produktivpfad | 3 SharePoint-Dateien | 0 |
+| Excel im Produktivpfad | 3 SharePoint-Dateien | 0 – beide gepflegten Dateien laufen über den Ladelauf und werden dabei historisiert |
 | CRM-Felder | 34 | 90 (Wunschliste, wächst schrittweise) |
-| Datenqualitätsprüfung | keine | 12 Regeln, blockierend bei ERROR |
+| Datenqualitätsprüfung | keine | 15 Regeln, blockierend bei ERROR |
 | Bewegungsanalyse | keine | eigene Seite mit Vorher/Nachher |
+| Rückschau auf die Pipeline | keine | jeder Tagesstand der letzten 90 Tage abrufbar, Monatsstände dauerhaft |
 
-### Die drei wichtigsten Verbesserungen
+### Die vier wichtigsten Verbesserungen
 
 **1. Kein manuelles Shiften mehr.** Anlauffaktor, Anlaufdauer, zeitliche
 Verschiebung, Bewertungsbasis und Mindestwahrscheinlichkeit sind Regler im
@@ -73,6 +74,12 @@ passiert?" hat jetzt eine Seite.
 `Table.SelectRows` aus dem Datenstrom entfernten, protokolliert der Neubau sie
 mit Name, Grund und Handlungsanweisung.
 
+**4. Die Pipeline von gestern ist noch da.** Die Gold-Schicht legt je Ladelauf
+einen vollständigen Tagesstand ab. Im Bericht steht deshalb nicht nur „wie es
+jetzt aussieht", sondern auch „wie es am 12. aussah" – zwei Kennzahlen,
+`Net New ITY (tagesaktuell)` und `Net New ITY (historischer Stand)`, die sich
+nebeneinander stellen lassen.
+
 ---
 
 ## Aufbau des Repositories
@@ -85,7 +92,7 @@ lakehouse/
 dataflows/               M-Code der CRM-Extrakte
 powerbi/
   Net New ITY Cockpit.pbip
-  ...SemanticModel/      TMDL: 16 Tabellen, 51 Kennzahlen
+  ...SemanticModel/      TMDL: 18 Tabellen, 80 Kennzahlen
   ...Report/             PBIR: 9 Seiten
 tools/
   build_report.py        baut die PBIR-Struktur neu auf (Sonderfall,
@@ -147,7 +154,9 @@ Beschreibung hat. Das ist beabsichtigt.
 2. **Szenarien** – die fünf Regler. Um die Zahlen des alten Budgetmodells zu
    reproduzieren: Anlauf auf 80 %, Anlaufdauer auf 3 Monate, Verschiebung auf
    +1 Monat.
-3. **CRM-Bewegung** – was sich seit dem letzten Stichtag geändert hat.
+3. **CRM-Bewegung** – was sich seit dem letzten Stichtag geändert hat. Über
+   den Datenschnitt *Stand vom …* lässt sich außerdem jede Seite auf einen
+   früheren Tag zurückstellen; ohne Auswahl zeigt sie den tagesaktuellen Stand.
 4. **Abstimmung & Datenqualität** – ob den Zahlen zu trauen ist und was im CRM
    fehlt.
 
@@ -159,6 +168,14 @@ Beschreibung hat. Das ist beabsichtigt.
   `docs/04_crm_feldkatalog.md` sind Wunschfelder und im Mandanten noch nicht
   verifiziert. Der Extrakt lädt fehlende Felder nicht, bricht aber auch nicht
   ab, und protokolliert sie in `_fehlende_felder`.
+* **Datenschnitt „Stand vom …" platzieren.** Die Stichtagsdimension und beide
+  Kennzahlen stehen im Modell; der Datenschnitt auf `'DIM Stichtag'[Stichtag
+  Bezeichnung]` ist noch von Hand in Power BI Desktop zu setzen – der Bericht
+  wird bewusst nicht generiert (siehe `docs/05_report_design.md`).
+* **`BUDGET_FY` bestätigen.** In `nb_00_config.py` steht das Geschäftsjahr der
+  Budgetdatei in der Konvention dieses Repositories (Beginnjahr). Die Excel
+  selbst bezeichnet dasselbe Jahr mit dem Endjahr. Der abgeleitete Wert ist
+  fachlich zu bestätigen; Regel DQ-BUD-002 meldet eine Abweichung.
 * **Abnahme gegen die Altberichte.** Der Parallelbetrieb steht noch aus; das
   Vorgehen beschreibt `docs/07_migration_mapping.md`, Abschnitt 5.
 * **Mapping-Tabelle befüllen.** Die Werk-Zuordnung der CRM-Vorgänge läuft über

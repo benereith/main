@@ -81,13 +81,13 @@
                 "Measure": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "CRM Data"
+                      "Entity": "_Kennzahlen"
                     }
                   },
                   "Property": "ITY relativ sicher"
                 }
               },
-              "queryRef": "CRM Data.ITY relativ sicher",
+              "queryRef": "_Kennzahlen.ITY relativ sicher",
               "nativeQueryRef": "ITY relativ sicher"
             }
           ]
@@ -402,7 +402,7 @@
           "Measure": {
             "Expression": {
               "SourceRef": {
-                "Entity": "CRM Data"
+                "Entity": "_Kennzahlen"
               }
             },
             "Property": "ITY relativ sicher"
