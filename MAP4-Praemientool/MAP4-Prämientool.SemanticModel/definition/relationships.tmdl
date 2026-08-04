@@ -1,0 +1,107 @@
+/// ============================================================================
+/// BEZIEHUNGEN - Sterngeflecht
+///
+/// Regeln, die hier durchgehalten werden:
+///   1. Genau EINE Faktentabelle (F_SAP). Alle Dimensionen zeigen mit 1:n darauf.
+///   2. Alle Beziehungen sind Einwegfilter (Dimension -> Fakten). Einzige Ausnahme:
+///      die Brueckenbeziehung brg_Person_Betrieb -> dim_Betrieb.
+///   3. Keine M:N-Beziehung mehr. Der frueher direkte, bidirektionale M:N-Link
+///      sap_master_data_innenauftrag[Pacht/Mandat] <-> Praemienvereinbarungen[Vertragsart]
+///      ist ersetzt durch die gemeinsame Dimension dim_PachtMandat, die beide Seiten
+///      von oben filtert.
+///   4. Zwischen zwei Tabellen gibt es immer nur einen aktiven Pfad -> keine Mehrdeutigkeit.
+/// ============================================================================
+
+/// F_SAP -> dim_Betrieb. Object_group ist die Betriebsnummer in den SAP-Exporten.
+relationship F_SAP_dim_Betrieb
+	fromColumn: F_SAP.Object_group
+	toColumn: dim_Betrieb.betrieb
+
+/// F_SAP -> dim_Konto. Laeuft ueber den numerischen Schluessel Kostenart_Key.
+/// Frueher lief diese Beziehung von Account (Ganzzahl) auf Kostenart (Text) - ein Typkonflikt.
+relationship F_SAP_dim_Konto
+	fromColumn: F_SAP.Account
+	toColumn: dim_Konto.Kostenart_Key
+
+/// F_SAP -> dim_Szenario. Der zusammengesetzte Schluessel SAP_Version|YTD-YTG bildet
+/// Budget (Version 20) und FC (YTD Version 0 + YTG RGF/R12) ohne DAX-Sonderlogik ab.
+relationship F_SAP_dim_Szenario
+	fromColumn: F_SAP.Szenario_Key
+	toColumn: dim_Szenario.Szenario_Key
+
+/// F_SAP -> dim_Periode.
+relationship F_SAP_dim_Periode
+	fromColumn: F_SAP.Perioden_Key
+	toColumn: dim_Periode.Perioden_Key
+
+/// dim_Betrieb -> dim_PachtMandat. Damit wirkt der Split auf alle Fakten.
+relationship dim_Betrieb_dim_PachtMandat
+	fromColumn: dim_Betrieb.Pacht/Mandat
+	toColumn: dim_PachtMandat.Pacht/Mandat
+
+/// tab_Praemienpunkte -> dim_PachtMandat. Zweiter Ast derselben Dimension.
+/// Ein Slicer auf dim_PachtMandat splittet dadurch Fakten UND Praemienpunkte gleichzeitig -
+/// genau das, was frueher die M:N-Beziehung leisten sollte.
+relationship tab_Praemienpunkte_dim_PachtMandat
+	fromColumn: tab_Prämienpunkte.Vertragsart
+	toColumn: dim_PachtMandat.Pacht/Mandat
+
+/// tab_Praemienpunkte -> dim_Praemienart.
+relationship tab_Praemienpunkte_dim_Praemienart
+	fromColumn: tab_Prämienpunkte.Prämienziel
+	toColumn: dim_Praemienart.Prämienziel
+
+/// dim_Betrieb -> dim_Region.
+relationship dim_Betrieb_dim_Region
+	fromColumn: dim_Betrieb.region
+	toColumn: dim_Region.region_key
+
+/// Retention -> dim_Region. Frueher hing Retention an sap_master_data_innenauftrag[region]
+/// und zusaetzlich (deaktiviert) an sap_master_data_unit[region]. Jetzt gibt es nur noch
+/// diese eine Region-Achse.
+relationship Retention_dim_Region
+	fromColumn: Retention.Region
+	toColumn: dim_Region.region_key
+
+/// dim_Innenauftrag -> dim_Betrieb. Nachgelagerte Dimension, liefert nur Zusatzattribute.
+relationship dim_Innenauftrag_dim_Betrieb
+	fromColumn: dim_Innenauftrag.betrieb
+	toColumn: dim_Betrieb.betrieb
+
+/// Personaldaten -> dim_Betrieb.
+relationship Personaldaten_dim_Betrieb
+	fromColumn: Personaldaten.Betrieb
+	toColumn: dim_Betrieb.betrieb
+
+/// Compliance -> dim_Betrieb.
+relationship Compliance_dim_Betrieb
+	fromColumn: Compliance.Betrieb
+	toColumn: dim_Betrieb.betrieb
+
+/// dim_Person -> brg_Person_Betrieb. Einwegfilter: die Person filtert ihre Zuordnungen.
+relationship dim_Person_brg_Person_Betrieb
+	fromColumn: brg_Person_Betrieb.Vollname
+	toColumn: dim_Person.Vollname
+
+/// brg_Person_Betrieb -> dim_Betrieb. DIE EINZIGE bidirektionale Beziehung im Modell.
+/// Sie ist noetig, damit eine ausgewaehlte Person ueber die Bruecke bis auf die Fakten
+/// durchfiltert (dim_Person -> brg -> dim_Betrieb -> F_SAP). Die Gegenrichtung erlaubt es,
+/// zu einem ausgewaehlten Betrieb die Verantwortlichen ueber brg_Person_Betrieb[Vollname]
+/// anzuzeigen. Das ist das Standardmuster fuer Brueckentabellen und bleibt eindeutig,
+/// weil brg_Person_Betrieb sonst mit keiner weiteren Tabelle verbunden ist.
+relationship brg_Person_Betrieb_dim_Betrieb
+	crossFilteringBehavior: bothDirections
+	fromColumn: brg_Person_Betrieb.Betrieb
+	toColumn: dim_Betrieb.betrieb
+
+/// Personaldaten -> dim_Person, BEWUSST DEAKTIVIERT.
+/// Aktiv wuerde sie einen Filterkreis erzeugen:
+///   Personaldaten -> dim_Betrieb <-> brg_Person_Betrieb -> dim_Person -> Personaldaten.
+/// Personaldaten haengt daher ueber den Betrieb am Modell. Wer die Gehalts-/Praemiensatzdaten
+/// direkt an der Person braucht, verwendet USERELATIONSHIP in einer eigenen Measure.
+/// Voraussetzung ist, dass die Namensschreibweise in Betriebeliste und Personaldaten
+/// uebereinstimmt - siehe Kontrollspalte dim_Person[Quelle].
+relationship Personaldaten_dim_Person
+	isActive: false
+	fromColumn: Personaldaten.Vollname
+	toColumn: dim_Person.Vollname

@@ -1,0 +1,171 @@
+/// EK-Compliance-Kennzahlen je Betrieb (aus SharePoint). Haengt ueber [Betrieb] an dim_Betrieb.
+/// Die mitgelieferten Spalten bezeichnung_region / _management / _bezirk sind Redundanzen aus
+/// der Quelle - fuer Auswertungen bitte die entsprechenden Spalten aus dim_Betrieb bzw.
+/// dim_Region verwenden, damit die Filter eindeutig bleiben.
+table Compliance
+	lineageTag: 3fb0282f-17ab-4e40-8fc9-1afbac7ae97e
+
+	column bezeichnung_verantwortungsbereich
+		dataType: string
+		lineageTag: f99bcb2a-bc5d-42da-ba8e-8f8f325d4507
+		summarizeBy: none
+		sourceColumn: bezeichnung_verantwortungsbereich
+
+		annotation SummarizationSetBy = Automatic
+
+	column bezeichnung_management
+		dataType: string
+		lineageTag: 42f753db-59c6-43fb-a05b-46b43e56246f
+		summarizeBy: none
+		sourceColumn: bezeichnung_management
+
+		annotation SummarizationSetBy = Automatic
+
+	column bezeichnung_region
+		dataType: string
+		lineageTag: e73f92e8-f523-413b-a09b-9da1370802ae
+		summarizeBy: none
+		sourceColumn: bezeichnung_region
+
+		annotation SummarizationSetBy = Automatic
+
+	column bezeichnung_bezirk
+		dataType: string
+		lineageTag: d6035370-7798-4afb-b60e-b54efa878733
+		summarizeBy: none
+		sourceColumn: bezeichnung_bezirk
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Betrieb (Auswahl)'
+		dataType: string
+		lineageTag: 62182e08-7fd1-4397-b25d-d553cbc94dae
+		summarizeBy: none
+		sourceColumn: Betrieb (Auswahl)
+
+		annotation SummarizationSetBy = Automatic
+
+	column A%
+		dataType: double
+		lineageTag: 2bf9757e-ffa3-44e3-8f53-c3820e884c68
+		summarizeBy: sum
+		sourceColumn: A%
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column B%
+		dataType: double
+		lineageTag: 22d50010-7292-4d37-9757-a5bf7e236a36
+		summarizeBy: sum
+		sourceColumn: B%
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column A&B%
+		dataType: double
+		lineageTag: f4310626-a93b-4882-9a72-d2d57c680053
+		summarizeBy: sum
+		sourceColumn: A&B%
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'A% Ziel'
+		dataType: double
+		lineageTag: 8c5957b8-41e9-48d0-8fe1-bf2c4909c8f2
+		summarizeBy: sum
+		sourceColumn: A% Ziel
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'B% Ziel'
+		dataType: double
+		lineageTag: 6befc81f-e46a-4ade-bdb3-3ab24be757f3
+		summarizeBy: sum
+		sourceColumn: B% Ziel
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'A&B % Ziel'
+		dataType: double
+		lineageTag: c383361d-acbe-409f-a53d-d48cbe6bbc47
+		summarizeBy: sum
+		sourceColumn: A&B % Ziel
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Diff A'
+		dataType: double
+		lineageTag: f0d1b1e3-2fe6-4cc2-a721-48968460bdbe
+		summarizeBy: sum
+		sourceColumn: Diff A
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Diff A&B'
+		dataType: double
+		lineageTag: b8bff6de-e9bd-4541-b08a-7b00c17a7cf5
+		summarizeBy: sum
+		sourceColumn: Diff A&B
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Status Zielerfüllung'
+		dataType: string
+		lineageTag: 4797bcc8-f59e-4c3c-988c-700da2591d22
+		summarizeBy: none
+		sourceColumn: Status Zielerfüllung
+
+		annotation SummarizationSetBy = Automatic
+
+	column Betrieb
+		dataType: int64
+		formatString: 0
+		lineageTag: f686c57f-3e56-4a61-aa87-421a63fe8e41
+		summarizeBy: none
+		sourceColumn: Betrieb
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Compliance = m
+		mode: import
+		source =
+				let
+				  Quelle = SharePoint.Contents(Sharepoint, [ApiVersion = 15]),
+				    #"Shared Documents" = Quelle{[Name="Shared Documents"]}[Content],
+				    #"Group Controlling" = #"Shared Documents"{[Name="Group Controlling"]}[Content],
+				    #"10_Prämientool" = #"Group Controlling"{[Name="10_Prämientool"]}[Content],
+				    #"10_Map 4 Prämientool" = #"10_Prämientool"{[Name="10_Map 4 Prämientool"]}[Content],
+				    #"2025_26" = #"10_Map 4 Prämientool"{[Name="2025_26"]}[Content],
+				    #"30_Daten aus Fachbereichen" = #"2025_26"{[Name="30_Daten aus Fachbereichen"]}[Content],
+				    #"Compliance xlsx" = #"30_Daten aus Fachbereichen"{[Name="Compliance.xlsx"]}[Content],
+				    #"Importierte Excel-Arbeitsmappe" = Excel.Workbook(#"Compliance xlsx"),
+				    #"EK-Compliance_Betriebe_Sheet" = #"Importierte Excel-Arbeitsmappe"{[Item="EK-Compliance_Betriebe",Kind="Sheet"]}[Data],
+				    #"Entfernte oberste Zeilen" = Table.Skip(#"EK-Compliance_Betriebe_Sheet",5),
+				    #"Höher gestufte Header" = Table.PromoteHeaders(#"Entfernte oberste Zeilen", [PromoteAllScalars=true]),
+				    #"Geänderter Typ" = Table.TransformColumnTypes(#"Höher gestufte Header",{{"bezeichnung_verantwortungsbereich", type text}, {"bezeichnung_management", type text}, {"bezeichnung_region", type text}, {"bezeichnung_bezirk", type text}, {"Betrieb (Auswahl)", type text}, {"A%", type number}, {"B%", type number}, {"A&B%", type number}, {"A% Ziel", type number}, {"B% Ziel", type number}, {"A&B % Ziel", type number}, {"Diff A", type number}, {"Diff A&B", type number}, {"Status Zielerfüllung", type text}, {"Column15", type any}, {"Column16", type text}, {"Betrieb", Int64.Type}, {"Punkte", Int64.Type}, {"Column19", type any}, {"Column20", type any}, {"Column21", type any}, {"Column22", type text}}),
+				    #"Andere entfernte Spalten" = Table.SelectColumns(#"Geänderter Typ",{"bezeichnung_verantwortungsbereich", "bezeichnung_management", "bezeichnung_region", "bezeichnung_bezirk", "Betrieb (Auswahl)", "A%", "B%", "A&B%", "A% Ziel", "B% Ziel", "A&B % Ziel", "Diff A", "Diff A&B", "Status Zielerfüllung"}),
+				    #"Der Text vor dem Trennzeichen wurde eingefügt." = Table.AddColumn(#"Andere entfernte Spalten", "Betrieb", each Text.BeforeDelimiter([#"Betrieb (Auswahl)"], " "), type text),
+				    #"Geänderter Typ1" = Table.TransformColumnTypes(#"Der Text vor dem Trennzeichen wurde eingefügt.",{{"Betrieb", Int64.Type}})
+				in
+				  #"Geänderter Typ1"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,45 @@
+expression LH_Server = "3w3wftkijo6ujehh4fb2eleovu-tuq7lxe5lznu7hpei5nzy67o3e.datawarehouse.fabric.microsoft.com" meta [IsParameterQuery=true, Type="Any", IsParameterQueryRequired=true]
+	lineageTag: 5538fa95-b606-43ed-bd87-bba9e4a79966
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Text
+
+expression LH_DB = "Reporting" meta [IsParameterQuery=true, Type="Any", IsParameterQueryRequired=true]
+	lineageTag: 368818b1-833e-4965-8d66-efadc9ecad10
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Text
+
+expression YTD/YTG = 9 meta [IsParameterQuery=true, Type="Any", IsParameterQueryRequired=true]
+	lineageTag: 29d07b2f-0eb5-4924-8a3f-75c8df444982
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Number
+
+expression Sharepoint = "https://cpgplc.sharepoint.com/sites/GroupControlling" meta [IsParameterQuery=true, Type="Any", IsParameterQueryRequired=true]
+	lineageTag: d11a3a56-1f39-4a5b-ba8c-044d50340e14
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Text
+
+expression Blanko-Abfrage =
+		let
+		  Quelle = SharePoint.Contents(Sharepoint, [ApiVersion = 15]),
+		    #"Shared Documents" = Quelle{[Name="Shared Documents"]}[Content],
+		    #"Group Controlling" = #"Shared Documents"{[Name="Group Controlling"]}[Content],
+		    #"10_Prämientool" = #"Group Controlling"{[Name="10_Prämientool"]}[Content],
+		    #"10_Map 4 Prämientool" = #"10_Prämientool"{[Name="10_Map 4 Prämientool"]}[Content],
+		    #"2025_26" = #"10_Map 4 Prämientool"{[Name="2025_26"]}[Content],
+		    #"30_Daten aus Fachbereichen" = #"2025_26"{[Name="30_Daten aus Fachbereichen"]}[Content]
+		in
+		  #"30_Daten aus Fachbereichen"
+	lineageTag: ca4e4841-1610-4471-8c27-3bbee632bf1d
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

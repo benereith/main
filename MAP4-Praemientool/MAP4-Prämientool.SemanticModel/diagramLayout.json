@@ -1,0 +1,256 @@
+{
+  "version": "1.1.0",
+  "diagrams": [
+    {
+      "ordinal": 0,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 1700,
+            "y": -200
+          },
+          "nodeIndex": "Compliance",
+          "nodeLineageTag": "3fb0282f-17ab-4e40-8fc9-1afbac7ae97e",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 1300,
+            "y": 600
+          },
+          "nodeIndex": "F_SAP",
+          "nodeLineageTag": "77aeeadf-7beb-49e0-8d19-9274ddd3e3dc",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 1
+        },
+        {
+          "location": {
+            "x": 900,
+            "y": -200
+          },
+          "nodeIndex": "Personaldaten",
+          "nodeLineageTag": "cab02e25-859f-412c-94aa-2d622c7e9b38",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 2
+        },
+        {
+          "location": {
+            "x": 500,
+            "y": -200
+          },
+          "nodeIndex": "Retention",
+          "nodeLineageTag": "e8597ca2-f0d7-43ff-bf92-5aeff14b6acc",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 3
+        },
+        {
+          "location": {
+            "x": 900,
+            "y": 1000
+          },
+          "nodeIndex": "_Measuretabelle",
+          "nodeLineageTag": "448d0ed6-170a-40cf-a8a9-fe83c736205a",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 4
+        },
+        {
+          "location": {
+            "x": 100,
+            "y": 200
+          },
+          "nodeIndex": "brg_Person_Betrieb",
+          "nodeLineageTag": "514753ff-eb82-45f0-a70f-4e3381824398",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 5
+        },
+        {
+          "location": {
+            "x": 1300,
+            "y": 200
+          },
+          "nodeIndex": "dim_Betrieb",
+          "nodeLineageTag": "93c19015-8004-4e27-b9fd-38312273b9ec",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 6
+        },
+        {
+          "location": {
+            "x": 1300,
+            "y": -200
+          },
+          "nodeIndex": "dim_Innenauftrag",
+          "nodeLineageTag": "a4a44f0e-25ae-497f-a55e-0788970e5607",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 7
+        },
+        {
+          "location": {
+            "x": 900,
+            "y": 600
+          },
+          "nodeIndex": "dim_Konto",
+          "nodeLineageTag": "d84f3d93-d925-4df2-a161-5c6b912b81a9",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 8
+        },
+        {
+          "location": {
+            "x": 1700,
+            "y": 200
+          },
+          "nodeIndex": "dim_PachtMandat",
+          "nodeLineageTag": "8b1c4f2a-0300-4a10-9d31-1f5a2c7e0300",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 9
+        },
+        {
+          "location": {
+            "x": 1700,
+            "y": 1000
+          },
+          "nodeIndex": "dim_Periode",
+          "nodeLineageTag": "8b1c4f2a-0200-4a10-9d31-1f5a2c7e0200",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 10
+        },
+        {
+          "location": {
+            "x": 100,
+            "y": -200
+          },
+          "nodeIndex": "dim_Person",
+          "nodeLineageTag": "8b1c4f2a-0500-4a10-9d31-1f5a2c7e0500",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 11
+        },
+        {
+          "location": {
+            "x": 2100,
+            "y": -200
+          },
+          "nodeIndex": "dim_Praemienart",
+          "nodeLineageTag": "8b1c4f2a-0600-4a10-9d31-1f5a2c7e0600",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 12
+        },
+        {
+          "location": {
+            "x": 500,
+            "y": 200
+          },
+          "nodeIndex": "dim_Region",
+          "nodeLineageTag": "8b1c4f2a-0400-4a10-9d31-1f5a2c7e0400",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 13
+        },
+        {
+          "location": {
+            "x": 1700,
+            "y": 600
+          },
+          "nodeIndex": "dim_Szenario",
+          "nodeLineageTag": "8b1c4f2a-0100-4a10-9d31-1f5a2c7e0100",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 14
+        },
+        {
+          "location": {
+            "x": 2100,
+            "y": 1000
+          },
+          "nodeIndex": "sw_Ergebnisziel",
+          "nodeLineageTag": "8b1c4f2a-0700-4a10-9d31-1f5a2c7e0700",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 15
+        },
+        {
+          "location": {
+            "x": 2500,
+            "y": 1000
+          },
+          "nodeIndex": "sw_HSE_TRIFR",
+          "nodeLineageTag": "8b1c4f2a-0800-4a10-9d31-1f5a2c7e0800",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 16
+        },
+        {
+          "location": {
+            "x": 2100,
+            "y": 200
+          },
+          "nodeIndex": "tab_Prämienpunkte",
+          "nodeLineageTag": "d5561500-0f00-4f31-afbf-8f9930f0abca",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 17
+        }
+      ],
+      "name": "Alle Tabellen",
+      "zoomValue": 70,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    }
+  ],
+  "selectedDiagram": "Alle Tabellen",
+  "defaultDiagram": "Alle Tabellen"
+}

@@ -1,0 +1,38 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.11.0/schema.json",
+  "name": "slcPachtMandat",
+  "position": {
+    "x": 0,
+    "y": 128,
+    "z": 2,
+    "height": 120,
+    "width": 200,
+    "tabOrder": 2
+  },
+  "visual": {
+    "visualType": "slicer",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dim_PachtMandat"
+                    }
+                  },
+                  "Property": "Pacht/Mandat"
+                }
+              },
+              "queryRef": "dim_PachtMandat.Pacht/Mandat",
+              "nativeQueryRef": "Pacht/Mandat"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

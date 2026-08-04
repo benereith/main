@@ -1,0 +1,99 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.11.0/schema.json",
+  "name": "mtxBetrieb",
+  "position": {
+    "x": 210,
+    "y": 0,
+    "z": 10,
+    "height": 430,
+    "width": 720,
+    "tabOrder": 10
+  },
+  "visual": {
+    "visualType": "pivotTable",
+    "query": {
+      "queryState": {
+        "Rows": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dim_Betrieb"
+                    }
+                  },
+                  "Property": "Werk - Bezeichnung"
+                }
+              },
+              "queryRef": "dim_Betrieb.Werk - Bezeichnung",
+              "nativeQueryRef": "Werk - Bezeichnung",
+              "active": true
+            }
+          ]
+        },
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measuretabelle"
+                    }
+                  },
+                  "Property": "Revenue Budget"
+                }
+              },
+              "queryRef": "_Measuretabelle.Revenue Budget",
+              "nativeQueryRef": "Revenue Budget"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measuretabelle"
+                    }
+                  },
+                  "Property": "Revenue FC"
+                }
+              },
+              "queryRef": "_Measuretabelle.Revenue FC",
+              "nativeQueryRef": "Revenue FC"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measuretabelle"
+                    }
+                  },
+                  "Property": "UP Budget"
+                }
+              },
+              "queryRef": "_Measuretabelle.UP Budget",
+              "nativeQueryRef": "UP Budget"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measuretabelle"
+                    }
+                  },
+                  "Property": "UP FC"
+                }
+              },
+              "queryRef": "_Measuretabelle.UP FC",
+              "nativeQueryRef": "UP FC"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

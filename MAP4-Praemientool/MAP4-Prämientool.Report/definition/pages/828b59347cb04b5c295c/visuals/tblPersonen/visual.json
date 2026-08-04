@@ -1,0 +1,66 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.11.0/schema.json",
+  "name": "tblPersonen",
+  "position": {
+    "x": 940,
+    "y": 0,
+    "z": 12,
+    "height": 430,
+    "width": 340,
+    "tabOrder": 12
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dim_Person"
+                    }
+                  },
+                  "Property": "Vollname"
+                }
+              },
+              "queryRef": "dim_Person.Vollname",
+              "nativeQueryRef": "Vollname"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measuretabelle"
+                    }
+                  },
+                  "Property": "Anzahl Verantwortlichkeit"
+                }
+              },
+              "queryRef": "_Measuretabelle.Anzahl Verantwortlichkeit",
+              "nativeQueryRef": "Anzahl Verantwortlichkeit"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measuretabelle"
+                    }
+                  },
+                  "Property": "Revenue Budget"
+                }
+              },
+              "queryRef": "_Measuretabelle.Revenue Budget",
+              "nativeQueryRef": "Revenue Budget"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

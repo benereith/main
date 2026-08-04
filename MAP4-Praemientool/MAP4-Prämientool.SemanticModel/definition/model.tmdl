@@ -1,0 +1,44 @@
+/// MAP4 Praemientool - Semantikmodell.
+///
+/// Aufbau (Sterngeflecht, Namenskonvention):
+///   F_SAP   = Faktentabelle
+///   dim_*   = Dimension, filtert immer nur in eine Richtung nach unten
+///   brg_*   = Brueckentabelle fuer echtes M:N (nur Person <-> Betrieb)
+///   tab_*   = Parameter-/Konfigurationstabelle (keine Dimension)
+///   sw_*    = beziehungsloser Schalter (What-if), wird nur per Measure ausgelesen
+///   _*      = Measure-Tabelle
+model Model
+	culture: de-DE
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: de-DE
+	valueFilterBehavior: independent
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation __PBI_TimeIntelligenceEnabled = 0
+
+annotation PBI_QueryOrder = ["LH_Server","LH_DB","YTD/YTG","Sharepoint","Blanko-Abfrage","F_SAP","dim_Betrieb","dim_Innenauftrag","dim_Konto","dim_Szenario","dim_Periode","dim_PachtMandat","dim_Region","dim_Person","brg_Person_Betrieb","tab_Prämienpunkte","dim_Praemienart","sw_Ergebnisziel","sw_HSE_TRIFR","Compliance","Retention","Personaldaten","_Measuretabelle"]
+
+annotation PBI_ProTooling = ["DevMode"]
+
+ref table F_SAP
+ref table dim_Betrieb
+ref table dim_Innenauftrag
+ref table dim_Konto
+ref table dim_Szenario
+ref table dim_Periode
+ref table dim_PachtMandat
+ref table dim_Region
+ref table dim_Person
+ref table brg_Person_Betrieb
+ref table tab_Prämienpunkte
+ref table dim_Praemienart
+ref table sw_Ergebnisziel
+ref table sw_HSE_TRIFR
+ref table Compliance
+ref table Retention
+ref table Personaldaten
+ref table _Measuretabelle
+
+ref cultureInfo de-DE

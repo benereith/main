@@ -1,0 +1,69 @@
+/// Parametertabelle mit den Praemienpunkten je Praemienziel und Vertragsart
+/// (frueher "Praemienvereinbarungen").
+///
+/// Grain: Praemienziel x Vertragsart. Das ist KEINE Dimension - deshalb hing sie frueher
+/// per M:N und bidirektional an sap_master_data_innenauftrag[Pacht/Mandat] und hat von dort
+/// in die gesamte Faktenwelt zurueckgefiltert. Diese Beziehung ist entfernt.
+/// Jetzt wird sie von oben gefiltert: dim_Praemienart und dim_PachtMandat zeigen jeweils
+/// mit 1:n und Einwegfilter auf diese Tabelle.
+table tab_Prämienpunkte
+	lineageTag: d5561500-0f00-4f31-afbf-8f9930f0abca
+
+	/// Fremdschluessel zu dim_Praemienart[Praemienziel].
+	column Prämienziel
+		dataType: string
+		lineageTag: 5ae6d285-663d-4fa6-a9c5-80945a2f7350
+		summarizeBy: none
+		sourceColumn: Prämienziel
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Maximal erreichbare Punkte fuer diese Kombination aus Praemienziel und Vertragsart.
+	column Prämienpunkte
+		dataType: double
+		isHidden
+		lineageTag: da57b712-7b36-4ffd-a1fc-3f8edb0188e7
+		summarizeBy: sum
+		sourceColumn: Prämienpunkte
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	/// Fremdschluessel zu dim_PachtMandat[Pacht/Mandat]. Enthaelt "Pacht" bzw. "Mandat".
+	column Vertragsart
+		dataType: string
+		lineageTag: be2f670d-1a02-4671-8bbf-3e5c4d59abe7
+		summarizeBy: none
+		sourceColumn: Vertragsart
+
+		annotation SummarizationSetBy = Automatic
+
+	partition tab_Prämienpunkte = m
+		mode: import
+		source =
+				let
+				  Quelle = SharePoint.Contents(Sharepoint, [ApiVersion = 15]),
+				    #"Shared Documents" = Quelle{[Name="Shared Documents"]}[Content],
+				    #"Group Controlling" = #"Shared Documents"{[Name="Group Controlling"]}[Content],
+				    #"10_Prämientool" = #"Group Controlling"{[Name="10_Prämientool"]}[Content],
+				    #"10_Map 4 Prämientool" = #"10_Prämientool"{[Name="10_Map 4 Prämientool"]}[Content],
+				    #"2025_26" = #"10_Map 4 Prämientool"{[Name="2025_26"]}[Content],
+				    #"20_Prämienvereinbarungen" = #"2025_26"{[Name="20_Prämienvereinbarungen"]}[Content],
+				    #"Prämienvereinbarung Pacht xlsx" = #"20_Prämienvereinbarungen"{[Name="Prämienvereinbarung Pacht.xlsx"]}[Content],
+				    #"Importierte Excel-Arbeitsmappe" = Excel.Workbook(#"Prämienvereinbarung Pacht xlsx"),
+				    Prämienvereinbarungen_Table = #"Importierte Excel-Arbeitsmappe"{[Item="Prämienvereinbarungen",Kind="Table"]}[Data],
+				    // Spaltennamen normalisieren (die Quellspalte hat ein Leerzeichen am Ende).
+				    #"Getrimmte Spaltennamen" = Table.RenameColumns(Prämienvereinbarungen_Table, List.Transform(Table.ColumnNames(Prämienvereinbarungen_Table), each {_, Text.Trim(_)})),
+				    // Textspalten trimmen, damit die Schluessel sauber auf die Dimensionen treffen.
+				    #"Getrimmte Werte" = Table.TransformColumns(#"Getrimmte Spaltennamen", {{"Prämienziel", each Text.Trim(Text.From(_)), type text}, {"Vertragsart", each Text.Trim(Text.From(_)), type text}}),
+				    #"Gefilterte Zeilen" = Table.SelectRows(#"Getrimmte Werte", each [Prämienziel] <> null and [Prämienziel] <> "")
+				in
+				  #"Gefilterte Zeilen"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

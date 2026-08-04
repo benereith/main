@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "MAP4-Prämientool"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "756d3db3-314b-4357-ac25-9a86704cb1dd"
+  }
+}

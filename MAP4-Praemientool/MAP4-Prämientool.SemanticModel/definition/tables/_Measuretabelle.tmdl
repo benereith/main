@@ -1,0 +1,313 @@
+/// Zentrale Measure-Tabelle. Alle Kennzahlen liegen hier, gegliedert nach Anzeigeordnern.
+/// Grundregel des Modells: Measures filtern ueber die dim_-Tabellen, nie direkt ueber
+/// Spalten der Faktentabelle. Dadurch bleibt jeder Filterweg nachvollziehbar.
+table _Measuretabelle
+	lineageTag: 448d0ed6-170a-40cf-a8a9-fe83c736205a
+
+	/// Rohsumme ueber alle Konten und alle Versionen. Nur als Baustein gedacht -
+	/// im Bericht bitte [UP] oder [Revenue] verwenden.
+	measure 'Value (Basis)' = SUM(F_SAP[Value])
+		formatString: #,0
+		displayFolder: 01 Basis
+		isHidden
+		lineageTag: 6d986c22-e56c-44c3-a578-8176d182bb1b
+
+		changedProperty = IsHidden
+
+	/// UP = Summe ueber ALLE Konten der Ergebnisrechnung (Type = "P&L"), ohne Revenue-Filter.
+	measure UP =
+			CALCULATE(
+			    [Value (Basis)],
+			    dim_Konto[Type] = "P&L"
+			)
+		formatString: #,0
+		displayFolder: 01 Basis
+		lineageTag: 3f2a7c10-1001-4a10-9d31-1f5a2c7e1001
+
+	/// Revenue = UP eingeschraenkt auf den Hierarchieknoten Total Revenue.
+	measure Revenue =
+			CALCULATE(
+			    [UP],
+			    dim_Konto[Level_2_Key] = "IS10000_T - Total Revenue inkl. IFRS/ NEUTRA/MGMT"
+			)
+		formatString: #,0
+		displayFolder: 01 Basis
+		lineageTag: cae6e3cf-b264-41a7-ae22-51036da26a44
+
+	/// Budget = SAP-Version 20 ueber alle Perioden.
+	/// REMOVEFILTERS(dim_Szenario) setzt eine ggf. am Visual haengende Szenarioauswahl zurueck,
+	/// damit Budget und FC nebeneinander in derselben Matrix stehen koennen.
+	measure 'Revenue Budget' =
+			CALCULATE(
+			    [Revenue],
+			    REMOVEFILTERS(dim_Szenario),
+			    dim_Szenario[Szenario] = "Budget"
+			)
+		formatString: #,0
+		displayFolder: 02 Szenario\Revenue
+		lineageTag: 6e48972d-e94e-4880-a783-ea46e58eb2e5
+
+	/// FC = YTD aus SAP-Version 0 (Actuals) + YTG aus SAP-Version RGF und R12.
+	/// Die Periodenlogik steckt im Schluessel dim_Szenario[Szenario_Key], nicht in dieser Measure.
+	measure 'Revenue FC' =
+			CALCULATE(
+			    [Revenue],
+			    REMOVEFILTERS(dim_Szenario),
+			    dim_Szenario[Szenario] = "FC"
+			)
+		formatString: #,0
+		displayFolder: 02 Szenario\Revenue
+		lineageTag: 3f2a7c10-1002-4a10-9d31-1f5a2c7e1002
+
+	measure 'Revenue FC vs Budget' = [Revenue FC] - [Revenue Budget]
+		formatString: #,0
+		displayFolder: 02 Szenario\Revenue
+		lineageTag: 3f2a7c10-1003-4a10-9d31-1f5a2c7e1003
+
+	measure 'UP Budget' =
+			CALCULATE(
+			    [UP],
+			    REMOVEFILTERS(dim_Szenario),
+			    dim_Szenario[Szenario] = "Budget"
+			)
+		formatString: #,0
+		displayFolder: 02 Szenario\UP
+		lineageTag: 3f2a7c10-1004-4a10-9d31-1f5a2c7e1004
+
+	measure 'UP FC' =
+			CALCULATE(
+			    [UP],
+			    REMOVEFILTERS(dim_Szenario),
+			    dim_Szenario[Szenario] = "FC"
+			)
+		formatString: #,0
+		displayFolder: 02 Szenario\UP
+		lineageTag: 3f2a7c10-1005-4a10-9d31-1f5a2c7e1005
+
+	measure 'UP FC vs Budget' = [UP FC] - [UP Budget]
+		formatString: #,0
+		displayFolder: 02 Szenario\UP
+		lineageTag: 3f2a7c10-1006-4a10-9d31-1f5a2c7e1006
+
+	/// Der Split Pacht/Mandat funktioniert im Regelfall einfach dadurch, dass
+	/// dim_PachtMandat[Pacht/Mandat] in Zeilen, Spalten oder Slicer gezogen wird.
+	/// Die folgenden Measures sind fuer feste Gegenueberstellungen gedacht, bei denen
+	/// beide Auspraegungen nebeneinander in einem Visual stehen sollen.
+	measure 'Revenue Budget Pacht' =
+			CALCULATE(
+			    [Revenue Budget],
+			    REMOVEFILTERS(dim_PachtMandat),
+			    dim_PachtMandat[Pacht/Mandat] = "Pacht"
+			)
+		formatString: #,0
+		displayFolder: 03 Pacht-Mandat\Revenue
+		lineageTag: 3f2a7c10-1010-4a10-9d31-1f5a2c7e1010
+
+	measure 'Revenue Budget Mandat' =
+			CALCULATE(
+			    [Revenue Budget],
+			    REMOVEFILTERS(dim_PachtMandat),
+			    dim_PachtMandat[Pacht/Mandat] = "Mandat"
+			)
+		formatString: #,0
+		displayFolder: 03 Pacht-Mandat\Revenue
+		lineageTag: 3f2a7c10-1011-4a10-9d31-1f5a2c7e1011
+
+	measure 'Revenue FC Pacht' =
+			CALCULATE(
+			    [Revenue FC],
+			    REMOVEFILTERS(dim_PachtMandat),
+			    dim_PachtMandat[Pacht/Mandat] = "Pacht"
+			)
+		formatString: #,0
+		displayFolder: 03 Pacht-Mandat\Revenue
+		lineageTag: 3f2a7c10-1012-4a10-9d31-1f5a2c7e1012
+
+	measure 'Revenue FC Mandat' =
+			CALCULATE(
+			    [Revenue FC],
+			    REMOVEFILTERS(dim_PachtMandat),
+			    dim_PachtMandat[Pacht/Mandat] = "Mandat"
+			)
+		formatString: #,0
+		displayFolder: 03 Pacht-Mandat\Revenue
+		lineageTag: 3f2a7c10-1013-4a10-9d31-1f5a2c7e1013
+
+	measure 'UP Budget Pacht' =
+			CALCULATE(
+			    [UP Budget],
+			    REMOVEFILTERS(dim_PachtMandat),
+			    dim_PachtMandat[Pacht/Mandat] = "Pacht"
+			)
+		formatString: #,0
+		displayFolder: 03 Pacht-Mandat\UP
+		lineageTag: 3f2a7c10-1014-4a10-9d31-1f5a2c7e1014
+
+	measure 'UP Budget Mandat' =
+			CALCULATE(
+			    [UP Budget],
+			    REMOVEFILTERS(dim_PachtMandat),
+			    dim_PachtMandat[Pacht/Mandat] = "Mandat"
+			)
+		formatString: #,0
+		displayFolder: 03 Pacht-Mandat\UP
+		lineageTag: 3f2a7c10-1015-4a10-9d31-1f5a2c7e1015
+
+	measure 'UP FC Pacht' =
+			CALCULATE(
+			    [UP FC],
+			    REMOVEFILTERS(dim_PachtMandat),
+			    dim_PachtMandat[Pacht/Mandat] = "Pacht"
+			)
+		formatString: #,0
+		displayFolder: 03 Pacht-Mandat\UP
+		lineageTag: 3f2a7c10-1016-4a10-9d31-1f5a2c7e1016
+
+	measure 'UP FC Mandat' =
+			CALCULATE(
+			    [UP FC],
+			    REMOVEFILTERS(dim_PachtMandat),
+			    dim_PachtMandat[Pacht/Mandat] = "Mandat"
+			)
+		formatString: #,0
+		displayFolder: 03 Pacht-Mandat\UP
+		lineageTag: 3f2a7c10-1017-4a10-9d31-1f5a2c7e1017
+
+	/// Liest den Schalter sw_Ergebnisziel aus. 1 = erreicht, 0 = nicht erreicht.
+	/// Ohne Auswahl (oder bei Mehrfachauswahl) gilt bewusst "nicht erreicht".
+	measure 'Faktor Ergebnisziel' = SELECTEDVALUE(sw_Ergebnisziel[Faktor], 0)
+		formatString: 0
+		displayFolder: 04 Prämien\Schalter
+		lineageTag: 3f2a7c10-1020-4a10-9d31-1f5a2c7e1020
+
+	/// Liest den Schalter sw_HSE_TRIFR aus. 1 = erreicht, 0 = nicht erreicht.
+	measure 'Faktor HSE-TRIFR' = SELECTEDVALUE(sw_HSE_TRIFR[Faktor], 0)
+		formatString: 0
+		displayFolder: 04 Prämien\Schalter
+		lineageTag: 3f2a7c10-1021-4a10-9d31-1f5a2c7e1021
+
+	/// Maximal erreichbare Punkte im aktuellen Filterkontext
+	/// (respektiert dim_PachtMandat und dim_Praemienart).
+	measure 'Prämienpunkte max' = SUM(tab_Prämienpunkte[Prämienpunkte])
+		formatString: #,0.0
+		displayFolder: 04 Prämien
+		lineageTag: 3f2a7c10-1022-4a10-9d31-1f5a2c7e1022
+
+	/// Tatsaechlich erreichte Punkte: je Praemienziel werden die Punkte mit dem Faktor des
+	/// zugehoerigen Schalters multipliziert. Praemienziele ohne eigenen Schalter zaehlen mit 0 -
+	/// kommt ein neues Ziel dazu, muss hier eine weitere Zeile ergaenzt werden.
+	measure 'Prämienpunkte erreicht' =
+			VAR FaktorErgebnisziel = [Faktor Ergebnisziel]
+			VAR FaktorHSE = [Faktor HSE-TRIFR]
+			RETURN
+			SUMX(
+			    tab_Prämienpunkte,
+			    tab_Prämienpunkte[Prämienpunkte]
+			        * SWITCH(
+			            TRUE(),
+			            tab_Prämienpunkte[Prämienziel] = "Ergebnisziel Compass Group Deutschland", FaktorErgebnisziel,
+			            tab_Prämienpunkte[Prämienziel] = "HSE-TRIFR", FaktorHSE,
+			            0
+			        )
+			)
+		formatString: #,0.0
+		displayFolder: 04 Prämien
+		lineageTag: 3f2a7c10-1023-4a10-9d31-1f5a2c7e1023
+
+	measure 'Zielerreichung %' = DIVIDE([Prämienpunkte erreicht], [Prämienpunkte max])
+		formatString: 0.0 %
+		displayFolder: 04 Prämien
+		lineageTag: 3f2a7c10-1024-4a10-9d31-1f5a2c7e1024
+
+	/// Anzahl der Betriebe im aktuellen Filterkontext.
+	measure 'Anzahl Betriebe' = COUNTROWS(dim_Betrieb)
+		formatString: 0
+		displayFolder: 05 Kontrolle
+		lineageTag: 3f2a7c10-1030-4a10-9d31-1f5a2c7e1030
+
+	/// Anzahl der Betriebe, die eine Person verantwortet. Frueher war hier ein ALLEXCEPT-Trick
+	/// noetig, weil Person und Betrieb in derselben Tabelle lagen - mit der Bruecke
+	/// brg_Person_Betrieb ergibt sich das jetzt direkt aus dem Modell.
+	measure 'Anzahl Verantwortlichkeit' = DISTINCTCOUNT(brg_Person_Betrieb[Betrieb])
+		formatString: 0
+		displayFolder: 05 Kontrolle
+		lineageTag: 26ac1f09-25d8-4fb3-b9f3-a11817ae51ca
+
+	/// Warnmeasure zur Doppelzaehlung: Betriebe mit mehr als einer verantwortlichen Person.
+	/// Deren Werte erscheinen bei jeder dieser Personen in voller Hoehe, die Summe ueber alle
+	/// Personen ist dann groesser als der Gesamtwert.
+	measure 'Betriebe mit mehreren Verantwortlichen' =
+			COUNTROWS(
+			    FILTER(
+			        VALUES(brg_Person_Betrieb[Betrieb]),
+			        CALCULATE(DISTINCTCOUNT(brg_Person_Betrieb[Vollname])) > 1
+			    )
+			)
+		formatString: 0
+		displayFolder: 05 Kontrolle
+		lineageTag: 3f2a7c10-1031-4a10-9d31-1f5a2c7e1031
+
+	/// Datenqualitaet: Werte, deren SAP-Version|YTD-YTG in dim_Szenario nicht hinterlegt ist.
+	/// Sollte 0 sein - sonst fehlen Versionen in dim_Szenario und die Werte tauchen weder
+	/// im Budget noch im FC auf.
+	measure 'Kontrolle Wert ohne Szenariozuordnung' =
+			SUMX(
+			    FILTER(
+			        CALCULATETABLE(F_SAP, REMOVEFILTERS(dim_Szenario)),
+			        ISBLANK(RELATED(dim_Szenario[Szenario]))
+			    ),
+			    F_SAP[Value]
+			)
+		formatString: #,0
+		displayFolder: 05 Kontrolle
+		lineageTag: 3f2a7c10-1032-4a10-9d31-1f5a2c7e1032
+
+	/// Datenqualitaet: Werte, deren Account in dim_Konto fehlt. Sollte 0 sein -
+	/// diese Werte wuerden sonst weder im UP noch im Revenue auftauchen.
+	measure 'Kontrolle Wert ohne Kontozuordnung' =
+			SUMX(
+			    FILTER(
+			        CALCULATETABLE(F_SAP, REMOVEFILTERS(dim_Konto)),
+			        ISBLANK(RELATED(dim_Konto[Kostenart_Key]))
+			    ),
+			    F_SAP[Value]
+			)
+		formatString: #,0
+		displayFolder: 05 Kontrolle
+		lineageTag: 3f2a7c10-1033-4a10-9d31-1f5a2c7e1033
+
+	/// Datenqualitaet: Werte, deren Object_group in dim_Betrieb fehlt. Sollte 0 sein.
+	measure 'Kontrolle Wert ohne Betriebszuordnung' =
+			SUMX(
+			    FILTER(
+			        CALCULATETABLE(F_SAP, REMOVEFILTERS(dim_Betrieb)),
+			        ISBLANK(RELATED(dim_Betrieb[betrieb]))
+			    ),
+			    F_SAP[Value]
+			)
+		formatString: #,0
+		displayFolder: 05 Kontrolle
+		lineageTag: 3f2a7c10-1034-4a10-9d31-1f5a2c7e1034
+
+	column Spalte1
+		dataType: string
+		isHidden
+		lineageTag: 734f315c-e690-47bc-b516-9e2f8fca5b19
+		summarizeBy: none
+		sourceColumn: Spalte1
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition _Measuretabelle = m
+		mode: import
+		source =
+				let
+				  Quelle = Table.FromRows(Json.Document(Binary.Decompress(Binary.FromText("i44FAA==", BinaryEncoding.Base64), Compression.Deflate)), let _t = ((type nullable text) meta [Serialized.Text = true]) in type table [Spalte1 = _t])
+				in
+				  Quelle
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table

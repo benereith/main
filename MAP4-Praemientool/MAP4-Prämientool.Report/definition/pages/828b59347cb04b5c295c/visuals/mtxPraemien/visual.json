@@ -1,0 +1,90 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.11.0/schema.json",
+  "name": "mtxPraemien",
+  "position": {
+    "x": 210,
+    "y": 440,
+    "z": 11,
+    "height": 280,
+    "width": 720,
+    "tabOrder": 11
+  },
+  "visual": {
+    "visualType": "pivotTable",
+    "query": {
+      "queryState": {
+        "Rows": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dim_Praemienart"
+                    }
+                  },
+                  "Property": "Prämienziel"
+                }
+              },
+              "queryRef": "dim_Praemienart.Prämienziel",
+              "nativeQueryRef": "Prämienziel",
+              "active": true
+            }
+          ]
+        },
+        "Columns": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dim_PachtMandat"
+                    }
+                  },
+                  "Property": "Pacht/Mandat"
+                }
+              },
+              "queryRef": "dim_PachtMandat.Pacht/Mandat",
+              "nativeQueryRef": "Pacht/Mandat",
+              "active": true
+            }
+          ]
+        },
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measuretabelle"
+                    }
+                  },
+                  "Property": "Prämienpunkte max"
+                }
+              },
+              "queryRef": "_Measuretabelle.Prämienpunkte max",
+              "nativeQueryRef": "Prämienpunkte max"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measuretabelle"
+                    }
+                  },
+                  "Property": "Prämienpunkte erreicht"
+                }
+              },
+              "queryRef": "_Measuretabelle.Prämienpunkte erreicht",
+              "nativeQueryRef": "Prämienpunkte erreicht"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

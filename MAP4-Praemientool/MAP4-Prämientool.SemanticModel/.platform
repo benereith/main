@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "MAP4-Prämientool"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "2cfd75e4-8e1f-4147-afaf-68e33fb7aaf3"
+  }
+}

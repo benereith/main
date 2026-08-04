@@ -1,0 +1,94 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.11.0/schema.json",
+  "name": "tblKontrolle",
+  "position": {
+    "x": 940,
+    "y": 440,
+    "z": 13,
+    "height": 280,
+    "width": 340,
+    "tabOrder": 13
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measuretabelle"
+                    }
+                  },
+                  "Property": "Anzahl Betriebe"
+                }
+              },
+              "queryRef": "_Measuretabelle.Anzahl Betriebe",
+              "nativeQueryRef": "Anzahl Betriebe"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measuretabelle"
+                    }
+                  },
+                  "Property": "Betriebe mit mehreren Verantwortlichen"
+                }
+              },
+              "queryRef": "_Measuretabelle.Betriebe mit mehreren Verantwortlichen",
+              "nativeQueryRef": "Betriebe mit mehreren Verantwortlichen"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measuretabelle"
+                    }
+                  },
+                  "Property": "Kontrolle Wert ohne Szenariozuordnung"
+                }
+              },
+              "queryRef": "_Measuretabelle.Kontrolle Wert ohne Szenariozuordnung",
+              "nativeQueryRef": "Kontrolle Wert ohne Szenariozuordnung"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measuretabelle"
+                    }
+                  },
+                  "Property": "Kontrolle Wert ohne Kontozuordnung"
+                }
+              },
+              "queryRef": "_Measuretabelle.Kontrolle Wert ohne Kontozuordnung",
+              "nativeQueryRef": "Kontrolle Wert ohne Kontozuordnung"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measuretabelle"
+                    }
+                  },
+                  "Property": "Kontrolle Wert ohne Betriebszuordnung"
+                }
+              },
+              "queryRef": "_Measuretabelle.Kontrolle Wert ohne Betriebszuordnung",
+              "nativeQueryRef": "Kontrolle Wert ohne Betriebszuordnung"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

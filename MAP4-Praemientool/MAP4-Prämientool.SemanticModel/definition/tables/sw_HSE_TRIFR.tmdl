@@ -1,0 +1,60 @@
+/// SCHALTER 2: "HSE-TRIFR" erreicht ja/nein.
+///
+/// Bewusst OHNE Beziehung zum restlichen Modell (disconnected table), analog zu sw_Ergebnisziel.
+/// Beide Schalter sind voneinander unabhaengig - die Punkte der erreichten Ziele addieren sich.
+///
+/// Verwendung im Bericht: Slicer auf sw_HSE_TRIFR[HSE-TRIFR], Einfachauswahl,
+/// Standardwert "nicht erreicht".
+table sw_HSE_TRIFR
+	lineageTag: 8b1c4f2a-0800-4a10-9d31-1f5a2c7e0800
+
+	column 'HSE-TRIFR'
+		dataType: string
+		isKey
+		lineageTag: 8b1c4f2a-0801-4a10-9d31-1f5a2c7e0801
+		summarizeBy: none
+		sourceColumn: HSE-TRIFR
+		sortByColumn: Sortierung
+
+		annotation SummarizationSetBy = Automatic
+
+	/// 1 = erreicht, 0 = nicht erreicht. Wird von [Faktor HSE-TRIFR] ausgelesen.
+	column Faktor
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 8b1c4f2a-0802-4a10-9d31-1f5a2c7e0802
+		summarizeBy: none
+		sourceColumn: Faktor
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column Sortierung
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 8b1c4f2a-0803-4a10-9d31-1f5a2c7e0803
+		summarizeBy: none
+		sourceColumn: Sortierung
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition sw_HSE_TRIFR = m
+		mode: import
+		source =
+				let
+				  Quelle = Table.FromRecords(
+				    {
+				      [#"HSE-TRIFR" = "nicht erreicht", Faktor = 0, Sortierung = 1],
+				      [#"HSE-TRIFR" = "erreicht",       Faktor = 1, Sortierung = 2]
+				    },
+				    type table [#"HSE-TRIFR" = text, Faktor = Int64.Type, Sortierung = Int64.Type]
+				  )
+				in
+				  Quelle
+
+	annotation PBI_ResultType = Table

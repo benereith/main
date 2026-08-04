@@ -1,0 +1,144 @@
+/// Faktentabelle: SAP-Werte je Betrieb, Konto, Periode und Version.
+/// Grain: Object_group (Betrieb) x Account x Fiscal_Year x Period x SAP_Version.
+/// Alle Filter kommen ausschliesslich ueber die dim_-Tabellen herein.
+table F_SAP
+	lineageTag: 77aeeadf-7beb-49e0-8d19-9274ddd3e3dc
+
+	/// Schluessel zu dim_Betrieb[betrieb].
+	column Object_group
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 7deb2141-da57-4e90-b63d-0aa4f53b17a2
+		summarizeBy: none
+		sourceColumn: Object_group
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Technisch. Fuer Auswertungen dim_Periode[Geschaeftsjahr] verwenden.
+	column Fiscal_Year
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 3e92288e-81b8-4bd4-a937-38f63a93c784
+		summarizeBy: none
+		sourceColumn: Fiscal_Year
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Technisch. Fuer Auswertungen dim_Szenario[Szenario] verwenden.
+	column SAP_Version
+		dataType: string
+		isHidden
+		lineageTag: 1d1fbd04-2568-473d-aff8-63dd120170ce
+		summarizeBy: none
+		sourceColumn: SAP_Version
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Schluessel zu dim_Konto[Kostenart_Key].
+	column Account
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 90df74bb-9477-4571-b0f0-dcbb8eb8189e
+		summarizeBy: none
+		sourceColumn: Account
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Technisch. Fuer Auswertungen dim_Periode[Periode] verwenden.
+	column Period
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 6046ab4d-5f16-4d71-8550-aa3b918cee6a
+		summarizeBy: none
+		sourceColumn: Period
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Betrag in EUR. Nicht direkt verwenden - ueber die Measures im Ordner "01 Basis" gehen.
+	column Value
+		dataType: double
+		isHidden
+		lineageTag: efc86e31-4fb3-41d9-8a62-9b8f83917051
+		summarizeBy: sum
+		sourceColumn: Value
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	/// YTD = Periode <= Parameter "YTD/YTG", sonst YTG.
+	column YTD/YTG
+		dataType: string
+		isHidden
+		lineageTag: 36aa2047-2c9e-4dbc-896d-01e257cd4fea
+		summarizeBy: none
+		sourceColumn: YTD/YTG
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Zusammengesetzter Schluessel SAP_Version|YTD-YTG. Verbindet die Fakten mit dim_Szenario.
+	/// Damit laesst sich der FC (YTD aus Version 0, YTG aus RGF+R12) ueber eine echte Beziehung
+	/// abbilden statt ueber harte Filter in den Measures.
+	column Szenario_Key
+		dataType: string
+		isHidden
+		lineageTag: 8b1c4f2a-0001-4a10-9d31-1f5a2c7e0001
+		summarizeBy: none
+		sourceColumn: Szenario_Key
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Zusammengesetzter Schluessel Geschaeftsjahr*100 + Periode. Verbindet die Fakten mit dim_Periode.
+	column Perioden_Key
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 8b1c4f2a-0002-4a10-9d31-1f5a2c7e0002
+		summarizeBy: none
+		sourceColumn: Perioden_Key
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition F_SAP = m
+		mode: import
+		source =
+				let
+				  Quelle = Sql.Database(LH_Server, LH_DB),
+				  #"Navigation 1" = Quelle{[Schema = "dbo", Item = "V_SAP_EXPORTS_cleansed"]}[Data],
+				    #"Gefilterte Zeilen" = Table.SelectRows(#"Navigation 1", each ([Object_type] = "OR") and ([Fiscal_Year] = 2025) and ([SAP_Version] <> "41" and [SAP_Version] <> "90" and [SAP_Version] <> "RFC" and [SAP_Version] <> "TBV" and [SAP_Version] <> "V")),
+				    #"Geänderter Typ" = Table.TransformColumnTypes(#"Gefilterte Zeilen",{{"Object_group", Int64.Type}}),
+				    #"Entfernte Spalten" = Table.RemoveColumns(#"Geänderter Typ",{"Object", "Object_type"}),
+				    #"Geänderter Typ1" = Table.TransformColumnTypes(#"Entfernte Spalten",{{"Account", Int64.Type}}),
+				    #"Entfernte Fehler" = Table.RemoveRowsWithErrors(#"Geänderter Typ1", {"Account"}),
+				    #"Hinzugefügte bedingte Spalte" = Table.AddColumn(#"Entfernte Fehler", "YTD/YTG", each if [Period] <= #"YTD/YTG" then "YTD" else "YTG"),
+				    #"Geänderter Typ2" = Table.TransformColumnTypes(#"Hinzugefügte bedingte Spalte",{{"YTD/YTG", type text}}),
+				    #"Szenario_Key" = Table.AddColumn(#"Geänderter Typ2", "Szenario_Key", each Text.From([SAP_Version]) & "|" & [#"YTD/YTG"], type text),
+				    #"Perioden_Key" = Table.AddColumn(#"Szenario_Key", "Perioden_Key", each [Fiscal_Year] * 100 + [Period], Int64.Type)
+				in
+				    #"Perioden_Key"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table

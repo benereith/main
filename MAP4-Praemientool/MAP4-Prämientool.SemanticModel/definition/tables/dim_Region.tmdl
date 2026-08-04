@@ -1,0 +1,46 @@
+/// Regionsdimension. Frueher hing Retention gleichzeitig an sap_master_data_innenauftrag[region]
+/// (aktiv) und an sap_master_data_unit[region] (deaktiviert, weil sonst mehrdeutig).
+/// Jetzt gibt es genau eine Region-Achse: Retention haengt an dieser Dimension, und diese
+/// Dimension filtert dim_Betrieb - damit ist der Filterweg eindeutig.
+table dim_Region
+	lineageTag: 8b1c4f2a-0400-4a10-9d31-1f5a2c7e0400
+
+	/// Primaerschluessel (Regionsschluessel aus den SAP-Stammdaten).
+	/// Heisst bewusst nicht "region": Power BI unterscheidet Spaltennamen nicht nach
+	/// Gross-/Kleinschreibung, "region" und "Region" waeren in einer Tabelle eine Kollision.
+	column region_key
+		dataType: string
+		isKey
+		isHidden
+		lineageTag: 8b1c4f2a-0401-4a10-9d31-1f5a2c7e0401
+		summarizeBy: none
+		sourceColumn: region_key
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Klartextbezeichnung der Region - diese Spalte im Bericht verwenden.
+	column Region
+		dataType: string
+		lineageTag: 8b1c4f2a-0402-4a10-9d31-1f5a2c7e0402
+		summarizeBy: none
+		sourceColumn: Region
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_Region = m
+		mode: import
+		source =
+				let
+				  // Leitet sich aus der Betriebsdimension ab, damit jede Region eines Betriebs
+				  // auch wirklich in der Dimension existiert.
+				  Quelle = Table.SelectColumns(dim_Betrieb, {"region", "bezeichnung_region"}),
+				    #"Ohne leere Regionen" = Table.SelectRows(Quelle, each [region] <> null and Text.Trim(Text.From([region])) <> ""),
+				    #"Eindeutige Regionen" = Table.Distinct(#"Ohne leere Regionen", {"region"}),
+				    #"Umbenannte Spalten" = Table.RenameColumns(#"Eindeutige Regionen", {{"region", "region_key"}, {"bezeichnung_region", "Region"}}),
+				    #"Sortierte Zeilen" = Table.Sort(#"Umbenannte Spalten", {{"Region", Order.Ascending}})
+				in
+				    #"Sortierte Zeilen"
+
+	annotation PBI_ResultType = Table

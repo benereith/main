@@ -1,0 +1,381 @@
+/// Personaldaten der Praemienberechtigten (Gehalt, Praemiensatz lt. Vertrag) aus SharePoint.
+/// Haengt ueber [Betrieb] an dim_Betrieb. Die Beziehung auf dim_Person[Vollname] existiert
+/// zusaetzlich, ist aber deaktiviert (sonst Filterkreis) - siehe relationships.tmdl.
+table Personaldaten
+	lineageTag: cab02e25-859f-412c-94aa-2d622c7e9b38
+
+	column Gesellschaft
+		dataType: string
+		lineageTag: 1488280c-05e2-4014-9d88-073cfe8f072f
+		summarizeBy: none
+		sourceColumn: Gesellschaft
+
+		annotation SummarizationSetBy = Automatic
+
+	column Region
+		dataType: string
+		lineageTag: c273145f-cb0a-415b-a30d-bd3bddf0569c
+		summarizeBy: none
+		sourceColumn: Region
+
+		annotation SummarizationSetBy = Automatic
+
+	column Betrieb
+		dataType: int64
+		formatString: 0
+		lineageTag: 1a8c3473-246f-4c93-81bd-8123adac746f
+		summarizeBy: none
+		sourceColumn: Betrieb
+
+		annotation SummarizationSetBy = Automatic
+
+	column Personal-nummer
+		dataType: string
+		lineageTag: d230cf77-fc5c-44a6-9c76-c490e8593a2d
+		summarizeBy: none
+		sourceColumn: Personal-nummer
+
+		annotation SummarizationSetBy = Automatic
+
+	column Teilbereich
+		dataType: string
+		lineageTag: 87bb1345-a43f-4ec2-9f2c-8ee433d1936f
+		summarizeBy: none
+		sourceColumn: Teilbereich
+
+		annotation SummarizationSetBy = Automatic
+
+	column Personal-teilbereich
+		dataType: string
+		lineageTag: 6443f59b-e5c3-4d59-bff1-c425f9bf02bc
+		summarizeBy: none
+		sourceColumn: Personal-teilbereich
+
+		annotation SummarizationSetBy = Automatic
+
+	column Kostenstelle
+		dataType: int64
+		formatString: 0
+		lineageTag: ed8f1a38-e35c-428b-b45e-296cd705287b
+		summarizeBy: sum
+		sourceColumn: Kostenstelle
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Kostenstelle (Bez.)'
+		dataType: string
+		lineageTag: 30cfbc78-eabb-41e1-82a1-1c234e068f69
+		summarizeBy: none
+		sourceColumn: Kostenstelle (Bez.)
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Planstelle (Bez.)'
+		dataType: string
+		lineageTag: a181e07c-edb3-430b-902d-d63c57ab005f
+		summarizeBy: none
+		sourceColumn: Planstelle (Bez.)
+
+		annotation SummarizationSetBy = Automatic
+
+	column Konzern-eintritt
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: fce30725-5901-4374-aa37-ad2f5fc4ee51
+		summarizeBy: none
+		sourceColumn: Konzern-eintritt
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column 'Sachbearbeiter Stralsund'
+		dataType: string
+		lineageTag: e4f52bff-4d33-4710-b978-37a02439c3a6
+		summarizeBy: none
+		sourceColumn: Sachbearbeiter Stralsund
+
+		annotation SummarizationSetBy = Automatic
+
+	column Nachname
+		dataType: string
+		lineageTag: 7d4d4c99-e5b6-4226-9df6-8b8f91de349e
+		summarizeBy: none
+		sourceColumn: Nachname
+
+		annotation SummarizationSetBy = Automatic
+
+	column Vorname
+		dataType: string
+		lineageTag: 55d3a15c-7fef-4ec6-b285-a7395eb763d9
+		summarizeBy: none
+		sourceColumn: Vorname
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Anzahl der Gehälter lt. Vertrag'
+		dataType: int64
+		formatString: 0
+		lineageTag: 72372a10-60fc-483e-b469-21e486f87b24
+		summarizeBy: sum
+		sourceColumn: Anzahl der Gehälter lt. Vertrag
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Auszahlung Oktober 2024 (inkl. etwaiger Zulagen und "halbe" Gehälter) '
+		dataType: decimal
+		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		lineageTag: 11c37498-812d-449b-916f-c61ab17c9585
+		summarizeBy: sum
+		sourceColumn: "Auszahlung Oktober 2024 (inkl. etwaiger Zulagen und ""halbe"" Gehälter) "
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	column 'Auszahlung November 2024 (inkl. etwaiger Zulagen und "halbe" Gehälter) '
+		dataType: decimal
+		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		lineageTag: 72768dbf-d47c-44b5-bfa3-cb6f2c0012ea
+		summarizeBy: sum
+		sourceColumn: "Auszahlung November 2024 (inkl. etwaiger Zulagen und ""halbe"" Gehälter) "
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	column 'Auszahlung Dezember 2024 (inkl. etwaiger Zulagen und "halbe" Gehälter) '
+		dataType: decimal
+		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		lineageTag: 3aa7b4f8-52f3-4e13-a108-d4ae18ecefbc
+		summarizeBy: sum
+		sourceColumn: "Auszahlung Dezember 2024 (inkl. etwaiger Zulagen und ""halbe"" Gehälter) "
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	column 'Auszahlung Januar 2025 (inkl. etwaiger Zulagen und "halbe" Gehälter) '
+		dataType: decimal
+		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		lineageTag: 0aea59db-ac19-47f6-943c-441fe6459b06
+		summarizeBy: sum
+		sourceColumn: "Auszahlung Januar 2025 (inkl. etwaiger Zulagen und ""halbe"" Gehälter) "
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	column 'Auszahlung Februar 2025 (inkl. etwaiger Zulagen und "halbe" Gehälter) '
+		dataType: decimal
+		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		lineageTag: 9111f2dc-0a01-4d8d-8c7c-1428c8d1f6df
+		summarizeBy: sum
+		sourceColumn: "Auszahlung Februar 2025 (inkl. etwaiger Zulagen und ""halbe"" Gehälter) "
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	column 'Auszahlung März 2025 (inkl. etwaiger Zulagen und "halbe" Gehälter) '
+		dataType: decimal
+		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		lineageTag: fd63eb12-66a3-4759-bc95-b9173f3f62f7
+		summarizeBy: sum
+		sourceColumn: "Auszahlung März 2025 (inkl. etwaiger Zulagen und ""halbe"" Gehälter) "
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	column 'Auszahlung April 2025 (inkl. etwaiger Zulagen und "halbe" Gehälter) '
+		dataType: decimal
+		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		lineageTag: 3431e38a-067e-4733-a4fc-a33adc9f011c
+		summarizeBy: sum
+		sourceColumn: "Auszahlung April 2025 (inkl. etwaiger Zulagen und ""halbe"" Gehälter) "
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	column 'Auszahlung Mai 2025 (inkl. etwaiger Zulagen und "halbe" Gehälter) '
+		dataType: decimal
+		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		lineageTag: 1e11588b-241e-4759-917d-a3a9466fe825
+		summarizeBy: sum
+		sourceColumn: "Auszahlung Mai 2025 (inkl. etwaiger Zulagen und ""halbe"" Gehälter) "
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	column 'Auszahlung Juni 2025 (inkl. etwaiger Zulagen und "halbe" Gehälter) '
+		dataType: decimal
+		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		lineageTag: 5b673d5e-3eaa-4ffe-8ae7-aa26593da7ca
+		summarizeBy: sum
+		sourceColumn: "Auszahlung Juni 2025 (inkl. etwaiger Zulagen und ""halbe"" Gehälter) "
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	column 'Auszahlung Juli 2025 (inkl. etwaiger Zulagen und "halbe" Gehälter) '
+		dataType: decimal
+		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		lineageTag: 24ffee2d-5718-4835-98dd-49df0337a996
+		summarizeBy: sum
+		sourceColumn: "Auszahlung Juli 2025 (inkl. etwaiger Zulagen und ""halbe"" Gehälter) "
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	column 'Auszahlung August 2025 (inkl. etwaiger Zulagen und "halbe" Gehälter) '
+		dataType: decimal
+		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		lineageTag: ea4a5387-9902-4af5-a0aa-aa3069ec94e9
+		summarizeBy: sum
+		sourceColumn: "Auszahlung August 2025 (inkl. etwaiger Zulagen und ""halbe"" Gehälter) "
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	column 'Auszahlung September 2025 (inkl. etwaiger Zulagen und "halbe" Gehälter) '
+		dataType: decimal
+		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		lineageTag: 450bc9eb-f67d-4ce5-9fb9-5fc0741284b8
+		summarizeBy: sum
+		sourceColumn: "Auszahlung September 2025 (inkl. etwaiger Zulagen und ""halbe"" Gehälter) "
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	column 'Jahresgeh. EUR (Basis: tatsächlich gezahltes Gehalt) aktuelles Geschäftsjahr'
+		dataType: decimal
+		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		lineageTag: 7aa55915-24f3-4bbe-928d-833add7b910c
+		summarizeBy: sum
+		sourceColumn: Jahresgeh. EUR (Basis: tatsächlich gezahltes Gehalt) aktuelles Geschäftsjahr
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	column 'Anzahl Monate (tatsächlich gezahltes Gehalt im aktuellen GJ)'
+		dataType: double
+		lineageTag: 740480a3-510a-4fea-9dee-81eb7e59d565
+		summarizeBy: sum
+		sourceColumn: Anzahl Monate (tatsächlich gezahltes Gehalt im aktuellen GJ)
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Beginndatum (tatsächlich gezahltes Gehalt)'
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 524e9d9c-6935-42a4-b1b0-eed6b8759bf4
+		summarizeBy: none
+		sourceColumn: Beginndatum (tatsächlich gezahltes Gehalt)
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column 'Endedatum (tatsächlich gezahltes Gehalt)'
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: a68f0cb7-dda6-4e22-bbe0-6f135a9fdcad
+		summarizeBy: none
+		sourceColumn: Endedatum (tatsächlich gezahltes Gehalt)
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column 'ggfs. Austritts-datum '
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 3385aab0-a8f9-43e2-8b45-9ae5e7c28930
+		summarizeBy: none
+		sourceColumn: "ggfs. Austritts-datum "
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column 'Prämiensatz lt. Vertrag   in %'
+		dataType: double
+		lineageTag: 56b886ce-d8c3-471c-b33d-0427654620b8
+		summarizeBy: sum
+		sourceColumn: Prämiensatz lt. Vertrag   in %
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column P-Reglung
+		dataType: string
+		lineageTag: 116d0bae-3c8b-4342-ac47-9702ae024a9c
+		summarizeBy: none
+		sourceColumn: P-Reglung
+
+		annotation SummarizationSetBy = Automatic
+
+	column Kommentar
+		dataType: string
+		lineageTag: e78db742-854a-4118-a7f5-7f16155d26f9
+		summarizeBy: none
+		sourceColumn: Kommentar
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'P-Reglung 2'
+		dataType: string
+		lineageTag: 0f8e6b4c-bfc9-4e7b-9caf-7e4847f1a092
+		summarizeBy: none
+		sourceColumn: P-Reglung 2
+
+		annotation SummarizationSetBy = Automatic
+
+	column Vollname
+		dataType: string
+		lineageTag: 1394de3e-b086-4dfb-848a-b5fd509164ac
+		summarizeBy: none
+		sourceColumn: Vollname
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Personaldaten = m
+		mode: import
+		source =
+				let
+				  Quelle = SharePoint.Contents(Sharepoint, [ApiVersion = 15]),
+				    #"Shared Documents" = Quelle{[Name="Shared Documents"]}[Content],
+				    #"Group Controlling" = #"Shared Documents"{[Name="Group Controlling"]}[Content],
+				    #"10_Prämientool" = #"Group Controlling"{[Name="10_Prämientool"]}[Content],
+				    #"10_Map 4 Prämientool" = #"10_Prämientool"{[Name="10_Map 4 Prämientool"]}[Content],
+				    #"2025_26" = #"10_Map 4 Prämientool"{[Name="2025_26"]}[Content],
+				    #"30_Daten aus Fachbereichen" = #"2025_26"{[Name="30_Daten aus Fachbereichen"]}[Content],
+				    #"Personaldaten xlsx" = #"30_Daten aus Fachbereichen"{[Name="Personaldaten.xlsx"]}[Content],
+				    #"Importierte Excel-Arbeitsmappe" = Excel.Workbook(#"Personaldaten xlsx"),
+				    Übersicht_P_Sheet = #"Importierte Excel-Arbeitsmappe"{[Item="Übersicht_P",Kind="Sheet"]}[Data],
+				    #"Höher gestufte Header" = Table.PromoteHeaders(Übersicht_P_Sheet, [PromoteAllScalars=true]),
+				    #"Geänderter Typ" = Table.TransformColumnTypes(#"Höher gestufte Header",{{"Gesellschaft", type text}, {"Region", type text}, {"Betrieb", Int64.Type}, {"Teilbereich", type text}, {"Personal-teilbereich", type text}, {"Kostenstelle", Int64.Type}, {"Kostenstelle (Bez.)", type text}, {"Planstelle (Bez.)", type text}, {"Konzern-eintritt", type date}, {"Sachbearbeiter Stralsund", type text}, {"Nachname", type text}, {"Vorname", type text}, {"Anzahl der Gehälter lt. Vertrag", Int64.Type}, {"Auszahlung Oktober 2024 (inkl. etwaiger Zulagen und ""halbe"" Gehälter) ", type number}, {"Auszahlung November 2024 (inkl. etwaiger Zulagen und ""halbe"" Gehälter) ", type number}, {"Auszahlung Dezember 2024 (inkl. etwaiger Zulagen und ""halbe"" Gehälter) ", type number}, {"Auszahlung Januar 2025 (inkl. etwaiger Zulagen und ""halbe"" Gehälter) ", type number}, {"Auszahlung Februar 2025 (inkl. etwaiger Zulagen und ""halbe"" Gehälter) ", type number}, {"Auszahlung März 2025 (inkl. etwaiger Zulagen und ""halbe"" Gehälter) ", type number}, {"Auszahlung April 2025 (inkl. etwaiger Zulagen und ""halbe"" Gehälter) ", type number}, {"Auszahlung Mai 2025 (inkl. etwaiger Zulagen und ""halbe"" Gehälter) ", type number}, {"Auszahlung Juni 2025 (inkl. etwaiger Zulagen und ""halbe"" Gehälter) ", type number}, {"Auszahlung Juli 2025 (inkl. etwaiger Zulagen und ""halbe"" Gehälter) ", type number}, {"Auszahlung August 2025 (inkl. etwaiger Zulagen und ""halbe"" Gehälter) ", type number}, {"Auszahlung September 2025 (inkl. etwaiger Zulagen und ""halbe"" Gehälter) ", type number}, {"Jahresgeh. EUR (Basis: tatsächlich gezahltes Gehalt) aktuelles Geschäftsjahr", type any}, {"Anzahl Monate #(lf)(tatsächlich gezahltes Gehalt im aktuellen GJ)", type number}, {"Beginndatum (tatsächlich gezahltes Gehalt)", type date}, {"Endedatum (tatsächlich gezahltes Gehalt)", type any}, {"ggfs. Austritts-datum ", type date}, {"Prämiensatz lt. Vertrag   in %", type text}, {"P-Reglung", type text}, {"Kommentar", type text}, {"P-Reglung 2", type text}, {"Auszahlung#(lf)für RST Alle", Int64.Type}, {"Column37", type any}, {"Check ", Int64.Type}, {"Column39", type text}, {"Column40", type text}, {"Column41", type text}, {"Column42", type any}, {"Column43", type any}}),
+				    #"Der Text vor dem Trennzeichen wurde extrahiert." = Table.TransformColumns(#"Geänderter Typ", {{"Prämiensatz lt. Vertrag   in %", each Text.BeforeDelimiter(_, " "), type text}}),
+				    #"Geänderter Typ1" = Table.TransformColumnTypes(#"Der Text vor dem Trennzeichen wurde extrahiert.",{{"Prämiensatz lt. Vertrag   in %", Percentage.Type}}),
+				    #"Entfernte Spalten" = Table.RemoveColumns(#"Geänderter Typ1",{"Column37", "Check ", "Column39", "Column40", "Column41", "Column42", "Column43", "Auszahlung#(lf)für RST Alle"}),
+				    #"Geänderter Typ2" = Table.TransformColumnTypes(#"Entfernte Spalten",{{"Endedatum (tatsächlich gezahltes Gehalt)", type date}, {"ggfs. Austritts-datum ", type date}, {"Jahresgeh. EUR (Basis: tatsächlich gezahltes Gehalt) aktuelles Geschäftsjahr", Currency.Type}, {"Auszahlung September 2025 (inkl. etwaiger Zulagen und ""halbe"" Gehälter) ", Currency.Type}, {"Auszahlung August 2025 (inkl. etwaiger Zulagen und ""halbe"" Gehälter) ", Currency.Type}, {"Auszahlung Juli 2025 (inkl. etwaiger Zulagen und ""halbe"" Gehälter) ", Currency.Type}, {"Auszahlung Juni 2025 (inkl. etwaiger Zulagen und ""halbe"" Gehälter) ", Currency.Type}, {"Auszahlung Mai 2025 (inkl. etwaiger Zulagen und ""halbe"" Gehälter) ", Currency.Type}, {"Auszahlung April 2025 (inkl. etwaiger Zulagen und ""halbe"" Gehälter) ", Currency.Type}, {"Auszahlung März 2025 (inkl. etwaiger Zulagen und ""halbe"" Gehälter) ", Currency.Type}, {"Auszahlung Februar 2025 (inkl. etwaiger Zulagen und ""halbe"" Gehälter) ", Currency.Type}, {"Auszahlung Januar 2025 (inkl. etwaiger Zulagen und ""halbe"" Gehälter) ", Currency.Type}, {"Auszahlung Dezember 2024 (inkl. etwaiger Zulagen und ""halbe"" Gehälter) ", Currency.Type}, {"Auszahlung November 2024 (inkl. etwaiger Zulagen und ""halbe"" Gehälter) ", Currency.Type}, {"Auszahlung Oktober 2024 (inkl. etwaiger Zulagen und ""halbe"" Gehälter) ", Currency.Type}}),
+				    #"Gefilterte Zeilen" = Table.SelectRows(#"Geänderter Typ2", each ([Gesellschaft] <> null)),
+				    #"Zusammengeführte Spalte eingefügt" = Table.AddColumn(#"Gefilterte Zeilen", "Vollname", each Text.Combine({[Vorname], " ", [Nachname]}), type text)
+				in
+				    #"Zusammengeführte Spalte eingefügt"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

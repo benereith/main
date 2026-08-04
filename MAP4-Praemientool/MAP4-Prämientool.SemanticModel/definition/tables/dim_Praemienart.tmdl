@@ -1,0 +1,28 @@
+/// Dimension der Praemienarten (Praemienziele). Filtert tab_Praemienpunkte mit 1:n und
+/// Einwegfilter - dadurch ist die frueher noetige M:N-Beziehung aufgeloest.
+/// Datengetrieben aus tab_Praemienpunkte: kommt ein neues Praemienziel in die Excel-Datei,
+/// taucht es hier automatisch auf.
+table dim_Praemienart
+	lineageTag: 8b1c4f2a-0600-4a10-9d31-1f5a2c7e0600
+
+	/// Primaerschluessel, z. B. "Ergebnisziel Compass Group Deutschland" oder "HSE-TRIFR".
+	column Prämienziel
+		dataType: string
+		isKey
+		lineageTag: 8b1c4f2a-0601-4a10-9d31-1f5a2c7e0601
+		summarizeBy: none
+		sourceColumn: Prämienziel
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_Praemienart = m
+		mode: import
+		source =
+				let
+				  Quelle = Table.SelectColumns(tab_Prämienpunkte, {"Prämienziel"}),
+				    #"Eindeutige Praemienziele" = Table.Distinct(Quelle, {"Prämienziel"}),
+				    #"Sortierte Zeilen" = Table.Sort(#"Eindeutige Praemienziele", {{"Prämienziel", Order.Ascending}})
+				in
+				    #"Sortierte Zeilen"
+
+	annotation PBI_ResultType = Table

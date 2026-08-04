@@ -1,0 +1,61 @@
+/// SCHALTER 1: "Ergebnisziel Compass Group Deutschland" erreicht ja/nein.
+///
+/// Bewusst OHNE Beziehung zum restlichen Modell (disconnected table). Der Slicer setzt nur
+/// den Wert, den die Measure [Faktor Ergebnisziel] ausliest. Damit wirkt die Auswahl
+/// konzernweit auf alle Praemienberechtigten und filtert keine einzige Faktenzeile weg.
+///
+/// Verwendung im Bericht: Slicer auf sw_Ergebnisziel[Ergebnisziel Compass Group Deutschland],
+/// Einfachauswahl, Standardwert "nicht erreicht".
+table sw_Ergebnisziel
+	lineageTag: 8b1c4f2a-0700-4a10-9d31-1f5a2c7e0700
+
+	column 'Ergebnisziel Compass Group Deutschland'
+		dataType: string
+		isKey
+		lineageTag: 8b1c4f2a-0701-4a10-9d31-1f5a2c7e0701
+		summarizeBy: none
+		sourceColumn: Ergebnisziel Compass Group Deutschland
+		sortByColumn: Sortierung
+
+		annotation SummarizationSetBy = Automatic
+
+	/// 1 = erreicht, 0 = nicht erreicht. Wird von [Faktor Ergebnisziel] ausgelesen.
+	column Faktor
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 8b1c4f2a-0702-4a10-9d31-1f5a2c7e0702
+		summarizeBy: none
+		sourceColumn: Faktor
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column Sortierung
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 8b1c4f2a-0703-4a10-9d31-1f5a2c7e0703
+		summarizeBy: none
+		sourceColumn: Sortierung
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition sw_Ergebnisziel = m
+		mode: import
+		source =
+				let
+				  Quelle = Table.FromRecords(
+				    {
+				      [#"Ergebnisziel Compass Group Deutschland" = "nicht erreicht", Faktor = 0, Sortierung = 1],
+				      [#"Ergebnisziel Compass Group Deutschland" = "erreicht",       Faktor = 1, Sortierung = 2]
+				    },
+				    type table [#"Ergebnisziel Compass Group Deutschland" = text, Faktor = Int64.Type, Sortierung = Int64.Type]
+				  )
+				in
+				  Quelle
+
+	annotation PBI_ResultType = Table

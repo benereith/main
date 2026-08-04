@@ -1,0 +1,56 @@
+/// Retention-Ziele je Region (aus SharePoint). Haengt jetzt eindeutig an dim_Region
+/// statt gleichzeitig an sap_master_data_innenauftrag und (deaktiviert) an sap_master_data_unit.
+table Retention
+	lineageTag: e8597ca2-f0d7-43ff-bf92-5aeff14b6acc
+
+	column Region
+		dataType: string
+		lineageTag: 6c351b34-690f-4e56-869f-55e5a018f8de
+		summarizeBy: none
+		sourceColumn: Region
+
+		annotation SummarizationSetBy = Automatic
+
+	column Ziel
+		dataType: double
+		lineageTag: 5a62b64f-b54c-4163-9dc2-7a1bbd0543c3
+		summarizeBy: none
+		sourceColumn: Ziel
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column Ist
+		dataType: double
+		lineageTag: eec38523-f481-4f52-84df-e6f0864e4357
+		summarizeBy: none
+		sourceColumn: Ist
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition Retention = m
+		mode: import
+		source =
+				let
+				  Quelle = SharePoint.Contents(Sharepoint, [ApiVersion = 15]),
+				    #"Shared Documents" = Quelle{[Name="Shared Documents"]}[Content],
+				    #"Group Controlling" = #"Shared Documents"{[Name="Group Controlling"]}[Content],
+				    #"10_Prämientool" = #"Group Controlling"{[Name="10_Prämientool"]}[Content],
+				    #"10_Map 4 Prämientool" = #"10_Prämientool"{[Name="10_Map 4 Prämientool"]}[Content],
+				    #"2025_26" = #"10_Map 4 Prämientool"{[Name="2025_26"]}[Content],
+				    #"30_Daten aus Fachbereichen" = #"2025_26"{[Name="30_Daten aus Fachbereichen"]}[Content],
+				    #"Retention xlsx" = #"30_Daten aus Fachbereichen"{[Name="Retention.xlsx"]}[Content],
+				    #"Importierte Excel-Arbeitsmappe" = Excel.Workbook(#"Retention xlsx"),
+				    #"Retention Ziel Region_Sheet" = #"Importierte Excel-Arbeitsmappe"{[Item="Retention Ziel Region",Kind="Sheet"]}[Data],
+				    #"Höher gestufte Header" = Table.PromoteHeaders(#"Retention Ziel Region_Sheet", [PromoteAllScalars=true]),
+				    #"Geänderter Typ" = Table.TransformColumnTypes(#"Höher gestufte Header",{{"Region", type text}, {"Ziel", Percentage.Type}, {"Ist", Percentage.Type}})
+				in
+				    #"Geänderter Typ"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

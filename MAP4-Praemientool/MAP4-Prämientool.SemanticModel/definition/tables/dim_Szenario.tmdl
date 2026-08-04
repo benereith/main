@@ -1,0 +1,83 @@
+/// Szenariodimension - loest die frueheren harten Versionsfilter in den Measures ab.
+///
+/// Budget = SAP-Version 20 ueber alle Perioden.
+/// FC     = YTD aus SAP-Version 0 (Actuals) + YTG aus SAP-Version RGF und R12.
+///
+/// Die Verbindung laeuft ueber den zusammengesetzten Schluessel "SAP_Version|YTD-YTG".
+/// Dadurch ist die Periodenlogik des FC Teil des Modells und nicht mehr in DAX versteckt.
+/// Neue Versionen werden hier ergaenzt, ohne dass eine Measure angefasst werden muss.
+table dim_Szenario
+	lineageTag: 8b1c4f2a-0100-4a10-9d31-1f5a2c7e0100
+
+	/// Budget oder FC. Das ist die Spalte fuer Slicer und Matrix-Spalten.
+	column Szenario
+		dataType: string
+		lineageTag: 8b1c4f2a-0101-4a10-9d31-1f5a2c7e0101
+		summarizeBy: none
+		sourceColumn: Szenario
+		sortByColumn: Szenario_Sort
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Primaerschluessel: SAP_Version|YTD-YTG. Verbindet auf F_SAP[Szenario_Key].
+	column Szenario_Key
+		dataType: string
+		isKey
+		isHidden
+		lineageTag: 8b1c4f2a-0102-4a10-9d31-1f5a2c7e0102
+		summarizeBy: none
+		sourceColumn: Szenario_Key
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Dokumentationsspalte: welche SAP-Version steckt hinter dem Szenario.
+	column SAP_Version
+		dataType: string
+		lineageTag: 8b1c4f2a-0103-4a10-9d31-1f5a2c7e0103
+		summarizeBy: none
+		sourceColumn: SAP_Version
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Dokumentationsspalte: fuer welchen Periodenbereich die Version gilt.
+	column 'YTD/YTG'
+		dataType: string
+		lineageTag: 8b1c4f2a-0104-4a10-9d31-1f5a2c7e0104
+		summarizeBy: none
+		sourceColumn: YTD/YTG
+
+		annotation SummarizationSetBy = Automatic
+
+	column Szenario_Sort
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 8b1c4f2a-0105-4a10-9d31-1f5a2c7e0105
+		summarizeBy: none
+		sourceColumn: Szenario_Sort
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_Szenario = m
+		mode: import
+		source =
+				let
+				  Quelle = Table.FromRecords(
+				    {
+				      [Szenario = "Budget", SAP_Version = "20",  #"YTD/YTG" = "YTD", Szenario_Sort = 1],
+				      [Szenario = "Budget", SAP_Version = "20",  #"YTD/YTG" = "YTG", Szenario_Sort = 1],
+				      [Szenario = "FC",     SAP_Version = "0",   #"YTD/YTG" = "YTD", Szenario_Sort = 2],
+				      [Szenario = "FC",     SAP_Version = "RGF", #"YTD/YTG" = "YTG", Szenario_Sort = 2],
+				      [Szenario = "FC",     SAP_Version = "R12", #"YTD/YTG" = "YTG", Szenario_Sort = 2]
+				    },
+				    type table [Szenario = text, SAP_Version = text, #"YTD/YTG" = text, Szenario_Sort = Int64.Type]
+				  ),
+				    #"Szenario_Key" = Table.AddColumn(Quelle, "Szenario_Key", each [SAP_Version] & "|" & [#"YTD/YTG"], type text)
+				in
+				    #"Szenario_Key"
+
+	annotation PBI_ResultType = Table

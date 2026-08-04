@@ -1,0 +1,54 @@
+/// Gemeinsame Dimension fuer den Split Pacht / Mandat.
+///
+/// Das ist der Kern der Aufloesung der frueheren M:N-Beziehung
+/// sap_master_data_innenauftrag[Pacht/Mandat] <-> Praemienvereinbarungen[Vertragsart]:
+/// Statt die beiden Tabellen direkt und bidirektional zu verknuepfen, filtert diese
+/// Dimension beide Seiten von oben (1:n, jeweils Einwegfilter).
+///
+///   dim_PachtMandat --> dim_Betrieb        --> F_SAP
+///   dim_PachtMandat --> tab_Praemienpunkte
+///
+/// Ein Slicer auf dieser Tabelle splittet damit gleichzeitig Umsatz, UP und Praemienpunkte -
+/// eindeutig, ohne Rueckfilterung und ohne Mehrdeutigkeit.
+table dim_PachtMandat
+	lineageTag: 8b1c4f2a-0300-4a10-9d31-1f5a2c7e0300
+
+	/// Primaerschluessel. Diese Spalte ist die einzige, die im Bericht fuer den Split
+	/// Pacht/Mandat verwendet werden soll.
+	column 'Pacht/Mandat'
+		dataType: string
+		isKey
+		lineageTag: 8b1c4f2a-0301-4a10-9d31-1f5a2c7e0301
+		summarizeBy: none
+		sourceColumn: Pacht/Mandat
+		sortByColumn: Sortierung
+
+		annotation SummarizationSetBy = Automatic
+
+	column Sortierung
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 8b1c4f2a-0302-4a10-9d31-1f5a2c7e0302
+		summarizeBy: none
+		sourceColumn: Sortierung
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_PachtMandat = m
+		mode: import
+		source =
+				let
+				  Quelle = Table.FromRecords(
+				    {
+				      [#"Pacht/Mandat" = "Pacht",  Sortierung = 1],
+				      [#"Pacht/Mandat" = "Mandat", Sortierung = 2]
+				    },
+				    type table [#"Pacht/Mandat" = text, Sortierung = Int64.Type]
+				  )
+				in
+				  Quelle
+
+	annotation PBI_ResultType = Table

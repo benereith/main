@@ -1,0 +1,64 @@
+/// Periodendimension. Wird fuer die YTD/YTG-Logik des FC gebraucht, ist im Bericht aber
+/// bewusst zurueckhaltend: fuer Auswertungen wird auf FY-Ebene aggregiert, die Periode selbst
+/// ist ausgeblendet und nur bei Bedarf einblendbar.
+table dim_Periode
+	lineageTag: 8b1c4f2a-0200-4a10-9d31-1f5a2c7e0200
+
+	/// Primaerschluessel: Geschaeftsjahr * 100 + Periode. Verbindet auf F_SAP[Perioden_Key].
+	column Perioden_Key
+		dataType: int64
+		isKey
+		isHidden
+		formatString: 0
+		lineageTag: 8b1c4f2a-0201-4a10-9d31-1f5a2c7e0201
+		summarizeBy: none
+		sourceColumn: Perioden_Key
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column Geschaeftsjahr
+		dataType: int64
+		formatString: 0
+		lineageTag: 8b1c4f2a-0202-4a10-9d31-1f5a2c7e0202
+		summarizeBy: none
+		sourceColumn: Geschaeftsjahr
+
+		annotation SummarizationSetBy = Automatic
+
+	column Periode
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 8b1c4f2a-0203-4a10-9d31-1f5a2c7e0203
+		summarizeBy: none
+		sourceColumn: Periode
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	/// YTD = Periode <= Parameter "YTD/YTG", sonst YTG.
+	column 'YTD/YTG'
+		dataType: string
+		lineageTag: 8b1c4f2a-0204-4a10-9d31-1f5a2c7e0204
+		summarizeBy: none
+		sourceColumn: YTD/YTG
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_Periode = m
+		mode: import
+		source =
+				let
+				  // Leitet sich direkt aus der Faktentabelle ab - damit kann es keine Perioden
+				  // in F_SAP geben, die in der Dimension fehlen.
+				  Quelle = Table.SelectColumns(F_SAP, {"Perioden_Key", "Fiscal_Year", "Period", "YTD/YTG"}),
+				    #"Eindeutige Perioden" = Table.Distinct(Quelle, {"Perioden_Key"}),
+				    #"Umbenannte Spalten" = Table.RenameColumns(#"Eindeutige Perioden", {{"Fiscal_Year", "Geschaeftsjahr"}, {"Period", "Periode"}}),
+				    #"Sortierte Zeilen" = Table.Sort(#"Umbenannte Spalten", {{"Perioden_Key", Order.Ascending}})
+				in
+				    #"Sortierte Zeilen"
+
+	annotation PBI_ResultType = Table

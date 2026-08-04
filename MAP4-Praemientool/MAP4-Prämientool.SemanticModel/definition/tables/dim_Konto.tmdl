@@ -1,0 +1,220 @@
+/// Kontendimension (Kontenhierarchie aus dem Lakehouse).
+/// Grain: eine Zeile je Kostenart. Steuert ueber [Type] die Abgrenzung P&L
+/// und ueber Level_2_Key die Abgrenzung Revenue.
+table dim_Konto
+	lineageTag: d84f3d93-d925-4df2-a161-5c6b912b81a9
+
+	/// Kostenart als Text (Anzeige).
+	column Kostenart
+		dataType: string
+		lineageTag: f346023d-b806-4d99-8ca1-74bba3524a3c
+		summarizeBy: none
+		sourceColumn: Kostenart
+
+		annotation SummarizationSetBy = Automatic
+
+	column Kostenart_Beschreibung
+		dataType: string
+		lineageTag: f0833337-24c1-47d1-bc22-6cbad34826d0
+		summarizeBy: none
+		sourceColumn: Kostenart_Beschreibung
+
+		annotation SummarizationSetBy = Automatic
+
+	column Tiefe
+		dataType: int64
+		formatString: 0
+		lineageTag: b1771d3b-1d89-4150-b560-39e7a0d768a0
+		summarizeBy: none
+		sourceColumn: Tiefe
+
+		annotation SummarizationSetBy = Automatic
+
+	column Level_1_Desc
+		dataType: string
+		lineageTag: a4fb8acc-97df-41fd-9d03-cd41e5de7e76
+		summarizeBy: none
+		sourceColumn: Level_1_Desc
+
+		annotation SummarizationSetBy = Automatic
+
+	column Level_2_Desc
+		dataType: string
+		lineageTag: df4a3bf1-2939-4aaf-9bd9-3a35aa7f72bf
+		summarizeBy: none
+		sourceColumn: Level_2_Desc
+
+		annotation SummarizationSetBy = Automatic
+
+	column Level_3_Desc
+		dataType: string
+		lineageTag: c77ddd52-11fb-41ff-91ae-304e6aaf3dbd
+		summarizeBy: none
+		sourceColumn: Level_3_Desc
+
+		annotation SummarizationSetBy = Automatic
+
+	column Level_4_Desc
+		dataType: string
+		lineageTag: 36086b9f-9620-43a4-b572-86bbfd30785b
+		summarizeBy: none
+		sourceColumn: Level_4_Desc
+
+		annotation SummarizationSetBy = Automatic
+
+	column Level_5_Desc
+		dataType: string
+		lineageTag: 1c6f73fe-ebe6-4139-bd9d-cb55483afe98
+		summarizeBy: none
+		sourceColumn: Level_5_Desc
+
+		annotation SummarizationSetBy = Automatic
+
+	column Level_6_Desc
+		dataType: string
+		lineageTag: 4fc6341f-ac2f-4b73-ac9b-750b85f7e5de
+		summarizeBy: none
+		sourceColumn: Level_6_Desc
+
+		annotation SummarizationSetBy = Automatic
+
+	column Level_7_Desc
+		dataType: string
+		lineageTag: a4e593dd-b21b-431f-9d0d-04ff866053a2
+		summarizeBy: none
+		sourceColumn: Level_7_Desc
+
+		annotation SummarizationSetBy = Automatic
+
+	column Level_8_Desc
+		dataType: string
+		lineageTag: 65e008bb-b617-410a-9580-d39c49565901
+		summarizeBy: none
+		sourceColumn: Level_8_Desc
+
+		annotation SummarizationSetBy = Automatic
+
+	column Level_9_Desc
+		dataType: string
+		lineageTag: 63b381d9-04fe-418f-b82e-886390a112c6
+		summarizeBy: none
+		sourceColumn: Level_9_Desc
+
+		annotation SummarizationSetBy = Automatic
+
+	column Level_1_Key
+		dataType: string
+		lineageTag: 4faef3de-ff36-4b53-8ac0-82068b47e26e
+		summarizeBy: none
+		sourceColumn: Level_1_Key
+
+		annotation SummarizationSetBy = Automatic
+
+	column Level_2_Key
+		dataType: string
+		lineageTag: f8ca4d1e-323a-4ba4-9d83-0f1ac068d590
+		summarizeBy: none
+		sourceColumn: Level_2_Key
+
+		annotation SummarizationSetBy = Automatic
+
+	column Level_3_Key
+		dataType: string
+		lineageTag: 80d98461-7a24-4d64-a9b3-f1bb46a0b93e
+		summarizeBy: none
+		sourceColumn: Level_3_Key
+
+		annotation SummarizationSetBy = Automatic
+
+	column Level_4_Key
+		dataType: string
+		lineageTag: 5b580de2-b585-467a-9c08-41f2e9c6b3b8
+		summarizeBy: none
+		sourceColumn: Level_4_Key
+
+		annotation SummarizationSetBy = Automatic
+
+	column Level_5_Key
+		dataType: string
+		lineageTag: 2aa66d81-93e5-477a-8ba4-6c438865d9ae
+		summarizeBy: none
+		sourceColumn: Level_5_Key
+
+		annotation SummarizationSetBy = Automatic
+
+	column Level_6_Key
+		dataType: string
+		lineageTag: ca62bebb-bcf0-4991-a0fe-5c25f3a9f377
+		summarizeBy: none
+		sourceColumn: Level_6_Key
+
+		annotation SummarizationSetBy = Automatic
+
+	column Level_7_Key
+		dataType: string
+		lineageTag: 66c3c03a-82ee-4d88-b4ef-043b31cdac82
+		summarizeBy: none
+		sourceColumn: Level_7_Key
+
+		annotation SummarizationSetBy = Automatic
+
+	column Level_8_Key
+		dataType: string
+		lineageTag: a4a27df3-5ec0-4e11-a324-748c74912a0b
+		summarizeBy: none
+		sourceColumn: Level_8_Key
+
+		annotation SummarizationSetBy = Automatic
+
+	column Level_9_Key
+		dataType: string
+		lineageTag: 4a2ab1ce-65f8-46ed-bf0a-0f0c4e1e7b16
+		summarizeBy: none
+		sourceColumn: Level_9_Key
+
+		annotation SummarizationSetBy = Automatic
+
+	column Type
+		dataType: string
+		lineageTag: 89883b67-4669-4861-b848-596162bab3b4
+		summarizeBy: none
+		sourceColumn: Type
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Numerischer Primaerschluessel der Kontendimension.
+	/// Die alte Beziehung lief von F_SAP[Account] (Ganzzahl) auf Kostenart (Text) - ein
+	/// Typkonflikt, der die Beziehung unzuverlaessig macht. Hier wird sauber auf Ganzzahl gekoppelt.
+	column Kostenart_Key
+		dataType: int64
+		isKey
+		isHidden
+		formatString: 0
+		lineageTag: 8b1c4f2a-0020-4a10-9d31-1f5a2c7e0020
+		summarizeBy: none
+		sourceColumn: Kostenart_Key
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_Konto = m
+		mode: import
+		source =
+				let
+				  Quelle = Sql.Database(LH_Server, LH_DB),
+				  #"Navigation 1" = Quelle{[Schema = "dbo", Item = "tab_accounts_hierarchy"]}[Data],
+				    // Numerischer Schluessel passend zu F_SAP[Account].
+				    #"Kostenart_Key" = Table.AddColumn(#"Navigation 1", "Kostenart_Key", each try Number.From(Text.Trim(Text.From([Kostenart]))) otherwise null),
+				    #"Typ Kostenart_Key" = Table.TransformColumnTypes(#"Kostenart_Key", {{"Kostenart_Key", Int64.Type}}),
+				    // Nicht-numerische Hierarchieknoten koennen nicht Ziel einer Beziehung sein.
+				    #"Ohne leere Schluessel" = Table.SelectRows(#"Typ Kostenart_Key", each [Kostenart_Key] <> null),
+				    // Absicherung des Grains: eine Zeile je Kostenart.
+				    #"Eindeutige Kostenarten" = Table.Distinct(#"Ohne leere Schluessel", {"Kostenart_Key"})
+				in
+				  #"Eindeutige Kostenarten"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+
