@@ -12,8 +12,6 @@ table _Measuretabelle
 		isHidden
 		lineageTag: 6d986c22-e56c-44c3-a578-8176d182bb1b
 
-		changedProperty = IsHidden
-
 	/// UP = Summe ueber ALLE Konten der Ergebnisrechnung (Type = "P&L"), ohne Revenue-Filter.
 	measure UP =
 			CALCULATE(

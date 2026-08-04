@@ -9,6 +9,10 @@ Prueft ohne Power BI Desktop:
   5. Alle Tabellen-/Spalten-/Measure-Referenzen in DAX existieren
   6. Keine case-insensitiven Namenskollisionen, sortByColumn zeigt auf vorhandene Spalten
   7. Alle Feldverweise im Report existieren im Modell
+  8. TMDL-Syntax: '///' sind Objektbeschreibungen, keine freien Kommentare. Sie muessen
+     unmittelbar vor einem Objekt stehen, das eine Description besitzt. Eine Leerzeile
+     dahinter oder ein '///' vor relationship/partition/annotation bricht den Parser
+     ("InvalidLineType: Unerwarteter Zeilentyp: Empty").
 
 Aufruf:  python3 tools/validate_model.py
 """
@@ -65,6 +69,42 @@ def load_relationships():
             "bidirectional": "bothDirections" in block,
         })
     return rels
+
+
+#: TMDL-Objekte, die eine Description tragen koennen und daher '///' erlauben.
+DESCRIBABLE = ("model ", "table ", "column ", "measure ", "hierarchy ", "level ",
+               "cultureInfo ", "expression ", "role ", "perspective ")
+#: Objekte ohne Description-Eigenschaft - ein '///' davor bricht den Parser.
+NOT_DESCRIBABLE = {"relationship", "partition", "annotation", "changedProperty", "ref"}
+
+
+def check_descriptions():
+    """Findet '///'-Bloecke, die an keinem Description-faehigen Objekt haengen."""
+    errors = []
+    paths = glob.glob(os.path.join(MODEL, "*.tmdl")) + glob.glob(os.path.join(MODEL, "*", "*.tmdl"))
+    for path in sorted(paths):
+        rel_path = os.path.relpath(path, MODEL)
+        lines = read(path).split("\n")
+        for index, line in enumerate(lines):
+            if not line.strip().startswith("///"):
+                continue
+            following = index + 1
+            while following < len(lines) and lines[following].strip().startswith("///"):
+                following += 1
+            if following >= len(lines):
+                errors.append(f"TMDL {rel_path}:{index + 1}: '///' am Dateiende ohne Objekt")
+                continue
+            target = lines[following].strip()
+            if target == "":
+                errors.append(f"TMDL {rel_path}:{following + 1}: '///' gefolgt von Leerzeile")
+            else:
+                keyword = target.split(" ")[0].split("=")[0].strip()
+                if keyword in NOT_DESCRIBABLE:
+                    errors.append(f"TMDL {rel_path}:{following + 1}: '///' vor '{keyword}' "
+                                  f"- dieses Objekt hat keine Description")
+                elif not target.startswith(DESCRIBABLE):
+                    errors.append(f"TMDL {rel_path}:{following + 1}: '///' vor '{target[:50]}'")
+    return errors
 
 
 def main():
@@ -146,6 +186,8 @@ def main():
                 errors.append(f"Report {visual}: Tabelle '{entity}' fehlt")
             elif prop not in tables[entity]["columns"] and prop not in tables[entity]["measures"]:
                 errors.append(f"Report {visual}: {entity}[{prop}] fehlt")
+
+    errors.extend(check_descriptions())
 
     active = sum(1 for r in rels if r["active"])
     bidi = sum(1 for r in rels if r["bidirectional"])

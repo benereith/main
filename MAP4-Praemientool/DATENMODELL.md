@@ -37,6 +37,36 @@ keine M:N-Beziehungen, sauberer Split Pacht/Mandat und ein Schalter für die Pr�
    sw_Ergebnisziel     sw_HSE_TRIFR      (ohne Beziehung, nur per Measure gelesen)
 ```
 
+## Beziehungen im Detail
+
+`relationships.tmdl` enthält bewusst keine Kommentare: `///` ist in TMDL eine
+Objektbeschreibung, und `relationship` hat in TOM keine Description-Eigenschaft.
+Ein `///` dort bricht den Parser. Deshalb steht die Erklärung hier.
+
+| Von | Nach | Richtung | Zweck |
+|---|---|---|---|
+| `F_SAP[Object_group]` | `dim_Betrieb[betrieb]` | → | Betriebsnummer in den SAP-Exporten |
+| `F_SAP[Account]` | `dim_Konto[Kostenart_Key]` | → | numerischer Schlüssel; vorher lief die Beziehung von `Account` (Ganzzahl) auf `Kostenart` (Text) |
+| `F_SAP[Szenario_Key]` | `dim_Szenario[Szenario_Key]` | → | Budget/FC über `SAP_Version\|YTD-YTG` |
+| `F_SAP[Perioden_Key]` | `dim_Periode[Perioden_Key]` | → | Geschäftsjahr × Periode |
+| `dim_Betrieb[Pacht/Mandat]` | `dim_PachtMandat[Pacht/Mandat]` | → | Split wirkt auf alle Fakten |
+| `tab_Prämienpunkte[Vertragsart]` | `dim_PachtMandat[Pacht/Mandat]` | → | zweiter Ast derselben Dimension – **ersetzt die M:N** |
+| `tab_Prämienpunkte[Prämienziel]` | `dim_Praemienart[Prämienziel]` | → | Prämienart als Dimension |
+| `dim_Betrieb[region]` | `dim_Region[region_key]` | → | eine einzige Region-Achse |
+| `Retention[Region]` | `dim_Region[region_key]` | → | vorher gleichzeitig an Innenauftrag und Unit |
+| `dim_Innenauftrag[betrieb]` | `dim_Betrieb[betrieb]` | → | nachgelagerte Dimension, nur Zusatzattribute |
+| `Personaldaten[Betrieb]` | `dim_Betrieb[betrieb]` | → | |
+| `Compliance[Betrieb]` | `dim_Betrieb[betrieb]` | → | |
+| `brg_Person_Betrieb[Vollname]` | `dim_Person[Vollname]` | → | Person filtert ihre Zuordnungen |
+| `brg_Person_Betrieb[Betrieb]` | `dim_Betrieb[betrieb]` | **↔** | einzige bidirektionale Beziehung, Brückenmuster |
+| `Personaldaten[Vollname]` | `dim_Person[Vollname]` | *inaktiv* | aktiv entstünde ein Filterkreis |
+
+Die bidirektionale Brückenbeziehung ist nötig, damit eine ausgewählte Person bis auf die
+Fakten durchfiltert (`dim_Person → brg → dim_Betrieb → F_SAP`). Die Gegenrichtung erlaubt es,
+zu einem ausgewählten Betrieb die Verantwortlichen über `brg_Person_Betrieb[Vollname]`
+anzuzeigen. Sie bleibt eindeutig, weil `brg_Person_Betrieb` mit keiner weiteren Tabelle
+verbunden ist.
+
 ## Was die M:N-Beziehung ersetzt hat
 
 Vorher:
