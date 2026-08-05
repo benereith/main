@@ -176,37 +176,153 @@ table _Measuretabelle
 	measure 'Faktor Ergebnisziel' = SELECTEDVALUE(sw_Ergebnisziel[Faktor], 0)
 		formatString: 0
 		displayFolder: 04 Prämien\Schalter
+		isHidden
 		lineageTag: 3f2a7c10-1020-4a10-9d31-1f5a2c7e1020
 
 	/// Liest den Schalter sw_HSE_TRIFR aus. 1 = erreicht, 0 = nicht erreicht.
 	measure 'Faktor HSE-TRIFR' = SELECTEDVALUE(sw_HSE_TRIFR[Faktor], 0)
 		formatString: 0
 		displayFolder: 04 Prämien\Schalter
+		isHidden
 		lineageTag: 3f2a7c10-1021-4a10-9d31-1f5a2c7e1021
 
-	/// Maximal erreichbare Punkte im aktuellen Filterkontext
-	/// (respektiert dim_PachtMandat und dim_Praemienart).
-	measure 'Prämienpunkte max' = SUM(tab_Prämienpunkte[Prämienpunkte])
+	/// Ergebnisziel Compass Group Deutschland: konzernweite Groesse, wird ueber den
+	/// Schalter sw_Ergebnisziel gesetzt.
+	measure 'Ziel erreicht Ergebnis CGD' = [Faktor Ergebnisziel]
+		formatString: 0
+		displayFolder: 04 Prämien\Zielerreichung
+		lineageTag: 3f2a7c10-1040-4a10-9d31-1f5a2c7e1040
+
+	/// HSE-TRIFR: konzernweite Groesse, wird ueber den Schalter sw_HSE_TRIFR gesetzt.
+	measure 'Ziel erreicht HSE-TRIFR' = [Faktor HSE-TRIFR]
+		formatString: 0
+		displayFolder: 04 Prämien\Zielerreichung
+		lineageTag: 3f2a7c10-1041-4a10-9d31-1f5a2c7e1041
+
+	/// Umsatzziel: erreicht, wenn das Delta aus Revenue FC und Revenue Budget nicht negativ ist.
+	/// Die Deltaform (statt FC >= Budget * Schwelle) haelt auch bei negativen Budgets
+	/// die Richtung korrekt. Fuer eine Toleranzschwelle die 0 durch
+	/// -(ABS(Ziel) * (1 - Schwelle)) ersetzen.
+	measure 'Ziel erreicht Umsatz' =
+			VAR Ziel = [Revenue Budget]
+			VAR Ist = [Revenue FC]
+			RETURN
+			IF(
+			    ISBLANK(Ziel) && ISBLANK(Ist),
+			    BLANK(),
+			    IF(COALESCE(Ist, 0) - COALESCE(Ziel, 0) >= 0, 1, 0)
+			)
+		formatString: 0
+		displayFolder: 04 Prämien\Zielerreichung
+		lineageTag: 3f2a7c10-1042-4a10-9d31-1f5a2c7e1042
+
+	/// UP-Ziel: erreicht, wenn das Delta aus UP FC und UP Budget nicht negativ ist.
+	measure 'Ziel erreicht UP' =
+			VAR Ziel = [UP Budget]
+			VAR Ist = [UP FC]
+			RETURN
+			IF(
+			    ISBLANK(Ziel) && ISBLANK(Ist),
+			    BLANK(),
+			    IF(COALESCE(Ist, 0) - COALESCE(Ziel, 0) >= 0, 1, 0)
+			)
+		formatString: 0
+		displayFolder: 04 Prämien\Zielerreichung
+		lineageTag: 3f2a7c10-1043-4a10-9d31-1f5a2c7e1043
+
+	/// Compliance-Ziel: geht nach Compliance[Status Zielerfuellung] = "ja".
+	/// Bei mehreren Betrieben (Abrechnungseinheit oder Person) muessen ALLE Betriebe "ja"
+	/// tragen. Fuer eine mildere Regel die letzte Zeile auf DIVIDE(MitJa, Bewertbare) >= 0,5
+	/// aendern. DAX vergleicht Text ohne Beachtung der Gross-/Kleinschreibung, "Ja" passt also.
+	measure 'Ziel erreicht Compliance' =
+			VAR Bewertbare = COUNTROWS(Compliance)
+			VAR MitJa =
+			    CALCULATE(
+			        COUNTROWS(Compliance),
+			        FILTER(Compliance, TRIM(Compliance[Status Zielerfüllung]) = "ja")
+			    )
+			RETURN
+			IF(
+			    ISBLANK(Bewertbare),
+			    BLANK(),
+			    IF(COALESCE(MitJa, 0) = Bewertbare, 1, 0)
+			)
+		formatString: 0
+		displayFolder: 04 Prämien\Zielerreichung
+		lineageTag: 3f2a7c10-1044-4a10-9d31-1f5a2c7e1044
+
+	/// Generische Zielerreichung: waehlt anhand von dim_Praemienart[Zielart] die passende Logik.
+	/// Dafuer gedacht, dass dim_Praemienart[Prämienziel] auf den Zeilen eines Visuals liegt.
+	measure 'Ziel erreicht' =
+			VAR Zielart = SELECTEDVALUE(dim_Praemienart[Zielart])
+			RETURN
+			SWITCH(
+			    Zielart,
+			    "ERGEBNIS_CGD", [Ziel erreicht Ergebnis CGD],
+			    "HSE_TRIFR", [Ziel erreicht HSE-TRIFR],
+			    "UMSATZ", [Ziel erreicht Umsatz],
+			    "UP", [Ziel erreicht UP],
+			    "COMPLIANCE", [Ziel erreicht Compliance],
+			    BLANK()
+			)
+		formatString: 0
+		displayFolder: 04 Prämien\Zielerreichung
+		lineageTag: 3f2a7c10-1045-4a10-9d31-1f5a2c7e1045
+
+	measure 'Ziel erreicht (Text)' =
+			VAR Wert = [Ziel erreicht]
+			RETURN
+			IF(ISBLANK(Wert), BLANK(), IF(Wert = 1, "erreicht", "nicht erreicht"))
+		displayFolder: 04 Prämien\Zielerreichung
+		lineageTag: 3f2a7c10-1046-4a10-9d31-1f5a2c7e1046
+
+	/// Maximal erreichbare Punkte.
+	/// TREATAS beschraenkt die Punktetabelle auf die Vertragsart der Betriebe im Filterkontext.
+	/// Noetig, weil dim_Betrieb -> dim_PachtMandat bewusst nur in eine Richtung filtert: ohne
+	/// TREATAS wuerden bei einem Pacht-Betrieb auch die Mandats-Punkte mitgezaehlt.
+	measure 'Prämienpunkte max' =
+			VAR Vertragsarten = CALCULATETABLE(VALUES(dim_Betrieb[Pacht/Mandat]))
+			RETURN
+			CALCULATE(
+			    SUM(tab_Prämienpunkte[Prämienpunkte]),
+			    TREATAS(Vertragsarten, tab_Prämienpunkte[Vertragsart])
+			)
 		formatString: #,0.0
 		displayFolder: 04 Prämien
 		lineageTag: 3f2a7c10-1022-4a10-9d31-1f5a2c7e1022
 
-	/// Tatsaechlich erreichte Punkte: je Praemienziel werden die Punkte mit dem Faktor des
-	/// zugehoerigen Schalters multipliziert. Praemienziele ohne eigenen Schalter zaehlen mit 0 -
-	/// kommt ein neues Ziel dazu, muss hier eine weitere Zeile ergaenzt werden.
+	/// Tatsaechlich erreichte Punkte: je Zeile der Punktetabelle wird ueber dim_Praemienart[Zielart]
+	/// die passende Zielerreichung bestimmt und mit den Punkten multipliziert.
+	/// Die Zielmeasures werden ABSICHTLICH vor dem SUMX in Variablen ausgewertet - sonst
+	/// wuerde die Kontextuebertragung sie je Punktezeile neu und falsch berechnen.
 	measure 'Prämienpunkte erreicht' =
-			VAR FaktorErgebnisziel = [Faktor Ergebnisziel]
-			VAR FaktorHSE = [Faktor HSE-TRIFR]
+			VAR Vertragsarten = CALCULATETABLE(VALUES(dim_Betrieb[Pacht/Mandat]))
+			VAR ErgebnisCGD = [Ziel erreicht Ergebnis CGD]
+			VAR HseTrifr = [Ziel erreicht HSE-TRIFR]
+			VAR Umsatz = [Ziel erreicht Umsatz]
+			VAR UnitProfit = [Ziel erreicht UP]
+			VAR CompStatus = [Ziel erreicht Compliance]
 			RETURN
 			SUMX(
-			    tab_Prämienpunkte,
-			    tab_Prämienpunkte[Prämienpunkte]
-			        * SWITCH(
-			            TRUE(),
-			            tab_Prämienpunkte[Prämienziel] = "Ergebnisziel Compass Group Deutschland", FaktorErgebnisziel,
-			            tab_Prämienpunkte[Prämienziel] = "HSE-TRIFR", FaktorHSE,
-			            0
-			        )
+			    CALCULATETABLE(
+			        tab_Prämienpunkte,
+			        TREATAS(Vertragsarten, tab_Prämienpunkte[Vertragsart])
+			    ),
+			    VAR Zielart = RELATED(dim_Praemienart[Zielart])
+			    RETURN
+			        tab_Prämienpunkte[Prämienpunkte]
+			            * COALESCE(
+			                SWITCH(
+			                    Zielart,
+			                    "ERGEBNIS_CGD", ErgebnisCGD,
+			                    "HSE_TRIFR", HseTrifr,
+			                    "UMSATZ", Umsatz,
+			                    "UP", UnitProfit,
+			                    "COMPLIANCE", CompStatus,
+			                    0
+			                ),
+			                0
+			            )
 			)
 		formatString: #,0.0
 		displayFolder: 04 Prämien
@@ -286,6 +402,30 @@ table _Measuretabelle
 		formatString: #,0
 		displayFolder: 05 Kontrolle
 		lineageTag: 3f2a7c10-1034-4a10-9d31-1f5a2c7e1034
+
+	/// Alle Betriebe der aktuellen Abrechnungseinheit als Text - zur Sichtpruefung des Sets.
+	measure 'Betriebe der Abrechnungseinheit' =
+			CONCATENATEX(
+			    VALUES(dim_Betrieb[Werk - Bezeichnung]),
+			    dim_Betrieb[Werk - Bezeichnung],
+			    ", ",
+			    dim_Betrieb[Werk - Bezeichnung],
+			    ASC
+			)
+		displayFolder: 05 Kontrolle
+		lineageTag: 3f2a7c10-1047-4a10-9d31-1f5a2c7e1047
+
+	/// Datenqualitaet: Praemienziele aus der Excel-Datei, die in dim_Praemienart keiner Zielart
+	/// zugeordnet sind. Sollte 0 sein - solche Ziele zaehlen mit 0 Punkten.
+	measure 'Kontrolle Prämienziele ohne Zielart' =
+			CALCULATE(
+			    COUNTROWS(dim_Praemienart),
+			    REMOVEFILTERS(dim_Praemienart),
+			    dim_Praemienart[Zielart] = "UNBEKANNT"
+			)
+		formatString: 0
+		displayFolder: 05 Kontrolle
+		lineageTag: 3f2a7c10-1048-4a10-9d31-1f5a2c7e1048
 
 	column Spalte1
 		dataType: string

@@ -58,6 +58,7 @@ Ein `///` dort bricht den Parser. Deshalb steht die Erklärung hier.
 | `Personaldaten[Betrieb]` | `dim_Betrieb[betrieb]` | → | |
 | `Compliance[Betrieb]` | `dim_Betrieb[betrieb]` | → | |
 | `brg_Person_Betrieb[Vollname]` | `dim_Person[Vollname]` | → | Person filtert ihre Zuordnungen |
+| `dim_Betrieb[Abrechnungsbetrieb]` | `dim_Abrechnungseinheit[Abrechnungsbetrieb]` | → | Betriebeset: mehrere Betriebe, eine Abrechnung |
 | `brg_Person_Betrieb[Betrieb]` | `dim_Betrieb[betrieb]` | **↔** | einzige bidirektionale Beziehung, Brückenmuster |
 | `Personaldaten[Vollname]` | `dim_Person[Vollname]` | *inaktiv* | aktiv entstünde ein Filterkreis |
 
@@ -137,6 +138,59 @@ Ohne Auswahl (oder bei Mehrfachauswahl) gilt bewusst „nicht erreicht" (Faktor 
 
 **Neues Prämienziel:** taucht automatisch in `dim_Praemienart` auf, zählt aber mit 0 Punkten,
 bis es in `[Prämienpunkte erreicht]` und ggf. mit einer eigenen `sw_`-Tabelle ergänzt wird.
+
+## Zielerreichung und Prämienpunkte
+
+Jedes Prämienziel bekommt in `dim_Praemienart[Zielart]` einen fachlichen Code. Der Code
+steuert, welche Logik ausgewertet wird:
+
+| Zielart | Logik | Erreicht wenn |
+|---|---|---|
+| `ERGEBNIS_CGD` | Schalter `sw_Ergebnisziel` | manuell auf „erreicht" gesetzt |
+| `HSE_TRIFR` | Schalter `sw_HSE_TRIFR` | manuell auf „erreicht" gesetzt |
+| `UMSATZ` | `[Revenue FC] - [Revenue Budget]` | Delta ≥ 0 |
+| `UP` | `[UP FC] - [UP Budget]` | Delta ≥ 0 |
+| `COMPLIANCE` | `Compliance[Status Zielerfüllung]` | **alle** Betriebe im Kontext tragen „ja" |
+| `UNBEKANNT` | – | nicht gemappt, zählt mit 0 Punkten |
+
+`[Prämienpunkte erreicht]` läuft über die Punktetabelle und multipliziert je Zeile die Punkte
+mit der Zielerreichung der zugehörigen Zielart. Die Punkte folgen dabei automatisch der
+Vertragsart (Pacht/Mandat) der Betriebe im Filterkontext.
+
+Zwei Details, die in der Praxis leicht schiefgehen:
+
+- **`TREATAS` auf die Vertragsart.** `dim_Betrieb → dim_PachtMandat` filtert bewusst nur in
+  eine Richtung. Ohne `TREATAS` würden bei einem Pacht-Betrieb auch die Mandats-Punkte
+  mitgezählt. Das betrifft `[Prämienpunkte max]` und `[Prämienpunkte erreicht]`.
+- **Zielmeasures vor dem `SUMX` in Variablen.** Sonst würde die Kontextübertragung sie je
+  Punktezeile neu und falsch berechnen.
+
+### Zielart pflegen
+
+In `dim_Praemienart` (Power Query → Erweiterter Editor), Block `HIER PFLEGEN`. Der Text links
+muss **exakt** dem Prämienziel in `Prämienvereinbarung Pacht.xlsx` entsprechen. Nicht gemappte
+Ziele bekommen `UNBEKANNT`; `[Kontrolle Prämienziele ohne Zielart]` zeigt, wie viele das sind.
+
+## Betriebeset: mehrere Betriebe, eine Abrechnung
+
+Manche Personen verantworten mehrere Betriebe, werden aber nur über einen davon abgerechnet.
+Das lässt sich nicht aus den Stammdaten ableiten und wird in `tab_Betriebeset` **manuell**
+gepflegt (Power Query → Erweiterter Editor, Block `HIER PFLEGEN`):
+
+```
+{Betrieb, Abrechnungsbetrieb, "Kommentar"}
+{1234,    1200,               "1234 wird über 1200 abgerechnet"}
+```
+
+Nur Ausnahmen eintragen – jeder Betrieb ohne Eintrag rechnet sich selbst ab.
+
+Daraus entsteht `dim_Betrieb[Abrechnungsbetrieb]` und darüber die Dimension
+`dim_Abrechnungseinheit`. **Das ist der Trick:** Sobald
+`dim_Abrechnungseinheit[Abrechnungseinheit]` in einem Visual auf den Zeilen liegt,
+aggregieren Umsatz, UP, Compliance und alle Zielmeasures automatisch über das gesamte Set.
+Es braucht dafür keine Sonder-Measure.
+
+`[Betriebe der Abrechnungseinheit]` listet zur Kontrolle alle Betriebe der Einheit als Text.
 
 ## Person ↔ Betrieb: bekannte Doppelzählung
 

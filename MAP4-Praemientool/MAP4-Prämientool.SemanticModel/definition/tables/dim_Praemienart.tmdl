@@ -15,13 +15,48 @@ table dim_Praemienart
 
 		annotation SummarizationSetBy = Automatic
 
+	/// Fachlicher Code des Ziels. Steuert, welche Logik [Ziel erreicht] auswertet.
+	/// Gepflegt in der Zuordnungsliste weiter unten in dieser Query.
+	/// Werte: ERGEBNIS_CGD, HSE_TRIFR, UMSATZ, UP, COMPLIANCE, UNBEKANNT
+	column Zielart
+		dataType: string
+		lineageTag: 8b1c4f2a-0602-4a10-9d31-1f5a2c7e0602
+		summarizeBy: none
+		sourceColumn: Zielart
+
+		annotation SummarizationSetBy = Automatic
+
 	partition dim_Praemienart = m
 		mode: import
 		source =
 				let
 				  Quelle = Table.SelectColumns(tab_Prämienpunkte, {"Prämienziel"}),
 				    #"Eindeutige Praemienziele" = Table.Distinct(Quelle, {"Prämienziel"}),
-				    #"Sortierte Zeilen" = Table.Sort(#"Eindeutige Praemienziele", {{"Prämienziel", Order.Ascending}})
+				  // ############################################################
+				  // ##  HIER PFLEGEN - Praemienziel aus der Excel-Datei auf   ##
+				  // ##  eine Zielart mappen. Der Text links muss EXAKT dem    ##
+				  // ##  Wert in Praemienvereinbarung Pacht.xlsx entsprechen.  ##
+				  // ##  Nicht gemappte Ziele erhalten "UNBEKANNT" und zaehlen ##
+				  // ##  mit 0 Punkten - sichtbar ueber die Kontrollmeasure    ##
+				  // ##  [Kontrolle Praemienziele ohne Zielart].               ##
+				  // ############################################################
+				    Zuordnung = #table(
+				      type table [Prämienziel = text, Zielart = text],
+				      {
+				        {"Ergebnisziel Compass Group Deutschland", "ERGEBNIS_CGD"},
+				        {"HSE-TRIFR",                              "HSE_TRIFR"},
+				        {"Umsatz",                                 "UMSATZ"},
+				        {"UP",                                     "UP"},
+				        {"Compliance",                             "COMPLIANCE"}
+				      }
+				    ),
+				  // ############################################################
+				  // ##  AB HIER NICHTS AENDERN                                ##
+				  // ############################################################
+				    #"Zielart verbunden" = Table.NestedJoin(#"Eindeutige Praemienziele", {"Prämienziel"}, Zuordnung, {"Prämienziel"}, "z", JoinKind.LeftOuter),
+				    #"Zielart erweitert" = Table.ExpandTableColumn(#"Zielart verbunden", "z", {"Zielart"}, {"Zielart"}),
+				    #"Zielart gefuellt" = Table.TransformColumns(#"Zielart erweitert", {{"Zielart", each if _ = null then "UNBEKANNT" else _, type text}}),
+				    #"Sortierte Zeilen" = Table.Sort(#"Zielart gefuellt", {{"Prämienziel", Order.Ascending}})
 				in
 				    #"Sortierte Zeilen"
 

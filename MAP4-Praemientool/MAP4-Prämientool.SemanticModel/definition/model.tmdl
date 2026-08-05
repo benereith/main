@@ -18,12 +18,13 @@ model Model
 
 annotation __PBI_TimeIntelligenceEnabled = 0
 
-annotation PBI_QueryOrder = ["LH_Server","LH_DB","YTD/YTG","Sharepoint","Blanko-Abfrage","F_SAP","dim_Betrieb","dim_Innenauftrag","dim_Konto","dim_Szenario","dim_Periode","dim_PachtMandat","dim_Region","dim_Person","brg_Person_Betrieb","tab_Prämienpunkte","dim_Praemienart","sw_Ergebnisziel","sw_HSE_TRIFR","Compliance","Retention","Personaldaten","_Measuretabelle"]
+annotation PBI_QueryOrder = ["LH_Server","LH_DB","YTD/YTG","Sharepoint","Blanko-Abfrage","F_SAP","tab_Betriebeset","dim_Betrieb","dim_Abrechnungseinheit","dim_Innenauftrag","dim_Konto","dim_Szenario","dim_Periode","dim_PachtMandat","dim_Region","dim_Person","brg_Person_Betrieb","tab_Prämienpunkte","dim_Praemienart","sw_Ergebnisziel","sw_HSE_TRIFR","Compliance","Retention","Personaldaten","_Measuretabelle"]
 
 annotation PBI_ProTooling = ["DevMode"]
 
 ref table F_SAP
 ref table dim_Betrieb
+ref table dim_Abrechnungseinheit
 ref table dim_Innenauftrag
 ref table dim_Konto
 ref table dim_Szenario
@@ -36,6 +37,7 @@ ref table tab_Prämienpunkte
 ref table dim_Praemienart
 ref table sw_Ergebnisziel
 ref table sw_HSE_TRIFR
+ref table tab_Betriebeset
 ref table Compliance
 ref table Retention
 ref table Personaldaten

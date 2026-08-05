@@ -62,7 +62,7 @@
         },
         {
           "location": {
-            "x": 900,
+            "x": 500,
             "y": 1000
           },
           "nodeIndex": "_Measuretabelle",
@@ -88,6 +88,19 @@
         },
         {
           "location": {
+            "x": 900,
+            "y": 200
+          },
+          "nodeIndex": "dim_Abrechnungseinheit",
+          "nodeLineageTag": "8b1c4f2a-0a00-4a10-9d31-1f5a2c7e0a00",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 6
+        },
+        {
+          "location": {
             "x": 1300,
             "y": 200
           },
@@ -97,7 +110,7 @@
             "height": 300,
             "width": 234
           },
-          "zIndex": 6
+          "zIndex": 7
         },
         {
           "location": {
@@ -110,11 +123,11 @@
             "height": 300,
             "width": 234
           },
-          "zIndex": 7
+          "zIndex": 8
         },
         {
           "location": {
-            "x": 900,
+            "x": 500,
             "y": 600
           },
           "nodeIndex": "dim_Konto",
@@ -123,7 +136,7 @@
             "height": 300,
             "width": 234
           },
-          "zIndex": 8
+          "zIndex": 9
         },
         {
           "location": {
@@ -136,7 +149,7 @@
             "height": 300,
             "width": 234
           },
-          "zIndex": 9
+          "zIndex": 10
         },
         {
           "location": {
@@ -149,7 +162,7 @@
             "height": 300,
             "width": 234
           },
-          "zIndex": 10
+          "zIndex": 11
         },
         {
           "location": {
@@ -162,7 +175,7 @@
             "height": 300,
             "width": 234
           },
-          "zIndex": 11
+          "zIndex": 12
         },
         {
           "location": {
@@ -175,7 +188,7 @@
             "height": 300,
             "width": 234
           },
-          "zIndex": 12
+          "zIndex": 13
         },
         {
           "location": {
@@ -188,7 +201,7 @@
             "height": 300,
             "width": 234
           },
-          "zIndex": 13
+          "zIndex": 14
         },
         {
           "location": {
@@ -201,7 +214,7 @@
             "height": 300,
             "width": 234
           },
-          "zIndex": 14
+          "zIndex": 15
         },
         {
           "location": {
@@ -214,7 +227,7 @@
             "height": 300,
             "width": 234
           },
-          "zIndex": 15
+          "zIndex": 16
         },
         {
           "location": {
@@ -227,7 +240,20 @@
             "height": 300,
             "width": 234
           },
-          "zIndex": 16
+          "zIndex": 17
+        },
+        {
+          "location": {
+            "x": 900,
+            "y": 600
+          },
+          "nodeIndex": "tab_Betriebeset",
+          "nodeLineageTag": "8b1c4f2a-0900-4a10-9d31-1f5a2c7e0900",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 18
         },
         {
           "location": {
@@ -240,7 +266,7 @@
             "height": 300,
             "width": 234
           },
-          "zIndex": 17
+          "zIndex": 19
         }
       ],
       "name": "Alle Tabellen",

@@ -1,0 +1,56 @@
+/// Abrechnungseinheit = der Betrieb, auf dem abgerechnet wird, plus alle ihm per
+/// tab_Betriebeset zugeschlagenen Betriebe.
+///
+/// Fuer Betriebe ohne Eintrag in tab_Betriebeset ist die Abrechnungseinheit der Betrieb selbst -
+/// die Dimension ist dann deckungsgleich mit dim_Betrieb.
+///
+/// Diese Dimension ist der Grund, warum das Betriebeset OHNE Sonder-Measures funktioniert:
+/// liegt dim_Abrechnungseinheit[Abrechnungseinheit] auf den Zeilen, aggregieren Umsatz, UP,
+/// Compliance und alle Zielmeasures automatisch ueber das gesamte Set.
+table dim_Abrechnungseinheit
+	lineageTag: 8b1c4f2a-0a00-4a10-9d31-1f5a2c7e0a00
+
+	/// Primaerschluessel: Betriebsnummer des Abrechnungsbetriebs.
+	column Abrechnungsbetrieb
+		dataType: int64
+		isKey
+		isHidden
+		formatString: 0
+		lineageTag: 8b1c4f2a-0a01-4a10-9d31-1f5a2c7e0a01
+		summarizeBy: none
+		sourceColumn: Abrechnungsbetrieb
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Klartext des Abrechnungsbetriebs - diese Spalte im Bericht verwenden.
+	column Abrechnungseinheit
+		dataType: string
+		lineageTag: 8b1c4f2a-0a02-4a10-9d31-1f5a2c7e0a02
+		summarizeBy: none
+		sourceColumn: Abrechnungseinheit
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_Abrechnungseinheit = m
+		mode: import
+		source =
+				let
+				  Quelle = Table.Distinct(Table.SelectColumns(dim_Betrieb, {"Abrechnungsbetrieb"}), {"Abrechnungsbetrieb"}),
+				    // Bezeichnung des Abrechnungsbetriebs anhaengen.
+				    Bezeichnungen = Table.SelectColumns(dim_Betrieb, {"betrieb", "Werk - Bezeichnung"}),
+				    #"Verbunden" = Table.NestedJoin(Quelle, {"Abrechnungsbetrieb"}, Bezeichnungen, {"betrieb"}, "bez", JoinKind.LeftOuter),
+				    #"Erweitert" = Table.ExpandTableColumn(#"Verbunden", "bez", {"Werk - Bezeichnung"}, {"Abrechnungseinheit"}),
+				    // Falls der Abrechnungsbetrieb selbst nicht in dim_Betrieb liegt, wenigstens die Nummer zeigen.
+				    #"Bezeichnung gefuellt" = Table.ReplaceValue(
+				      #"Erweitert",
+				      each [Abrechnungseinheit],
+				      each if [Abrechnungseinheit] = null then Text.PadStart(Text.From([Abrechnungsbetrieb], "de-DE"), 4, "0") & " - (nicht in dim_Betrieb)" else [Abrechnungseinheit],
+				      Replacer.ReplaceValue, {"Abrechnungseinheit"}),
+				    #"Typ" = Table.TransformColumnTypes(#"Bezeichnung gefuellt", {{"Abrechnungseinheit", type text}}),
+				    #"Sortierte Zeilen" = Table.Sort(#"Typ", {{"Abrechnungseinheit", Order.Ascending}})
+				in
+				    #"Sortierte Zeilen"
+
+	annotation PBI_ResultType = Table

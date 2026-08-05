@@ -405,6 +405,20 @@ table dim_Betrieb
 
 		annotation SummarizationSetBy = Automatic
 
+	/// Betrieb, auf dem abgerechnet wird. Standard: der Betrieb selbst.
+	/// Abweichungen kommen ausschliesslich aus der manuell gepflegten Liste tab_Betriebeset.
+	column Abrechnungsbetrieb
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 8b1c4f2a-0011-4a10-9d31-1f5a2c7e0011
+		summarizeBy: none
+		sourceColumn: Abrechnungsbetrieb
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
 	partition dim_Betrieb = m
 		mode: import
 		source =
@@ -421,9 +435,15 @@ table dim_Betrieb
 				    // Dadurch haengt das Merkmal an der Betriebsdimension und gilt automatisch fuer alle Fakten.
 				    #"Pacht/Mandat" = Table.AddColumn(#"Geänderter Typ", "Pacht/Mandat", each if List.Contains({"PR", "M", "XK", "XP"}, [vertragsart]) then "Mandat" else "Pacht", type text),
 				    // Absicherung des Grains: eine Zeile je Betrieb.
-				    #"Eindeutige Betriebe" = Table.Distinct(#"Pacht/Mandat", {"betrieb"})
+				    #"Eindeutige Betriebe" = Table.Distinct(#"Pacht/Mandat", {"betrieb"}),
+				    // Abrechnungsbetrieb aus der manuell gepflegten Ausnahmeliste tab_Betriebeset ziehen.
+				    // Ohne Eintrag rechnet sich ein Betrieb selbst ab.
+				    #"Set zugeordnet" = Table.NestedJoin(#"Eindeutige Betriebe", {"betrieb"}, tab_Betriebeset, {"Betrieb"}, "set", JoinKind.LeftOuter),
+				    #"Set erweitert" = Table.ExpandTableColumn(#"Set zugeordnet", "set", {"Abrechnungsbetrieb"}, {"Set_Abrechnungsbetrieb"}),
+				    #"Abrechnungsbetrieb" = Table.AddColumn(#"Set erweitert", "Abrechnungsbetrieb", each if [Set_Abrechnungsbetrieb] <> null then [Set_Abrechnungsbetrieb] else [betrieb], Int64.Type),
+				    #"Hilfsspalte entfernt" = Table.RemoveColumns(#"Abrechnungsbetrieb", {"Set_Abrechnungsbetrieb"})
 				in
-				    #"Eindeutige Betriebe"
+				    #"Hilfsspalte entfernt"
 
 	annotation PBI_ResultType = Table
 

@@ -34,6 +34,10 @@ relationship Retention_dim_Region
 	fromColumn: Retention.Region
 	toColumn: dim_Region.region_key
 
+relationship dim_Abrechnungseinheit_dim_Betrieb
+	fromColumn: dim_Betrieb.Abrechnungsbetrieb
+	toColumn: dim_Abrechnungseinheit.Abrechnungsbetrieb
+
 relationship dim_Innenauftrag_dim_Betrieb
 	fromColumn: dim_Innenauftrag.betrieb
 	toColumn: dim_Betrieb.betrieb

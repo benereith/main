@@ -1,0 +1,73 @@
+/// MANUELL GEPFLEGTE AUSNAHMELISTE: Betriebe, die ueber einen ANDEREN Betrieb abgerechnet werden.
+///
+/// Hintergrund: Manche Personen verantworten mehrere Betriebe, werden aber nur ueber einen
+/// davon abgerechnet. Diese Zuordnung laesst sich nicht aus den Stammdaten ableiten.
+///
+/// PFLEGE (Power BI Desktop -> Daten transformieren -> tab_Betriebeset -> Erweiterter Editor):
+///   Nur AUSNAHMEN eintragen. Jeder Betrieb, der hier nicht steht, rechnet sich selbst ab.
+///   Betrieb            = der Betrieb, dessen Werte mitgerechnet werden sollen
+///   Abrechnungsbetrieb = der Betrieb, auf dem die Praemie abgerechnet wird
+///
+/// Die Zuordnung landet ueber einen Merge als Spalte dim_Betrieb[Abrechnungsbetrieb] und
+/// erzeugt daraus die Dimension dim_Abrechnungseinheit. Sobald diese in einem Visual auf den
+/// Zeilen liegt, aggregieren Umsatz, UP und Compliance automatisch ueber das ganze Set -
+/// es braucht dafuer keine Sonder-Measure.
+table tab_Betriebeset
+	lineageTag: 8b1c4f2a-0900-4a10-9d31-1f5a2c7e0900
+
+	/// Betrieb, der einem anderen Abrechnungsbetrieb zugeschlagen wird.
+	column Betrieb
+		dataType: int64
+		isKey
+		formatString: 0
+		lineageTag: 8b1c4f2a-0901-4a10-9d31-1f5a2c7e0901
+		summarizeBy: none
+		sourceColumn: Betrieb
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Betrieb, auf dem abgerechnet wird. Darf auf sich selbst zeigen.
+	column Abrechnungsbetrieb
+		dataType: int64
+		formatString: 0
+		lineageTag: 8b1c4f2a-0902-4a10-9d31-1f5a2c7e0902
+		summarizeBy: none
+		sourceColumn: Abrechnungsbetrieb
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Freitext zur Nachvollziehbarkeit, wer die Zuordnung wann warum gesetzt hat.
+	column Kommentar
+		dataType: string
+		lineageTag: 8b1c4f2a-0903-4a10-9d31-1f5a2c7e0903
+		summarizeBy: none
+		sourceColumn: Kommentar
+
+		annotation SummarizationSetBy = Automatic
+
+	partition tab_Betriebeset = m
+		mode: import
+		source =
+				let
+				  // ############################################################
+				  // ##  HIER PFLEGEN - eine Zeile je Ausnahme                 ##
+				  // ##  {Betrieb, Abrechnungsbetrieb, "Kommentar"}            ##
+				  // ############################################################
+				  Zuordnungen = #table(
+				    type table [Betrieb = Int64.Type, Abrechnungsbetrieb = Int64.Type, Kommentar = text],
+				    {
+				      // Beispielzeile - bitte durch echte Zuordnungen ersetzen:
+				      // {1234, 1200, "1234 wird ueber 1200 abgerechnet, Verantwortung Mustermann"}
+				    }
+				  ),
+				  // ############################################################
+				  // ##  AB HIER NICHTS AENDERN                                ##
+				  // ############################################################
+				    // Selbstbezuege sind unnoetig und wuerden nur Pflegeaufwand erzeugen.
+				    #"Ohne Selbstbezug" = Table.SelectRows(Zuordnungen, each [Betrieb] <> [Abrechnungsbetrieb]),
+				    // Ein Betrieb darf nur einem Abrechnungsbetrieb zugeordnet sein.
+				    #"Eindeutige Zuordnung" = Table.Distinct(#"Ohne Selbstbezug", {"Betrieb"})
+				in
+				    #"Eindeutige Zuordnung"
+
+	annotation PBI_ResultType = Table
