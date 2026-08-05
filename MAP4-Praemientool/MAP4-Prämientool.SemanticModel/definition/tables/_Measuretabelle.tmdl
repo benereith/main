@@ -405,6 +405,36 @@ table _Measuretabelle
 		displayFolder: 05 Kontrolle
 		lineageTag: 3f2a7c10-1048-4a10-9d31-1f5a2c7e1048
 
+	/// Datenqualitaet Betriebeset: Zuordnungen, die eine KETTE bilden, also einen
+	/// Abrechnungsbetrieb nennen, der selbst weiterverwiesen wird (1201 -> 1200, 1200 -> 1100).
+	/// Solche Ketten zerreissen das Set. Sollte 0 sein.
+	measure 'Kontrolle Betriebeset Ketten' =
+			VAR Abrechnungsbetriebe =
+			    CALCULATETABLE(VALUES(tab_Betriebeset[Abrechnungsbetrieb]), REMOVEFILTERS(tab_Betriebeset))
+			VAR Zugeordnete =
+			    CALCULATETABLE(VALUES(tab_Betriebeset[Betrieb]), REMOVEFILTERS(tab_Betriebeset))
+			RETURN
+			COUNTROWS(
+			    FILTER(Abrechnungsbetriebe, tab_Betriebeset[Abrechnungsbetrieb] IN Zugeordnete)
+			) + 0
+		formatString: 0
+		displayFolder: 05 Kontrolle
+		lineageTag: 3f2a7c10-1049-4a10-9d31-1f5a2c7e1049
+
+	/// Datenqualitaet Betriebeset: Abrechnungseinheiten, die Pacht- UND Mandats-Betriebe
+	/// mischen. Dort zaehlen [Praemienpunkte max] und [Praemienpunkte erreicht] die Punkte
+	/// beider Vertragsarten zusammen. Sollte 0 sein.
+	measure 'Kontrolle Abrechnungseinheiten gemischte Vertragsart' =
+			COUNTROWS(
+			    FILTER(
+			        VALUES(dim_Betrieb[Abrechnungsbetrieb]),
+			        CALCULATE(DISTINCTCOUNT(dim_Betrieb[Pacht/Mandat])) > 1
+			    )
+			) + 0
+		formatString: 0
+		displayFolder: 05 Kontrolle
+		lineageTag: 3f2a7c10-104a-4a10-9d31-1f5a2c7e104a
+
 	column Spalte1
 		dataType: string
 		isHidden

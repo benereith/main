@@ -175,6 +175,26 @@ gepflegt (Power Query → Erweiterter Editor, Block `HIER PFLEGEN`):
 
 Nur Ausnahmen eintragen – jeder Betrieb ohne Eintrag rechnet sich selbst ab.
 
+**Sets beliebiger Größe:** eine Zeile je zugeschlagenem Betrieb. Für einen Betriebsleiter mit
+5 Betrieben, der über 1200 abrechnet, sind es 4 Zeilen – 1200 selbst braucht keine:
+
+```
+{1201, 1200, "Verantwortung Mustermann"},
+{1202, 1200, "Verantwortung Mustermann"},
+{1203, 1200, "Verantwortung Mustermann"},
+{1204, 1200, "Verantwortung Mustermann"}
+```
+
+Zwei Fallstricke, die mit größeren Sets real werden:
+
+1. **Keine Ketten bilden.** `1201 → 1200` *und* `1200 → 1100` zerreißt das Set: 1201 landet
+   bei 1200, 1200 aber bei 1100. Immer alle Betriebe eines Sets direkt auf denselben
+   Abrechnungsbetrieb zeigen lassen. Kontrolle: `[Kontrolle Betriebeset Ketten]` = 0.
+2. **Vertragsart einheitlich halten.** Mischt ein Set Pacht- und Mandats-Betriebe, zählen
+   `[Prämienpunkte max]` und `[Prämienpunkte erreicht]` die Punkte **beider** Vertragsarten
+   zusammen – `VALUES(dim_Betrieb[Pacht/Mandat])` liefert dann zwei Werte.
+   Kontrolle: `[Kontrolle Abrechnungseinheiten gemischte Vertragsart]` = 0.
+
 Daraus entsteht `dim_Betrieb[Abrechnungsbetrieb]` und darüber die Dimension
 `dim_Abrechnungseinheit`. **Das ist der Trick:** Sobald
 `dim_Abrechnungseinheit[Abrechnungseinheit]` in einem Visual auf den Zeilen liegt,

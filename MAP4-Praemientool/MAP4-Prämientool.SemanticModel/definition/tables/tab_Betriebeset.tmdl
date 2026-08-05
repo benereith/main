@@ -8,6 +8,19 @@
 ///   Betrieb            = der Betrieb, dessen Werte mitgerechnet werden sollen
 ///   Abrechnungsbetrieb = der Betrieb, auf dem die Praemie abgerechnet wird
 ///
+/// BELIEBIG GROSSE SETS: eine Zeile je zugeschlagenem Betrieb. Fuer einen Betriebsleiter mit
+/// 5 Betrieben, der ueber 1200 abrechnet, sind es 4 Zeilen - 1200 selbst braucht keine:
+///   {1201, 1200, "..."}  {1202, 1200, "..."}  {1203, 1200, "..."}  {1204, 1200, "..."}
+///
+/// ZWEI FALLSTRICKE:
+///   1. KEINE KETTEN bilden. Wer 1201 -> 1200 und gleichzeitig 1200 -> 1100 eintraegt,
+///      zerreisst das Set: 1201 landet bei 1200, 1200 aber bei 1100. Immer alle Betriebe
+///      eines Sets direkt auf denselben Abrechnungsbetrieb zeigen lassen.
+///      Kontrolle: [Kontrolle Betriebeset Ketten] muss 0 sein.
+///   2. VERTRAGSART EINHEITLICH halten. Mischt ein Set Pacht- und Mandats-Betriebe, zaehlen
+///      [Praemienpunkte max] und [Praemienpunkte erreicht] die Punkte BEIDER Vertragsarten.
+///      Kontrolle: [Kontrolle Abrechnungseinheiten gemischte Vertragsart] muss 0 sein.
+///
 /// Die Zuordnung landet ueber einen Merge als Spalte dim_Betrieb[Abrechnungsbetrieb] und
 /// erzeugt daraus die Dimension dim_Abrechnungseinheit. Sobald diese in einem Visual auf den
 /// Zeilen liegt, aggregieren Umsatz, UP und Compliance automatisch ueber das ganze Set -
@@ -56,8 +69,11 @@ table tab_Betriebeset
 				  Zuordnungen = #table(
 				    type table [Betrieb = Int64.Type, Abrechnungsbetrieb = Int64.Type, Kommentar = text],
 				    {
-				      // Beispielzeile - bitte durch echte Zuordnungen ersetzen:
-				      // {1234, 1200, "1234 wird ueber 1200 abgerechnet, Verantwortung Mustermann"}
+				      // Beispiel fuer ein Set aus 5 Betrieben (Abrechnung ueber 1200):
+				      // {1201, 1200, "Verantwortung Mustermann, Abrechnung ueber 1200"},
+				      // {1202, 1200, "Verantwortung Mustermann, Abrechnung ueber 1200"},
+				      // {1203, 1200, "Verantwortung Mustermann, Abrechnung ueber 1200"},
+				      // {1204, 1200, "Verantwortung Mustermann, Abrechnung ueber 1200"}
 				    }
 				  ),
 				  // ############################################################
