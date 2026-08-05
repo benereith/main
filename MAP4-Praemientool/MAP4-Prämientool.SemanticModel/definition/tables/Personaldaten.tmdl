@@ -1,6 +1,7 @@
 /// Personaldaten der Praemienberechtigten (Gehalt, Praemiensatz lt. Vertrag) aus SharePoint.
-/// Haengt ueber [Betrieb] an dim_Betrieb. Die Beziehung auf dim_Person[Vollname] existiert
-/// zusaetzlich, ist aber deaktiviert (sonst Filterkreis) - siehe relationships.tmdl.
+/// Haengt ueber [Betrieb] an dim_Betrieb. Die Spalte [Vollname] steht fuer Auswertungen auf
+/// Personenebene zur Verfuegung; sie filtert die Fakten aber NICHT, weil Personaldaten auf der
+/// n-Seite von dim_Betrieb liegt - siehe DATENMODELL.md, Abschnitt "Personenebene".
 table Personaldaten
 	lineageTag: cab02e25-859f-412c-94aa-2d622c7e9b38
 

@@ -339,28 +339,6 @@ table _Measuretabelle
 		displayFolder: 05 Kontrolle
 		lineageTag: 3f2a7c10-1030-4a10-9d31-1f5a2c7e1030
 
-	/// Anzahl der Betriebe, die eine Person verantwortet. Frueher war hier ein ALLEXCEPT-Trick
-	/// noetig, weil Person und Betrieb in derselben Tabelle lagen - mit der Bruecke
-	/// brg_Person_Betrieb ergibt sich das jetzt direkt aus dem Modell.
-	measure 'Anzahl Verantwortlichkeit' = DISTINCTCOUNT(brg_Person_Betrieb[Betrieb])
-		formatString: 0
-		displayFolder: 05 Kontrolle
-		lineageTag: 26ac1f09-25d8-4fb3-b9f3-a11817ae51ca
-
-	/// Warnmeasure zur Doppelzaehlung: Betriebe mit mehr als einer verantwortlichen Person.
-	/// Deren Werte erscheinen bei jeder dieser Personen in voller Hoehe, die Summe ueber alle
-	/// Personen ist dann groesser als der Gesamtwert.
-	measure 'Betriebe mit mehreren Verantwortlichen' =
-			COUNTROWS(
-			    FILTER(
-			        VALUES(brg_Person_Betrieb[Betrieb]),
-			        CALCULATE(DISTINCTCOUNT(brg_Person_Betrieb[Vollname])) > 1
-			    )
-			)
-		formatString: 0
-		displayFolder: 05 Kontrolle
-		lineageTag: 3f2a7c10-1031-4a10-9d31-1f5a2c7e1031
-
 	/// Datenqualitaet: Werte, deren SAP-Version|YTD-YTG in dim_Szenario nicht hinterlegt ist.
 	/// Sollte 0 sein - sonst fehlen Versionen in dim_Szenario und die Werte tauchen weder
 	/// im Budget noch im FC auf.

@@ -1,6 +1,6 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.11.0/schema.json",
-  "name": "tblPersonen",
+  "name": "tblAbrechnung",
   "position": {
     "x": 940,
     "y": 0,
@@ -20,14 +20,14 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "dim_Person"
+                      "Entity": "dim_Abrechnungseinheit"
                     }
                   },
-                  "Property": "Vollname"
+                  "Property": "Abrechnungseinheit"
                 }
               },
-              "queryRef": "dim_Person.Vollname",
-              "nativeQueryRef": "Vollname"
+              "queryRef": "dim_Abrechnungseinheit.Abrechnungseinheit",
+              "nativeQueryRef": "Abrechnungseinheit"
             },
             {
               "field": {
@@ -37,11 +37,11 @@
                       "Entity": "_Measuretabelle"
                     }
                   },
-                  "Property": "Anzahl Verantwortlichkeit"
+                  "Property": "Prämienpunkte erreicht"
                 }
               },
-              "queryRef": "_Measuretabelle.Anzahl Verantwortlichkeit",
-              "nativeQueryRef": "Anzahl Verantwortlichkeit"
+              "queryRef": "_Measuretabelle.Prämienpunkte erreicht",
+              "nativeQueryRef": "Prämienpunkte erreicht"
             },
             {
               "field": {
@@ -51,11 +51,11 @@
                       "Entity": "_Measuretabelle"
                     }
                   },
-                  "Property": "Revenue Budget"
+                  "Property": "Zielerreichung %"
                 }
               },
-              "queryRef": "_Measuretabelle.Revenue Budget",
-              "nativeQueryRef": "Revenue Budget"
+              "queryRef": "_Measuretabelle.Zielerreichung %",
+              "nativeQueryRef": "Zielerreichung %"
             }
           ]
         }

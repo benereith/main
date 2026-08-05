@@ -37,20 +37,6 @@
                       "Entity": "_Measuretabelle"
                     }
                   },
-                  "Property": "Betriebe mit mehreren Verantwortlichen"
-                }
-              },
-              "queryRef": "_Measuretabelle.Betriebe mit mehreren Verantwortlichen",
-              "nativeQueryRef": "Betriebe mit mehreren Verantwortlichen"
-            },
-            {
-              "field": {
-                "Measure": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "_Measuretabelle"
-                    }
-                  },
                   "Property": "Kontrolle Wert ohne Szenariozuordnung"
                 }
               },

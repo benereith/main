@@ -9,7 +9,6 @@ keine M:N-Beziehungen, sauberer Split Pacht/Mandat und ein Schalter für die Pr�
 |---------|------------------------------------------------------------------------|
 | `F_`    | Faktentabelle                                                          |
 | `dim_`  | Dimension, filtert immer nur in eine Richtung nach unten                |
-| `brg_`  | Brückentabelle für echtes M:N                                          |
 | `tab_`  | Parameter-/Konfigurationstabelle (keine Dimension)                     |
 | `sw_`   | beziehungsloser Schalter (What-if), wird nur per Measure ausgelesen     |
 | `_`     | Measure-Tabelle                                                        |
@@ -17,25 +16,26 @@ keine M:N-Beziehungen, sauberer Split Pacht/Mandat und ein Schalter für die Pr�
 ## Struktur
 
 ```
-                     dim_Person
-                          │
-              brg_Person_Betrieb  ◄── einzige bidirektionale Beziehung
-                          │
-  Retention ── dim_Region ┤
-                          │
-     dim_PachtMandat ─────┼──── dim_Betrieb ────┬── dim_Innenauftrag
-            │             │          │          ├── Personaldaten
-            │             │          │          └── Compliance
-            │             │          ▼
-            │             │        F_SAP ◄── dim_Konto
-            │             │          ▲
-            │             │          ├── dim_Szenario
-            │             │          └── dim_Periode
+  tab_Betriebeset ──► dim_Abrechnungseinheit
+                                │
+  Retention ── dim_Region ──────┤
+                                │
+     dim_PachtMandat ───────────┼── dim_Betrieb ──┬── dim_Innenauftrag
+            │                   │        │        ├── Personaldaten
+            │                   │        │        └── Compliance
+            │                   │        ▼
+            │                   │      F_SAP ◄── dim_Konto
+            │                   │        ▲
+            │                   │        ├── dim_Szenario
+            │                   │        └── dim_Periode
             │
    tab_Prämienpunkte ── dim_Praemienart
 
    sw_Ergebnisziel     sw_HSE_TRIFR      (ohne Beziehung, nur per Measure gelesen)
 ```
+
+Alle 13 Beziehungen sind aktiv und filtern in genau eine Richtung. Es gibt weder eine
+bidirektionale noch eine deaktivierte Beziehung im Modell.
 
 ## Beziehungen im Detail
 
@@ -57,16 +57,7 @@ Ein `///` dort bricht den Parser. Deshalb steht die Erklärung hier.
 | `dim_Innenauftrag[betrieb]` | `dim_Betrieb[betrieb]` | → | nachgelagerte Dimension, nur Zusatzattribute |
 | `Personaldaten[Betrieb]` | `dim_Betrieb[betrieb]` | → | |
 | `Compliance[Betrieb]` | `dim_Betrieb[betrieb]` | → | |
-| `brg_Person_Betrieb[Vollname]` | `dim_Person[Vollname]` | → | Person filtert ihre Zuordnungen |
 | `dim_Betrieb[Abrechnungsbetrieb]` | `dim_Abrechnungseinheit[Abrechnungsbetrieb]` | → | Betriebeset: mehrere Betriebe, eine Abrechnung |
-| `brg_Person_Betrieb[Betrieb]` | `dim_Betrieb[betrieb]` | **↔** | einzige bidirektionale Beziehung, Brückenmuster |
-| `Personaldaten[Vollname]` | `dim_Person[Vollname]` | *inaktiv* | aktiv entstünde ein Filterkreis |
-
-Die bidirektionale Brückenbeziehung ist nötig, damit eine ausgewählte Person bis auf die
-Fakten durchfiltert (`dim_Person → brg → dim_Betrieb → F_SAP`). Die Gegenrichtung erlaubt es,
-zu einem ausgewählten Betrieb die Verantwortlichen über `brg_Person_Betrieb[Vollname]`
-anzuzeigen. Sie bleibt eindeutig, weil `brg_Person_Betrieb` mit keiner weiteren Tabelle
-verbunden ist.
 
 ## Was die M:N-Beziehung ersetzt hat
 
@@ -192,17 +183,27 @@ Es braucht dafür keine Sonder-Measure.
 
 `[Betriebe der Abrechnungseinheit]` listet zur Kontrolle alle Betriebe der Einheit als Text.
 
-## Person ↔ Betrieb: bekannte Doppelzählung
+## Personenebene
 
-Die Zuordnung ist echtes M:N – eine Person verantwortet mehrere Betriebe, und ein Betrieb
-kann durch unterjährige Verantwortungswechsel mehrere Personen haben. In der Quelle
-(SharePoint-Betriebeliste) stehen **keine Gültigkeitszeiträume**.
+Die SharePoint-Betriebeliste ist aus dem Modell entfernt. Sie war ein Versuch, die aktuellen
+Verantwortlichkeiten abzubilden, brachte aber echtes M:N ohne Gültigkeitszeiträume mit sich
+(eine Person → mehrere Betriebe, ein Betrieb → mehrere Personen bei unterjährigen Wechseln)
+und damit eine Doppelzählung, die sich aus den Quelldaten nicht auflösen ließ.
 
-Folge: Ein Betrieb mit mehreren Verantwortlichen wird jeder dieser Personen in voller Höhe
-zugerechnet. Die Summe über alle Personen ist dann größer als der Gesamtwert.
+Personenbezug läuft jetzt allein über `Personaldaten` — dort stehen die Prämienberechtigten
+mit Betrieb, Gehalt und Prämiensatz.
 
-Die Measure `[Betriebe mit mehreren Verantwortlichen]` macht die betroffenen Fälle sichtbar.
-Sobald in der Quelldatei Gültig-von/bis gepflegt wird, lässt sich das periodengenau auflösen.
+**Wichtige Einschränkung:** `Personaldaten` liegt auf der n-Seite von `dim_Betrieb`. Eine
+Auswahl auf `Personaldaten[Vollname]` filtert die Fakten daher **nicht** — eine Tabelle mit
+`Personaldaten[Vollname]` und `[Revenue Budget]` zeigt in jeder Zeile denselben Gesamtwert.
+Personenbezogene Kennzahlen aus `Personaldaten` selbst (Gehalt, Prämiensatz) funktionieren
+dagegen normal.
+
+Wenn Personen die Fakten filtern sollen, ist der Weg dorthin eine Einzeilenänderung:
+`Personaldaten[Betrieb] → dim_Betrieb[betrieb]` auf `crossFilteringBehavior: bothDirections`
+setzen. Das ist bewusst **nicht** gesetzt — es wäre die einzige bidirektionale Beziehung im
+Modell, und bei mehreren Prämienberechtigten je Betrieb bekäme jede Person den vollen
+Betriebswert zugerechnet.
 
 ## Kontrollmeasures
 
@@ -224,9 +225,7 @@ Namenskollisionen und Feldverweise im Report.
 
 ## Offene Punkte
 
-- `Personaldaten[Vollname] → dim_Person[Vollname]` ist angelegt, aber **deaktiviert** –
-  aktiv entstünde ein Filterkreis. Voraussetzung für eine spätere Aktivierung ist, dass die
-  Namensschreibweise in Betriebeliste und Personaldaten übereinstimmt.
-  Die Kontrollspalte `dim_Person[Quelle]` zeigt, wer nur in einer der beiden Quellen steht.
+- Personen filtern die Fakten nicht – siehe Abschnitt „Personenebene". Falls das gebraucht
+  wird, ist die Änderung dort beschrieben.
 - `Fiscal_Year = 2025` ist weiterhin im Power-Query-Filter von `F_SAP` gesetzt.
   `dim_Periode` ist vorbereitet, falls später mehrere Geschäftsjahre geladen werden sollen.

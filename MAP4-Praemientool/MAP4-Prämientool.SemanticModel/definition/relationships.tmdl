@@ -49,17 +49,3 @@ relationship Personaldaten_dim_Betrieb
 relationship Compliance_dim_Betrieb
 	fromColumn: Compliance.Betrieb
 	toColumn: dim_Betrieb.betrieb
-
-relationship dim_Person_brg_Person_Betrieb
-	fromColumn: brg_Person_Betrieb.Vollname
-	toColumn: dim_Person.Vollname
-
-relationship brg_Person_Betrieb_dim_Betrieb
-	crossFilteringBehavior: bothDirections
-	fromColumn: brg_Person_Betrieb.Betrieb
-	toColumn: dim_Betrieb.betrieb
-
-relationship Personaldaten_dim_Person
-	isActive: false
-	fromColumn: Personaldaten.Vollname
-	toColumn: dim_Person.Vollname
