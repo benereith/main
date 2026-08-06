@@ -1,0 +1,249 @@
+table DIM_DATE
+	lineageTag: f8025ca9-5491-418b-a989-b3192bf3dfdf
+	dataCategory: Time
+
+	column Datum
+		dataType: dateTime
+		isKey
+		formatString: Long Date
+		lineageTag: 4f1578fd-6ded-442b-89ef-d95bfe4c6d36
+		summarizeBy: none
+		sourceColumn: Datum
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column Jahr
+		dataType: int64
+		formatString: 0
+		lineageTag: 70f0cbe6-af09-440b-ac41-90cd84650fff
+		summarizeBy: none
+		sourceColumn: Jahr
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Monat Nummer'
+		dataType: int64
+		formatString: 0
+		lineageTag: ab16a257-90ba-4dd0-bb35-acd6812ec0dc
+		summarizeBy: none
+		sourceColumn: Monat Nummer
+
+		annotation SummarizationSetBy = Automatic
+
+	column Monat
+		dataType: string
+		lineageTag: ba277dd7-2b67-4acc-8f09-448da45bfbdc
+		summarizeBy: none
+		sourceColumn: Monat
+
+		annotation SummarizationSetBy = Automatic
+
+	column Tag
+		dataType: int64
+		formatString: 0
+		lineageTag: 16d8eb71-abf4-4bc7-9283-55081a2b70bb
+		summarizeBy: none
+		sourceColumn: Tag
+
+		annotation SummarizationSetBy = Automatic
+
+	column Wochentag
+		dataType: string
+		lineageTag: c581a4dd-c6d9-433c-a709-ab813d6bea68
+		summarizeBy: none
+		sourceColumn: Wochentag
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Wochentag Nummer'
+		dataType: int64
+		formatString: 0
+		lineageTag: cb666ca7-3f4a-44a3-87a7-80783a71718e
+		summarizeBy: none
+		sourceColumn: Wochentag Nummer
+
+		annotation SummarizationSetBy = Automatic
+
+	column Quartal
+		dataType: string
+		lineageTag: 816418ec-5033-477b-ae6e-fbb5aa76eb4e
+		summarizeBy: none
+		sourceColumn: Quartal
+
+		annotation SummarizationSetBy = Automatic
+
+	column Halbjahr
+		dataType: string
+		lineageTag: ea7dd64c-d1c5-42c2-9c42-e3185d6d10a0
+		summarizeBy: none
+		sourceColumn: Halbjahr
+
+		annotation SummarizationSetBy = Automatic
+
+	column FY_Jahr
+		dataType: string
+		lineageTag: c7edc8f2-4a30-45e3-8e2a-45cabbbc04db
+		summarizeBy: none
+		sourceColumn: FY_Jahr
+
+		annotation SummarizationSetBy = Automatic
+
+	column FY_JahrLang
+		dataType: string
+		lineageTag: 9de0c89d-fa76-4cdf-a59e-f6426d870658
+		summarizeBy: none
+		sourceColumn: FY_JahrLang
+
+		annotation SummarizationSetBy = Automatic
+
+	column FY_JahrMonat
+		dataType: string
+		lineageTag: 21342d70-7ac9-43cc-9ead-97db27420711
+		summarizeBy: none
+		sourceColumn: FY_JahrMonat
+
+		annotation SummarizationSetBy = Automatic
+
+	column FY_Quartal
+		dataType: string
+		lineageTag: b94e7869-27dc-4550-b5ff-9f22a378d61a
+		summarizeBy: none
+		sourceColumn: FY_Quartal
+
+		annotation SummarizationSetBy = Automatic
+
+	column FY_QuartalNr
+		dataType: int64
+		formatString: 0
+		lineageTag: 6ded4083-c334-4328-9712-f76dc03e2a7c
+		summarizeBy: none
+		sourceColumn: FY_QuartalNr
+
+		annotation SummarizationSetBy = Automatic
+
+	column FY_Monat
+		dataType: string
+		lineageTag: 604ce275-02b8-4c93-be40-9e02a1bdc842
+		summarizeBy: none
+		sourceColumn: FY_Monat
+
+		annotation SummarizationSetBy = Automatic
+
+	column FY_MonatNr
+		dataType: int64
+		formatString: 0
+		lineageTag: b2392dcb-fb82-44e5-bd98-4e0c40447808
+		summarizeBy: none
+		sourceColumn: FY_MonatNr
+
+		annotation SummarizationSetBy = Automatic
+
+	column FY_Periode
+		dataType: string
+		lineageTag: 81886900-ea8f-486b-b54e-79ba32aeee41
+		summarizeBy: none
+		sourceColumn: FY_Periode
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Lesbares Monatslabel für den Monats-Slicer, z.B. "Jun 26".
+	/// Erst mit der Mehrmonats-Ladung gibt es im Bericht überhaupt etwas auszuwählen.
+	column Monat_Label = FORMAT(DIM_DATE[Datum], "MMM yy")
+		lineageTag: 6c93f0a5-14b8-42d7-9e06-b5a72c1f3840
+		summarizeBy: none
+		sortByColumn: Monat_Sortierung
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Sortierschlüssel JJJJMM für Monat_Label.
+	column Monat_Sortierung = DIM_DATE[Jahr] * 100 + DIM_DATE[Monat Nummer]
+		formatString: 0
+		isHidden
+		lineageTag: 0b74e2c9-8d51-4a36-b1f0-27c9e5648a13
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DIM_DATE = m
+		mode: import
+		source = ```
+				let
+				    // === Parameter (einfach anpassen) ===
+				    Startdatum = #date(2020, 1, 1),
+				    Enddatum   = #date(2030, 12, 31),
+				
+				    // === Basis-Datumstabelle ===
+				    DatumsListe   = List.Dates(Startdatum, Duration.Days(Enddatum - Startdatum) + 1, #duration(1,0,0,0)),
+				    DatumsTabelle = Table.FromList(DatumsListe, Splitter.SplitByNothing(), {"Datum"}),
+				
+				    // === Kalender-Spalten ===
+				    MitJahr        = Table.AddColumn(DatumsTabelle, "Jahr",           each Date.Year([Datum]),           Int64.Type),
+				    MitMonatName   = Table.AddColumn(MitJahr,       "Monat",           each Date.MonthName([Datum]),      type text),
+				    MitMonatNr     = Table.AddColumn(MitMonatName,  "Monat Nummer",    each Date.Month([Datum]),          Int64.Type),
+				    MitTag         = Table.AddColumn(MitMonatNr,    "Tag",             each Date.Day([Datum]),            Int64.Type),
+				    MitWochentag   = Table.AddColumn(MitTag,        "Wochentag",       each Date.DayOfWeekName([Datum]),  type text),
+				    MitWochentagNr = Table.AddColumn(MitWochentag,  "Wochentag Nummer",each Date.DayOfWeek([Datum], Day.Monday) + 1, Int64.Type), // 1=Montag
+				    MitQuartal     = Table.AddColumn(MitWochentagNr,"Quartal",         each "Q" & Text.From(Date.QuarterOfYear([Datum])), type text),
+				    MitHalbjahr    = Table.AddColumn(MitQuartal,    "Halbjahr",        each if Date.Month([Datum]) <= 6 then "H1" else "H2", type text),
+				
+				    // === Fiscal Year ab 1. Oktober (FY2025/26-Format) – FEHLERFREI ===
+				    AddFiscalColumns = Table.AddColumn(MitHalbjahr, "FiscalTemp", each 
+				        let
+				            m  = Date.Month([Datum]),
+				            y  = Date.Year([Datum]),
+				            
+				            // FY-Startjahr und Endjahr
+				            FY_Start = if m >= 10 then y else y - 1,
+				            FY_End   = FY_Start + 1,
+				            
+				            // Fiscal Monat 1–12 (Okt=1, Nov=2, ..., Sep=12)
+				            FY_Monat_Nr = if m >= 10 then m - 9 else m + 3,
+				            
+				            // Fiscal Quartal 1–4
+				            FY_Quartal_Nr = Number.RoundUp(FY_Monat_Nr / 3)
+				        in
+				            [ 
+				                FY_Jahr       = "FY" & Text.From(FY_Start) & "/" & Text.End(Text.From(FY_End), 2),   // FY2025/26
+				                FY_JahrLang   = Text.From(FY_Start) & "/" & Text.From(FY_End),                     // 2025/26
+				                FY_Quartal    = "FQ" & Text.From(FY_Quartal_Nr),                                   // FQ1 … FQ4
+				                FY_Monat      = "FM" & Text.PadStart(Text.From(FY_Monat_Nr), 2, "0"),              // FM01 … FM12
+				                FY_Periode    = "P" & Text.PadStart(Text.From(FY_Monat_Nr), 2, "0"),              // FP01 … FP12
+				                FY_JahrMonat  = Text.From(FY_Start) & "_" & Text.From(FY_Monat_Nr), // 2025-01 für Okt 2024
+				                FY_MonatNr    = FY_Monat_Nr,                                                       // 1–12 als Zahl
+				                FY_QuartalNr  = FY_Quartal_Nr                                                      // 1–4 als Zahl
+				            ]
+				    ),
+				
+				    // Record-Spalten aufklappen
+				    Erweitert = Table.ExpandRecordColumn(AddFiscalColumns, "FiscalTemp", 
+				        {"FY_Jahr", "FY_JahrLang", "FY_Quartal", "FY_Monat", "FY_Periode", "FY_JahrMonat", "FY_MonatNr", "FY_QuartalNr"}),
+				
+				    // Datentypen final setzen
+				    #"Typen korrigiert" = Table.TransformColumnTypes(Erweitert,{
+				        {"Datum", type date},
+				        {"Jahr", Int64.Type},
+				        {"Monat Nummer", Int64.Type},
+				        {"Tag", Int64.Type},
+				        {"Wochentag Nummer", Int64.Type},
+				        {"FY_MonatNr", Int64.Type},
+				        {"FY_QuartalNr", Int64.Type}
+				    }),
+				
+				    // Spalten in gewünschter Reihenfolge
+				    Ergebnis = Table.SelectColumns(#"Typen korrigiert", {
+				        "Datum", "Jahr", "Monat Nummer", "Monat", "Tag",
+				        "Wochentag", "Wochentag Nummer", "Quartal", "Halbjahr",
+				        "FY_Jahr", "FY_JahrLang", "FY_JahrMonat",
+				        "FY_Quartal", "FY_QuartalNr", "FY_Monat", "FY_MonatNr", "FY_Periode"
+				    })
+				
+				in
+				    Ergebnis
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

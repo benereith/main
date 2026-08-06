@@ -1,0 +1,111 @@
+{
+  "version": "1.1.0",
+  "diagrams": [
+    {
+      "ordinal": 0,
+      "scrollPosition": {
+        "x": 353.14285278320313,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 923.47456340167059,
+            "y": 0
+          },
+          "nodeIndex": "tab_accounts_hierarchy",
+          "nodeLineageTag": "6cce14b9-dfcf-45f9-973d-ede908978984",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 4
+        },
+        {
+          "location": {
+            "x": 334,
+            "y": -25
+          },
+          "nodeIndex": "V_SAP_EXPORTS_cleansed",
+          "nodeLineageTag": "82637c4d-e27a-4baa-ad5b-042b6f1d0cdf",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 3
+        },
+        {
+          "location": {
+            "x": 375.34092634776005,
+            "y": 383.93697798025812
+          },
+          "nodeIndex": "DIM_DATE",
+          "nodeLineageTag": "f8025ca9-5491-418b-a989-b3192bf3dfdf",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 5
+        },
+        {
+          "location": {
+            "x": 633.53010087862,
+            "y": 403.31652022995985
+          },
+          "nodeIndex": "sap_master_data_unit",
+          "nodeLineageTag": "8ddf1904-d18a-4726-9e70-2f12bcde619d",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 2
+        },
+        {
+          "location": {
+            "x": 1838,
+            "y": 254.46848899012906
+          },
+          "nodeIndex": "Abgeschlossene Periode",
+          "size": {
+            "height": 200,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 1370,
+            "y": 302.46848899012906
+          },
+          "nodeIndex": "0_Measuretabelle",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 1206.5714285714284,
+            "y": 29.325631847271922
+          },
+          "nodeIndex": "Übergabedatum",
+          "nodeLineageTag": "6399f1a2-06eb-4657-aa5f-628dd4b19ff7",
+          "size": {
+            "height": 176,
+            "width": 234
+          },
+          "zIndex": 0
+        }
+      ],
+      "name": "Alle Tabellen",
+      "zoomValue": 70,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    }
+  ],
+  "selectedDiagram": "Alle Tabellen",
+  "defaultDiagram": "Alle Tabellen"
+}

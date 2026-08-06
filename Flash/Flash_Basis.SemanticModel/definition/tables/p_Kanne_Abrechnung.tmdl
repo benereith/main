@@ -1,0 +1,48 @@
+/// Steuertabelle ohne Beziehung (Was-wäre-wenn-Schalter) für den Managementbereich Kanne.
+///
+/// Hintergrund: Kanne wird abweichend von den übrigen Managementbereichen abgerechnet.
+/// Steht der Schalter auf "Ja", werden ALLE Kanne-Units als Actuals (SAP-Version 0) gerechnet,
+/// unabhängig von ihrem Übergabestatus. Steht er auf "Nein", gilt für Kanne dieselbe
+/// ACT/FC/V-Logik wie überall sonst.
+///
+/// Der Schalter wirkt ausschließlich über die Measure [Flash] (bzw. [Flash Basis]) und braucht
+/// deshalb keinen Refresh - er ist reine Berichtslogik.
+table p_Kanne_Abrechnung
+	lineageTag: 6f0a8d31-4b72-4e59-93c1-2d85f7069ea4
+
+	/// Auswahlwert des Slicers: "Nein" (Standard, normale Statuslogik) oder "Ja" (alles ACT).
+	column 'Kanne abgerechnet'
+		dataType: string
+		lineageTag: 91c5e73b-8a04-4d16-b2f7-50e6c1a97d38
+		summarizeBy: none
+		sourceColumn: [Kanne abgerechnet]
+		sortByColumn: Sortierung
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Sortierung, damit "Nein" im Slicer vor "Ja" steht.
+	column Sortierung
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: 2ab94c07-5d61-482f-90b3-e8a7f2c40d59
+		summarizeBy: none
+		sourceColumn: [Sortierung]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition p_Kanne_Abrechnung = calculated
+		mode: import
+		source = ```
+				DATATABLE(
+				    "Kanne abgerechnet", STRING,
+				    "Sortierung", INTEGER,
+				    {
+				        {"Nein", 1},
+				        {"Ja", 2}
+				    }
+				)
+				```
+
+	annotation PBI_Id = 7d41c9b60e2a45f8ac13b57e29d604fa
+

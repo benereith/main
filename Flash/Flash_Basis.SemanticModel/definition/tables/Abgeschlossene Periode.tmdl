@@ -1,0 +1,18 @@
+table 'Abgeschlossene Periode'
+	lineageTag: c0eecb15-c97d-4022-8bf9-d6615e6fbc4a
+
+	column Value
+		formatString: 0
+		lineageTag: 7d7d566c-f263-426b-aec5-5737c6df505b
+		summarizeBy: sum
+		isNameInferred
+		sourceColumn: [Value]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Abgeschlossene Periode' = calculated
+		mode: import
+		source = GENERATESERIES(0, 12, 1)
+
+	annotation PBI_Id = b2bbe05f8cb24b579a45f2f44ccb8dcb
+

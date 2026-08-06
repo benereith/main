@@ -1,0 +1,126 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.10.0/schema.json",
+  "name": "a7612e69298859b9a71c",
+  "position": {
+    "x": 1000.0769583142464,
+    "y": 174,
+    "z": 4000,
+    "height": 300,
+    "width": 279.5712322491984,
+    "tabOrder": 4000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "sap_master_data_unit"
+                    }
+                  },
+                  "Property": "Werk - Bezeichnung"
+                }
+              },
+              "queryRef": "sap_master_data_unit.Werk - Bezeichnung",
+              "nativeQueryRef": "Werk - Bezeichnung"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "sap_master_data_unit"
+                  }
+                },
+                "Property": "Werk - Bezeichnung"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "24d846d0eb7655389f8c",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "0_Measuretabelle"
+              }
+            },
+            "Property": "FC_Value_P&L"
+          }
+        },
+        "type": "Advanced",
+        "filter": {
+          "Version": 2,
+          "From": [
+            {
+              "Name": "0",
+              "Entity": "0_Measuretabelle",
+              "Type": 0
+            }
+          ],
+          "Where": [
+            {
+              "Condition": {
+                "Not": {
+                  "Expression": {
+                    "Comparison": {
+                      "ComparisonKind": 0,
+                      "Left": {
+                        "Measure": {
+                          "Expression": {
+                            "SourceRef": {
+                              "Source": "0"
+                            }
+                          },
+                          "Property": "FC_Value_P&L"
+                        }
+                      },
+                      "Right": {
+                        "Literal": {
+                          "Value": "null"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "howCreated": "User"
+      },
+      {
+        "name": "bf72e6093a87c546dde9",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "sap_master_data_unit"
+              }
+            },
+            "Property": "Werk - Bezeichnung"
+          }
+        },
+        "type": "Categorical"
+      }
+    ]
+  }
+}

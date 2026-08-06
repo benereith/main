@@ -1,0 +1,33 @@
+model Model
+	culture: de-DE
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: de-DE
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation __PBI_TimeIntelligenceEnabled = 1
+
+annotation PBI_QueryOrder = ["Geschäftsjahr","Startperiode","Aktuelle_Periode","fnPeriodeStart","SAP_Versionen","Kommentar_SQL_Endpoint","Kommentar_Datenbank","sap_master_data_unit","Übergabedatum","Unit_Status","DIM_DATE","tab_accounts_hierarchy","V_SAP_EXPORTS_cleansed","Kommentare","0_Measuretabelle"]
+
+annotation PBI_ProTooling = ["WebModelingEdit","DevMode"]
+
+annotation __LastRPTime = 134296191466502364
+
+ref table sap_master_data_unit
+ref table DateTableTemplate_593d574e-afc9-442a-9a8c-a04ad8f7d285
+ref table DIM_DATE
+ref table tab_accounts_hierarchy
+ref table V_SAP_EXPORTS_cleansed
+ref table Unit_Status
+ref table Kommentare
+ref table p_Kanne_Abrechnung
+ref table p_Zeitbezug
+ref table 0_Measuretabelle
+ref table 'Abgeschlossene Periode'
+ref table Übergabedatum
+ref table LocalDateTable_bc039c3a-c4a4-402d-b31c-f5d1a4419ca6
+ref table LocalDateTable_9f350d77-b502-41aa-bf08-f3603321a9d7
+
+ref cultureInfo de-DE
+

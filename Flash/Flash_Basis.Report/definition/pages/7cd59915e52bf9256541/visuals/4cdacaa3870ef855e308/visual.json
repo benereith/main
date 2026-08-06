@@ -1,0 +1,804 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.11.0/schema.json",
+  "name": "4cdacaa3870ef855e308",
+  "position": {
+    "x": 0,
+    "y": 124,
+    "z": 3000,
+    "height": 594,
+    "width": 1000.6544616259748,
+    "tabOrder": 3000
+  },
+  "visual": {
+    "visualType": "ZebraBITablesBAE31B370F254F808553548EFB35BFA5",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "HierarchyLevel": {
+                  "Expression": {
+                    "Hierarchy": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "tab_accounts_hierarchy"
+                        }
+                      },
+                      "Hierarchy": "P&L"
+                    }
+                  },
+                  "Level": "Level_2_Key"
+                }
+              },
+              "queryRef": "tab_accounts_hierarchy.P&L.Level_2_Key",
+              "nativeQueryRef": "P&L Level_2_Key",
+              "active": true
+            },
+            {
+              "field": {
+                "HierarchyLevel": {
+                  "Expression": {
+                    "Hierarchy": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "tab_accounts_hierarchy"
+                        }
+                      },
+                      "Hierarchy": "P&L"
+                    }
+                  },
+                  "Level": "Level_3_Key"
+                }
+              },
+              "queryRef": "tab_accounts_hierarchy.P&L.Level_3_Key",
+              "nativeQueryRef": "P&L Level_3_Key",
+              "active": true
+            },
+            {
+              "field": {
+                "HierarchyLevel": {
+                  "Expression": {
+                    "Hierarchy": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "tab_accounts_hierarchy"
+                        }
+                      },
+                      "Hierarchy": "P&L"
+                    }
+                  },
+                  "Level": "Level_4_Key"
+                }
+              },
+              "queryRef": "tab_accounts_hierarchy.P&L.Level_4_Key",
+              "nativeQueryRef": "P&L Level_4_Key",
+              "active": true
+            },
+            {
+              "field": {
+                "HierarchyLevel": {
+                  "Expression": {
+                    "Hierarchy": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "tab_accounts_hierarchy"
+                        }
+                      },
+                      "Hierarchy": "P&L"
+                    }
+                  },
+                  "Level": "Level_5_Key"
+                }
+              },
+              "queryRef": "tab_accounts_hierarchy.P&L.Level_5_Key",
+              "nativeQueryRef": "P&L Level_5_Key",
+              "active": true
+            }
+          ]
+        },
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "0_Measuretabelle"
+                    }
+                  },
+                  "Property": "ACT_Value_P&L"
+                }
+              },
+              "queryRef": "0_Measuretabelle.ACT_Value_P&L",
+              "nativeQueryRef": "Act",
+              "displayName": "Act"
+            }
+          ]
+        },
+        "Forecast": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "0_Measuretabelle"
+                    }
+                  },
+                  "Property": "FC_Value_P&L"
+                }
+              },
+              "queryRef": "0_Measuretabelle.FC_Value_P&L",
+              "nativeQueryRef": "FC",
+              "displayName": "FC"
+            }
+          ]
+        },
+        "Plan": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "0_Measuretabelle"
+                    }
+                  },
+                  "Property": "BUD_Value_P&L"
+                }
+              },
+              "queryRef": "0_Measuretabelle.BUD_Value_P&L",
+              "nativeQueryRef": "Bud",
+              "displayName": "Bud"
+            }
+          ]
+        },
+        "PreviousYear": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "0_Measuretabelle"
+                    }
+                  },
+                  "Property": "Flash"
+                }
+              },
+              "queryRef": "0_Measuretabelle.Flash",
+              "nativeQueryRef": "Flash"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "HierarchyLevel": {
+                "Expression": {
+                  "Hierarchy": {
+                    "Expression": {
+                      "SourceRef": {
+                        "Entity": "tab_accounts_hierarchy"
+                      }
+                    },
+                    "Hierarchy": "P&L"
+                  }
+                },
+                "Level": "Level_2_Key"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ]
+      }
+    },
+    "expansionStates": [
+      {
+        "roles": [
+          "Category"
+        ],
+        "levels": [
+          {
+            "queryRefs": [
+              "tab_accounts_hierarchy.P&L.Level_2_Key"
+            ],
+            "identityKeys": [
+              {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "tab_accounts_hierarchy"
+                    }
+                  },
+                  "Property": "Level_2_Key"
+                }
+              }
+            ],
+            "isPinned": true
+          },
+          {
+            "queryRefs": [
+              "tab_accounts_hierarchy.P&L.Level_3_Key"
+            ],
+            "identityKeys": [
+              {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "tab_accounts_hierarchy"
+                    }
+                  },
+                  "Property": "Level_3_Key"
+                }
+              }
+            ],
+            "isPinned": true
+          },
+          {
+            "queryRefs": [
+              "tab_accounts_hierarchy.P&L.Level_4_Key"
+            ],
+            "isPinned": true
+          },
+          {
+            "queryRefs": [
+              "tab_accounts_hierarchy.P&L.Level_5_Key"
+            ],
+            "isCollapsed": true,
+            "isPinned": true
+          }
+        ],
+        "root": {}
+      }
+    ],
+    "objects": {
+      "licenseSettings": [
+        {
+          "properties": {
+            "licenseKey": {
+              "expr": {
+                "Literal": {
+                  "Value": "'GOdA2ZmAXMvQi9eyS+sBj96oQXC81N2lB4y2BvlibCqe7FYRH+c7b1wuMyD74HlRATrHLyoxJMwiyl8jv51jCnsiY29tcGFueSI6IkNvbXBhc3MgR3JvdXAgRGV1dHNjaGxhbmQgR21iSCIsImV4cGlyeURhdGUiOiIyMDI2LTExLTI1Iiwib3JkZXJEYXRlIjoiMjAyNS0xMS0yMyIsIm5PZlVzZXJzIjoiNTAwIiwibGljZW5zZVR5cGUiOiJQYWlkIiwibGljZW5zZVRpZXIiOm51bGwsInZpc3VhbFR5cGUiOiJBbGwifQ=='"
+                }
+              }
+            },
+            "appliedTimestamp": {
+              "expr": {
+                "Literal": {
+                  "Value": "1779881688111D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "proFeaturesSettings": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "version": [
+        {
+          "properties": {
+            "version": {
+              "expr": {
+                "Literal": {
+                  "Value": "'8.3.0.37'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "migrationLog": [
+        {
+          "properties": {
+            "isMigrating": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "previewSettings": [
+        {
+          "properties": {
+            "migrationsLog": {
+              "expr": {
+                "Literal": {
+                  "Value": "'{\"calculationCorrectionFeature\":{\"visualVersion\":\"1.0.0\",\"isMigrationCompleted\":true}}'"
+                }
+              }
+            },
+            "activationLog": {
+              "expr": {
+                "Literal": {
+                  "Value": "'{\"calculationCorrectionFeature\":{\"previewFeatureVersion\":\"1.0.0\"}}'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "categoriesMetadata": [
+        {
+          "properties": {
+            "invertedHierarchies": {
+              "expr": {
+                "Literal": {
+                  "Value": "'[]'"
+                }
+              }
+            },
+            "invertCalculationCategoriesValues": {
+              "expr": {
+                "Literal": {
+                  "Value": "'[]'"
+                }
+              }
+            },
+            "addedFormulas": {
+              "expr": {
+                "Literal": {
+                  "Value": "'[{\"identity\":\"---> CoS %\",\"expression\":\"[IS20000_T - Total COS inkl. IFRS/NEUTRA/MGMT] / [IS10000_T - Total Revenue inkl. IFRS/ NEUTRA/MGMT]\",\"hierarchyIdentity\":\"tab_accounts_hierarchy.P&L.Level_2_Key\",\"position\":\"IS20000_T - Total COS inkl. IFRS/NEUTRA/MGMT\",\"bold\":false,\"italic\":true,\"decimalPlaces\":1,\"units\":\"P\",\"fontColor\":\"#0617F8\",\"selectionId\":null},{\"identity\":\"Gross Profit\",\"expression\":\"[IS10000_T - Total Revenue inkl. IFRS/ NEUTRA/MGMT] + [IS20000_T - Total COS inkl. IFRS/NEUTRA/MGMT]\",\"hierarchyIdentity\":\"tab_accounts_hierarchy.P&L.Level_2_Key\",\"position\":\"---> CoS %\",\"bold\":true,\"italic\":false,\"decimalPlaces\":1,\"units\":\"K\",\"fontColor\":\"#000000\",\"selectionId\":null},{\"identity\":\"---> GP %\",\"expression\":\"[Gross Profit] / [IS10000_T - Total Revenue inkl. IFRS/ NEUTRA/MGMT]\",\"hierarchyIdentity\":\"tab_accounts_hierarchy.P&L.Level_2_Key\",\"position\":\"Gross Profit\",\"bold\":false,\"italic\":true,\"decimalPlaces\":1,\"units\":\"P\",\"selectionId\":null,\"fontColor\":\"#0617F8\"},{\"identity\":\"---> Labour %\",\"expression\":\"[IS30000_T - Total Labour Cost inkl. IFRS/ NEUT/MGMT] / [IS10000_T - Total Revenue inkl. IFRS/ NEUTRA/MGMT]\",\"hierarchyIdentity\":\"tab_accounts_hierarchy.P&L.Level_2_Key\",\"position\":\"IS30000_T - Total Labour Cost inkl. IFRS/ NEUT/MGMT\",\"bold\":false,\"italic\":true,\"decimalPlaces\":1,\"units\":\"P\",\"fontColor\":\"#0617F8\",\"selectionId\":null},{\"identity\":\"---> Overhead %\",\"expression\":\"[IS40000_T - Total Overheads inkl. IFRS/ NEUTRA/MGMT] / [IS10000_T - Total Revenue inkl. IFRS/ NEUTRA/MGMT]\",\"hierarchyIdentity\":\"tab_accounts_hierarchy.P&L.Level_2_Key\",\"position\":\"IS40000_T - Total Overheads inkl. IFRS/ NEUTRA/MGMT\",\"bold\":false,\"italic\":true,\"decimalPlaces\":1,\"units\":\"P\",\"fontColor\":\"#0617F8\",\"selectionId\":null},{\"identity\":\"UPC - Unit Profit Contribution\",\"expression\":\"[IS10000_T - Total Revenue inkl. IFRS/ NEUTRA/MGMT] + [IS20000_T - Total COS inkl. IFRS/NEUTRA/MGMT] + [IS30000_T - Total Labour Cost inkl. IFRS/ NEUT/MGMT] + [IS40000_T - Total Overheads inkl. IFRS/ NEUTRA/MGMT]\",\"hierarchyIdentity\":\"tab_accounts_hierarchy.P&L.Level_2_Key\",\"position\":\"---> Overhead %\",\"bold\":true,\"italic\":false,\"decimalPlaces\":1,\"units\":\"K\",\"selectionId\":null},{\"identity\":\"---> UPC %\",\"expression\":\"[UPC - Unit Profit Contribution] / [IS10000_T - Total Revenue inkl. IFRS/ NEUTRA/MGMT]\",\"hierarchyIdentity\":\"tab_accounts_hierarchy.P&L.Level_2_Key\",\"position\":\"UPC - Unit Profit Contribution\",\"bold\":false,\"italic\":true,\"decimalPlaces\":1,\"units\":\"P\",\"fontColor\":\"#0617F8\",\"selectionId\":null}]'"
+                }
+              }
+            },
+            "skipCalculationCategories": {
+              "expr": {
+                "Literal": {
+                  "Value": "'[{\"hierarchyIdentity\":\"tab_accounts_hierarchy.P&L.Level_2_Key\",\"category\":\"---> CoS %\",\"level\":0},{\"hierarchyIdentity\":\"tab_accounts_hierarchy.P&L.Level_2_Key\",\"category\":\"Gross Profit\",\"level\":0},{\"hierarchyIdentity\":\"tab_accounts_hierarchy.P&L.Level_2_Key\",\"category\":\"---> GP%\",\"level\":0},{\"hierarchyIdentity\":\"tab_accounts_hierarchy.P&L.Level_2_Key\",\"category\":\"---> Labour %\",\"level\":0},{\"hierarchyIdentity\":\"tab_accounts_hierarchy.P&L.Level_2_Key\",\"category\":\"---> Overhead %\",\"level\":0},{\"hierarchyIdentity\":\"tab_accounts_hierarchy.P&L.Level_2_Key\",\"category\":\"UPC - Unit Profit Contribution\",\"level\":0},{\"hierarchyIdentity\":\"tab_accounts_hierarchy.P&L.Level_2_Key\",\"category\":\"---> UPC %\",\"level\":0}]'"
+                }
+              }
+            },
+            "collapsedVirtually": {
+              "expr": {
+                "Literal": {
+                  "Value": "'[\"IS20000_T - Total COS inkl. IFRS/NEUTRA/MGMT\",\"IS30000_T - Total Labour Cost inkl. IFRS/ NEUT/MGMT\",\"IS40000_T - Total Overheads inkl. IFRS/ NEUTRA/MGMT\",\"IS10000_T - Total Revenue inkl. IFRS/ NEUTRA/MGMT IS10000_LI - Total Revenue inkl. IFRS\",\"IS10000_T - Total Revenue inkl. IFRS/ NEUTRA/MGMT IS10000_N - Total Revenue Neutra\",\"IS20000_T - Total COS inkl. IFRS/NEUTRA/MGMT IS2000_M - Total Cost of Food & Materials\",\"IS20000_T - Total COS inkl. IFRS/NEUTRA/MGMT IS20000_LI - Total COS inkl. IFRS\",\"IS20000_T - Total COS inkl. IFRS/NEUTRA/MGMT IS20000_N - Total Cost of Food & Materials Neutra\",\"IS30000_T - Total Labour Cost inkl. IFRS/ NEUT/MGMT IS30000_LI - Total Labour Cost inkl. IFRS\",\"IS30000_T - Total Labour Cost inkl. IFRS/ NEUT/MGMT IS30000_N - Total Labour Cost Neutra\",\"IS40000_T - Total Overheads inkl. IFRS/ NEUTRA/MGMT IS41000_T - Total Rent, Com. inkl. IFRS/ NEUTRA/MGMT\",\"IS40000_T - Total Overheads inkl. IFRS/ NEUTRA/MGMT IS42000_T - Total Depr, Amort inkl. IFRS/ NEUT/MGMT\",\"IS40000_T - Total Overheads inkl. IFRS/ NEUTRA/MGMT IS43000_T - Total Bought In & Pass T. inkl. I/N/M\",\"IS40000_T - Total Overheads inkl. IFRS/ NEUTRA/MGMT IS48000_T - Other Overheads inkl. IFRS/ NEUTRA/MGMT\",\"IS10000_T - Total Revenue inkl. IFRS/ NEUTRA/MGMT IS1000_M - Total Revenue IS11100_M - 3rd Party Revenue\",\"IS10000_T - Total Revenue inkl. IFRS/ NEUTRA/MGMT IS10000_LI - Total Revenue inkl. IFRS IS10000 - Total Revenue\",\"IS10000_T - Total Revenue inkl. IFRS/ NEUTRA/MGMT IS10000_LI - Total Revenue inkl. IFRS IS10000_I - Total Revenue Iadj\",\"IS10000_T - Total Revenue inkl. IFRS/ NEUTRA/MGMT IS10000_N - Total Revenue Neutra IS11100_N - 3rd Party Revenue Neutra\",\"IS20000_T - Total COS inkl. IFRS/NEUTRA/MGMT IS2000_M - Total Cost of Food & Materials IS21100_M - Cost of Food & Related Consumables\",\"IS20000_T - Total COS inkl. IFRS/NEUTRA/MGMT IS20000_LI - Total COS inkl. IFRS IS20000 - Total Cost of Food & Materials\",\"IS20000_T - Total COS inkl. IFRS/NEUTRA/MGMT IS20000_LI - Total COS inkl. IFRS IS20000_I - Total Cost of Food & Materials Iadj\",\"IS20000_T - Total COS inkl. IFRS/NEUTRA/MGMT IS20000_N - Total Cost of Food & Materials Neutra IS21100_N - Cost of Food & Related Consum. Neutra\",\"IS20000_T - Total COS inkl. IFRS/NEUTRA/MGMT IS20000_N - Total Cost of Food & Materials Neutra IS21200_N - Other Cost of Sales Neutra\",\"IS30000_T - Total Labour Cost inkl. IFRS/ NEUT/MGMT IS30000_LI - Total Labour Cost inkl. IFRS IS30000 - Total Labour Cost\",\"IS30000_T - Total Labour Cost inkl. IFRS/ NEUT/MGMT IS30000_LI - Total Labour Cost inkl. IFRS IS30000_I - Total Labour Cost Iadj\",\"IS30000_T - Total Labour Cost inkl. IFRS/ NEUT/MGMT IS30000_N - Total Labour Cost Neutra IS31100_N - Wages & Salaries Neutra\",\"IS40000_T - Total Overheads inkl. IFRS/ NEUTRA/MGMT IS41000_T - Total Rent, Com. inkl. IFRS/ NEUTRA/MGMT IS41000_LI - Total Rent, Com. inkl. IFRS\",\"IS40000_T - Total Overheads inkl. IFRS/ NEUTRA/MGMT IS41000_T - Total Rent, Com. inkl. IFRS/ NEUTRA/MGMT IS41000_N - Total Rent, Comm.&Other 3rd Party Neutra\",\"IS40000_T - Total Overheads inkl. IFRS/ NEUTRA/MGMT IS42000_T - Total Depr, Amort inkl. IFRS/ NEUT/MGMT IS42000_LI - Total Depr, Amort inkl. IFRS\",\"IS40000_T - Total Overheads inkl. IFRS/ NEUTRA/MGMT IS43000_T - Total Bought In & Pass T. inkl. I/N/M IS43100_T - Bought In Goods&S. inkl. IFRS/Neut/Mgmt\",\"IS40000_T - Total Overheads inkl. IFRS/ NEUTRA/MGMT IS43000_T - Total Bought In & Pass T. inkl. I/N/M IS43200_T - Pass Through Costs inkl. IFRS/Neut/Mgmt\",\"IS40000_T - Total Overheads inkl. IFRS/ NEUTRA/MGMT IS48000_T - Other Overheads inkl. IFRS/ NEUTRA/MGMT IS48000_LI - Other Overheads inkl. IFRS\",\"IS40000_T - Total Overheads inkl. IFRS/ NEUTRA/MGMT IS48000_T - Other Overheads inkl. IFRS/ NEUTRA/MGMT IS48000_N - Other Overheads Neutra\",\"IS10000_T - Total Revenue inkl. IFRS/ NEUTRA/MGMT IS1000_M - Total Revenue\",\"IS10000_T - Total Revenue inkl. IFRS/ NEUTRA/MGMT\"]'"
+                }
+              }
+            },
+            "resultCalculationCategories": {
+              "expr": {
+                "Literal": {
+                  "Value": "'[{\"hierarchyIdentity\":\"tab_accounts_hierarchy.P&L.Level_2_Key\",\"category\":\"Gross Profit\",\"level\":0},{\"hierarchyIdentity\":\"tab_accounts_hierarchy.P&L.Level_2_Key\",\"category\":\"UPC - Unit Profit Contribution\",\"level\":0}]'"
+                }
+              }
+            },
+            "userOverrides": {
+              "expr": {
+                "Literal": {
+                  "Value": "'[\"Gross Profit\",\"UPC - Unit Profit Contribution\"]'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "chartSettings": [
+        {
+          "properties": {
+            "firstTimeShowingColumnAdder": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            },
+            "columnSettings": {
+              "expr": {
+                "Literal": {
+                  "Value": "'{\"actual\":{\"invert\":false,\"order\":1,\"scaleGroup\":1,\"format\":0,\"useMeasureName\":true,\"suppressOthers\":false,\"pbiFormatString\":\"\",\"tableView\":{\"bold\":false,\"textColor\":\"\",\"backgroundFill\":\"\",\"markerStyle\":5,\"border\":\"#000000\",\"showAsTable\":0,\"hidden\":false,\"hiddenFromGroups\":[]},\"chartView\":{\"bold\":false,\"textColor\":\"\",\"backgroundFill\":\"\",\"markerStyle\":5,\"border\":\"#0C0B0B\",\"showAsTable\":0,\"hidden\":false,\"hiddenFromGroups\":[]},\"conditionalVariance\":{\"lowerThreshold\":0,\"upperThreshold\":0,\"thresholdUnit\":\"P\"}},\"previousYear\":{\"invert\":false,\"order\":0,\"scaleGroup\":1,\"format\":0,\"useMeasureName\":true,\"suppressOthers\":false,\"pbiFormatString\":\"\",\"tableView\":{\"bold\":false,\"textColor\":\"\",\"backgroundFill\":\"\",\"markerStyle\":5,\"border\":\"\",\"showAsTable\":0,\"hidden\":false,\"hiddenFromGroups\":[]},\"chartView\":{\"bold\":false,\"textColor\":\"\",\"backgroundFill\":\"\",\"markerStyle\":5,\"border\":\"\",\"showAsTable\":0,\"hidden\":false,\"hiddenFromGroups\":[],\"columnWidthOption\":1,\"columnFixedWidth\":89},\"conditionalVariance\":{\"lowerThreshold\":0,\"upperThreshold\":0,\"thresholdUnit\":\"P\"}},\"actual-previousYear\":{\"invert\":false,\"order\":null,\"scaleGroup\":1,\"format\":1,\"useMeasureName\":true,\"suppressOthers\":false,\"pbiFormatString\":\"\",\"tableView\":{\"bold\":false,\"textColor\":\"\",\"backgroundFill\":\"\",\"markerStyle\":5,\"border\":\"\",\"showAsTable\":0,\"hidden\":true,\"hiddenFromGroups\":[]},\"chartView\":{\"bold\":false,\"textColor\":\"\",\"backgroundFill\":\"\",\"markerStyle\":5,\"border\":\"\",\"showAsTable\":0,\"hidden\":false,\"hiddenFromGroups\":[]},\"conditionalVariance\":{\"lowerThreshold\":0,\"upperThreshold\":0,\"thresholdUnit\":\"P\"}},\"actual-previousYear-percent\":{\"invert\":false,\"order\":null,\"scaleGroup\":1,\"format\":2,\"useMeasureName\":true,\"suppressOthers\":false,\"pbiFormatString\":\"\",\"tableView\":{\"bold\":false,\"textColor\":\"\",\"backgroundFill\":\"\",\"markerStyle\":5,\"border\":\"\",\"showAsTable\":0,\"hidden\":true,\"hiddenFromGroups\":[]},\"chartView\":{\"bold\":false,\"textColor\":\"\",\"backgroundFill\":\"\",\"markerStyle\":5,\"border\":\"\",\"showAsTable\":0,\"hidden\":true,\"hiddenFromGroups\":[]},\"conditionalVariance\":{\"lowerThreshold\":0,\"upperThreshold\":0,\"thresholdUnit\":\"P\"}},\"plan\":{\"invert\":false,\"order\":6,\"scaleGroup\":1,\"format\":0,\"useMeasureName\":true,\"suppressOthers\":false,\"pbiFormatString\":\"\",\"tableView\":{\"bold\":false,\"textColor\":\"\",\"backgroundFill\":\"\",\"markerStyle\":5,\"border\":\"\",\"showAsTable\":0,\"hidden\":false,\"hiddenFromGroups\":[]},\"chartView\":{\"bold\":false,\"textColor\":\"\",\"backgroundFill\":\"\",\"markerStyle\":5,\"border\":\"\",\"showAsTable\":0,\"hidden\":false,\"hiddenFromGroups\":[]},\"conditionalVariance\":{\"lowerThreshold\":0,\"upperThreshold\":0,\"thresholdUnit\":\"P\"}},\"actual-plan\":{\"invert\":false,\"order\":8,\"scaleGroup\":1,\"format\":1,\"useMeasureName\":true,\"suppressOthers\":false,\"pbiFormatString\":\"\",\"tableView\":{\"bold\":false,\"textColor\":\"\",\"backgroundFill\":\"\",\"markerStyle\":5,\"border\":\"\",\"showAsTable\":0,\"hidden\":false,\"hiddenFromGroups\":[]},\"chartView\":{\"bold\":false,\"textColor\":\"\",\"backgroundFill\":\"\",\"markerStyle\":5,\"border\":\"\",\"showAsTable\":0,\"hidden\":false,\"hiddenFromGroups\":[]},\"conditionalVariance\":{\"lowerThreshold\":0,\"upperThreshold\":0,\"thresholdUnit\":\"P\"}},\"actual-plan-percent\":{\"invert\":false,\"order\":null,\"scaleGroup\":1,\"format\":2,\"useMeasureName\":true,\"suppressOthers\":false,\"pbiFormatString\":\"\",\"tableView\":{\"bold\":false,\"textColor\":\"\",\"backgroundFill\":\"\",\"markerStyle\":5,\"border\":\"\",\"showAsTable\":0,\"hidden\":true,\"hiddenFromGroups\":[]},\"chartView\":{\"bold\":false,\"textColor\":\"\",\"backgroundFill\":\"\",\"markerStyle\":5,\"border\":\"\",\"showAsTable\":0,\"hidden\":true,\"hiddenFromGroups\":[]},\"conditionalVariance\":{\"lowerThreshold\":0,\"upperThreshold\":0,\"thresholdUnit\":\"P\"}},\"forecast\":{\"invert\":false,\"order\":2,\"scaleGroup\":1,\"format\":0,\"useMeasureName\":true,\"suppressOthers\":false,\"pbiFormatString\":\"\",\"tableView\":{\"bold\":false,\"textColor\":\"\",\"backgroundFill\":\"\",\"markerStyle\":5,\"border\":\"\",\"showAsTable\":0,\"hidden\":false,\"hiddenFromGroups\":[]},\"chartView\":{\"bold\":false,\"textColor\":\"\",\"backgroundFill\":\"\",\"markerStyle\":5,\"border\":\"\",\"showAsTable\":0,\"hidden\":false,\"hiddenFromGroups\":[]},\"conditionalVariance\":{\"lowerThreshold\":0,\"upperThreshold\":0,\"thresholdUnit\":\"P\"}},\"actual-forecast\":{\"invert\":false,\"order\":3,\"scaleGroup\":1,\"format\":1,\"useMeasureName\":true,\"suppressOthers\":false,\"pbiFormatString\":\"\",\"tableView\":{\"bold\":false,\"textColor\":\"\",\"backgroundFill\":\"\",\"markerStyle\":5,\"border\":\"\",\"showAsTable\":0,\"hidden\":false,\"hiddenFromGroups\":[]},\"chartView\":{\"bold\":false,\"textColor\":\"\",\"backgroundFill\":\"\",\"markerStyle\":5,\"border\":\"\",\"showAsTable\":0,\"hidden\":false,\"hiddenFromGroups\":[]},\"conditionalVariance\":{\"lowerThreshold\":0,\"upperThreshold\":0,\"thresholdUnit\":\"P\"}},\"actual-forecast-percent\":{\"invert\":false,\"order\":null,\"scaleGroup\":1,\"format\":2,\"useMeasureName\":true,\"suppressOthers\":false,\"pbiFormatString\":\"\",\"tableView\":{\"bold\":false,\"textColor\":\"\",\"backgroundFill\":\"\",\"markerStyle\":5,\"border\":\"\",\"showAsTable\":0,\"hidden\":true,\"hiddenFromGroups\":[]},\"chartView\":{\"bold\":false,\"textColor\":\"\",\"backgroundFill\":\"\",\"markerStyle\":5,\"border\":\"\",\"showAsTable\":0,\"hidden\":true,\"hiddenFromGroups\":[]},\"conditionalVariance\":{\"lowerThreshold\":0,\"upperThreshold\":0,\"thresholdUnit\":\"P\"}}}'"
+                }
+              }
+            },
+            "showAsTable": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "groupsCollapsed": {
+              "expr": {
+                "Literal": {
+                  "Value": "'[\"Leonardi\",\"Medirest\",\"Food Affairs\",\"Kanne\"]'"
+                }
+              }
+            },
+            "invert": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            },
+            "minChartWidth": {
+              "expr": {
+                "Literal": {
+                  "Value": "140D"
+                }
+              }
+            },
+            "showColumnGrandTotal": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "sortSettings": [
+        {
+          "properties": {
+            "categorySort": {
+              "expr": {
+                "Literal": {
+                  "Value": "0D"
+                }
+              }
+            },
+            "chartSort": {
+              "expr": {
+                "Literal": {
+                  "Value": "0D"
+                }
+              }
+            },
+            "columnName": {
+              "expr": {
+                "Literal": {
+                  "Value": "'actual'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "dataLabelSettings": [
+        {
+          "properties": {
+            "units": {
+              "expr": {
+                "Literal": {
+                  "Value": "'K'"
+                }
+              }
+            },
+            "negativeValuesFormat": {
+              "expr": {
+                "Literal": {
+                  "Value": "1D"
+                }
+              }
+            },
+            "rightAlignNumbers": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "titleSettings": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "groupsMetadata": [
+        {
+          "properties": {
+            "inverted": {
+              "expr": {
+                "Literal": {
+                  "Value": "'[]'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "titleWrap": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "fontColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "ThemeDataColor": {
+                      "ColorId": 0,
+                      "Percent": 0
+                    }
+                  }
+                }
+              }
+            },
+            "background": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#B3985A'"
+                    }
+                  }
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "12D"
+                }
+              }
+            },
+            "fontFamily": {
+              "expr": {
+                "Literal": {
+                  "Value": "'''Segoe UI Semibold'', wf_segoe-ui_semibold, helvetica, arial, sans-serif'"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'P&L'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "background": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "transparency": {
+              "expr": {
+                "Literal": {
+                  "Value": "0D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "border": [
+        {
+          "properties": {
+            "width": {
+              "expr": {
+                "Literal": {
+                  "Value": "1D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualTooltip": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "51519102376090eda330",
+        "ordinal": 0,
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "0_Measuretabelle"
+              }
+            },
+            "Property": "ACT_Value_P&L"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "a307e02fbc2e700989ce",
+        "ordinal": 1,
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "0_Measuretabelle"
+              }
+            },
+            "Property": "BUD_Value_P&L"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "3fefe081beb0bca71413",
+        "ordinal": 2,
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "sap_master_data_unit"
+              }
+            },
+            "Property": "verantwortungsbereich"
+          }
+        },
+        "type": "Categorical",
+        "howCreated": "User"
+      },
+      {
+        "name": "9bfbcbf7723b95d0aadd",
+        "ordinal": 3,
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "0_Measuretabelle"
+              }
+            },
+            "Property": "FC_Value_P&L"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "d017026794505cd5094c",
+        "ordinal": 4,
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "0_Measuretabelle"
+              }
+            },
+            "Property": "Flash"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "f226abf684508b752ea9",
+        "ordinal": 5,
+        "field": {
+          "HierarchyLevel": {
+            "Expression": {
+              "Hierarchy": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "tab_accounts_hierarchy"
+                  }
+                },
+                "Hierarchy": "P&L"
+              }
+            },
+            "Level": "Level_2_Key"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "a71ba32418876928965c",
+        "ordinal": 6,
+        "field": {
+          "HierarchyLevel": {
+            "Expression": {
+              "Hierarchy": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "tab_accounts_hierarchy"
+                  }
+                },
+                "Hierarchy": "P&L"
+              }
+            },
+            "Level": "Level_3_Key"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "8614da99c6426933c109",
+        "ordinal": 7,
+        "field": {
+          "HierarchyLevel": {
+            "Expression": {
+              "Hierarchy": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "tab_accounts_hierarchy"
+                  }
+                },
+                "Hierarchy": "P&L"
+              }
+            },
+            "Level": "Level_4_Key"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "2c02c554c0e88c931342",
+        "ordinal": 8,
+        "field": {
+          "HierarchyLevel": {
+            "Expression": {
+              "Hierarchy": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "tab_accounts_hierarchy"
+                  }
+                },
+                "Hierarchy": "P&L"
+              }
+            },
+            "Level": "Level_5_Key"
+          }
+        },
+        "type": "Categorical"
+      }
+    ],
+    "filterSortOrder": "Custom"
+  }
+}

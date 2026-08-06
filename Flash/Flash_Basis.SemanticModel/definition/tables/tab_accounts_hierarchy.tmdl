@@ -1,0 +1,141 @@
+table tab_accounts_hierarchy
+	lineageTag: 6cce14b9-dfcf-45f9-973d-ede908978984
+
+	column Kostenart
+		dataType: string
+		lineageTag: 9f667716-a6e9-491d-a015-0ebdb2093a57
+		summarizeBy: none
+		sourceColumn: Kostenart
+
+		annotation SummarizationSetBy = Automatic
+
+	column Kostenart_Beschreibung
+		dataType: string
+		lineageTag: 8e2ca3c1-5ee0-49a8-a6a0-ab44522439ed
+		summarizeBy: none
+		sourceColumn: Kostenart_Beschreibung
+
+		annotation SummarizationSetBy = Automatic
+
+	column Level_2_Key
+		dataType: string
+		lineageTag: 564a1ad4-e7ed-433e-8273-ed966ecd8037
+		summarizeBy: none
+		sourceColumn: Level_2_Key
+
+		annotation SummarizationSetBy = Automatic
+
+	column Level_3_Key
+		dataType: string
+		lineageTag: 39df3f39-9b06-416e-a83a-37a737968885
+		summarizeBy: none
+		sourceColumn: Level_3_Key
+
+		annotation SummarizationSetBy = Automatic
+
+	column Level_4_Key
+		dataType: string
+		lineageTag: 4fbb9f10-bf2b-45ba-b04d-b410cf21a932
+		summarizeBy: none
+		sourceColumn: Level_4_Key
+
+		annotation SummarizationSetBy = Automatic
+
+	column Level_5_Key
+		dataType: string
+		lineageTag: 678c11be-d3fd-4a58-9815-11dd77f35f8d
+		summarizeBy: none
+		sourceColumn: Level_5_Key
+
+		annotation SummarizationSetBy = Automatic
+
+	column Level_6_Key
+		dataType: string
+		lineageTag: 91964402-1fe0-4d6e-81ed-c5db3222d6ae
+		summarizeBy: none
+		sourceColumn: Level_6_Key
+
+		annotation SummarizationSetBy = Automatic
+
+	column Level_7_Key
+		dataType: string
+		lineageTag: c954fe73-4294-4b42-8a54-cafaf1113033
+		summarizeBy: none
+		sourceColumn: Level_7_Key
+
+		annotation SummarizationSetBy = Automatic
+
+	column Level_8_Key
+		dataType: string
+		lineageTag: 58dcb867-b656-4ec2-bd0c-722c57eaf11b
+		summarizeBy: none
+		sourceColumn: Level_8_Key
+
+		annotation SummarizationSetBy = Automatic
+
+	column Level_9_Key
+		dataType: string
+		lineageTag: a35b33e3-755b-46a9-877b-0187c892a186
+		summarizeBy: none
+		sourceColumn: Level_9_Key
+
+		annotation SummarizationSetBy = Automatic
+
+	column Type
+		dataType: string
+		lineageTag: 443bff69-4560-4bbe-8c15-dce81b40d95e
+		summarizeBy: none
+		sourceColumn: Type
+
+		annotation SummarizationSetBy = Automatic
+
+	hierarchy P&L
+		lineageTag: b64ad93e-1a95-45b8-99cd-ff174e6b3f09
+
+		level Level_2_Key
+			lineageTag: 92549168-d21e-4ada-9145-0cc231a59c9d
+			column: Level_2_Key
+
+		level Level_3_Key
+			lineageTag: 6eb4cd92-a65c-4dff-9200-ee6ddc5d4cb0
+			column: Level_3_Key
+
+		level Level_4_Key
+			lineageTag: 9b637cc6-f929-4ccc-9981-61ff85f1761d
+			column: Level_4_Key
+
+		level Level_5_Key
+			lineageTag: f2864c1f-5821-4212-8ab2-da1bda02744a
+			column: Level_5_Key
+
+		level Level_6_Key
+			lineageTag: 62d58804-0602-43de-9ef9-5a8e1c4e5613
+			column: Level_6_Key
+
+		level Level_7_Key
+			lineageTag: 8946b5b3-db5c-4444-85ee-6b6cc229f898
+			column: Level_7_Key
+
+		level Level_8_Key
+			lineageTag: f095b5b1-b765-4f78-8484-6f5cc06105b1
+			column: Level_8_Key
+
+		level Level_9_Key
+			lineageTag: 4f07a9b0-7629-433a-9e7d-9d5277fab949
+			column: Level_9_Key
+
+	partition tab_accounts_hierarchy = m
+		mode: import
+		source =
+				let
+				    Quelle = Sql.Databases("3w3wftkijo6ujehh4fb2eleovu-tuq7lxe5lznu7hpei5nzy67o3e.datawarehouse.fabric.microsoft.com"),
+				    Reporting = Quelle{[Name="Reporting"]}[Data],
+				    dbo_tab_accounts_hierarchy = Reporting{[Schema="dbo",Item="tab_accounts_hierarchy"]}[Data],
+				    #"Andere entfernte Spalten" = Table.SelectColumns(dbo_tab_accounts_hierarchy,{"Kostenart", "Kostenart_Beschreibung", "Level_2_Key", "Level_3_Key", "Level_4_Key", "Level_5_Key", "Level_6_Key", "Level_7_Key", "Level_8_Key", "Level_9_Key", "Type"})
+				in
+				    #"Andere entfernte Spalten"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

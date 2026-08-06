@@ -1,0 +1,47 @@
+/// Steuertabelle ohne Beziehung: Einzelmonat oder kumuliert (YTD).
+///
+/// Seit der Mehrmonats-Umstellung liegen alle Perioden ab Startperiode im Modell. Über diesen
+/// Schalter wird gesteuert, ob die Kennzahlen den im Monats-Slicer gewählten Monat allein zeigen
+/// oder alle Perioden des Geschäftsjahres bis einschließlich des gewählten Monats aufsummieren.
+///
+/// Ausgewertet wird der Schalter in den vier Basis-Measures (ACT/BUD/FC/V_Value_P&L).
+/// Alles Weitere - Flash, Ratios, Flex, Rang - baut darauf auf und ist damit automatisch korrekt.
+table p_Zeitbezug
+	lineageTag: 4c19e0b7-8d53-42fa-a610-97b3e2d5c481
+
+	/// Auswahlwert des Slicers: "Einzelmonat" (Standard) oder "Kumuliert (YTD)".
+	column Zeitbezug
+		dataType: string
+		lineageTag: d8730fa1-6c29-4b05-8e74-13a5c96b0f2e
+		summarizeBy: none
+		sourceColumn: [Zeitbezug]
+		sortByColumn: Sortierung
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Sortierung, damit "Einzelmonat" im Slicer vorne steht.
+	column Sortierung
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: 5e94b2c6-0a17-4d38-b9f2-84c07e15a6d3
+		summarizeBy: none
+		sourceColumn: [Sortierung]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition p_Zeitbezug = calculated
+		mode: import
+		source = ```
+				DATATABLE(
+				    "Zeitbezug", STRING,
+				    "Sortierung", INTEGER,
+				    {
+				        {"Einzelmonat", 1},
+				        {"Kumuliert (YTD)", 2}
+				    }
+				)
+				```
+
+	annotation PBI_Id = 3f82ad4c17e94b60bd25e0918c4a7f6b
+

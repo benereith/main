@@ -1,0 +1,135 @@
+/// Berichtskommentare je Werk und Periode, gelesen aus der Fabric-SQL-Datenbank.
+///
+/// Bewusst DirectQuery: der Translytical Task Flow schreibt den Kommentar über eine
+/// User Data Function direkt in dbo.Flash_Kommentare, und der Bericht soll ihn ohne
+/// Modell-Refresh sofort anzeigen. Bei Import wäre der Kommentar erst nach der nächsten
+/// Aktualisierung sichtbar.
+///
+/// Setup der Datenbank, der Tabelle und der User Data Function: docs/kommentare/README.md.
+/// Die Verbindungsparameter stehen in expressions.tmdl (Kommentar_SQL_Endpoint, Kommentar_Datenbank).
+table Kommentare
+	lineageTag: b03e7c15-9a24-4d68-81f5-6c2790eb4a37
+
+	/// Technischer Primärschlüssel aus der SQL-Tabelle.
+	column Kommentar_ID
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: 27f4c9a0-3e81-45b6-90c7-d5138a2be064
+		summarizeBy: none
+		sourceColumn: Kommentar_ID
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Schlüssel Werk|Geschäftsjahr|Periode - in SQL als berechnete Spalte gepflegt, damit er
+	/// exakt dem Schlüssel in Unit_Status und V_SAP_EXPORTS_cleansed entspricht.
+	/// Trägt keine Beziehung: die Kommentare hängen als zweite Faktentabelle an
+	/// sap_master_data_unit und DIM_DATE, damit Unit-Slicer und Monats-Slicer beide greifen.
+	column Status_Key
+		dataType: string
+		isHidden
+		lineageTag: 91d602be-7c45-4a39-b8e0-3f2571ca9d84
+		summarizeBy: none
+		sourceColumn: Status_Key
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Erster Kalendertag der kommentierten Periode - Verknüpfung zu DIM_DATE.
+	/// Wird in SQL aus Fiscal_Year und Periode berechnet, mit derselben Regel wie fnPeriodeStart.
+	column Datum
+		dataType: dateTime
+		formatString: Short Date
+		isHidden
+		lineageTag: ad64f0c2-3b19-4e57-8d02-6f915c73be40
+		summarizeBy: none
+		sourceColumn: Datum
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	/// Werksnummer, auf die sich der Kommentar bezieht.
+	column Werk
+		dataType: int64
+		formatString: 0
+		lineageTag: 5a8b13f7-e620-4c94-a3d1-70f45b9c286e
+		summarizeBy: none
+		sourceColumn: Werk
+
+		annotation SummarizationSetBy = Automatic
+
+	/// SAP-Geschäftsjahr des Kommentars.
+	column Fiscal_Year
+		dataType: int64
+		formatString: 0
+		lineageTag: c4e70915-2b86-43fd-9017-8ad6e35c1029
+		summarizeBy: none
+		sourceColumn: Fiscal_Year
+
+		annotation SummarizationSetBy = Automatic
+
+	/// SAP-Periode des Kommentars (1 = Oktober).
+	column Periode
+		dataType: int64
+		formatString: 0
+		lineageTag: 6b920ecd-4f13-478a-85c2-09e7a1d3f560
+		summarizeBy: none
+		sourceColumn: Periode
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Freitext des Kommentars.
+	column Kommentar
+		dataType: string
+		lineageTag: 8f3ad260-1c57-49e2-b04f-e69352d78b1a
+		summarizeBy: none
+		sourceColumn: Kommentar
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Grobe Einordnung (z.B. Abrechnung, CoS, Overhead, Sonstiges) - kommt aus dem Dropdown
+	/// des Task-Flow-Buttons und macht die Kommentare filterbar.
+	column Kategorie
+		dataType: string
+		lineageTag: 0d15e8b3-a794-4620-8f3c-b5271ea9046d
+		summarizeBy: none
+		sourceColumn: Kategorie
+
+		annotation SummarizationSetBy = Automatic
+
+	/// UPN des schreibenden Benutzers, von der User Data Function aus dem Aufrufkontext gesetzt.
+	column Erfasst_von
+		dataType: string
+		lineageTag: f6207c48-9d3b-41e5-a6b0-14ce8237db95
+		summarizeBy: none
+		sourceColumn: Erfasst_von
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Zeitstempel der Erfassung.
+	column Erfasst_am
+		dataType: dateTime
+		formatString: dd.mm.yyyy hh:nn
+		lineageTag: 3e8c5170-6b29-4d84-92af-c710d6b5e043
+		summarizeBy: none
+		sourceColumn: Erfasst_am
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Kommentare = m
+		mode: directQuery
+		source = ```
+				let
+				    Quelle = Sql.Database(Kommentar_SQL_Endpoint, Kommentar_Datenbank),
+				    Flash_Kommentare = Quelle{[Schema = "dbo", Item = "Flash_Kommentare"]}[Data],
+
+				    // Gelöschte Kommentare bleiben in der Tabelle stehen (Nachvollziehbarkeit),
+				    // werden im Bericht aber ausgeblendet.
+				    #"Aktive Kommentare" = Table.SelectRows(Flash_Kommentare, each [Ist_Aktiv] = true),
+				    Ergebnis = Table.SelectColumns(#"Aktive Kommentare", {"Kommentar_ID", "Status_Key", "Werk", "Fiscal_Year", "Periode", "Datum", "Kommentar", "Kategorie", "Erfasst_von", "Erfasst_am"})
+				in
+				    Ergebnis
+				```
+
+	annotation PBI_ResultType = Table
+

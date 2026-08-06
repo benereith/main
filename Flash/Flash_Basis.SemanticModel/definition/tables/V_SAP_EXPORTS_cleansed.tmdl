@@ -1,0 +1,144 @@
+/// Faktentabelle aus dem SAP-Export (Objekttyp OR).
+/// Lädt seit der Umstellung alle Perioden von Startperiode bis Aktuelle_Periode des Geschäftsjahres,
+/// nicht mehr nur den Berichtsmonat. Die Monatsauswahl passiert im Bericht über DIM_DATE.
+table V_SAP_EXPORTS_cleansed
+	lineageTag: 8a43f2e2-b18f-4218-bc55-21d0a2f852b6
+
+	column Object_group
+		dataType: int64
+		formatString: 0
+		lineageTag: 41233392-4222-4f8e-8018-54538949828e
+		summarizeBy: none
+		sourceColumn: Object_group
+
+		annotation SummarizationSetBy = Automatic
+
+	column Object_type
+		dataType: string
+		lineageTag: 4c2a7b0f-7bc3-4591-8b9f-c230ed325917
+		summarizeBy: none
+		sourceColumn: Object_type
+
+		annotation SummarizationSetBy = Automatic
+
+	column Fiscal_Year
+		dataType: int64
+		formatString: 0
+		lineageTag: 0f112dac-777f-45cb-a645-38f69f6d26a5
+		summarizeBy: sum
+		sourceColumn: Fiscal_Year
+
+		annotation SummarizationSetBy = Automatic
+
+	column Period
+		dataType: int64
+		formatString: 0
+		lineageTag: dfc5c1bd-414d-45f7-9fb0-9657fcd5b2a4
+		summarizeBy: sum
+		sourceColumn: Period
+
+		annotation SummarizationSetBy = Automatic
+
+	column Datum
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 16b85b40-fd35-4575-bf58-0c147b358b45
+		summarizeBy: none
+		sourceColumn: Datum
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column Object
+		dataType: string
+		lineageTag: a394508a-eec9-410b-89ab-a6a105300475
+		summarizeBy: none
+		sourceColumn: Object
+
+		annotation SummarizationSetBy = Automatic
+
+	column SAP_Version
+		dataType: string
+		lineageTag: 1bb41bc2-641d-419e-920d-45e82e9cb95e
+		summarizeBy: none
+		sourceColumn: SAP_Version
+
+		annotation SummarizationSetBy = Automatic
+
+	column Account
+		dataType: string
+		lineageTag: 3a801263-b74c-42af-8643-e6b94281214d
+		summarizeBy: none
+		sourceColumn: Account
+
+		annotation SummarizationSetBy = Automatic
+
+	column Value
+		dataType: double
+		lineageTag: d66f045f-0522-481b-8388-f737cff86d96
+		summarizeBy: sum
+		sourceColumn: Value
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	/// Zusammengesetzter Schlüssel Werk|Geschäftsjahr|Periode.
+	/// Verbindet die Fakten mit Unit_Status, weil der Abrechnungsstatus seit der Mehrmonats-Umstellung
+	/// je Werk UND Periode gilt - eine reine Werk-Beziehung wäre nicht mehr eindeutig.
+	column Status_Key
+		dataType: string
+		lineageTag: 4e91c07a-2b6d-4c58-9a13-7d0e5f28b346
+		summarizeBy: none
+		sourceColumn: Status_Key
+		isHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition V_SAP_EXPORTS_cleansed = m
+		mode: import
+		source = ```
+				let
+				    Quelle = Sql.Database("3w3wftkijo6ujehh4fb2eleovu-tuq7lxe5lznu7hpei5nzy67o3e.datawarehouse.pbidedicated.windows.net", "Reporting"),
+
+				    // Versionsliste zentral aus dem Parameter SAP_Versionen, damit sie nur an einer Stelle gepflegt wird
+				    VersionsListe = Text.Combine(List.Transform(SAP_Versionen, each "'" & _ & "'"), ", "),
+
+				    Ergebnis = Value.NativeQuery(
+				        Quelle,
+				        "SELECT * FROM V_SAP_EXPORTS_cleansed
+				         WHERE Object_type = 'OR'
+				           AND Fiscal_Year = @Jahr
+				           AND Period BETWEEN @VonPeriode AND @BisPeriode
+				           AND SAP_Version IN (" & VersionsListe & ")",
+				        [
+				            Jahr = Text.From(Geschäftsjahr),
+				            VonPeriode = Text.From(Startperiode),
+				            BisPeriode = Text.From(Aktuelle_Periode)
+				        ]
+				    ),
+
+				    #"Geänderter Typ" = Table.TransformColumnTypes(Ergebnis,{
+				        {"Object_group", Int64.Type},
+				        {"Fiscal_Year", Int64.Type},
+				        {"Period", Int64.Type}
+				    }),
+
+				    #"Datum hinzugefügt" = Table.AddColumn(#"Geänderter Typ", "Datum", each
+				        fnPeriodeStart([Fiscal_Year], [Period]),
+				        type date
+				    ),
+
+				    #"Status_Key hinzugefügt" = Table.AddColumn(#"Datum hinzugefügt", "Status_Key", each
+				        Text.From([Object_group]) & "|" & Text.From([Fiscal_Year]) & "|" & Text.From([Period]),
+				        type text
+				    )
+				in
+				    #"Status_Key hinzugefügt"
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

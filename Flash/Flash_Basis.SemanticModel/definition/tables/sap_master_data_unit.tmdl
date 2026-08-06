@@ -1,0 +1,149 @@
+/// Unit-Stammdaten (Dimension) aus dem Dataflow, gefiltert auf die fünf Managementbereiche.
+/// Enthält bewusst KEINE zeitabhängigen Spalten mehr: Status und Flash_Szenario sind in die
+/// Tabelle Unit_Status gewandert, weil sie seit der Mehrmonats-Umstellung je Werk UND Periode gelten.
+table sap_master_data_unit
+	lineageTag: 8ddf1904-d18a-4726-9e70-2f12bcde619d
+
+	column betrieb
+		dataType: int64
+		formatString: 0
+		lineageTag: 470a8f39-d0f7-4a69-a01a-ac2440f010e6
+		summarizeBy: none
+		sourceColumn: betrieb
+
+		annotation SummarizationSetBy = Automatic
+
+	column bezeichnung_betrieb
+		dataType: string
+		lineageTag: 697aae5f-e4ca-4824-a934-4b67e70ec54e
+		summarizeBy: none
+		sourceColumn: bezeichnung_betrieb
+
+		annotation SummarizationSetBy = Automatic
+
+	column buchungskreis
+		dataType: int64
+		formatString: 0
+		lineageTag: 2788b838-ba5e-4158-9c61-9c4025d74271
+		summarizeBy: sum
+		sourceColumn: buchungskreis
+
+		annotation SummarizationSetBy = Automatic
+
+	column sektor
+		dataType: string
+		lineageTag: da27617b-9cd9-46db-af71-75058b7f4059
+		summarizeBy: none
+		sourceColumn: sektor
+
+		annotation SummarizationSetBy = Automatic
+
+	column vertragsart
+		dataType: string
+		lineageTag: ed1c663a-822a-4179-bf04-2030b604fc61
+		summarizeBy: none
+		sourceColumn: vertragsart
+
+		annotation SummarizationSetBy = Automatic
+
+	column innenauftragsart
+		dataType: string
+		lineageTag: 0ab89ef6-fdd6-4a98-9e27-aa012fdd7bcf
+		summarizeBy: none
+		sourceColumn: innenauftragsart
+
+		annotation SummarizationSetBy = Automatic
+
+	column bezirk
+		dataType: string
+		lineageTag: a4dae0bb-280e-48c2-8ae4-9d7b3ca92d55
+		summarizeBy: none
+		sourceColumn: bezirk
+
+		annotation SummarizationSetBy = Automatic
+
+	column service
+		dataType: int64
+		formatString: 0
+		lineageTag: 18de6948-5b26-4415-a7b6-4a1f53161fcd
+		summarizeBy: sum
+		sourceColumn: service
+
+		annotation SummarizationSetBy = Automatic
+
+	column bezeichnung_management
+		dataType: string
+		lineageTag: 25ee6eb2-ec57-4190-ab5b-e46f42e6a956
+		summarizeBy: none
+		sourceColumn: bezeichnung_management
+
+		annotation SummarizationSetBy = Automatic
+
+	column bezeichnung_region
+		dataType: string
+		lineageTag: 05cec9e9-1f26-4b6b-8b52-cf171e34e5b5
+		summarizeBy: none
+		sourceColumn: bezeichnung_region
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Werk - Bezeichnung'
+		dataType: string
+		lineageTag: df76b3f2-2721-4a42-8600-cc37e8f2f428
+		summarizeBy: none
+		sourceColumn: Werk - Bezeichnung
+
+		annotation SummarizationSetBy = Automatic
+
+	column Betriebstyp
+		dataType: string
+		lineageTag: 2bbb4180-6529-4c59-b161-65c48b401752
+		summarizeBy: none
+		sourceColumn: Betriebstyp
+
+		annotation SummarizationSetBy = Automatic
+
+	column verantwortungsbereich
+		dataType: int64
+		formatString: 0
+		lineageTag: e57c7937-9b38-4bc9-87c8-f8fb97713bf4
+		summarizeBy: none
+		sourceColumn: verantwortungsbereich
+
+		annotation SummarizationSetBy = Automatic
+
+	partition sap_master_data_unit = m
+		mode: import
+		source = ```
+				let
+				    Quelle = PowerPlatform.Dataflows(null),
+				    Workspaces = Quelle{[Id="Workspaces"]}[Data],
+				    #"Workspace_ID" = Workspaces{[workspaceId="ddc66bda-5a20-49f0-be6e-b68e17a1cc90"]}[Data],
+				    #"Dataflow_ID" = #"Workspace_ID"{[dataflowId="a65e47b1-6a8b-4cf2-8131-c90e55bf14c7"]}[Data],
+				    sap_master_data_unit = #"Dataflow_ID"{[entity="sap_master_data_unit",version=""]}[Data],
+				
+				    // Filter ZUERST – reduziert Zeilen vor allen weiteren Schritten
+				    ManagementFilter = {"Eurest", "Food Affairs", "Kanne", "Leonardi", "Medirest"},
+				    #"Gefilterte Zeilen" = Table.SelectRows(sap_master_data_unit, each List.Contains(ManagementFilter, [bezeichnung_management])),
+				
+				    #"Werk Bezeichnung" = Table.AddColumn(#"Gefilterte Zeilen", "Werk - Bezeichnung", each Text.Combine({Text.PadStart(Text.From([betrieb], "de-DE"), 4, "0"), " - ", [bezeichnung_betrieb]}), type text),
+				
+				    PlanbetriebeRoll = List.Buffer({ 127, 1678, 1680, 1682, 1684, 1686, 1688, 1690, 1692, 1694, 1696, 1862, 1863, 2119, 4350, 4590, 5200, 5226, 7133, 7120, 7937, 8535, 8849, 9736, 9747, 9876, 9937 }),
+				    PlanbetriebeITY = List.Buffer({ 1679, 1681, 1683, 1685, 1687, 1689, 1691, 1693, 1695, 7933, 8385, 8386, 9911, 9913, 9916, 9920, 9922, 9924, 9926, 9933, 9936, 9940, 9944, 9945, 9946, 9947, 9950, 9952 }),
+				
+				    Hinzugefügt_Betriebstyp = Table.AddColumn(#"Werk Bezeichnung", "Betriebstyp", each
+				        if List.Contains(PlanbetriebeRoll, [betrieb]) then "Plan-Betriebe Roll"
+				        else if List.Contains(PlanbetriebeITY, [betrieb]) then "Plan-Betriebe ITY"
+				        else "Real-Betriebe", type text),
+				
+				    // Der frühere Join auf Übergabedatum entfällt hier: der Status ist monatsabhängig
+				    // und wird deshalb in Unit_Status je Werk UND Periode gebildet.
+				    #"Andere entfernte Spalten" = Table.SelectColumns(Hinzugefügt_Betriebstyp, {"betrieb", "bezeichnung_betrieb", "buchungskreis", "sektor", "vertragsart", "innenauftragsart", "bezirk", "service", "bezeichnung_management", "verantwortungsbereich", "bezeichnung_region", "Werk - Bezeichnung", "Betriebstyp"})
+				in
+				    #"Andere entfernte Spalten"
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

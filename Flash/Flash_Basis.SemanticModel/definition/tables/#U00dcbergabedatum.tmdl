@@ -1,0 +1,85 @@
+/// Stammdaten je Werk aus IA_Stammdaten.XLSX (SharePoint Group Controlling).
+/// Enthält nur noch die reinen Übergabedaten - die frühere Spalte Status wurde entfernt,
+/// weil sie an einen einzelnen Berichtsmonat gebunden war. Der Status wird jetzt in
+/// Unit_Status je Werk UND Periode berechnet.
+table Übergabedatum
+	lineageTag: 6399f1a2-06eb-4657-aa5f-628dd4b19ff7
+
+	/// Werksnummer, entspricht sap_master_data_unit[betrieb] und V_SAP_EXPORTS_cleansed[Object_group].
+	column Werk
+		dataType: int64
+		formatString: 0
+		lineageTag: 46cf5de0-b4ce-40c8-bca4-c1dc929c6705
+		summarizeBy: sum
+		sourceColumn: Werk
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Spätestes Datum der FIBU-Übergabe (Faktura). Liegt es im Berichtsmonat, gilt die Unit als abgerechnet.
+	column FIBU_Übergabe_Datum
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: d14b6803-2800-4545-8c42-bae8f7c4fc10
+		summarizeBy: none
+		sourceColumn: FIBU_Übergabe_Datum
+
+		variation Variation
+			isDefault
+			relationship: 213da7ec-ce3a-4db7-a4e9-209e1187eebe
+			defaultHierarchy: LocalDateTable_bc039c3a-c4a4-402d-b31c-f5d1a4419ca6.Datumshierarchie
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	/// Spätestes Flash-Übergabedatum. Liegt es im Berichtsmonat, gilt die Unit als Flash-Meldung.
+	column Flash_Übergabedatum
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 4fe87ef7-32a8-4ce1-a42e-9df4ec50e114
+		summarizeBy: none
+		sourceColumn: Flash_Übergabedatum
+
+		variation Variation
+			isDefault
+			relationship: da8bdda7-b445-4f4f-b16a-f3be4d919ee2
+			defaultHierarchy: LocalDateTable_9f350d77-b502-41aa-bf08-f3603321a9d7.Datumshierarchie
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	partition Übergabedatum = m
+		mode: import
+		source = ```
+				let
+				    Quelle = SharePoint.Contents("https://cpgplc.sharepoint.com/sites/GroupControlling", [ApiVersion = 15]),
+				    #"Shared Documents" = Quelle{[Name="Shared Documents"]}[Content],
+				    #"Group Controlling" = #"Shared Documents"{[Name="Group Controlling"]}[Content],
+				    Flash = #"Group Controlling"{[Name="Flash"]}[Content],
+				    #"01_Input" = Flash{[Name="01_Input"]}[Content],
+				    #"IA_Stammdaten XLSX" = #"01_Input"{[Name="IA_Stammdaten.XLSX"]}[Content],
+				    #"Importierte Excel-Arbeitsmappe" = Excel.Workbook(#"IA_Stammdaten XLSX"),
+				    Sheet1_Sheet = #"Importierte Excel-Arbeitsmappe"{[Item="Sheet1",Kind="Sheet"]}[Data],
+				    #"Höher gestufte Header" = Table.PromoteHeaders(Sheet1_Sheet, [PromoteAllScalars=true]),
+				    #"Andere entfernte Spalten" = Table.SelectColumns(#"Höher gestufte Header",{"Werk", "FibuübergFaktKalJahr", "FlashÜbergabedatum"}),
+				    #"Geänderter Typ" = Table.TransformColumnTypes(#"Andere entfernte Spalten",{{"Werk", Int64.Type}, {"FibuübergFaktKalJahr", type date}, {"FlashÜbergabedatum", type date}}),
+
+				    #"Werk gefiltert" = Table.SelectRows(#"Geänderter Typ", each [Werk] <> null),
+
+				    // Je Werk das jeweils späteste Übergabedatum. Die Bewertung gegen einen Monat
+				    // passiert bewusst nicht mehr hier, sondern in Unit_Status - dort je Periode.
+				    #"Gruppierte Zeilen" = Table.Group(#"Werk gefiltert", {"Werk"}, {
+				        {"FIBU_Übergabe_Datum", each List.Max([FibuübergFaktKalJahr]), type nullable date},
+				        {"Flash_Übergabedatum", each List.Max([FlashÜbergabedatum]), type nullable date}
+				    }),
+
+				    #"Sortierte Zeilen" = Table.Sort(#"Gruppierte Zeilen", {{"Flash_Übergabedatum", Order.Descending}})
+				in
+				    #"Sortierte Zeilen"
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

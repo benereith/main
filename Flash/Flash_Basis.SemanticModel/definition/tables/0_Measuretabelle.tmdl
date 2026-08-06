@@ -1,0 +1,301 @@
+/// Zentrale Measuretabelle des Flash-Berichts.
+///
+/// Aufbau in vier Schichten, damit Änderungen nur an einer Stelle nötig sind:
+///   1. _Basis-Measures       - reine Summen je SAP-Version, ohne Zeitlogik
+///   2. Value-Measures        - ACT/BUD/FC/V inkl. Auswertung des Schalters p_Zeitbezug
+///   3. [Flash Basis]/[Flash] - Szenariomix je Unit inkl. Kanne-Schalter
+///   4. Ratios, Flex, Rang    - bauen ausschließlich auf Schicht 2 und 3 auf
+table 0_Measuretabelle
+	lineageTag: 7c559915-9cdd-45d0-9a52-e0467decadca
+
+	/// Ist-Werte (SAP-Version 0), P&L-Konten, ohne Zeitlogik.
+	/// Nur als Baustein für [ACT_Value_P&L] gedacht - im Bericht bitte die Value-Measures nutzen.
+	measure _ACT_Basis = CALCULATE(SUM(V_SAP_EXPORTS_cleansed[Value]), tab_accounts_hierarchy[Type] = "P&L", V_SAP_EXPORTS_cleansed[SAP_Version] = "0")
+		isHidden
+		lineageTag: 1f47a0d6-83b5-4e29-97c0-d2a61b73e548
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	/// Budgetwerte (SAP-Version 20), P&L-Konten, ohne Zeitlogik.
+	measure _BUD_Basis = CALCULATE(SUM(V_SAP_EXPORTS_cleansed[Value]), tab_accounts_hierarchy[Type] = "P&L", V_SAP_EXPORTS_cleansed[SAP_Version] = "20")
+		isHidden
+		lineageTag: 9c0e5241-7d38-4a16-b5f9-e0387c41ad62
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	/// Aktueller Forecast, P&L-Konten, ohne Zeitlogik.
+	/// Der aktuelle FC ist definiert als Summe aus RGF und R12. Die übrigen FC-Versionen
+	/// (RF, 35, RTD) werden zwar geladen, zählen aber nur für die Datenprüfung in Unit_Status
+	/// und NICHT in den aktuellen Forecast hinein.
+	measure _FC_Basis = CALCULATE(SUM(V_SAP_EXPORTS_cleansed[Value]), tab_accounts_hierarchy[Type] = "P&L", V_SAP_EXPORTS_cleansed[SAP_Version] IN {"RGF", "R12"})
+		isHidden
+		lineageTag: 6a5db307-c194-4f82-80e6-31b7f0c25a94
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	/// Vorschauwerte (SAP-Version V), P&L-Konten, ohne Zeitlogik.
+	measure _V_Basis = CALCULATE(SUM(V_SAP_EXPORTS_cleansed[Value]), tab_accounts_hierarchy[Type] = "P&L", V_SAP_EXPORTS_cleansed[SAP_Version] = "V")
+		isHidden
+		lineageTag: e2814bf5-30a7-49dc-b16c-58a0e93d7462
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	/// Geschäftsjahr des aktuell gefilterten Zeitraums (z.B. "FY2025/26"). Hilfsmaß für die YTD-Logik.
+	measure _FY = SELECTEDVALUE(DIM_DATE[FY_Jahr], MAX(DIM_DATE[FY_Jahr]))
+		isHidden
+		lineageTag: 4d90c6ea-1b73-45f8-a207-e6c8145b9302
+
+	/// Höchste im Filterkontext sichtbare Geschäftsjahres-Monatsnummer (1 = Oktober).
+	/// Bis zu diesem Monat kumuliert die YTD-Variante.
+	measure _FY_Monat_bis = MAX(DIM_DATE[FY_MonatNr])
+		formatString: 0
+		isHidden
+		lineageTag: 8b62f1c4-5079-4e3a-96d1-c7a30be48f15
+
+	/// Ist die kumulierte Betrachtung aktiv? Liest den Slicer auf p_Zeitbezug.
+	/// Ohne Auswahl (oder bei Mehrfachauswahl) gilt bewusst Einzelmonat.
+	measure _Kumuliert = SELECTEDVALUE(p_Zeitbezug[Zeitbezug], "Einzelmonat") = "Kumuliert (YTD)"
+		isHidden
+		lineageTag: a70c3d92-6e18-4b45-83f7-20d9145ce6b8
+
+	/// Ist-Werte (SAP-Version 0) für P&L-Konten.
+	/// Berücksichtigt den Schalter p_Zeitbezug: Einzelmonat oder kumuliert bis zum gewählten Monat.
+	/// Die YTD-Variante filtert über FY_Jahr/FY_MonatNr aus DIM_DATE statt über DATESYTD, weil das
+	/// Geschäftsjahr am 30.09. endet und so kein sprachabhängiges Jahresende-Literal nötig ist.
+	measure ACT_Value_P&L = ```
+			VAR _Geschaeftsjahr = [_FY]
+			VAR _MonatBis = [_FY_Monat_bis]
+			RETURN
+			IF(
+			    [_Kumuliert],
+			    CALCULATE(
+			        [_ACT_Basis],
+			        REMOVEFILTERS(DIM_DATE),
+			        DIM_DATE[FY_Jahr] = _Geschaeftsjahr,
+			        DIM_DATE[FY_MonatNr] <= _MonatBis
+			    ),
+			    [_ACT_Basis]
+			)
+			```
+		lineageTag: 22981339-de1e-4ab5-a204-76b30fc2a50c
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	/// Budgetwerte (SAP-Version 20) für P&L-Konten, mit Zeitbezugs-Schalter.
+	measure BUD_Value_P&L = ```
+			VAR _Geschaeftsjahr = [_FY]
+			VAR _MonatBis = [_FY_Monat_bis]
+			RETURN
+			IF(
+			    [_Kumuliert],
+			    CALCULATE(
+			        [_BUD_Basis],
+			        REMOVEFILTERS(DIM_DATE),
+			        DIM_DATE[FY_Jahr] = _Geschaeftsjahr,
+			        DIM_DATE[FY_MonatNr] <= _MonatBis
+			    ),
+			    [_BUD_Basis]
+			)
+			```
+		lineageTag: 6917d938-740a-4519-85ba-a7057e61a889
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	/// Aktueller Forecast (RGF + R12) für P&L-Konten, mit Zeitbezugs-Schalter.
+	measure FC_Value_P&L = ```
+			VAR _Geschaeftsjahr = [_FY]
+			VAR _MonatBis = [_FY_Monat_bis]
+			RETURN
+			IF(
+			    [_Kumuliert],
+			    CALCULATE(
+			        [_FC_Basis],
+			        REMOVEFILTERS(DIM_DATE),
+			        DIM_DATE[FY_Jahr] = _Geschaeftsjahr,
+			        DIM_DATE[FY_MonatNr] <= _MonatBis
+			    ),
+			    [_FC_Basis]
+			)
+			```
+		lineageTag: 5280f622-46b1-4743-9ae4-11668ffdefee
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	/// Vorschauwerte (SAP-Version V) für P&L-Konten, mit Zeitbezugs-Schalter.
+	measure V_Value_P&L = ```
+			VAR _Geschaeftsjahr = [_FY]
+			VAR _MonatBis = [_FY_Monat_bis]
+			RETURN
+			IF(
+			    [_Kumuliert],
+			    CALCULATE(
+			        [_V_Basis],
+			        REMOVEFILTERS(DIM_DATE),
+			        DIM_DATE[FY_Jahr] = _Geschaeftsjahr,
+			        DIM_DATE[FY_MonatNr] <= _MonatBis
+			    ),
+			    [_V_Basis]
+			)
+			```
+		lineageTag: 545b9417-66da-463b-b490-4c90964c7fdc
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	/// Vorjahreswert des Ist (Same Period Last Year).
+	/// Achtung: liefert nur dann Werte, wenn auch das Vorjahr geladen ist. Mit der aktuellen
+	/// Parametrisierung (genau ein Geschäftsjahr) bleibt die Measure leer - dafür müsste die
+	/// Faktenabfrage um das Vorjahr erweitert werden.
+	measure SPLY = CALCULATE([ACT_Value_P&L], SAMEPERIODLASTYEAR(DIM_DATE[Datum]))
+		lineageTag: f0c78a9a-05dc-4dad-a57a-ec7b7958a9b6
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	/// Flash-Wert nach der reinen Statuslogik, ohne die Kanne-Ausnahme.
+	/// Je Unit und Periode entscheidet Unit_Status[Flash_Szenario], welche Wertart zählt.
+	/// Units mit Szenario "Ohne Wertung" (Status Inaktiv) fallen automatisch heraus,
+	/// weil sie in keinem der drei Zweige vorkommen.
+	measure 'Flash Basis' = ```
+			CALCULATE([ACT_Value_P&L], KEEPFILTERS(Unit_Status[Flash_Szenario] = "ACT"))
+			    + CALCULATE([FC_Value_P&L], KEEPFILTERS(Unit_Status[Flash_Szenario] = "FC"))
+			    + CALCULATE([V_Value_P&L], KEEPFILTERS(Unit_Status[Flash_Szenario] = "V"))
+			```
+		isHidden
+		lineageTag: 3c05e714-8bd2-4691-a70f-15e8c4396db0
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	/// Flash-Wert des Berichts.
+	///
+	/// Alle Managementbereiche außer Kanne folgen der Statuslogik aus Unit_Status[Flash_Szenario].
+	/// Kanne wird getrennt gerechnet und hängt am Slicer p_Kanne_Abrechnung:
+	///   "Ja"   - Kanne ist abgerechnet, alle Kanne-Units zählen mit ihren Ist-Werten (ACT)
+	///   "Nein" - Kanne folgt derselben ACT/FC/V-Logik wie alle anderen Bereiche (Standard)
+	///
+	/// KEEPFILTERS sorgt dafür, dass eine im Bericht gesetzte Managementbereichs-Auswahl erhalten
+	/// bleibt: ist Kanne herausgefiltert, liefert der Kanne-Teil schlicht BLANK.
+	measure Flash = ```
+			VAR _KanneAbgerechnet = SELECTEDVALUE(p_Kanne_Abrechnung[Kanne abgerechnet], "Nein") = "Ja"
+			VAR _OhneKanne =
+			    CALCULATE([Flash Basis], KEEPFILTERS(sap_master_data_unit[bezeichnung_management] <> "Kanne"))
+			VAR _KanneNachStatus =
+			    CALCULATE([Flash Basis], KEEPFILTERS(sap_master_data_unit[bezeichnung_management] = "Kanne"))
+			VAR _KanneAlsIst =
+			    CALCULATE([ACT_Value_P&L], KEEPFILTERS(sap_master_data_unit[bezeichnung_management] = "Kanne"))
+			RETURN
+			    _OhneKanne + IF(_KanneAbgerechnet, _KanneAlsIst, _KanneNachStatus)
+			```
+		lineageTag: d36d06e0-e906-4806-8609-80e93dbfe27c
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	/// CoS-Quote im Ist: Total COS / Total Revenue.
+	measure Act_Ratio_CoS = DIVIDE(CALCULATE([ACT_Value_P&L], tab_accounts_hierarchy[Level_2_Key]="IS20000_T - Total COS inkl. IFRS/NEUTRA/MGMT"),CALCULATE([ACT_Value_P&L], tab_accounts_hierarchy[Level_2_Key]="IS10000_T - Total Revenue inkl. IFRS/ NEUTRA/MGMT"))
+		formatString: 0.00\ %;-0.00\ %;0.00\ %
+		lineageTag: 20d8b904-8c26-45db-94c6-c16bb0f9c131
+
+	/// CoS-Quote im Forecast: Total COS / Total Revenue.
+	measure FC_Ratio_CoS = DIVIDE(CALCULATE([FC_Value_P&L], tab_accounts_hierarchy[Level_2_Key]="IS20000_T - Total COS inkl. IFRS/NEUTRA/MGMT"),CALCULATE([FC_Value_P&L], tab_accounts_hierarchy[Level_2_Key]="IS10000_T - Total Revenue inkl. IFRS/ NEUTRA/MGMT"))
+		formatString: 0.00\ %;-0.00\ %;0.00\ %
+		lineageTag: cfadafed-2c3a-41e4-a55a-f889b550649f
+
+	/// Abweichung der CoS-Quote Ist gegen Forecast in Prozentpunkten.
+	measure Delta_Cos = [Act_Ratio_CoS]-[FC_Ratio_CoS]
+		formatString: 0.00\ %;-0.00\ %;0.00\ %
+		lineageTag: 769eb1e2-928f-498d-98a2-05830bdf3421
+
+	/// Geflexter CoS-Effekt in Euro: Ist-Umsatz multipliziert mit der CoS-Quotenabweichung.
+	measure 'Flex CoS' = CALCULATE([ACT_Value_P&L], tab_accounts_hierarchy[Level_2_Key]="IS10000_T - Total Revenue inkl. IFRS/ NEUTRA/MGMT")*[Delta_Cos]
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: 87d37a64-0e68-484e-b4c3-850e13d6f358
+
+	/// Ist-Umsatz (Total Revenue).
+	measure Act_Rev = CALCULATE([ACT_Value_P&L], tab_accounts_hierarchy[Level_2_Key]="IS10000_T - Total Revenue inkl. IFRS/ NEUTRA/MGMT")
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: b24b2ce6-6b07-4c21-96de-d314fd0e438f
+
+	/// Rang der Unit nach geflextem CoS-Effekt - Grundlage der Flop-20-Seite.
+	measure Rang_Filter = ```
+			RANKX(
+			    ALLSELECTED(sap_master_data_unit[Werk - Bezeichnung]),
+			    [Flex CoS],
+			    ,
+			    ASC,
+			    Dense
+			)
+			```
+		formatString: 0
+		lineageTag: 5fa1a3f9-d285-4d3f-a591-203efb23c1df
+
+	/// Overhead-Quote im Ist: Total Overheads / Total Revenue.
+	measure Act_Ratio_OvH = DIVIDE(CALCULATE([ACT_Value_P&L], tab_accounts_hierarchy[Level_2_Key]="IS40000_T - Total Overheads inkl. IFRS/ NEUTRA/MGMT"),CALCULATE([ACT_Value_P&L], tab_accounts_hierarchy[Level_2_Key]="IS10000_T - Total Revenue inkl. IFRS/ NEUTRA/MGMT"))
+		formatString: 0.00\ %;-0.00\ %;0.00\ %
+		lineageTag: 2d2afd1b-c6f1-4c5d-9ac5-aec0c4947ec7
+
+	/// Overhead-Quote im Forecast: Total Overheads / Total Revenue.
+	measure FC_Ratio_OvH = DIVIDE(CALCULATE([FC_Value_P&L], tab_accounts_hierarchy[Level_2_Key]="IS40000_T - Total Overheads inkl. IFRS/ NEUTRA/MGMT"),CALCULATE([FC_Value_P&L], tab_accounts_hierarchy[Level_2_Key]="IS10000_T - Total Revenue inkl. IFRS/ NEUTRA/MGMT"))
+		formatString: 0.00\ %;-0.00\ %;0.00\ %
+		lineageTag: 59142036-0c55-435e-852e-e413424d9126
+
+	/// Abweichung der Overhead-Quote Ist gegen Forecast in Prozentpunkten.
+	measure Delta_OvH = [Act_Ratio_OvH]-[FC_Ratio_OvH]
+		formatString: 0.00\ %;-0.00\ %;0.00\ %
+		lineageTag: 1e0b28cb-3afc-40a9-8a16-c1b93343cb37
+
+	/// Geflexter Overhead-Effekt in Euro: Ist-Umsatz multipliziert mit der Quotenabweichung.
+	measure 'Flex OvH' = CALCULATE([ACT_Value_P&L], tab_accounts_hierarchy[Level_2_Key]="IS10000_T - Total Revenue inkl. IFRS/ NEUTRA/MGMT")*[Delta_OvH]
+		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		lineageTag: 9d6d1768-9470-4373-a200-86846f9ecc9f
+
+	/// Anzahl der Units im Filterkontext, die in der gewählten Periode keinerlei Werte haben.
+	/// Kontrollkennzahl: steigt sie unerwartet, fehlt vermutlich eine Datenlieferung.
+	measure 'Units ohne Daten' = CALCULATE(COUNTROWS(Unit_Status), KEEPFILTERS(Unit_Status[Status] = "Inaktiv"))
+		formatString: 0
+		lineageTag: 7e4b0192-a65c-43df-8021-9c3fe705da16
+
+	/// Anzahl der Units im Filterkontext, die Werte haben, aber weder Abrechnung noch Flash gemeldet
+	/// haben. Das sind die echten "Kein Kennzeichen"-Fälle, die inhaltlich nachzuhalten sind.
+	measure 'Units ohne Kennzeichen' = CALCULATE(COUNTROWS(Unit_Status), KEEPFILTERS(Unit_Status[Status] = "Kein Kennzeichen"))
+		formatString: 0
+		lineageTag: 0a97d5b3-4e21-486c-b7f9-38c62e01a4d7
+
+	/// Anzahl der Kommentare im aktuellen Filterkontext.
+	measure 'Kommentar Anzahl' = COUNTROWS(Kommentare)
+		formatString: 0
+		lineageTag: c5312bf8-9704-4a6e-8de3-2fb1a49c07e6
+
+	/// Alle Kommentare des Filterkontexts als Text, neueste zuerst - für die Kommentarkachel.
+	measure Kommentartext = ```
+			CONCATENATEX(
+			    Kommentare,
+			    Kommentare[Kommentar] & "  (" & Kommentare[Erfasst_von] & ", " & FORMAT(Kommentare[Erfasst_am], "dd.MM.yyyy") & ")",
+			    UNICHAR(10) & UNICHAR(10),
+			    Kommentare[Erfasst_am], DESC
+			)
+			```
+		lineageTag: 91ea760c-24d8-4b53-a0f1-6c07b3d95428
+
+	/// Zeitpunkt des jüngsten Kommentars im Filterkontext.
+	measure 'Letzter Kommentar am' = MAX(Kommentare[Erfasst_am])
+		formatString: dd.mm.yyyy hh:nn
+		lineageTag: 46b0d3f9-1a85-4c72-90e6-b7215ce0834d
+
+	column 'Spalte "1"'
+		dataType: string
+		isHidden
+		lineageTag: e0e3e136-09af-47f7-b92a-101f7f6c9df8
+		summarizeBy: none
+		sourceColumn: Spalte "1"
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 0_Measuretabelle = m
+		mode: import
+		source =
+				let
+				    Quelle = Table.FromRows(Json.Document(Binary.Decompress(Binary.FromText("i44FAA==", BinaryEncoding.Base64), Compression.Deflate)), let _t = ((type nullable text) meta [Serialized.Text = true]) in type table [#"Spalte ""1""" = _t]),
+				    #"Geänderter Typ" = Table.TransformColumnTypes(Quelle,{{"Spalte ""1""", type text}})
+				in
+				    #"Geänderter Typ"
+
+	annotation PBI_ResultType = Table
+

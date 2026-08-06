@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "Flash_Basis"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "5bf267bd-0fae-46a4-a1bc-624492998e86"
+  }
+}

@@ -1,0 +1,257 @@
+/// Abrechnungsstatus je Werk UND Periode - die zentrale neue Tabelle der Mehrmonats-Umstellung.
+/// Vorher hing der Status an einer einzigen Spalte in sap_master_data_unit und galt nur für
+/// pBerichtsmonat. Jetzt entsteht für jede geladene Periode eine eigene Bewertung, sodass
+/// vergangene Monate mit dem Status gerechnet werden, den sie damals tatsächlich hatten.
+///
+/// Grain: eine Zeile je Werk x Periode. Verknüpfung zur Faktentabelle über Status_Key.
+table Unit_Status
+	lineageTag: 2c81f4a6-9d37-4b1e-8a05-6f3b90c27d14
+
+	/// Zusammengesetzter Schlüssel Werk|Geschäftsjahr|Periode - 1:n-Beziehung zu V_SAP_EXPORTS_cleansed.
+	column Status_Key
+		dataType: string
+		isHidden
+		isKey
+		lineageTag: 5b0e3c92-7a41-4f86-b2d9-1c47e8a05f63
+		summarizeBy: none
+		sourceColumn: Status_Key
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Werksnummer, entspricht sap_master_data_unit[betrieb].
+	column Werk
+		dataType: int64
+		formatString: 0
+		lineageTag: 8f62d1b0-4c95-4e73-a1f8-2b70e94c635a
+		summarizeBy: none
+		sourceColumn: Werk
+
+		annotation SummarizationSetBy = Automatic
+
+	/// SAP-Geschäftsjahr der Bewertung (identisch zum Parameter Geschäftsjahr).
+	column Fiscal_Year
+		dataType: int64
+		formatString: 0
+		lineageTag: a4d70e58-3f26-49bc-90a1-7e35b8d2f091
+		summarizeBy: none
+		sourceColumn: Fiscal_Year
+
+		annotation SummarizationSetBy = Automatic
+
+	/// SAP-Periode 1-12 (1 = Oktober).
+	column Periode
+		dataType: int64
+		formatString: 0
+		lineageTag: c93b512e-6d84-4a07-b5f3-08e91a7c4d26
+		summarizeBy: none
+		sourceColumn: Periode
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Erster Kalendertag der Periode - nur zur Kontrolle, die Zeitachse im Bericht ist DIM_DATE.
+	column Datum
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: 1e75c0a3-9b48-4d12-8f60-3a2d5e91b7c8
+		summarizeBy: none
+		sourceColumn: Datum
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	/// Spätestes FIBU-Übergabedatum der Unit (aus IA_Stammdaten), unbewertet.
+	column FIBU_Übergabe_Datum
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: 7a10d6f4-2c83-4b59-9e07-b41cd8f52e37
+		summarizeBy: none
+		sourceColumn: FIBU_Übergabe_Datum
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	/// Spätestes Flash-Übergabedatum der Unit (aus IA_Stammdaten), unbewertet.
+	column Flash_Übergabedatum
+		dataType: dateTime
+		formatString: Short Date
+		lineageTag: 3d6b91e7-5f20-4c48-a973-8e01c25db4f6
+		summarizeBy: none
+		sourceColumn: Flash_Übergabedatum
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	/// Rohes Kennzeichen aus den Übergabedaten, bewertet gegen genau diese Periode:
+	/// Abgerechnet (FIBU-Übergabe im Monat) / Flash (Flash-Übergabe im Monat) /
+	/// Offen (FIBU-Übergabe im Vormonat) / Kein Kennzeichen.
+	/// Ohne Datenprüfung - die Unterscheidung "Kein Kennzeichen" vs. "Inaktiv" macht erst [Status].
+	column Status_Kennzeichen
+		dataType: string
+		isHidden
+		lineageTag: 9c48e2b1-0a76-4d35-8bf1-6e93074ac2d5
+		summarizeBy: none
+		sourceColumn: Status_Kennzeichen
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Hat die Unit in dieser Periode Ist-Werte (SAP-Version 0)?
+	column Hat_Actuals = CALCULATE(COUNTROWS(V_SAP_EXPORTS_cleansed), V_SAP_EXPORTS_cleansed[SAP_Version] = "0") > 0
+		isHidden
+		lineageTag: 6e2a94c7-1b58-4f03-92d6-c07b348e15fa
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Hat die Unit in dieser Periode Budgetwerte (SAP-Version 20)?
+	column Hat_Budget = CALCULATE(COUNTROWS(V_SAP_EXPORTS_cleansed), V_SAP_EXPORTS_cleansed[SAP_Version] = "20") > 0
+		isHidden
+		lineageTag: b1573fd8-4e60-42a9-87c5-9d20e4b63071
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Hat die Unit in dieser Periode Forecastwerte? Alle FC-Versionen, nicht nur der aktuelle FC.
+	/// Der aktuelle FC ist RGF + R12; RF, 35 und RTD sind ältere bzw. abweichende FC-Stände und
+	/// zählen für die Frage "wird hier überhaupt geplant" trotzdem mit.
+	column Hat_Forecast = CALCULATE(COUNTROWS(V_SAP_EXPORTS_cleansed), V_SAP_EXPORTS_cleansed[SAP_Version] IN {"RF", "RGF", "35", "R12", "RTD"}) > 0
+		isHidden
+		lineageTag: 0f9c62b5-7d14-48ea-b306-51a7e9c04d8b
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Liegt für die Unit in dieser Periode überhaupt irgendein Wert vor?
+	/// Wenn nein, ist die Unit in diesem Monat nicht bewirtschaftet - dann ist auch mit keiner
+	/// Abrechnung und keinem Flash-Kennzeichen zu rechnen, und der Status wird Inaktiv.
+	column Hat_Daten = Unit_Status[Hat_Actuals] || Unit_Status[Hat_Budget] || Unit_Status[Hat_Forecast]
+		isHidden
+		lineageTag: 4a86bd31-c052-4179-9e28-7f13b60ac945
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Auswertbarer Status der Unit in dieser Periode.
+	///
+	/// Inaktiv          - weder Actuals (0) noch Budget (20) noch Forecast (RF/RGF/35/R12/RTD).
+	///                    Die Unit wird in diesem Monat nicht bewirtschaftet und fließt nicht in
+	///                    [Flash] ein. Vorher landeten diese Units als "Kein Kennzeichen" in ACT
+	///                    und haben die Flop-Listen verwässert.
+	/// Kein Kennzeichen - Daten vorhanden, aber weder Abrechnung noch Flash gemeldet. Das ist eine
+	///                    echte Kennzeichnung und bleibt wie bisher eine ACT-Unit.
+	/// Abgerechnet      - FIBU-Übergabe in diesem Monat.
+	/// Flash            - Flash-Übergabe in diesem Monat.
+	/// Offen            - FIBU-Übergabe im Vormonat, in diesem Monat noch nichts.
+	column Status = IF(Unit_Status[Hat_Daten], Unit_Status[Status_Kennzeichen], "Inaktiv")
+		lineageTag: 8d3f70c6-2e95-4b81-a04d-16c8b95e3720
+		summarizeBy: none
+		sortByColumn: Status_Sortierung
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Sortierreihenfolge für [Status], damit Slicer und Legenden fachlich sortiert sind.
+	column Status_Sortierung = ```
+			SWITCH(
+			    Unit_Status[Status],
+			    "Abgerechnet", 1,
+			    "Flash", 2,
+			    "Offen", 3,
+			    "Kein Kennzeichen", 4,
+			    "Inaktiv", 5,
+			    9
+			)
+			```
+		formatString: 0
+		isHidden
+		lineageTag: e70b4a92-5c13-4d68-b7f0-2a94e6d1503c
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Welche Wertart bildet für diese Unit in dieser Periode den Flash ab?
+	///
+	/// Ohne Wertung - Status Inaktiv, die Unit liefert keinen Beitrag zum Flash.
+	/// ACT          - Innenauftragsart I oder N, oder Status Abgerechnet / Kein Kennzeichen.
+	/// FC           - Status Offen, oder Status Flash bei Vertragsart PR / M / XK / XP.
+	/// V            - alles Übrige.
+	///
+	/// Die Zuordnung ist bewusst weiterhin eine berechnete Spalte (schnell, gut filterbar).
+	/// Die dynamische Ausnahme für den Managementbereich Kanne sitzt dagegen in der Measure
+	/// [Flash], weil ein Slicer keine berechnete Spalte umsteuern kann.
+	///
+	/// LOOKUPVALUE statt RELATED, weil zwischen Unit_Status und sap_master_data_unit bewusst
+	/// keine Beziehung besteht: beide Tabellen filtern die Fakten, eine zusätzliche direkte
+	/// Beziehung würde einen mehrdeutigen Pfad erzeugen.
+	column Flash_Szenario = ```
+			VAR _Werk = Unit_Status[Werk]
+			VAR _Innenauftragsart = LOOKUPVALUE(sap_master_data_unit[innenauftragsart], sap_master_data_unit[betrieb], _Werk)
+			VAR _Vertragsart = LOOKUPVALUE(sap_master_data_unit[vertragsart], sap_master_data_unit[betrieb], _Werk)
+			VAR _Status = Unit_Status[Status]
+			RETURN
+			SWITCH(
+			    TRUE(),
+			    _Status = "Inaktiv", "Ohne Wertung",
+			    _Innenauftragsart IN {"I", "N"} || _Status IN {"Kein Kennzeichen", "Abgerechnet"}, "ACT",
+			    _Status = "Offen" || (_Status = "Flash" && _Vertragsart IN {"PR", "M", "XK", "XP"}), "FC",
+			    "V"
+			)
+			```
+		lineageTag: f2c580a7-9e46-4b30-81da-73c095e6b4f1
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Unit_Status = m
+		mode: import
+		source = ```
+				let
+				    // Alle geladenen Perioden - identisches Fenster wie die Faktentabelle
+				    Perioden = List.Numbers(Startperiode, Aktuelle_Periode - Startperiode + 1),
+
+				    // Werksliste aus den bereits gefilterten Stammdaten (fünf Managementbereiche)
+				    Werke = Table.Distinct(Table.SelectColumns(sap_master_data_unit, {"betrieb"})),
+
+				    UB = Table.Buffer(Übergabedatum),
+				    #"Zusammengeführte Abfragen" = Table.NestedJoin(Werke, {"betrieb"}, UB, {"Werk"}, "UB", JoinKind.LeftOuter),
+				    #"Erweiterte UB" = Table.ExpandTableColumn(#"Zusammengeführte Abfragen", "UB", {"FIBU_Übergabe_Datum", "Flash_Übergabedatum"}, {"FIBU_Übergabe_Datum", "Flash_Übergabedatum"}),
+
+				    // Kreuzprodukt Werk x Periode
+				    #"Perioden angehängt" = Table.AddColumn(#"Erweiterte UB", "Periode", each Perioden),
+				    #"Perioden expandiert" = Table.ExpandListColumn(#"Perioden angehängt", "Periode"),
+				    #"Periode typisiert" = Table.TransformColumnTypes(#"Perioden expandiert", {{"Periode", Int64.Type}}),
+
+				    #"Datum hinzugefügt" = Table.AddColumn(#"Periode typisiert", "Datum", each fnPeriodeStart(Geschäftsjahr, [Periode]), type date),
+
+				    // Dieselbe Regel wie früher in Übergabedatum, nur eben je Periode statt einmal global
+				    #"Kennzeichen hinzugefügt" = Table.AddColumn(#"Datum hinzugefügt", "Status_Kennzeichen", each
+				        let
+				            MonatStart    = [Datum],
+				            MonatEnde     = Date.AddMonths(MonatStart, 1),
+				            VormonatStart = Date.AddMonths(MonatStart, -1),
+				            DatumFibu     = [FIBU_Übergabe_Datum],
+				            DatumFlash    = [Flash_Übergabedatum],
+				            FibuAktuell   = DatumFibu  <> null and DatumFibu  >= MonatStart    and DatumFibu  < MonatEnde,
+				            FlashAktuell  = DatumFlash <> null and DatumFlash >= MonatStart    and DatumFlash < MonatEnde,
+				            FibuVormonat  = DatumFibu  <> null and DatumFibu  >= VormonatStart and DatumFibu  < MonatStart
+				        in
+				            if FibuAktuell then "Abgerechnet"
+				            else if FlashAktuell then "Flash"
+				            else if FibuVormonat then "Offen"
+				            else "Kein Kennzeichen", type text),
+
+				    #"Jahr hinzugefügt" = Table.AddColumn(#"Kennzeichen hinzugefügt", "Fiscal_Year", each Geschäftsjahr, Int64.Type),
+
+				    // Schlüssel exakt wie in V_SAP_EXPORTS_cleansed aufgebaut
+				    #"Schlüssel hinzugefügt" = Table.AddColumn(#"Jahr hinzugefügt", "Status_Key", each
+				        Text.From([betrieb]) & "|" & Text.From(Geschäftsjahr) & "|" & Text.From([Periode]), type text),
+
+				    #"Umbenannte Spalten" = Table.RenameColumns(#"Schlüssel hinzugefügt", {{"betrieb", "Werk"}}),
+				    Ergebnis = Table.SelectColumns(#"Umbenannte Spalten", {"Status_Key", "Werk", "Fiscal_Year", "Periode", "Datum", "FIBU_Übergabe_Datum", "Flash_Übergabedatum", "Status_Kennzeichen"})
+				in
+				    Ergebnis
+				```
+
+	annotation PBI_ResultType = Table
+
