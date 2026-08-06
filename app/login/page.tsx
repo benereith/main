@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { supabaseKonfiguriert } from "@/lib/supabase/konfiguriert";
+import VorschauHinweis from "@/components/VorschauHinweis";
 
 function LoginFormular() {
   const router = useRouter();
@@ -129,6 +131,10 @@ function LoginFormular() {
 }
 
 export default function Login() {
+  if (!supabaseKonfiguriert) {
+    return <VorschauHinweis was="Der Login ist" />;
+  }
+
   return (
     <div className="container-seite flex min-h-[85vh] items-center justify-center py-16">
       <Suspense fallback={null}>

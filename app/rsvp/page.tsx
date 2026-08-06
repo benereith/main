@@ -1,10 +1,16 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { supabaseKonfiguriert } from "@/lib/supabase/konfiguriert";
+import VorschauHinweis from "@/components/VorschauHinweis";
 import RsvpFormular from "@/components/RsvpFormular";
 
 export const dynamic = "force-dynamic";
 
 export default async function RsvpSeite() {
+  if (!supabaseKonfiguriert) {
+    return <VorschauHinweis was="Das Anmeldeformular ist" />;
+  }
+
   const supabase = await createClient();
   const {
     data: { user },

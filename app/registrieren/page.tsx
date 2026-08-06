@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { supabaseKonfiguriert } from "@/lib/supabase/konfiguriert";
+import VorschauHinweis from "@/components/VorschauHinweis";
 import { hochzeit } from "@/content/hochzeit";
 
 export default function Registrieren() {
@@ -14,6 +16,10 @@ export default function Registrieren() {
   const [laedt, setLaedt] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
   const [fertig, setFertig] = useState(false);
+
+  if (!supabaseKonfiguriert) {
+    return <VorschauHinweis was="Die Gäste-Anmeldung ist" />;
+  }
 
   const absenden = async (e: React.FormEvent) => {
     e.preventDefault();

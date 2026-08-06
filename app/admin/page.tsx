@@ -1,12 +1,18 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { supabaseKonfiguriert } from "@/lib/supabase/konfiguriert";
+import VorschauHinweis from "@/components/VorschauHinweis";
 import { hochzeit } from "@/content/hochzeit";
 import AdminTabelle, { type RsvpZeile } from "@/components/AdminTabelle";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminSeite() {
+  if (!supabaseKonfiguriert) {
+    return <VorschauHinweis was="Der Admin-Bereich ist" />;
+  }
+
   const supabase = await createClient();
   const {
     data: { user },

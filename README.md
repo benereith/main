@@ -303,19 +303,49 @@ nicht auf der Liste steht, fällt dir im Admin-Bereich sofort auf.
 
 ---
 
-## 8. Lokal entwickeln
+## 8. Lokal anschauen
+
+### Ohne alles — nur mal draufgucken
+
+Du brauchst dafür **kein** Supabase und **kein** Vercel. Einmal
+[Node.js](https://nodejs.org) installieren (die LTS-Version), dann im
+Projektordner:
 
 ```bash
 npm install
+npm run dev
+```
+
+Die Seite läuft dann auf **http://localhost:3000**.
+
+Ohne Zugangsdaten startet sie im **Vorschau-Modus**: Alle Inhalte — Startseite,
+Ablauf, Location, Anfahrt, Übernachtung, Dresscode, Fotos, Geschenke, FAQ —
+funktionieren ganz normal. Nur Login, Anmeldeformular und Admin-Bereich zeigen
+statt eines Fehlers einen Hinweis. Oben läuft ein schmaler Balken mit, der dich
+daran erinnert.
+
+Genau so kannst du in Ruhe `content/hochzeit.ts` durchgehen, Texte umschreiben
+und Bilder einsetzen. Während `npm run dev` läuft, aktualisiert sich der Browser
+bei jedem Speichern automatisch.
+
+Beenden: `Strg + C` im Terminal.
+
+### Mit Datenbank, um Anmeldung und Admin zu testen
+
+Sobald du das Supabase-Projekt hast (Schritt 1 bis 3 oben):
+
+```bash
 cp .env.example .env.local      # danach die beiden Werte eintragen
 npm run dev
 ```
 
-Die Seite läuft dann auf http://localhost:3000.
-
 Vergiss nicht, in Supabase unter **Authentication → URL Configuration** die
 Adresse `http://localhost:3000/auth/callback` als Redirect-URL zu ergänzen,
 sonst funktionieren die Bestätigungslinks lokal nicht.
+
+> Tipp: Leg dir dort ruhig ein zweites Supabase-Projekt als Spielwiese an. Dann
+> kannst du Testgäste anlegen und wieder löschen, ohne dass es die echten Daten
+> berührt.
 
 ---
 

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { supabaseKonfiguriert } from "@/lib/supabase/konfiguriert";
 import { hochzeit } from "@/content/hochzeit";
 
 const links = [
@@ -21,6 +22,9 @@ export default function Navigation() {
   const [istAdmin, setIstAdmin] = useState(false);
 
   useEffect(() => {
+    // Ohne Supabase-Zugangsdaten gibt es keine Anmeldung — Vorschau-Modus.
+    if (!supabaseKonfiguriert) return;
+
     const supabase = createClient();
 
     const pruefen = async () => {

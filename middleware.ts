@@ -1,13 +1,19 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import {
+  supabaseKey,
+  supabaseKonfiguriert,
+  supabaseUrl,
+} from "@/lib/supabase/konfiguriert";
 
 export async function middleware(request: NextRequest) {
+  // Vorschau-Modus ohne Supabase: einfach durchlassen, die Seiten selbst
+  // zeigen dann einen Hinweis.
+  if (!supabaseKonfiguriert) return NextResponse.next({ request });
+
   let response = NextResponse.next({ request });
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
+  const supabase = createServerClient(supabaseUrl, supabaseKey, {
       cookies: {
         getAll() {
           return request.cookies.getAll();
@@ -20,10 +26,9 @@ export async function middleware(request: NextRequest) {
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options),
           );
-        },
       },
     },
-  );
+  });
 
   // Hält die Session frisch. Nicht entfernen.
   const {

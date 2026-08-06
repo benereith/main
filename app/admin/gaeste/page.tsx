@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { supabaseKonfiguriert } from "@/lib/supabase/konfiguriert";
+import VorschauHinweis from "@/components/VorschauHinweis";
 import { hochzeit } from "@/content/hochzeit";
 import GaesteVerwaltung, {
   type Gast,
@@ -10,6 +12,10 @@ import GaesteVerwaltung, {
 export const dynamic = "force-dynamic";
 
 export default async function GaesteSeite() {
+  if (!supabaseKonfiguriert) {
+    return <VorschauHinweis was="Die Gästeliste ist" />;
+  }
+
   const supabase = await createClient();
   const {
     data: { user },

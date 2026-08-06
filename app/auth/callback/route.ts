@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { supabaseKonfiguriert } from "@/lib/supabase/konfiguriert";
 
 /**
  * Landepunkt für den Link aus der Bestätigungsmail.
@@ -11,6 +12,10 @@ export async function GET(request: NextRequest) {
   const tokenHash = searchParams.get("token_hash");
   const type = searchParams.get("type");
   const weiter = searchParams.get("weiter") ?? "/rsvp";
+
+  if (!supabaseKonfiguriert) {
+    return NextResponse.redirect(`${origin}/rsvp`);
+  }
 
   const supabase = await createClient();
 
