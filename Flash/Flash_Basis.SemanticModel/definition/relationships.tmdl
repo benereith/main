@@ -6,19 +6,14 @@ relationship dd992e52-f2cf-a39f-52d2-417eb088fafc
 	fromColumn: V_SAP_EXPORTS_cleansed.Object_group
 	toColumn: sap_master_data_unit.betrieb
 
-// Fakten an den periodenscharfen Abrechnungsstatus. Ersetzt die frühere Status-Spalte in
-// sap_master_data_unit: der Schlüssel enthält die Periode, damit vergangene Monate ihren
-// eigenen Status behalten.
 relationship 5c2f8ae1-90d3-4b76-a1e8-4f60c7395bd2
 	fromColumn: V_SAP_EXPORTS_cleansed.Status_Key
 	toColumn: Unit_Status.Status_Key
 
-// Kommentare hängen wie eine zweite Faktentabelle an der Unit-Dimension ...
 relationship 7b39d0f5-6c48-41ea-92b7-08d5a1e64c37
 	fromColumn: Kommentare.Werk
 	toColumn: sap_master_data_unit.betrieb
 
-// ... und an der Zeitachse, damit der Monats-Slicer die Kommentare mitfiltert.
 relationship e4a1682c-3f95-4d07-b6c1-29e0d7b53f8a
 	fromColumn: Kommentare.Datum
 	toColumn: DIM_DATE.Datum
