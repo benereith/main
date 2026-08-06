@@ -5,7 +5,9 @@ Webseite zur Hochzeit am 7. August 2027 im Hotel Kloster Haydau, Morschen.
 **Was drin ist:** Ablauf, Location, Anfahrt mit Karte, Übernachtung, Dresscode
 mit Beispielbildern, Fotogalerie (nach der Hochzeit), FAQ, Geschenke — sowie ein
 Gäste-Login mit Bestätigungsmail, ein Anmeldeformular und ein Admin-Bereich, in
-dem ihr seht, wer zu- und abgesagt hat und wer wo übernachtet.
+dem ihr seht, wer zu- und abgesagt hat und wer wo übernachtet. Eure vollständige
+Gästeliste könnt ihr importieren — Anmeldungen werden automatisch dem passenden
+Eintrag zugeordnet, Unklares ordnet ihr per Klick von Hand zu.
 
 ---
 
@@ -17,8 +19,9 @@ dem ihr seht, wer zu- und abgesagt hat und wer wo übernachtet.
 4. [Bilder einfügen](#4-bilder-einfügen)
 5. [Fotos nach der Hochzeit freischalten](#5-fotos-nach-der-hochzeit-freischalten)
 6. [Admin-Bereich](#6-admin-bereich)
-7. [Lokal entwickeln](#7-lokal-entwickeln)
-8. [Kosten](#8-kosten)
+7. [Gästeliste](#7-gästeliste)
+8. [Lokal entwickeln](#8-lokal-entwickeln)
+9. [Kosten](#9-kosten)
 
 ---
 
@@ -216,12 +219,14 @@ ohne die zweite an keine Gästedaten.
 
 **Was du dort siehst:**
 
+- Stand der Einladungen: wie viele der Eingeladenen schon geantwortet haben
 - Zusagen, Absagen, Personen gesamt, Kinder
 - Wer im Kloster Haydau schläft, wer woanders, wer gar nicht
 - Erwartete Personen pro Tag (Freitag / Samstag / Sonntag)
 - Vegetarier, Veganer, Allergien, Shuttle-Bedarf
-- Die vollständige Gästeliste mit Suche, Filtern und **CSV-Export** — den
-  kannst du in Excel öffnen und dem Hotel schicken
+- Alle Rückmeldungen mit Suche, Filtern und **CSV-Export** — den kannst du in
+  Excel öffnen und dem Hotel schicken
+- Einen Hinweis, wenn eine Anmeldung zu keinem Eintrag der Gästeliste passt
 
 **Datenschutz:** Gäste sehen ausschließlich ihre eigene Anmeldung, niemals die
 der anderen. Das ist direkt in der Datenbank per Row Level Security abgesichert,
@@ -229,7 +234,76 @@ nicht nur in der Oberfläche.
 
 ---
 
-## 7. Lokal entwickeln
+## 7. Gästeliste
+
+Unter **`/admin/gaeste`** pflegst du die Liste aller Eingeladenen. Damit siehst
+du nicht nur, wer geantwortet hat, sondern vor allem: **wer noch nicht.**
+
+### Liste importieren
+
+Reiter **„Liste importieren"**. Du kannst direkt aus Excel oder Google Sheets
+kopieren und ins Textfeld einfügen — Semikolon, Tab und Komma werden alle
+erkannt.
+
+```
+Vorname;Nachname;E-Mail;Gruppe;Seite;Notiz
+Lisa;Müller;lisa.mueller@web.de;Familie Müller;Braut;
+Tom;Müller;;Familie Müller;Braut;Sohn von Lisa
+Jan;Schneider;jan@beispiel.de;;Bräutigam;Trauzeuge
+```
+
+Nur **Vorname** und **Nachname** sind Pflicht. Eine Kopfzeile darf drin bleiben.
+Bevor du auf „Importieren" drückst, zeigt dir die Vorschau rechts, was neu
+angelegt wird und was übersprungen wird — **bereits vorhandene Namen werden
+nicht doppelt angelegt.** Du kannst den Import also gefahrlos wiederholen, wenn
+die Liste wächst.
+
+Einzelne Gäste kannst du auch direkt in der Oberfläche hinzufügen, bearbeiten
+und löschen.
+
+### Wie die Zuordnung funktioniert
+
+Meldet sich jemand auf der Webseite an, sucht das System automatisch den
+passenden Eintrag — in dieser Reihenfolge:
+
+1. **Über die E-Mail-Adresse.** Passt die Adresse aus der Anmeldung zu einer
+   Adresse auf der Gästeliste, ist die Sache klar.
+2. **Über Vor- und Nachname.** Groß-/Kleinschreibung, Umlaute und „ß" spielen
+   dabei keine Rolle: „SOREN strauss" findet „Sören Strauß".
+3. **Bleibt es unklar** — kein Treffer oder mehrere gleiche Namen —, passiert
+   nichts Automatisches. Die Anmeldung landet im Reiter **„Noch zuzuordnen"**.
+
+Ein Eintrag der Gästeliste wird nie zweimal vergeben. Und eine von Hand
+gesetzte Zuordnung wird nie automatisch überschrieben.
+
+### Von Hand zuordnen
+
+Reiter **„Noch zuzuordnen"**: Zu jeder offenen Anmeldung wählst du den
+passenden Eintrag aus. Gäste mit gleichem Nachnamen stehen in der Auswahl ganz
+oben. Steht jemand gar nicht auf der Liste (kurzfristige Einladung), legst du
+den Eintrag zuerst unter „Gästeliste" an.
+
+Hast du die Gästeliste nachträglich ergänzt, drück oben rechts auf
+**„Zuordnung neu prüfen"** — dann werden alle offenen Anmeldungen noch einmal
+gegen die aktualisierte Liste geprüft.
+
+### Nachfassen
+
+Im Reiter „Gästeliste" auf **„Ohne Antwort"** filtern und dann auf
+**„Nachfassen"** drücken: Dein Mailprogramm öffnet sich mit allen Adressen im
+BCC, die noch nicht geantwortet haben. (Nur für Gäste, bei denen eine
+E-Mail-Adresse hinterlegt ist.)
+
+### Muss jemand auf der Liste stehen, um sich anzumelden?
+
+Nein. Jeder mit dem Link kann sich anmelden — die Gästeliste ist eine
+Auswertungshilfe, keine Zugangssperre. Das ist Absicht: sonst käme ein Gast
+nicht durch, nur weil er eine andere Mailadresse benutzt als erwartet. Wer
+nicht auf der Liste steht, fällt dir im Admin-Bereich sofort auf.
+
+---
+
+## 8. Lokal entwickeln
 
 ```bash
 npm install
@@ -245,7 +319,7 @@ sonst funktionieren die Bestätigungslinks lokal nicht.
 
 ---
 
-## 8. Kosten
+## 9. Kosten
 
 | Posten | Kosten |
 |---|---|

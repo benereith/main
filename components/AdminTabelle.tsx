@@ -24,6 +24,8 @@ export type RsvpZeile = {
   shuttle: boolean;
   lied_wunsch: string | null;
   nachricht: string | null;
+  gast_id: string | null;
+  zuordnung_art: "email" | "name" | "manuell" | null;
   created_at: string;
 };
 
@@ -49,7 +51,13 @@ const essenLabel: Record<RsvpZeile["essen"], string> = {
   vegan: "Vegan",
 };
 
-export default function AdminTabelle({ zeilen }: { zeilen: RsvpZeile[] }) {
+export default function AdminTabelle({
+  zeilen,
+  gastNamen,
+}: {
+  zeilen: RsvpZeile[];
+  gastNamen: Record<string, string>;
+}) {
   const [filter, setFilter] = useState<Filter>("alle");
   const [suche, setSuche] = useState("");
   const [offen, setOffen] = useState<string | null>(null);
@@ -101,8 +109,13 @@ export default function AdminTabelle({ zeilen }: { zeilen: RsvpZeile[] }) {
     };
 
     const csv = [
-      spalten.join(";"),
-      ...gefiltert.map((r) => spalten.map((c) => escape(r[c])).join(";")),
+      ["gaesteliste_name", ...spalten].join(";"),
+      ...gefiltert.map((r) =>
+        [
+          escape(r.gast_id ? (gastNamen[r.gast_id] ?? "") : ""),
+          ...spalten.map((c) => escape(r[c])),
+        ].join(";"),
+      ),
     ].join("\r\n");
 
     // BOM, damit Excel Umlaute korrekt anzeigt
@@ -112,7 +125,7 @@ export default function AdminTabelle({ zeilen }: { zeilen: RsvpZeile[] }) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `gaesteliste-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `rueckmeldungen-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -120,7 +133,7 @@ export default function AdminTabelle({ zeilen }: { zeilen: RsvpZeile[] }) {
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-display text-2xl">Gästeliste</h2>
+        <h2 className="font-display text-2xl">Rückmeldungen</h2>
         <button onClick={csvExport} className="btn btn-rand !py-2 !text-sm">
           Als CSV exportieren ({gefiltert.length})
         </button>
@@ -186,10 +199,22 @@ export default function AdminTabelle({ zeilen }: { zeilen: RsvpZeile[] }) {
                         </div>
                         <a
                           href={`mailto:${r.email}`}
-                          className="text-xs text-grau underline underline-offset-2"
+                          className="block text-xs text-grau underline underline-offset-2"
                         >
                           {r.email}
                         </a>
+                        {r.gast_id && gastNamen[r.gast_id] ? (
+                          gastNamen[r.gast_id].toLowerCase() !==
+                          `${r.vorname} ${r.nachname}`.toLowerCase() ? (
+                            <span className="mt-0.5 block text-xs text-gold">
+                              Gästeliste: {gastNamen[r.gast_id]}
+                            </span>
+                          ) : null
+                        ) : (
+                          <span className="mt-0.5 block text-xs text-gold">
+                            nicht auf der Gästeliste zugeordnet
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <span
@@ -234,6 +259,20 @@ export default function AdminTabelle({ zeilen }: { zeilen: RsvpZeile[] }) {
                         <td colSpan={7} className="px-4 py-4">
                           <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
                             <Detail label="Telefon" wert={r.telefon} />
+                            <Detail
+                              label="Gästeliste"
+                              wert={
+                                r.gast_id
+                                  ? `${gastNamen[r.gast_id] ?? "unbekannt"} (${
+                                      r.zuordnung_art === "manuell"
+                                        ? "von Hand"
+                                        : r.zuordnung_art === "email"
+                                          ? "per E-Mail"
+                                          : "per Name"
+                                    })`
+                                  : "nicht zugeordnet"
+                              }
+                            />
                             <Detail
                               label="Begleitung"
                               wert={

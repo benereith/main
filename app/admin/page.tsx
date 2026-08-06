@@ -34,12 +34,22 @@ export default async function AdminSeite() {
     );
   }
 
-  const { data, error } = await supabase
-    .from("rsvps")
-    .select("*")
-    .order("created_at", { ascending: false });
+  const [{ data, error }, { data: gaesteliste }] = await Promise.all([
+    supabase.from("rsvps").select("*").order("created_at", { ascending: false }),
+    supabase.from("gaeste").select("id, vorname, nachname"),
+  ]);
 
   const zeilen = (data ?? []) as RsvpZeile[];
+  const eingeladen = gaesteliste?.length ?? 0;
+  const nichtZugeordnet = zeilen.filter((r) => !r.gast_id).length;
+  const ohneAntwort = Math.max(
+    0,
+    eingeladen - zeilen.filter((r) => r.gast_id).length,
+  );
+
+  const gastNamen = new Map(
+    (gaesteliste ?? []).map((g) => [g.id, `${g.vorname} ${g.nachname}`]),
+  );
 
   // ---- Auswertung ----
   const zusagen = zeilen.filter((r) => r.teilnahme === "ja");
@@ -87,10 +97,54 @@ export default async function AdminSeite() {
             {zeilen.length} Rückmeldungen · Deadline {hochzeit.rsvpDeadline}
           </p>
         </div>
-        <Link href="/" className="btn btn-rand !py-2 !text-sm">
-          Zur Webseite
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/admin/gaeste" className="btn btn-primar !py-2 !text-sm">
+            Gästeliste
+          </Link>
+          <Link href="/" className="btn btn-rand !py-2 !text-sm">
+            Zur Webseite
+          </Link>
+        </div>
       </header>
+
+      {eingeladen > 0 && (
+        <div className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-xl bg-sand/50 p-5">
+          <div>
+            <p className="text-sm text-grau">Stand der Einladungen</p>
+            <p className="mt-1 font-display text-2xl">
+              {eingeladen - ohneAntwort} von {eingeladen} haben geantwortet
+            </p>
+            {ohneAntwort > 0 && (
+              <p className="mt-1 text-sm text-grau">
+                {ohneAntwort} Eingeladene fehlen noch.
+              </p>
+            )}
+          </div>
+          <div className="h-2 min-w-48 flex-1 overflow-hidden rounded-full bg-white">
+            <div
+              className="h-full rounded-full bg-salbei-dunkel transition-all"
+              style={{
+                width: `${Math.round(((eingeladen - ohneAntwort) / eingeladen) * 100)}%`,
+              }}
+            />
+          </div>
+          <Link href="/admin/gaeste" className="btn btn-rand !py-2 !text-sm">
+            Wer fehlt noch?
+          </Link>
+        </div>
+      )}
+
+      {nichtZugeordnet > 0 && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-gold/15 p-4">
+          <p className="text-sm">
+            <strong>{nichtZugeordnet}</strong> Anmeldung(en) hängen an keinem
+            Eintrag der Gästeliste.
+          </p>
+          <Link href="/admin/gaeste" className="btn btn-rand !py-1.5 !text-sm">
+            Von Hand zuordnen
+          </Link>
+        </div>
+      )}
 
       {error && (
         <p className="mt-8 rounded-lg bg-altrosa/20 p-4 text-sm">
@@ -189,7 +243,7 @@ export default async function AdminSeite() {
 
       {/* Gästeliste */}
       <div className="mt-10">
-        <AdminTabelle zeilen={zeilen} />
+        <AdminTabelle zeilen={zeilen} gastNamen={Object.fromEntries(gastNamen)} />
       </div>
     </div>
   );
