@@ -152,9 +152,15 @@ table Unit_Status
 		annotation SummarizationSetBy = Automatic
 
 	/// Sortierreihenfolge für [Status], damit Slicer und Legenden fachlich sortiert sind.
+	///
+	/// Die Spalte wiederholt bewusst die Ableitung aus [Hat_Daten] und [Status_Kennzeichen],
+	/// statt [Status] zu referenzieren: eine Sortierspalte gilt in der Engine als Abhängigkeit
+	/// der sortierten Spalte, ein Verweis auf [Status] wäre also eine Ringabhängigkeit.
 	column Status_Sortierung = ```
+			VAR _Status = IF(Unit_Status[Hat_Daten], Unit_Status[Status_Kennzeichen], "Inaktiv")
+			RETURN
 			SWITCH(
-			    Unit_Status[Status],
+			    _Status,
 			    "Abgerechnet", 1,
 			    "Flash", 2,
 			    "Offen", 3,
