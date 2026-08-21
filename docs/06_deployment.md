@@ -178,8 +178,8 @@ df_sap_ingest aktualisieren            ─┘         │                 │   
 | 2 | `df_map_unit_assignment` aktualisieren | Dataflow-Aktualisierung | – | SharePoint | `stg_map_unit_assignment` |
 | 3 | `df_sap_ingest` aktualisieren | Dataflow-Aktualisierung | – | SAP-Warehouse `Reporting`, Gen1-Dataflow `sap_master_data_unit` | `bronze_sap_unit`, `bronze_sap_revenue` |
 | 4 | `nb_05_snapshot` | Notebook | 1 **und** 2, je Succeeded | alle `stg_*` | `bronze_crm_*`, `bronze_map_unit_assignment` |
-| 5 | `nb_10_silver` | Notebook | 4 **und** 3, je Succeeded | `bronze_crm_*`, **`bronze_sap_unit`** | `silver_opportunity`, `silver_contract`, `silver_unit`, `silver_*_history`, `silver_dq_reject` |
-| 6 | `nb_20_gold` | Notebook | 5, Succeeded | `silver_*`, `bronze_map_unit_assignment`, **`bronze_sap_revenue`** | `gold_dim_*`, `gold_fct_*` |
+| 5 | `nb_10_silver` | Notebook | 4, Succeeded | `bronze_crm_*` | `silver_opportunity`, `silver_contract`, `silver_*_history`, `silver_dq_reject` |
+| 6 | `nb_20_gold` | Notebook | 5 **und** 3, je Succeeded | `silver_*`, `bronze_map_unit_assignment`, **`bronze_sap_unit`**, **`bronze_sap_revenue`** | `gold_dim_*`, `gold_fct_*` |
 | 7 | `nb_30_quality` | Notebook | 6, Succeeded | `gold_fct_net_new_ity`, `silver_*` | `gold_dq_checks` |
 | 8 | Semantikmodell aktualisieren | native Aktivität, sonst Web-Aktivität gegen die Enhanced-Refresh-REST-API | 7, Succeeded | – | Import-Tabellen des Modells |
 

@@ -174,7 +174,7 @@ write_delta(dim_hfm, "gold_dim_hfm_struktur")
 # Wie in nb_30_quality: die rohe TABLE_OR_VIEW_NOT_FOUND nennt nur den
 # Tabellennamen, nicht das Notebook, das sie haette schreiben sollen.
 VORAUSSETZUNGEN = {
-    "silver_unit": "nb_10_silver (Abschnitt 3, braucht bronze_sap_unit)",
+    "bronze_sap_unit": "Dataflow df_sap_ingest, Abfrage bronze_sap_unit",
     "silver_opportunity": "nb_10_silver (Abschnitt 1)",
     "silver_contract": "nb_10_silver (Abschnitt 2)",
 }
@@ -183,26 +183,104 @@ if _fehlend:
     raise ValueError(
         "Vorgaengertabelle(n) fehlen: " + ", ".join(sorted(_fehlend)) + ".\n"
         + "\n".join(f"  {t} <- {VORAUSSETZUNGEN[t]}" for t in sorted(_fehlend))
-        + "\nnb_10_silver zuerst fehlerfrei durchlaufen lassen."
+        + "\nDen jeweils genannten Schritt zuerst fehlerfrei durchlaufen lassen."
     )
 
-unit = spark.table("silver_unit")
+# Die Betriebsstammdaten kommen UNVERAENDERT aus Bronze. Es gibt keine
+# Silver-Stufe mehr fuer diese Tabelle: sie hat nichts bereinigt oder
+# gefiltert, sondern nur die vier unten stehenden Spalten ergaenzt - und dabei
+# ueber eine Auswahlliste jede neue Quellspalte stillschweigend liegen lassen.
+#
+# ALLE Spalten der Quelle bleiben erhalten. Was hier passiert, ist
+# ausschliesslich ADDITIV: vier abgeleitete Spalten und der Unit-Status. Keine
+# Spalte wird weggelassen, umbenannt oder umgerechnet.
+unit = spark.table("bronze_sap_unit")
 
-DIM_UNIT_SPALTEN = [
-    "betrieb", "werk_bezeichnung", "bezeichnung_betrieb", "buchungskreis",
-    "sektor", "hfm_sektor", "betriebstyp", "known_unknown", "vertragsbeginn",
-    "schliessung", "bezeichnung_vertragsart", "bezeichnung_region",
-    "bezeichnung_management", "bezeichnung_verantwortungsbereich",
-    "bezeichnung_branche", "bezeichnung_kundengruppe", "bundesland", "stadt",
-    "cause_of_change", "bezeichnung_cause_of_change",
-    "cause_of_change_fy", "cause_of_change_ny",
-]
+# Tabelle da, aber ohne Fachspalten: das passiert, wenn die Quellnavigation in
+# df_sap_ingest nicht auf sap_master_data_unit zeigt. Uebrig bleiben dann nur
+# loaded_at und _fehlende_felder. Ohne diese Pruefung waere die Rohmeldung ein
+# UNRESOLVED_COLUMN auf 'betrieb' und zeigte auf dieses Notebook statt auf den
+# Dataflow. (Stand frueher in nb_10_silver, Abschnitt 3.)
+UNIT_PFLICHT = ["betrieb", "bezeichnung_betrieb", "sektor"]
+_fehlt = [s for s in UNIT_PFLICHT if s not in unit.columns]
+if _fehlt:
+    raise ValueError(
+        "bronze_sap_unit enthaelt keine Betriebsstammdaten.\n"
+        f"Fehlende Pflichtspalten: {', '.join(_fehlt)}\n"
+        f"Vorhandene Spalten: {', '.join(unit.columns)}\n"
+        "Ursache liegt im Dataflow df_sap_ingest, Abfrage bronze_sap_unit: die "
+        "Navigationsschritte am Anfang der Abfrage muessen auf "
+        "sap_master_data_unit zeigen."
+    )
 
+# Optionale Stammdatenfelder ergaenzen, damit ein einzelnes fehlendes Attribut
+# den Lauf nicht kippt. Die Liste beschraenkt NICHT die Auswahl - alle
+# uebrigen Quellspalten laufen ohnehin unveraendert mit.
+unit = ergaenze_spalten(
+    unit,
+    {
+        "buchungskreis": "string", "vertragsbeginn": "date", "schliessung": "date",
+        "bezeichnung_vertragsart": "string", "bezeichnung_region": "string",
+        "bezeichnung_management": "string", "bezeichnung_verantwortungsbereich": "string",
+        "bezeichnung_branche": "string", "bezeichnung_kundengruppe": "string",
+        "bundesland": "string", "stadt": "string",
+        "cause_of_change": "int", "bezeichnung_cause_of_change": "string",
+        "cause_of_change_fy": "int", "cause_of_change_ny": "int",
+    },
+    "bronze_sap_unit",
+)
+
+# Diese vier Spalten entstehen erst hier, weil sie Wissen brauchen, das nicht
+# in den SAP-Stammdaten steht: die Planbetriebslisten aus nb_00_config und die
+# HFM-Sektor-Harmonisierung.
+#
+# betriebstyp ist dabei die wichtigste: die Kennzahlen [Roll Budget],
+# [ITY Budget], [Unknown ITY Budget] und [Budget Net New (SAP)] grenzen
+# darueber ab. Faellt sie weg, liefern alle vier stillschweigend leere Werte.
 dim_unit_sap = (
-    unit.select(*DIM_UNIT_SPALTEN)
+    unit.withColumn(
+        "werk_bezeichnung",
+        F.concat(
+            F.lpad(F.col("betrieb").cast("string"), 4, "0"),
+            F.lit(" - "),
+            F.col("bezeichnung_betrieb"),
+        ),
+    )
+    .withColumn(
+        "betriebstyp",
+        F.when(F.col("betrieb").isin(PLANBETRIEBE_ROLL), F.lit("Plan-Betriebe Roll"))
+        .when(F.col("betrieb").isin(PLANBETRIEBE_ITY), F.lit("Plan-Betriebe ITY"))
+        .otherwise(F.lit("Real-Betriebe")),
+    )
+    .withColumn(
+        "known_unknown",
+        F.when(F.col("betriebstyp") == "Real-Betriebe", F.lit("known")).otherwise(
+            F.lit("unknown")
+        ),
+    )
+    # HFM-Sektor-Harmonisierung (aus dim_sap_master_data_unit uebernommen)
+    .withColumn(
+        "hfm_sektor",
+        F.when(
+            F.col("bezeichnung_verantwortungsbereich") == "Food Services",
+            F.when(F.col("sektor").isin("SE", "RE", "ED"), F.lit("HC"))
+            .when(F.col("sektor").isin("OV", "RT"), F.lit("BU"))
+            .otherwise(F.col("sektor")),
+        )
+        .when(
+            F.col("bezeichnung_verantwortungsbereich") == "Support Service",
+            F.when(F.col("sektor") == "OV", F.lit("BU")).otherwise(F.col("sektor")),
+        )
+        .otherwise(F.col("sektor")),
+    )
     .dropDuplicates(["betrieb"])
     .withColumn("unit_status", F.lit("In Betrieb"))
 )
+
+# Spaltensatz der Dimension - ergibt sich jetzt aus der Quelle statt aus einer
+# gepflegten Liste. Wird nur noch gebraucht, um die geplanten Units unten
+# typgerecht aufzufuellen.
+DIM_UNIT_SPALTEN = dim_unit_sap.columns
 
 # --- Geplante Units aus dem Mapping ergaenzen ------------------------------
 # Eine Dimension allein aus den SAP-Stammdaten laesst genau die Units in die
@@ -792,14 +870,17 @@ else:
         .withColumn("betrag_ytd", F.sum("betrag_monat").over(w_ytd))
     )
 
-    # dropDuplicates ist hier NICHT optional: silver_unit fuehrt je Betrieb
-    # potenziell mehrere Zeilen, und dieser Join steht auf der Mengenseite der
-    # Umsaetze. Ohne Entdopplung vervielfacht er jede Umsatzzeile - lautlos,
-    # weil das Ergebnis wie echte Daten aussieht. gold_dim_unit entdoppelt
-    # bereits; hier fehlte es.
+    # Aus der bereits abgeleiteten Betriebsdimension, nicht erneut aus Bronze:
+    # betriebstyp entsteht oben aus den Planbetriebslisten und muss hier
+    # dieselbe Auspraegung haben wie in gold_dim_unit. Zweimal abgeleitet
+    # liefe es beim naechsten Eingriff auseinander.
+    #
+    # dropDuplicates ist trotzdem NICHT optional: dieser Join steht auf der
+    # Mengenseite der Umsaetze, und schon eine doppelte Betriebszeile
+    # vervielfacht jede Umsatzzeile - lautlos, weil das Ergebnis wie echte
+    # Daten aussieht.
     unit_coch = (
-        spark.table("silver_unit")
-        .select(
+        dim_unit_sap.select(
             F.col("betrieb").alias("werk"), "cause_of_change", "cause_of_change_fy",
             "cause_of_change_ny", "betriebstyp",
         )

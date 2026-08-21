@@ -5,9 +5,12 @@
 # Bronze -> Silver: typisieren, bereinigen, fachlich filtern, historisieren.
 #
 # Eingang  : bronze_crm_opportunity, bronze_crm_contract, bronze_crm_account,
-#            bronze_crm_systemuser, bronze_crm_territory, bronze_sap_unit,
-#            bronze_sap_revenue
-# Ausgang  : silver_opportunity, silver_contract, silver_unit, silver_revenue
+#            bronze_crm_territory
+# Ausgang  : silver_opportunity, silver_contract, silver_*_history,
+#            silver_dq_reject
+#
+# Die SAP-Tabellen laufen NICHT ueber diese Schicht: bronze_sap_unit und
+# bronze_sap_revenue gehen unveraendert nach nb_20_gold.
 #
 # Zwei Dinge passieren hier, die es in den Altmodellen nicht gab:
 #   1. SCD2-Historisierung. Jeder Ladelauf schreibt einen Snapshot; geaenderte
@@ -376,110 +379,18 @@ write_delta(con_silver, "silver_contract", mode="overwrite")
 
 
 # ===========================================================================
-# 3. SAP-Stammdaten (Betriebe)
+# 3. SAP-Stammdaten (Betriebe) - ENTFAELLT HIER
 # ===========================================================================
-# bronze_sap_unit kommt aus dem Dataflow df_sap_ingest (Abfrage
-# bronze_sap_unit) und wird dort mit ERSETZEN geschrieben - ohne
-# Historisierung, weil Betriebsstammdaten ein Ist-Stand sind und keine
-# Bewegung. nb_05_snapshot fasst die Tabelle deshalb nicht an.
+# Frueher entstand an dieser Stelle silver_unit. Der Schritt ist entfallen:
+# er hat nichts bereinigt, gefiltert oder historisiert, sondern nur vier
+# abgeleitete Spalten ergaenzt (werk_bezeichnung, betriebstyp,
+# known_unknown, hfm_sektor). Dafuer eine eigene Schicht zu durchlaufen
+# kostete eine Tabelle, einen Schreibvorgang und eine Auswahlliste, in der
+# jede neue Quellspalte stillschweigend liegen blieb.
 #
-# Fehlt sie, ist df_sap_ingest nicht gelaufen. Das darf die CRM-Verarbeitung
-# nicht entwerten: silver_opportunity und silver_contract sind an dieser
-# Stelle bereits geschrieben und fachlich vollstaendig.
-if not spark.catalog.tableExists("bronze_sap_unit"):
-    raise ValueError(
-        "bronze_sap_unit fehlt im Lakehouse.\n"
-        "Quelle ist der Dataflow df_sap_ingest, Abfrage bronze_sap_unit "
-        "(liest den bestehenden Gen1-Dataflow sap_master_data_unit).\n"
-        "Diesen Dataflow aktualisieren, dann nb_10_silver erneut starten.\n"
-        "Einrichtung: docs/06_deployment.md, Schritt 1.\n"
-        "Der CRM-Teil (silver_opportunity, silver_contract) ist bereits "
-        "erfolgreich geschrieben."
-    )
-
-# Tabelle da, aber leer an Inhalt: das passiert, wenn die Quellnavigation in
-# df_sap_ingest nicht auf sap_master_data_unit zeigt. SafeSelect uebernimmt
-# dann keine einzige Fachspalte, und uebrig bleiben nur loaded_at und
-# _fehlende_felder. Die Rohmeldung waere ein UNRESOLVED_COLUMN auf 'betrieb'
-# und wuerde auf dieses Notebook zeigen statt auf den Dataflow.
-unit_raw = spark.table("bronze_sap_unit")
-UNIT_PFLICHT = ["betrieb", "bezeichnung_betrieb", "sektor"]
-_fehlt = [s for s in UNIT_PFLICHT if s not in unit_raw.columns]
-if _fehlt:
-    _diag = ""
-    if "_fehlende_felder" in unit_raw.columns:
-        _werte = [
-            r[0] for r in unit_raw.select("_fehlende_felder").distinct().limit(3).collect()
-        ]
-        _diag = "\nSpalte _fehlende_felder meldet: " + " | ".join(str(w) for w in _werte)
-    raise ValueError(
-        "bronze_sap_unit enthaelt keine Betriebsstammdaten.\n"
-        f"Fehlende Pflichtspalten: {', '.join(_fehlt)}\n"
-        f"Vorhandene Spalten: {', '.join(unit_raw.columns)}\n"
-        "Ursache liegt im Dataflow df_sap_ingest, Abfrage bronze_sap_unit: die "
-        "Platzhalterschritte 'Quelle' und 'Navigation' am Anfang der Abfrage "
-        "muessen ueber 'Daten abrufen -> Dataflows' durch die echte Navigation "
-        "zu sap_master_data_unit ersetzt werden."
-        + _diag
-        + "\nDer CRM-Teil (silver_opportunity, silver_contract) ist bereits "
-        "erfolgreich geschrieben."
-    )
-
-# Optionale Stammdatenfelder ergaenzen, damit ein einzelnes fehlendes Attribut
-# (etwa bundesland) den Lauf nicht kippt - dieselbe Trennung wie bei CRM.
-unit_raw = ergaenze_spalten(
-    unit_raw,
-    {
-        "buchungskreis": "string", "vertragsbeginn": "date", "schliessung": "date",
-        "bezeichnung_vertragsart": "string", "bezeichnung_region": "string",
-        "bezeichnung_management": "string", "bezeichnung_verantwortungsbereich": "string",
-        "bezeichnung_branche": "string", "bezeichnung_kundengruppe": "string",
-        "bundesland": "string", "stadt": "string",
-        "cause_of_change": "int", "bezeichnung_cause_of_change": "string",
-        "cause_of_change_fy": "int", "cause_of_change_ny": "int",
-    },
-    "bronze_sap_unit",
-)
-
-unit = (
-    unit_raw
-    .withColumn(
-        "werk_bezeichnung",
-        F.concat(F.lpad(F.col("betrieb").cast("string"), 4, "0"), F.lit(" - "),
-                 F.col("bezeichnung_betrieb")),
-    )
-    .withColumn(
-        "betriebstyp",
-        F.when(F.col("betrieb").isin(PLANBETRIEBE_ROLL), F.lit("Plan-Betriebe Roll"))
-        .when(F.col("betrieb").isin(PLANBETRIEBE_ITY), F.lit("Plan-Betriebe ITY"))
-        .otherwise(F.lit("Real-Betriebe")),
-    )
-    .withColumn(
-        "known_unknown",
-        F.when(F.col("betriebstyp") == "Real-Betriebe", F.lit("known")).otherwise(
-            F.lit("unknown")
-        ),
-    )
-    # HFM-Sektor-Harmonisierung (aus dim_sap_master_data_unit uebernommen)
-    .withColumn(
-        "hfm_sektor",
-        F.when(
-            F.col("bezeichnung_verantwortungsbereich") == "Food Services",
-            F.when(F.col("sektor").isin("SE", "RE", "ED"), F.lit("HC"))
-            .when(F.col("sektor").isin("OV", "RT"), F.lit("BU"))
-            .otherwise(F.col("sektor")),
-        )
-        .when(
-            F.col("bezeichnung_verantwortungsbereich") == "Support Service",
-            F.when(F.col("sektor") == "OV", F.lit("BU")).otherwise(F.col("sektor")),
-        )
-        .otherwise(F.col("sektor")),
-    )
-    .withColumn("snapshot_date", F.lit(RUN_DATE))
-)
-
-write_delta(unit, "silver_unit", mode="overwrite")
-
+# bronze_sap_unit geht jetzt unveraendert nach nb_20_gold; die Ableitungen
+# passieren dort. Zwischen Bronze und Gold wird an dieser Tabelle nichts
+# mehr veraendert - insbesondere wird keine Spalte mehr weggelassen.
 
 # ===========================================================================
 # 4. SCD2-Historisierung der CRM-Kennzahlen

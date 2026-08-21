@@ -40,42 +40,18 @@ let
     // erneutes Table.TransformColumnTypes wuerde nur Fehlerquellen schaffen.
     Stammdaten = Dataflow{[entity = "sap_master_data_unit", version = ""]}[Data],
 
-    // Nur die Spalten, die Silver/Gold tatsaechlich brauchen. Fehlende Felder
-    // werden uebersprungen statt zu einem Abbruch zu fuehren - dasselbe
-    // SafeSelect-Muster wie bei den CRM-Abfragen, damit ein umbenanntes Feld
-    // den Lauf nicht kippt.
-    GewuenschteSpalten = {
-        "betrieb",                            // Werksnummer, Primaerschluessel
-        "bezeichnung_betrieb",
-        "buchungskreis",
-        "sektor",
-        "vertragsbeginn",
-        "schliessung",
-        "bezeichnung_vertragsart",
-        "bezeichnung_region",
-        "bezeichnung_management",
-        "bezeichnung_verantwortungsbereich",  // steuert die HFM-Sektor-Logik
-        "bezeichnung_branche",
-        "bezeichnung_kundengruppe",
-        "bundesland",
-        "stadt",
-        "cause_of_change",                    // Net-New-Hierarchie
-        "bezeichnung_cause_of_change",
-        "cause_of_change_fy",
-        "cause_of_change_ny"
-    },
-
+    // ALLE Spalten der Quelle. Bewusst keine Auswahlliste mehr: eine
+    // Whitelist laesst jedes neue Feld der SAP-Stammdaten stillschweigend
+    // liegen, bis jemand merkt, dass es fehlt - und genau das ist mehrfach
+    // passiert. Betriebsstammdaten sind schmal genug, dass die vollstaendige
+    // Uebernahme nichts kostet.
     VorhandeneSpalten = Table.ColumnNames(Stammdaten),
-    Auswahl = List.Intersect({GewuenschteSpalten, VorhandeneSpalten}),
-    Fehlend = List.Difference(GewuenschteSpalten, VorhandeneSpalten),
 
-    // Reissleine. SafeSelect ist dafuer gedacht, EINZELNE fehlende Felder zu
-    // ueberspringen. Fehlt dagegen der Primaerschluessel "betrieb", zeigt die
-    // Navigation nicht auf die Stammdatentabelle - typischerweise, weil die
-    // Platzhalterzeilen oben nicht ersetzt wurden und noch die Arbeitsbereichs-
-    // liste geliefert wird. Ohne diese Pruefung entstuende eine Tabelle mit
-    // nur loaded_at und _fehlende_felder, und der Fehler faende sich erst
-    // Schritte spaeter in nb_10_silver wieder.
+    // Reissleine. Fehlt der Primaerschluessel "betrieb", zeigt die Navigation
+    // nicht auf die Stammdatentabelle - etwa nach einem Umzug des
+    // Gen1-Dataflows in einen anderen Arbeitsbereich. Ohne diese Pruefung
+    // entstuende eine Tabelle, deren Fehler erst Schritte spaeter in
+    // nb_20_gold auffiele.
     Geprueft =
         if not List.Contains(VorhandeneSpalten, "betrieb") then
             error Error.Record(
@@ -89,14 +65,11 @@ let
         else
             Stammdaten,
 
-    Selektiert = Table.SelectColumns(Geprueft, Auswahl),
-
     // Ladezeitpunkt zur Nachvollziehbarkeit. KEIN snapshot_date - siehe oben.
     MitLadezeit = Table.AddColumn(
-        Selektiert, "loaded_at", each DateTime.From(fn_berlin_now()), type datetime
+        Geprueft, "loaded_at", each DateTime.From(fn_berlin_now()), type datetime
     ),
-    MitDiagnose = Table.AddColumn(
-        MitLadezeit, "_fehlende_felder", each Text.Combine(Fehlend, ","), type text
-    )
+    // Keine Auswahlliste mehr, also auch nichts, was fehlen koennte.
+    MitDiagnose = Table.AddColumn(MitLadezeit, "_fehlende_felder", each "", type text)
 in
     MitDiagnose

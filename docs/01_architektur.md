@@ -61,10 +61,11 @@ Net New ITY:
                ▼
 ┌───────────────────────────────────────────────────────────────────────────┐
 │ SILVER  – typisiert, bereinigt, dedupliziert, fachlich gefiltert          │
-│  silver_opportunity   silver_contract   silver_revenue   silver_unit      │
+│  silver_opportunity   silver_contract   silver_*_history                  │
 │  → GEGENWART: genau EINE Zeile je Vorgang (nur_letzter_snapshot)          │
 │  → Veränderung liegt getrennt in silver_*_history                         │
 │  → Business Rules der Group Guidance (Feb 2025) angewandt                 │
+│  → NUR CRM. bronze_sap_* geht an dieser Schicht VORBEI direkt nach Gold   │
 └──────────────┬────────────────────────────────────────────────────────────┘
                │ Notebook nb_20_gold (PySpark)
                ▼
@@ -91,7 +92,7 @@ Net New ITY:
 └──────────────┬────────────────────────────────────────────────────────────┘
                ▼
 ┌───────────────────────────────────────────────────────────────────────────┐
-│ BERICHT  "Net New ITY Cockpit"  – 10 Seiten, Storytelling-with-Data       │
+│ BERICHT  "Net New ITY Cockpit"  – 11 Seiten, Storytelling-with-Data       │
 └───────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -119,6 +120,32 @@ ab, bevor das Semantikmodell aktualisiert wird.
 `bronze_sap_*` ist von der Regel ausgenommen: diese Tabellen werden je Lauf
 ersetzt statt historisiert und tragen deshalb kein `snapshot_date`.
 `nur_letzter_snapshot()` gibt sie unverändert zurück.
+
+### Die SAP-Tabellen laufen an Silver vorbei
+
+`bronze_sap_unit` und `bronze_sap_revenue` gehen **direkt** nach Gold. Für sie
+gab es früher eine Silver-Stufe, die weder bereinigt noch gefiltert noch
+historisiert hat – sie ergänzte nur vier abgeleitete Spalten und ließ dabei
+über eine Auswahlliste jede neue Quellspalte stillschweigend liegen. Eine
+Schicht, die nichts trennt, ist keine Schicht, sondern eine Kopie.
+
+Für die Betriebsstammdaten heißt das ausdrücklich: **zwischen Bronze und Gold
+wird keine Spalte weggelassen.** Der Dataflow lädt alle Felder von
+`sap_master_data_unit`, Gold reicht sie durch. Was Gold hinzufügt, ist rein
+additiv:
+
+| Spalte | Entsteht aus |
+|---|---|
+| `werk_bezeichnung` | Betriebsnummer + Bezeichnung, als Anzeigelabel |
+| `betriebstyp` | Planbetriebslisten in `nb_00_config` |
+| `known_unknown` | abgeleitet aus `betriebstyp` |
+| `hfm_sektor` | HFM-Sektor-Harmonisierung |
+| `unit_status` | „In Betrieb" bzw. „Geplant" (aus dem Mapping ergänzte Units) |
+
+Diese fünf stehen nicht in SAP – sie brauchen Wissen, das nur im Modell liegt.
+`betriebstyp` ist dabei tragend: `[Roll Budget]`, `[ITY Budget]`,
+`[Unknown ITY Budget]` und `[Budget Net New (SAP)]` grenzen darüber ab und
+lieferten ohne sie stillschweigend leere Werte.
 
 ## 3. Auslagerungsentscheidungen
 
