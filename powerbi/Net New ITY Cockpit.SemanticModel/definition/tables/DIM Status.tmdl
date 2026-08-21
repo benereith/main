@@ -1,0 +1,105 @@
+/// Statusdimension für New- und Lost-Business-Pipeline.
+/// 
+/// Warum als Dimension statt als String-Filter in Measures: In den
+/// Altmodellen wurden Buckets über CALCULATE(..., Sales_Status="Won YTD")
+/// gefiltert. Dadurch waren Sortierung und Farbe je Visualisierung neu zu
+/// pflegen, und ein neuer Bucket erforderte neue Measures. Hier hängen
+/// Reihenfolge, Sicherheitsgrad und Farbrolle an den Daten.
+/// 
+/// Quelle: gold_dim_status.
+table 'DIM Status'
+	lineageTag: b2000000-0000-4000-8000-000000000001
+
+	column 'Status Code'
+		dataType: string
+		isHidden
+		lineageTag: b2000000-0000-4000-8000-000000000101
+		summarizeBy: none
+		sourceColumn: status_code
+
+	/// Anzeigebezeichnung: Won, Expected Win, Pipeline, Lost, Expected Loss,
+	/// At Risk, No Risk, Ohne Win-%.
+	column Status
+		dataType: string
+		lineageTag: b2000000-0000-4000-8000-000000000102
+		summarizeBy: none
+		sourceColumn: status_label
+		sortByColumn: Sortierung
+
+	/// NEW oder LOST.
+	column Geschäftsart
+		dataType: string
+		lineageTag: b2000000-0000-4000-8000-000000000103
+		summarizeBy: none
+		sourceColumn: business_type
+
+	column Sortierung
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: b2000000-0000-4000-8000-000000000104
+		summarizeBy: sum
+		sourceColumn: status_sort
+
+		annotation SummarizationSetBy = Automatic
+
+	/// gesichert / erwartet / unsicher / unbekannt.
+	/// Diese Gruppierung trägt die Kernaussage jeder Pipeline-Grafik: Wie viel
+	/// des Net New ITY ist bereits belastbar?
+	column Sicherheitsgrad
+		dataType: string
+		lineageTag: b2000000-0000-4000-8000-000000000105
+		summarizeBy: none
+		sourceColumn: sicherheitsgrad
+
+	/// Farbrolle für das Berichtsthema (nb-won, nb-expected, nb-pipeline,
+	/// lb-lost, lb-expected, lb-atrisk, neutral). Aufgelöst in
+	/// StaticResources/SharedResources/BaseThemes/NetNewITY.json.
+	column Farbrolle
+		dataType: string
+		isHidden
+		lineageTag: b2000000-0000-4000-8000-000000000106
+		summarizeBy: none
+		sourceColumn: farbrolle
+
+	/// Hex-Farbe zur direkten Bindung in Visualisierungen
+	/// (Datenfarben → bedingte Formatierung → Feldwert).
+	/// So ist die Farbsemantik an die Daten gebunden und kann in keiner
+	/// Visualisierung versehentlich abweichen.
+	/// 
+	/// Die Werte stammen aus zwei validierten Ein-Ton-Rampen:
+	/// Blau  #86b6ef → #3987e5 → #184f95   (New Business, zunehmende Sicherheit)
+	/// Rot   #eb9998 → #e34948 → #a02222   (Lost Business, zunehmende Sicherheit)
+	/// Beide Rampen erfüllen Monotonie, Mindestabstand je Stufe und den
+	/// 2:1-Kontrast der hellsten Stufe gegen weißen Hintergrund.
+	column Farbe =
+			SWITCH (
+			    'DIM Status'[Status Code],
+			    "WON",            "#184F95",
+			    "EXPECTED_WIN",   "#3987E5",
+			    "PIPELINE",       "#86B6EF",
+			    "LOST",           "#A02222",
+			    "EXPECTED_LOSS",  "#E34948",
+			    "AT_RISK",        "#EB9998",
+			    "#898781"
+			)
+		lineageTag: b2000000-0000-4000-8000-000000000107
+		summarizeBy: none
+
+	column status_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 9c944fcd-de4e-4228-acec-33580d5f040a
+		summarizeBy: sum
+		sourceColumn: status_key
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'DIM Status' = m
+		mode: import
+		source = fnLakehouse("gold_dim_status")
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

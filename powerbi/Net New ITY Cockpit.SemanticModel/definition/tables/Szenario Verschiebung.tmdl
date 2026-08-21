@@ -1,0 +1,58 @@
+/// SZENARIO-PARAMETER 1 von 4 · Zeitliche Verschiebung
+/// 
+/// Beantwortet: "Was passiert mit dem Net New ITY, wenn sich alle
+/// Mobilisierungen bzw. Vertragsenden um n Monate verschieben?"
+/// 
+/// WARUM DAS HIER STEHT UND NICHT IM LAKEHOUSE
+/// Im Altmodell war die Verschiebung eine Power-Query-Spalte
+/// (Revenues[Verschiebung +1]) mit fest verdrahtetem +1. Jede Änderung des
+/// Verschiebungsbetrags erforderte eine Modelländerung und einen vollen
+/// Refresh. Materialisieren wäre auch keine Lösung: Die zehn Stufen mal fünf
+/// Anlauffaktoren mal sieben Anlaufdauern ergäben 350 Faktenvarianten.
+/// 
+/// Die DAX-Variante iteriert über 'DIM Datum'[Monatsindex] – zwölf bis
+/// vierundzwanzig Werte im Filterkontext. Der Aufwand ist vernachlässigbar.
+/// 
+/// Diese Tabelle ist bewusst NICHT mit dem Modell verbunden (disconnected):
+/// sie filtert nichts, sie liefert nur einen Skalar an die Measures.
+table 'Szenario Verschiebung'
+	lineageTag: d1000000-0000-4000-8000-000000000001
+
+	column Monate
+		lineageTag: 0b4e6571-3f80-4f8b-b6ca-311da744f30c
+		isNameInferred
+		sourceColumn: [Monate]
+
+	column Bezeichnung
+		lineageTag: c0bb064f-be8c-4a35-975f-84923fd02de0
+		isNameInferred
+		sourceColumn: [Bezeichnung]
+
+	column Sortierung
+		lineageTag: 25c361ac-9eba-42ed-a089-09ae8f864b4b
+		isNameInferred
+		sourceColumn: [Sortierung]
+
+	partition 'Szenario Verschiebung' = calculated
+		mode: import
+		source =
+				DATATABLE (
+				    "Monate", INTEGER,
+				    "Bezeichnung", STRING,
+				    "Sortierung", INTEGER,
+				    {
+				        { -3, "3 Monate früher", 1 },
+				        { -2, "2 Monate früher", 2 },
+				        { -1, "1 Monat früher", 3 },
+				        {  0, "Keine Verschiebung", 4 },
+				        {  1, "1 Monat später", 5 },
+				        {  2, "2 Monate später", 6 },
+				        {  3, "3 Monate später", 7 },
+				        {  4, "4 Monate später", 8 },
+				        {  5, "5 Monate später", 9 },
+				        {  6, "6 Monate später", 10 }
+				    }
+				)
+
+	annotation PBI_Id = SzenarioVerschiebung
+

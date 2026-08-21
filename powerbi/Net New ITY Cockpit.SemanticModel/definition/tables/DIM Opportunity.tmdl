@@ -1,0 +1,180 @@
+/// Opportunity-Stammdaten aus dem CRM. Quelle: gold_dim_opportunity.
+/// 
+/// Ersetzt die elf dim_opp_*-Tabellen des Altmodells "CRM Call". Diese waren
+/// über "Duplikate entfernen" aus dem Fakt erzeugt und über beidseitig
+/// filternde Beziehungen angebunden – eine Konstruktion, die Filterrichtungen
+/// unvorhersehbar macht. Hier: eine Dimension, eine Richtung.
+table 'DIM Opportunity'
+	lineageTag: b4000000-0000-4000-8000-000000000001
+
+	column 'Opportunity ID'
+		dataType: string
+		isHidden
+		isKey
+		lineageTag: b4000000-0000-4000-8000-000000000101
+		summarizeBy: none
+		sourceColumn: opportunityid
+
+	column Opportunity
+		dataType: string
+		lineageTag: b4000000-0000-4000-8000-000000000102
+		summarizeBy: none
+		sourceColumn: opportunity_name
+
+	column Kunde
+		dataType: string
+		lineageTag: b4000000-0000-4000-8000-000000000103
+		summarizeBy: none
+		sourceColumn: account_name
+
+	column Verantwortlicher
+		dataType: string
+		lineageTag: b4000000-0000-4000-8000-000000000104
+		summarizeBy: none
+		sourceColumn: owner_name
+
+	column Vertriebsgebiet
+		dataType: string
+		lineageTag: b4000000-0000-4000-8000-000000000105
+		summarizeBy: none
+		sourceColumn: territory_name
+
+	/// Vertriebsphase laut CRM (cgplc_salesstagename).
+	column Vertriebsphase
+		dataType: string
+		lineageTag: b4000000-0000-4000-8000-000000000106
+		summarizeBy: none
+		sourceColumn: sales_stage
+
+	column Vertragsart
+		dataType: string
+		lineageTag: b4000000-0000-4000-8000-000000000107
+		summarizeBy: none
+		sourceColumn: contract_type
+
+	column Sektor
+		dataType: string
+		lineageTag: b4000000-0000-4000-8000-000000000108
+		summarizeBy: none
+		sourceColumn: sector
+
+	column Subsektor
+		dataType: string
+		lineageTag: b4000000-0000-4000-8000-000000000109
+		summarizeBy: none
+		sourceColumn: subsector
+
+	/// Bisheriger Anbieter – die Wettbewerbersicht, die im Altbericht fehlte.
+	column 'Aktueller Anbieter'
+		dataType: string
+		lineageTag: b4000000-0000-4000-8000-000000000110
+		summarizeBy: none
+		sourceColumn: current_supplier
+
+	column 'ITY Cluster'
+		dataType: string
+		lineageTag: b4000000-0000-4000-8000-000000000111
+		summarizeBy: none
+		sourceColumn: ity_cluster
+
+	/// Erwartetes Entscheidungsdatum.
+	column Entscheidungsdatum
+		dataType: dateTime
+		formatString: dd.mm.yyyy
+		lineageTag: b4000000-0000-4000-8000-000000000112
+		summarizeBy: none
+		sourceColumn: est_close_date
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	/// Mobilisierungs-/Eröffnungsdatum – Startpunkt der Periodenverteilung.
+	column Mobilisierung
+		dataType: dateTime
+		formatString: dd.mm.yyyy
+		lineageTag: b4000000-0000-4000-8000-000000000113
+		summarizeBy: none
+		sourceColumn: opening_date
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column Gewinndatum
+		dataType: dateTime
+		formatString: dd.mm.yyyy
+		lineageTag: b4000000-0000-4000-8000-000000000114
+		summarizeBy: none
+		sourceColumn: won_date
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column 'Win %'
+		dataType: double
+		formatString: 0.0\ %;-0.0\ %;0.0\ %
+		lineageTag: b4000000-0000-4000-8000-000000000115
+		summarizeBy: sum
+		sourceColumn: win_probability
+
+		annotation SummarizationSetBy = Automatic
+
+	/// ARO-Umsatz laut CRM – Basis für HFM MAP131.
+	column 'ARO Umsatz'
+		dataType: double
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		lineageTag: b4000000-0000-4000-8000-000000000116
+		summarizeBy: sum
+		sourceColumn: revenue_aro
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// ITY-Umsatz laut CRM – Basis für HFM MAP141a.
+	column 'ITY Umsatz'
+		dataType: double
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		lineageTag: b4000000-0000-4000-8000-000000000117
+		summarizeBy: sum
+		sourceColumn: revenue_ity
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Bruttomarge in Prozent laut CRM.
+	column 'Bruttomarge %'
+		dataType: double
+		formatString: 0.0\ %;-0.0\ %;0.0\ %
+		lineageTag: b4000000-0000-4000-8000-000000000118
+		summarizeBy: sum
+		sourceColumn: bg_percent
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'ITY Monate'
+		dataType: int64
+		formatString: 0
+		lineageTag: b4000000-0000-4000-8000-000000000119
+		summarizeBy: sum
+		sourceColumn: calc_ity_months
+
+		annotation SummarizationSetBy = Automatic
+
+	column contract_id
+		dataType: string
+		lineageTag: a4e919c5-bd33-4768-90bd-3485747b8199
+		summarizeBy: none
+		sourceColumn: contract_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column status_code
+		dataType: string
+		lineageTag: e03b15ae-9ec8-4c2c-9073-a9443f48d5aa
+		summarizeBy: none
+		sourceColumn: status_code
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'DIM Opportunity' = m
+		mode: import
+		source = fnLakehouse("gold_dim_opportunity")
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

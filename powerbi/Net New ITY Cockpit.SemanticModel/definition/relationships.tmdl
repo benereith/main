@@ -1,0 +1,55 @@
+relationship FCT_NetNewITY__DIM_Datum
+	fromColumn: 'FCT Net New ITY'.Periode
+	toColumn: 'DIM Datum'.Datum
+
+relationship FCT_NetNewITY__DIM_Status
+	fromColumn: 'FCT Net New ITY'.'Status Code'
+	toColumn: 'DIM Status'.'Status Code'
+
+relationship FCT_NetNewITY__DIM_Opportunity
+	fromColumn: 'FCT Net New ITY'.'Entität ID'
+	toColumn: 'DIM Opportunity'.'Opportunity ID'
+
+relationship FCT_NetNewITY__DIM_Vertrag
+	isActive: false
+	fromColumn: 'FCT Net New ITY'.'Entität ID'
+	toColumn: 'DIM Vertrag'.'Vertrag ID'
+
+relationship FCT_NetNewITY__DIM_Betrieb
+	fromColumn: 'FCT Net New ITY'.Werk
+	toColumn: 'DIM Betrieb'.Werk
+
+relationship FCT_Umsatz__DIM_Datum
+	fromColumn: 'FCT Umsatz'.Periode
+	toColumn: 'DIM Datum'.Datum
+
+relationship FCT_Umsatz__DIM_Betrieb
+	fromColumn: 'FCT Umsatz'.Werk
+	toColumn: 'DIM Betrieb'.Werk
+
+relationship FCT_Umsatz__DIM_HFM
+	fromColumn: 'FCT Umsatz'.'Metric ID'
+	toColumn: 'DIM HFM-Struktur'.'Metric ID'
+
+relationship FCT_Bewegung__DIM_Opportunity
+	fromColumn: 'FCT CRM-Bewegung'.'Entität ID'
+	toColumn: 'DIM Opportunity'.'Opportunity ID'
+
+relationship FCT_Bewegung__DIM_Vertrag
+	isActive: false
+	fromColumn: 'FCT CRM-Bewegung'.'Entität ID'
+	toColumn: 'DIM Vertrag'.'Vertrag ID'
+
+relationship AutoDetected_cb0a1f76-6f3a-4065-8c98-7d6931cbef6f
+	isActive: false
+	fromColumn: 'DIM Opportunity'.status_code
+	toColumn: 'DIM Status'.'Status Code'
+
+relationship AutoDetected_aa35d239-d5fa-4733-b80f-1a2aa31df5d9
+	fromColumn: 'DIM Vertrag'.status_code
+	toColumn: 'DIM Status'.'Status Code'
+
+relationship 32d35c76-9da2-be4f-3965-51a27761000d
+	fromColumn: 'FCT Net New ITY'.Entität
+	toColumn: 'CRM Data'.name
+

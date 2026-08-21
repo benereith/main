@@ -1,0 +1,145 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.11.0/schema.json",
+  "name": "0d1aa45901298df873c0",
+  "position": {
+    "x": 184,
+    "y": 164,
+    "z": 1658,
+    "height": 88,
+    "width": 1080,
+    "tabOrder": 1658
+  },
+  "visual": {
+    "visualType": "cardVisual",
+    "query": {
+      "queryState": {
+        "Data": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Kennzahlen"
+                    }
+                  },
+                  "Property": "Bewegung Anzahl"
+                }
+              },
+              "queryRef": "_Kennzahlen.Bewegung Anzahl",
+              "nativeQueryRef": "Bewegung Anzahl"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Kennzahlen"
+                    }
+                  },
+                  "Property": "Bewegung Statuswechsel"
+                }
+              },
+              "queryRef": "_Kennzahlen.Bewegung Statuswechsel",
+              "nativeQueryRef": "Bewegung Statuswechsel"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Kennzahlen"
+                    }
+                  },
+                  "Property": "Bewegung positiv"
+                }
+              },
+              "queryRef": "_Kennzahlen.Bewegung positiv",
+              "nativeQueryRef": "Bewegung positiv"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Kennzahlen"
+                    }
+                  },
+                  "Property": "Bewegung negativ"
+                }
+              },
+              "queryRef": "_Kennzahlen.Bewegung negativ",
+              "nativeQueryRef": "Bewegung negativ"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Kennzahlen"
+                    }
+                  },
+                  "Property": "Bewegung Wert"
+                }
+              },
+              "queryRef": "_Kennzahlen.Bewegung Wert",
+              "nativeQueryRef": "Bewegung Wert"
+            }
+          ]
+        }
+      }
+    },
+    "objects": {
+      "label": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "9.0D"
+                }
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "14D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "id": "default"
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

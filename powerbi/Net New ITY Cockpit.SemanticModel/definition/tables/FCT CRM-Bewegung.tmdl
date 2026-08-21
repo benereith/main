@@ -1,0 +1,136 @@
+/// Veränderungen im CRM zwischen zwei Ladeläufen. Quelle: gold_fct_crm_movement.
+/// 
+/// Diese Tabelle ist die Antwort auf die Anforderung, Entwicklungen im CRM
+/// schnell zeigen zu können. Granularität: eine Zeile je Entität und
+/// Änderungszeitpunkt – mit Vorher- und Nachher-Wert.
+/// 
+/// Die Historie entsteht in nb_10_silver: pro Tag wird ein Snapshot geschrieben,
+/// aber nur dann eine neue Zeile erzeugt, wenn sich eine der überwachten Größen
+/// tatsächlich geändert hat. Jede Zeile bedeutet also eine echte Änderung.
+/// 
+/// Bewusst NICHT mit 'DIM Datum' verbunden: die Zeitachse dieser Tabelle ist
+/// der Erhebungsstichtag, nicht die Wirkungsperiode. Eine Verbindung würde
+/// beide Zeitbegriffe vermischen.
+table 'FCT CRM-Bewegung'
+	lineageTag: c2000000-0000-4000-8000-000000000001
+
+	column 'Entität ID'
+		dataType: string
+		isHidden
+		lineageTag: c2000000-0000-4000-8000-000000000101
+		summarizeBy: none
+		sourceColumn: entity_id
+
+	column Entitätstyp
+		dataType: string
+		lineageTag: c2000000-0000-4000-8000-000000000102
+		summarizeBy: none
+		sourceColumn: entity_type
+
+	column Geschäftsart
+		dataType: string
+		lineageTag: c2000000-0000-4000-8000-000000000103
+		summarizeBy: none
+		sourceColumn: business_type
+
+	/// Stichtag, an dem die Änderung festgestellt wurde.
+	column Stichtag
+		dataType: dateTime
+		formatString: dd.mm.yyyy
+		lineageTag: c2000000-0000-4000-8000-000000000104
+		summarizeBy: none
+		sourceColumn: snapshot_date
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	/// Stichtag des vorherigen Stands.
+	column 'Vorheriger Stichtag'
+		dataType: dateTime
+		formatString: dd.mm.yyyy
+		lineageTag: c2000000-0000-4000-8000-000000000105
+		summarizeBy: none
+		sourceColumn: prev_snapshot_date
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	/// Wert nach der Änderung. New Business: ITY-Umsatz.
+	/// Lost Business: Vorjahres-ARO.
+	column 'Wert neu'
+		dataType: double
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		lineageTag: c2000000-0000-4000-8000-000000000106
+		summarizeBy: sum
+		sourceColumn: value_new
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	column 'Wert alt'
+		dataType: double
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		lineageTag: c2000000-0000-4000-8000-000000000107
+		summarizeBy: sum
+		sourceColumn: value_old
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Wertänderung. Positiv = Chance gewachsen bzw. Risiko gewachsen –
+	/// die Leserichtung hängt an der Geschäftsart.
+	column Wertänderung
+		dataType: double
+		formatString: +#,0\ "€";-#,0\ "€";0\ "€"
+		lineageTag: c2000000-0000-4000-8000-000000000108
+		summarizeBy: sum
+		sourceColumn: value_delta
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	column 'Wahrscheinlichkeit neu'
+		dataType: double
+		formatString: 0.0\ %;-0.0\ %;0.0\ %
+		lineageTag: c2000000-0000-4000-8000-000000000109
+		summarizeBy: none
+		sourceColumn: probability_new
+
+	column 'Wahrscheinlichkeit alt'
+		dataType: double
+		formatString: 0.0\ %;-0.0\ %;0.0\ %
+		lineageTag: c2000000-0000-4000-8000-000000000110
+		summarizeBy: none
+		sourceColumn: probability_old
+
+	column Wahrscheinlichkeitsänderung
+		dataType: double
+		formatString: +0.0\ %;-0.0\ %;0.0\ %
+		lineageTag: c2000000-0000-4000-8000-000000000111
+		summarizeBy: none
+		sourceColumn: probability_delta
+
+	column 'Status neu'
+		dataType: string
+		lineageTag: c2000000-0000-4000-8000-000000000112
+		summarizeBy: none
+		sourceColumn: status_new
+
+	column 'Status alt'
+		dataType: string
+		lineageTag: c2000000-0000-4000-8000-000000000113
+		summarizeBy: none
+		sourceColumn: status_old
+
+	/// Statuswechsel / Wahrscheinlichkeit / Wert / Sonstiges.
+	/// Erlaubt es, im Bericht die relevanten Änderungen zuerst zu zeigen:
+	/// ein Statuswechsel wiegt schwerer als eine Wertkorrektur.
+	column Änderungsart
+		dataType: string
+		lineageTag: c2000000-0000-4000-8000-000000000114
+		summarizeBy: none
+		sourceColumn: aenderungsart
+
+	partition 'FCT CRM-Bewegung' = m
+		mode: import
+		source = fnLakehouse("gold_fct_crm_movement")
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

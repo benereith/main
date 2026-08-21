@@ -1,0 +1,243 @@
+{
+  "version": "1.1.0",
+  "diagrams": [
+    {
+      "ordinal": 0,
+      "scrollPosition": {
+        "x": 707.5,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 1852.6472969415308,
+            "y": 251.61479971243438
+          },
+          "nodeIndex": "_Kennzahlen",
+          "nodeLineageTag": "a0000000-0000-4000-8000-000000000001",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 1042.0967605623082,
+            "y": 453.22959942486887
+          },
+          "nodeIndex": "DIM Betrieb",
+          "nodeLineageTag": "b3000000-0000-4000-8000-000000000001",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 1209.0606088302861,
+            "y": -50
+          },
+          "nodeIndex": "DIM Datum",
+          "nodeLineageTag": "b1000000-0000-4000-8000-000000000001",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 1329.3822997396653,
+            "y": 340.2148519248741
+          },
+          "nodeIndex": "DIM HFM-Struktur",
+          "nodeLineageTag": "b6000000-0000-4000-8000-000000000001",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 425.022580916797,
+            "y": 31.949350930816081
+          },
+          "nodeIndex": "DIM Opportunity",
+          "nodeLineageTag": "b4000000-0000-4000-8000-000000000001",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 629.24112473021637,
+            "y": 386.8310813234641
+          },
+          "nodeIndex": "DIM Status",
+          "nodeLineageTag": "b2000000-0000-4000-8000-000000000001",
+          "size": {
+            "height": 272,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 339.89821282168532,
+            "y": 389.11993646625717
+          },
+          "nodeIndex": "DIM Vertrag",
+          "nodeLineageTag": "b5000000-0000-4000-8000-000000000001",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 2136.6472969415308,
+            "y": 289.61479971243438
+          },
+          "nodeIndex": "DQ Prüfungen",
+          "nodeLineageTag": "b7000000-0000-4000-8000-000000000001",
+          "size": {
+            "height": 224,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 50,
+            "y": 243.08643102038093
+          },
+          "nodeIndex": "FCT CRM-Bewegung",
+          "nodeLineageTag": "c2000000-0000-4000-8000-000000000001",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 817.85307645762066,
+            "y": 18.813133618661709
+          },
+          "nodeIndex": "FCT Net New ITY",
+          "nodeLineageTag": "c1000000-0000-4000-8000-000000000001",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 1626.1472969415308,
+            "y": 53.131525684439794
+          },
+          "nodeIndex": "FCT Umsatz",
+          "nodeLineageTag": "c3000000-0000-4000-8000-000000000001",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 2420.6472969415308,
+            "y": 337.61479971243438
+          },
+          "nodeIndex": "Szenario Anlauf",
+          "nodeLineageTag": "d2000000-0000-4000-8000-000000000001",
+          "size": {
+            "height": 128,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 2704.6472969415308,
+            "y": 337.61479971243438
+          },
+          "nodeIndex": "Szenario Anlaufdauer",
+          "nodeLineageTag": "d3000000-0000-4000-8000-000000000001",
+          "size": {
+            "height": 128,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 2988.6472969415308,
+            "y": 325.61479971243438
+          },
+          "nodeIndex": "Szenario Bewertung",
+          "nodeLineageTag": "d4000000-0000-4000-8000-000000000001",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 3272.6472969415308,
+            "y": 337.61479971243438
+          },
+          "nodeIndex": "Szenario Schwelle",
+          "nodeLineageTag": "d5000000-0000-4000-8000-000000000001",
+          "size": {
+            "height": 128,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 3556.6472969415308,
+            "y": 325.61479971243438
+          },
+          "nodeIndex": "Szenario Verschiebung",
+          "nodeLineageTag": "d1000000-0000-4000-8000-000000000001",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 849.39729694153084,
+            "y": 506.61479971243443
+          },
+          "nodeIndex": "CRM Data",
+          "nodeLineageTag": "5af530fe-3d99-42ef-abd5-98d2172b06ce",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        }
+      ],
+      "name": "Alle Tabellen",
+      "zoomValue": 80,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    }
+  ],
+  "selectedDiagram": "Alle Tabellen",
+  "defaultDiagram": "Alle Tabellen"
+}

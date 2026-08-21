@@ -1,0 +1,320 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.11.0/schema.json",
+  "name": "55fd07ea70d6e6b5da83",
+  "position": {
+    "x": 184.59203036053131,
+    "y": 476.05313092979122,
+    "z": 4000,
+    "height": 195.52182163187854,
+    "width": 944.819734345351,
+    "tabOrder": 4000
+  },
+  "visual": {
+    "visualType": "pivotTable",
+    "query": {
+      "queryState": {
+        "Rows": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "DIM Betrieb"
+                    }
+                  },
+                  "Property": "Management"
+                }
+              },
+              "queryRef": "DIM Betrieb.Management",
+              "nativeQueryRef": "Management",
+              "active": true
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "DIM Betrieb"
+                    }
+                  },
+                  "Property": "Region"
+                }
+              },
+              "queryRef": "DIM Betrieb.Region",
+              "nativeQueryRef": "Region",
+              "active": false
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "FCT Net New ITY"
+                    }
+                  },
+                  "Property": "Entität"
+                }
+              },
+              "queryRef": "FCT Net New ITY.Entität",
+              "nativeQueryRef": "Entität",
+              "active": false
+            }
+          ]
+        },
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Kennzahlen"
+                    }
+                  },
+                  "Property": "New Business ITY"
+                }
+              },
+              "queryRef": "_Kennzahlen.New Business ITY",
+              "nativeQueryRef": "New Business ITY"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Kennzahlen"
+                    }
+                  },
+                  "Property": "Lost Business ITY"
+                }
+              },
+              "queryRef": "_Kennzahlen.Lost Business ITY",
+              "nativeQueryRef": "Lost Business ITY"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Kennzahlen"
+                    }
+                  },
+                  "Property": "Net New ITY"
+                }
+              },
+              "queryRef": "_Kennzahlen.Net New ITY",
+              "nativeQueryRef": "Net New ITY"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "_Kennzahlen"
+                  }
+                },
+                "Property": "New Business ITY"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "expansionStates": [
+      {
+        "roles": [
+          "Rows"
+        ],
+        "levels": [
+          {
+            "queryRefs": [
+              "DIM Betrieb.Management"
+            ],
+            "isCollapsed": true,
+            "isPinned": true
+          },
+          {
+            "queryRefs": [
+              "DIM Betrieb.Region"
+            ],
+            "isCollapsed": true,
+            "isPinned": true
+          },
+          {
+            "queryRefs": [
+              "FCT Net New ITY.Entität"
+            ],
+            "isCollapsed": true,
+            "isPinned": true
+          }
+        ],
+        "root": {}
+      }
+    ],
+    "objects": {
+      "subTotals": [
+        {
+          "properties": {
+            "rowSubtotals": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "columnSubtotals": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Net New ITY nach Organisation'"
+                }
+              }
+            },
+            "titleWrap": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "fontColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#0B0B0B'"
+                    }
+                  }
+                }
+              }
+            },
+            "alignment": {
+              "expr": {
+                "Literal": {
+                  "Value": "'left'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "733b3e83eb907bdd3441",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "DIM Betrieb"
+              }
+            },
+            "Property": "Region"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "43d214c105c87bbab964",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "DIM Betrieb"
+              }
+            },
+            "Property": "Management"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "2a083178b199950d0504",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Kennzahlen"
+              }
+            },
+            "Property": "New Business ITY"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "db42db593a02a5487c00",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Kennzahlen"
+              }
+            },
+            "Property": "Lost Business ITY"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "4b18592cc85e25340801",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Kennzahlen"
+              }
+            },
+            "Property": "Net New ITY"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "b8e96ff470045b9bc0cb",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "FCT Net New ITY"
+              }
+            },
+            "Property": "Entität"
+          }
+        },
+        "type": "Categorical"
+      }
+    ]
+  }
+}

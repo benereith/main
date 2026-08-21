@@ -1,0 +1,297 @@
+/// SAP-Betriebsstammdaten (Werke). Quelle: gold_dim_unit.
+/// Ersetzt SAP_Stammdaten bzw. dim_sap_master_data_unit der Altmodelle.
+table 'DIM Betrieb'
+	lineageTag: b3000000-0000-4000-8000-000000000001
+
+	/// Veränderung gegenüber der GLEICHEN Periode des Vorjahres.
+	///
+	/// Rechnet bewusst auf der Bruttosumme und bringt den Vorjahresbezug
+	/// selbst mit – nicht über [Net New ITY], das seinerseits bereits den
+	/// Vorjahresanteil abzieht. Andernfalls wäre der Abzug doppelt drin.
+	///
+	/// Aufgehoben werden nur die Zeitfilter (GJ Jahr, GJ Periode Nr);
+	/// Region, Sektor und übrige Filter bleiben erhalten, damit die
+	/// Kennzahl auch in einer aufgerissenen Sicht stimmt.
+	measure 'Net New ITY YoY' = ```
+			
+			-- 1. Szenario-Auswahl bestimmen
+			VAR _SzenarioBasis = SELECTEDVALUE ( 'Szenario Bewertung'[Bewertungsbasis], "CRM-gewichtet" )
+			
+			-- 2. Hilfs-Funktion für die Szenario-Berechnung
+			VAR _BerechneSzenario = 
+			    SWITCH (
+			        _SzenarioBasis,
+			        "CRM-gewichtet", SUM ( 'FCT Net New ITY'[Betrag] ),
+			        "Vollwert",      SUM ( 'FCT Net New ITY'[Betrag ungewichtet (vorzeichenbehaftet)] ),
+			        "Nur gesichert",
+			            CALCULATE (
+			                SUM ( 'FCT Net New ITY'[Betrag ungewichtet (vorzeichenbehaftet)] ),
+			                KEEPFILTERS ( 'DIM Status'[Status Code] IN { "WON", "LOST" } )
+			            ),
+			        SUM ( 'FCT Net New ITY'[Betrag] )
+			    )
+			
+			-- 3. Wert für das aktuelle Jahr
+			VAR _AktuellerWert = _BerechneSzenario
+			
+			-- 4. Aktuelles Jahr und Periode ermitteln (mit Fallback, falls kein Jahr gefiltert ist)
+			VAR _AktuellesGJ = 
+			    COALESCE (
+			        SELECTEDVALUE ( 'DIM Datum'[GJ Jahr] ),
+			        MAX ( 'DIM Datum'[GJ Jahr] )
+			    )
+			
+			VAR _AktuellePeriode = SELECTEDVALUE ( 'DIM Datum'[GJ Periode Nr] )
+			
+			-- 5. Wert für das Vorjahr berechnen (unter Beibehaltung aller anderen Berichtsfilter)
+			VAR _VorjahresWert = 
+			    CALCULATE (
+			        _BerechneSzenario,
+			        -- Nur die Zeitfilter aufheben, damit Regionen, etc. erhalten bleiben!
+			        REMOVEFILTERS ( 'DIM Datum'[GJ Jahr], 'DIM Datum'[GJ Periode Nr] ),
+			        'DIM Datum'[GJ Jahr] = _AktuellesGJ - 1,
+			        'DIM Datum'[GJ Periode Nr] = _AktuellePeriode
+			    )
+			
+			-- 6. Finale Rückgabe: Aktueller Wert plus Vorjahr * -1
+			RETURN
+			    IF (
+			        NOT ISBLANK ( _AktuellerWert ) || NOT ISBLANK ( _VorjahresWert ),
+			        _AktuellerWert + ( _VorjahresWert * -1 )
+			    )
+			```
+		formatString: 0
+		lineageTag: 5b5a8cb2-6100-4fcf-98a9-c934f4f2afe4
+
+	/// Pipeline-Ziel: das Dreifache des New-Business-Budgets.
+	///
+	/// Der Faktor 3 ist eine Erfahrungsregel – rund ein Drittel der
+	/// Pipeline wird gewonnen, also braucht es das Dreifache des Ziels an
+	/// Volumen. Er steht hier als Konstante und ist keine aus den Daten
+	/// abgeleitete Größe; bei geänderter Abschlussquote muss er nachgezogen
+	/// werden.
+	measure 'ITY Target Pipeline' = [New Business Budget]*3
+		lineageTag: c81ce318-2e32-4bfd-913a-42708fc4b7b0
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	/// Ungewichtetes New-Business-Volumen – die Pipeline zum Vollwert,
+	/// ohne Lost Business. Gegengröße zu [ITY Target Pipeline].
+	measure 'Unweighted ITY Pipeline' = CALCULATE(SUM('FCT Net New ITY'[Betrag ungewichtet (vorzeichenbehaftet)]), 'FCT Net New ITY'[Geschäftsart]="NEW")
+		lineageTag: eeb59d23-8690-4778-a88a-0215e0ff9486
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column Werk
+		dataType: int64
+		isKey
+		formatString: 0
+		lineageTag: b3000000-0000-4000-8000-000000000101
+		summarizeBy: none
+		sourceColumn: betrieb
+
+	/// "0123 – Bezeichnung". Führende Nullen, damit die Sortierung stimmt.
+	column 'Werk Bezeichnung'
+		dataType: string
+		lineageTag: b3000000-0000-4000-8000-000000000102
+		summarizeBy: none
+		sourceColumn: werk_bezeichnung
+
+	column Betriebsname
+		dataType: string
+		lineageTag: b3000000-0000-4000-8000-000000000103
+		summarizeBy: none
+		sourceColumn: bezeichnung_betrieb
+
+	column Buchungskreis
+		dataType: int64
+		formatString: 0
+		lineageTag: b3000000-0000-4000-8000-000000000104
+		summarizeBy: sum
+		sourceColumn: buchungskreis
+
+		annotation SummarizationSetBy = Automatic
+
+	column Sektor
+		dataType: string
+		lineageTag: b3000000-0000-4000-8000-000000000105
+		summarizeBy: none
+		sourceColumn: sektor
+
+	/// Harmonisierter Sektor für die HFM-Meldung (HC / BU / …).
+	column 'HFM Sektor'
+		dataType: string
+		lineageTag: b3000000-0000-4000-8000-000000000106
+		summarizeBy: none
+		sourceColumn: hfm_sektor
+
+	/// Real-Betriebe / Plan-Betriebe Roll / Plan-Betriebe ITY.
+	/// Plan-Betriebe sind Platzhalter-Kostenstellen für unknown Business und
+	/// dürfen in Betriebszählungen nicht mitlaufen.
+	column Betriebstyp
+		dataType: string
+		lineageTag: b3000000-0000-4000-8000-000000000107
+		summarizeBy: none
+		sourceColumn: betriebstyp
+
+	/// known = realer Betrieb, unknown = Planbetrieb.
+	/// Die Kernunterscheidung des gesamten Berichts: known ITY ist gebucht,
+	/// unknown ITY wird aus dem CRM approximiert.
+	column 'Known / Unknown'
+		dataType: string
+		lineageTag: b3000000-0000-4000-8000-000000000108
+		summarizeBy: none
+		sourceColumn: known_unknown
+
+	/// "In Betrieb" = aus den SAP-Stammdaten.
+	/// "Geplant"    = existiert nur im gepflegten Mapping, weil die Unit noch
+	/// nicht gewonnen ist.
+	/// 
+	/// Ohne diese Ergänzung fielen geplante Units in die Leerzeile jeder
+	/// Organisationsauswertung – also genau der Teil, um den es im Net New
+	/// Business geht. Für sie bleiben Region, Management und Sektor leer,
+	/// solange die Mappingdatei diese Angaben nicht mitführt.
+	column Unit-Status
+		dataType: string
+		lineageTag: b3000000-0000-4000-8000-000000000121
+		summarizeBy: none
+		sourceColumn: unit_status
+
+	column Vertragsbeginn
+		dataType: dateTime
+		formatString: dd.mm.yyyy
+		lineageTag: b3000000-0000-4000-8000-000000000109
+		summarizeBy: none
+		sourceColumn: vertragsbeginn
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column Schließung
+		dataType: dateTime
+		formatString: dd.mm.yyyy
+		lineageTag: b3000000-0000-4000-8000-000000000110
+		summarizeBy: none
+		sourceColumn: schliessung
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column Vertragsart
+		dataType: string
+		lineageTag: b3000000-0000-4000-8000-000000000111
+		summarizeBy: none
+		sourceColumn: bezeichnung_vertragsart
+
+	column Region
+		dataType: string
+		lineageTag: b3000000-0000-4000-8000-000000000112
+		summarizeBy: none
+		sourceColumn: bezeichnung_region
+
+	column Management
+		dataType: string
+		lineageTag: b3000000-0000-4000-8000-000000000113
+		summarizeBy: none
+		sourceColumn: bezeichnung_management
+
+	column Verantwortungsbereich
+		dataType: string
+		lineageTag: b3000000-0000-4000-8000-000000000114
+		summarizeBy: none
+		sourceColumn: bezeichnung_verantwortungsbereich
+
+	column Branche
+		dataType: string
+		lineageTag: b3000000-0000-4000-8000-000000000115
+		summarizeBy: none
+		sourceColumn: bezeichnung_branche
+
+	column Kundengruppe
+		dataType: string
+		lineageTag: b3000000-0000-4000-8000-000000000116
+		summarizeBy: none
+		sourceColumn: bezeichnung_kundengruppe
+
+	column Bundesland
+		dataType: string
+		lineageTag: b3000000-0000-4000-8000-000000000117
+		summarizeBy: none
+		sourceColumn: bundesland
+
+	column Stadt
+		dataType: string
+		lineageTag: b3000000-0000-4000-8000-000000000118
+		summarizeBy: none
+		sourceColumn: stadt
+
+	/// Cause of Change laut SAP-Stammdaten. Alle Codes sind relativ zu einem
+	/// BEZUGSJAHR zu lesen – "Vorjahr" heißt das Jahr vor dem Bezugsjahr:
+	///   1 = im Vorjahr gewonnen    → rollt ins Bezugsjahr (Metrik 1 bzw. 2)
+	///   2 = im Bezugsjahr gewonnen → New Business ITY (Metrik 4)
+	///   3 = im Vorjahr verloren    → Lost Business Roll (Metrik 6)
+	///   4 = im Bezugsjahr verloren → Lost Business ITY (Metrik 7 bzw. 8)
+	///   5 = M&A                    → keine Net-New-Größe (99)
+	///
+	/// Welches Bezugsjahr gilt, hängt an der Variante: diese Spalte und
+	/// cause_of_change_fy blicken aus dem laufenden Geschäftsjahr,
+	/// cause_of_change_ny aus dem Folgejahr. Die Umsetzung steht in
+	/// nb_20_gold, fn_map_coch.
+	column 'Cause of Change'
+		dataType: int64
+		formatString: 0
+		lineageTag: b3000000-0000-4000-8000-000000000119
+		summarizeBy: sum
+		sourceColumn: cause_of_change
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Cause of Change Bezeichnung'
+		dataType: string
+		lineageTag: b3000000-0000-4000-8000-000000000120
+		summarizeBy: none
+		sourceColumn: bezeichnung_cause_of_change
+
+	column cause_of_change_fy
+		dataType: int64
+		formatString: 0
+		lineageTag: 6e3dbbbd-a205-4986-8d8a-4d91e2c87d6f
+		summarizeBy: sum
+		sourceColumn: cause_of_change_fy
+
+		annotation SummarizationSetBy = Automatic
+
+	column cause_of_change_ny
+		dataType: int64
+		formatString: 0
+		lineageTag: 516a47ba-d116-4f6f-ac3e-fc5029b8bcc4
+		summarizeBy: sum
+		sourceColumn: cause_of_change_ny
+
+		annotation SummarizationSetBy = Automatic
+
+	hierarchy Organisation
+		lineageTag: b3000000-0000-4000-8000-000000000201
+
+		level Verantwortungsbereich
+			lineageTag: b3000000-0000-4000-8000-000000000202
+			column: Verantwortungsbereich
+
+		level Region
+			lineageTag: b3000000-0000-4000-8000-000000000203
+			column: Region
+
+		level Management
+			lineageTag: b3000000-0000-4000-8000-000000000204
+			column: Management
+
+		level Betrieb
+			lineageTag: b3000000-0000-4000-8000-000000000205
+			column: 'Werk Bezeichnung'
+
+	partition 'DIM Betrieb' = m
+		mode: import
+		source = fnLakehouse("gold_dim_unit")
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

@@ -1,0 +1,242 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.11.0/schema.json",
+  "name": "52d083b60a15ec74e801",
+  "position": {
+    "x": 183.37760910815939,
+    "y": 201.59392789373814,
+    "z": 7001,
+    "height": 478.48197343453506,
+    "width": 924.17457305502842,
+    "tabOrder": 7001
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "FCT Net New ITY"
+                    }
+                  },
+                  "Property": "Entität"
+                }
+              },
+              "queryRef": "FCT Net New ITY.Entität",
+              "nativeQueryRef": "Entität"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "FCT Net New ITY"
+                    }
+                  },
+                  "Property": "Wahrscheinlichkeit"
+                }
+              },
+              "queryRef": "FCT Net New ITY.Wahrscheinlichkeit",
+              "nativeQueryRef": "Wahrscheinlichkeit"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Kennzahlen"
+                    }
+                  },
+                  "Property": "Net New ITY"
+                }
+              },
+              "queryRef": "_Kennzahlen.Net New ITY",
+              "nativeQueryRef": "Net New ITY"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "DIM Betrieb"
+                    }
+                  },
+                  "Property": "Unweighted ITY Pipeline"
+                }
+              },
+              "queryRef": "DIM Betrieb.Unweighted ITY Pipeline",
+              "nativeQueryRef": "Unweighted ITY",
+              "displayName": "Unweighted ITY"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "FCT Net New ITY"
+                    }
+                  },
+                  "Property": "Entscheidungsdatum"
+                }
+              },
+              "queryRef": "FCT Net New ITY.Entscheidungsdatum",
+              "nativeQueryRef": "Entscheidungsdatum"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "DIM Opportunity"
+                    }
+                  },
+                  "Property": "Mobilisierung"
+                }
+              },
+              "queryRef": "DIM Opportunity.Mobilisierung",
+              "nativeQueryRef": "Mobilisierung"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "FCT Net New ITY"
+                    }
+                  },
+                  "Property": "Verantwortlicher"
+                }
+              },
+              "queryRef": "FCT Net New ITY.Verantwortlicher",
+              "nativeQueryRef": "Verantwortlicher"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "DIM Betrieb"
+                  }
+                },
+                "Property": "Unweighted ITY Pipeline"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "aa1754b23053a34606e0",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "FCT Net New ITY"
+              }
+            },
+            "Property": "Entität"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "dabb43e18837c59d4058",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "FCT Net New ITY"
+              }
+            },
+            "Property": "Wahrscheinlichkeit"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "7829ef5a5dbe3d313aaa",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Kennzahlen"
+              }
+            },
+            "Property": "Net New ITY"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "578400619e283671639a",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "DIM Betrieb"
+              }
+            },
+            "Property": "Unweighted ITY Pipeline"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "b948f4a805ce17ce76c7",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "FCT Net New ITY"
+              }
+            },
+            "Property": "Entscheidungsdatum"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "001f2e541d61817d31d2",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "DIM Opportunity"
+              }
+            },
+            "Property": "Mobilisierung"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "e7c55f3d4b9de0780e01",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "FCT Net New ITY"
+              }
+            },
+            "Property": "Verantwortlicher"
+          }
+        },
+        "type": "Categorical"
+      }
+    ]
+  }
+}

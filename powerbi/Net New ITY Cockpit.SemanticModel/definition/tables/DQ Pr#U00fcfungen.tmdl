@@ -1,0 +1,62 @@
+/// Ergebnisse der Datenqualitätsprüfungen je Ladelauf.
+/// Quelle: gold_dq_checks (siehe lakehouse/notebooks/nb_30_quality.py).
+/// 
+/// Diese Tabelle macht sichtbar, was in den Altmodellen unsichtbar war:
+/// Opportunities ohne Mobilisierungsdatum, Verträge ohne Vorjahres-ARO,
+/// ITY-Werte oberhalb des ARO. Solche Sätze wurden dort per
+/// "Gefilterte Zeilen" entfernt und tauchten nirgends wieder auf – der
+/// fehlende Betrag war im Ergebnis nicht mehr erklärbar.
+table 'DQ Prüfungen'
+	lineageTag: b7000000-0000-4000-8000-000000000001
+
+	column Regel
+		dataType: string
+		lineageTag: b7000000-0000-4000-8000-000000000101
+		summarizeBy: none
+		sourceColumn: regel_id
+
+	/// ERROR bricht die Pipeline ab, WARNING erscheint im Bericht,
+	/// INFO ist eine reine Kennzahl.
+	column Schweregrad
+		dataType: string
+		lineageTag: b7000000-0000-4000-8000-000000000102
+		summarizeBy: none
+		sourceColumn: schweregrad
+
+	column Beschreibung
+		dataType: string
+		lineageTag: b7000000-0000-4000-8000-000000000103
+		summarizeBy: none
+		sourceColumn: beschreibung
+
+	column Verstöße
+		dataType: int64
+		formatString: #,0
+		lineageTag: b7000000-0000-4000-8000-000000000104
+		summarizeBy: sum
+		sourceColumn: anzahl_verstoesse
+
+	/// Konkrete Handlungsanweisung – wer im CRM was nachpflegen muss.
+	column Handlungshinweis
+		dataType: string
+		lineageTag: b7000000-0000-4000-8000-000000000105
+		summarizeBy: none
+		sourceColumn: hinweis
+
+	column Prüfdatum
+		dataType: dateTime
+		formatString: dd.mm.yyyy
+		lineageTag: b7000000-0000-4000-8000-000000000106
+		summarizeBy: none
+		sourceColumn: pruef_datum
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	partition 'DQ Prüfungen' = m
+		mode: import
+		source = fnLakehouse("gold_dq_checks")
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

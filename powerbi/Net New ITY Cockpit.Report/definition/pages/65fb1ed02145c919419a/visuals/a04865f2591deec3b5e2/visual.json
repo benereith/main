@@ -1,0 +1,168 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.11.0/schema.json",
+  "name": "a04865f2591deec3b5e2",
+  "position": {
+    "x": 183.96761133603241,
+    "y": 25.910931174089068,
+    "z": 4000,
+    "height": 176.19433198380568,
+    "width": 655.54655870445345,
+    "tabOrder": 4000
+  },
+  "visual": {
+    "visualType": "gauge",
+    "query": {
+      "queryState": {
+        "TargetValue": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "DIM Betrieb"
+                    }
+                  },
+                  "Property": "ITY Target Pipeline"
+                }
+              },
+              "queryRef": "DIM Betrieb.ITY Target Pipeline",
+              "nativeQueryRef": "ITY Target Pipeline"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "DIM Betrieb"
+                    }
+                  },
+                  "Property": "Unweighted ITY Pipeline"
+                }
+              },
+              "queryRef": "DIM Betrieb.Unweighted ITY Pipeline",
+              "nativeQueryRef": "Unweighted ITY Pipeline"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "DIM Betrieb"
+                  }
+                },
+                "Property": "Unweighted ITY Pipeline"
+              }
+            },
+            "direction": "Descending"
+          }
+        ],
+        "isDefaultSort": true
+      }
+    },
+    "objects": {
+      "calloutValue": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'New Business #ITY Target Pipeline'"
+                }
+              }
+            },
+            "titleWrap": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "fontColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#0B0B0B'"
+                    }
+                  }
+                }
+              }
+            },
+            "alignment": {
+              "expr": {
+                "Literal": {
+                  "Value": "'left'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "cb9b0dc6a89992b0437b",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "DIM Betrieb"
+              }
+            },
+            "Property": "Unweighted ITY Pipeline"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "0be0b36d6c20209c3a10",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "DIM Betrieb"
+              }
+            },
+            "Property": "ITY Target Pipeline"
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
+  }
+}

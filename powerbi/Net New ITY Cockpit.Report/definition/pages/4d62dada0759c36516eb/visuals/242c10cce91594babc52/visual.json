@@ -1,0 +1,204 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.8.0/schema.json",
+  "name": "242c10cce91594babc52",
+  "position": {
+    "x": 184,
+    "y": 412,
+    "z": 4138,
+    "height": 260,
+    "width": 1080,
+    "tabOrder": 4138
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "DQ Prüfungen"
+                    }
+                  },
+                  "Property": "Regel"
+                }
+              },
+              "queryRef": "DQ Prüfungen.Regel",
+              "nativeQueryRef": "Regel"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "DQ Prüfungen"
+                    }
+                  },
+                  "Property": "Schweregrad"
+                }
+              },
+              "queryRef": "DQ Prüfungen.Schweregrad",
+              "nativeQueryRef": "Schweregrad"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "DQ Prüfungen"
+                    }
+                  },
+                  "Property": "Beschreibung"
+                }
+              },
+              "queryRef": "DQ Prüfungen.Beschreibung",
+              "nativeQueryRef": "Beschreibung"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Kennzahlen"
+                    }
+                  },
+                  "Property": "DQ Verstöße"
+                }
+              },
+              "queryRef": "_Kennzahlen.DQ Verstöße",
+              "nativeQueryRef": "DQ Verstöße"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "DQ Prüfungen"
+                    }
+                  },
+                  "Property": "Handlungshinweis"
+                }
+              },
+              "queryRef": "DQ Prüfungen.Handlungshinweis",
+              "nativeQueryRef": "Handlungshinweis"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "_Kennzahlen"
+                  }
+                },
+                "Property": "DQ Verstöße"
+              }
+            },
+            "direction": "Descending"
+          }
+        ],
+        "isDefaultSort": true
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Datenqualität – was im CRM nachgepflegt werden muss'"
+                }
+              }
+            },
+            "titleWrap": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "fontColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#0B0B0B'"
+                    }
+                  }
+                }
+              }
+            },
+            "alignment": {
+              "expr": {
+                "Literal": {
+                  "Value": "'left'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "subTitle": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Jede Zeile nennt die betroffene Regel und die konkrete Handlung. Regeln mit Schweregrad ERROR blockieren die Aktualisierung.'"
+                }
+              }
+            },
+            "titleWrap": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "fontColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#52514E'"
+                    }
+                  }
+                }
+              }
+            },
+            "alignment": {
+              "expr": {
+                "Literal": {
+                  "Value": "'left'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}
