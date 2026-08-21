@@ -527,10 +527,37 @@ table _Kennzahlen
 
 	/// 05 BUDGET UND FORECAST (SAP)
 	/// 
+	/// Monatswert der Umsatztabelle, eingegrenzt auf die Ertragskonten.
+	///
+	/// WOZU DIESE ZWISCHENSTUFE
+	/// 'FCT Umsatz' führt seit der Kategorie-Aufteilung zwei Zeilenmengen auf
+	/// derselben Granularität: "Revenue" (nur Ertragskonten) und "UP" (gesamter
+	/// Buchungsstoff). Ein blankes SUM über [Monatswert] summiert beide und
+	/// liefert lautlos den doppelten Wert.
+	///
+	/// Statt denselben Filter in jede Umsatzkennzahl zu kopieren – und ihn
+	/// beim Anlegen der nächsten zu vergessen – steht er hier einmal. Alle
+	/// Umsatz-, Budget- und Forecastkennzahlen bauen darauf auf.
+	///
+	/// Für eine Auswertung auf UP-Basis gehört eine zweite Basiskennzahl
+	/// daneben, nicht ein Filter irgendwo weiter oben.
+	measure 'Umsatz Monatswert' = ```
+			CALCULATE (
+			    SUM ( 'FCT Umsatz'[Monatswert] ),
+			    KEEPFILTERS ( 'FCT Umsatz'[Kategorie] = "Revenue" )
+			)
+			```
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 05 Budget und Forecast
+		lineageTag: a0000000-0000-4000-8000-000000000509
+		isHidden
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
 	/// Gebuchter Umsatz laut SAP (Version 0).
 	measure 'Umsatz Ist' =
 			CALCULATE (
-			    SUM ( 'FCT Umsatz'[Monatswert] ),
+			    [Umsatz Monatswert],
 			    KEEPFILTERS ( 'FCT Umsatz'[Werttyp Version] = "Actual_0" )
 			)
 		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
@@ -542,7 +569,7 @@ table _Kennzahlen
 	/// Budgetierter Umsatz (SAP-Version 20).
 	measure 'Umsatz Budget' =
 			CALCULATE (
-			    SUM ( 'FCT Umsatz'[Monatswert] ),
+			    [Umsatz Monatswert],
 			    KEEPFILTERS ( 'FCT Umsatz'[Werttyp Version] = "Plan_90" )
 			)
 		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
@@ -554,7 +581,7 @@ table _Kennzahlen
 	/// Aktueller Forecast (SAP-Versionen RGF und R12).
 	measure 'Umsatz Forecast' =
 			CALCULATE (
-			    SUM ( 'FCT Umsatz'[Monatswert] ),
+			    [Umsatz Monatswert],
 			    KEEPFILTERS ( 'FCT Umsatz'[Werttyp Version] IN { "Plan_RGF", "Plan_R12" } )
 			)
 		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
@@ -567,7 +594,7 @@ table _Kennzahlen
 	/// Der Wert, gegen den die CRM-Approximation gestellt wird.
 	measure 'Net ITY Budget' =
 			CALCULATE (
-			    SUM ( 'FCT Umsatz'[Monatswert] ),
+			    [Umsatz Monatswert],
 			    KEEPFILTERS ( 'FCT Umsatz'[Werttyp Version] = "Plan_90" ),
 			    KEEPFILTERS('DIM Betrieb'[cause_of_change_ny] in {4,2}))+4900000-6842682.23
 		displayFolder: 05 Budget und Forecast
@@ -598,7 +625,7 @@ table _Kennzahlen
 			VAR _GJ = MAX ( 'DIM Datum'[GJ Jahr] )
 			RETURN
 			    CALCULATE (
-			        SUM ( 'FCT Umsatz'[Monatswert] ),
+			        [Umsatz Monatswert],
 			        REMOVEFILTERS ( 'DIM Datum' ),
 			        'FCT Umsatz'[GJ Jahr] = _GJ - 1,
 			        KEEPFILTERS ( 'FCT Umsatz'[Werttyp Version] = "Actual_0" ),
@@ -659,7 +686,7 @@ table _Kennzahlen
 	/// Planbetriebe vom Typ Roll). Gegengröße zu [Roll gesichert].
 	measure 'Roll Budget' =
 			CALCULATE (
-			    SUM ( 'FCT Umsatz'[Monatswert] ),
+			    [Umsatz Monatswert],
 			    KEEPFILTERS ( 'FCT Umsatz'[Werttyp Version] = "Plan_90" ),
 			    KEEPFILTERS ( 'FCT Umsatz'[Betriebstyp] = "Plan-Betriebe Roll" )
 			)
@@ -673,7 +700,7 @@ table _Kennzahlen
 	/// Entscheidungen dazu fallen erst im Budgetjahr selbst.
 	measure 'Unknown ITY Budget' =
 			CALCULATE (
-			    SUM ( 'FCT Umsatz'[Monatswert] ),
+			    [Umsatz Monatswert],
 			    KEEPFILTERS ( 'FCT Umsatz'[Werttyp Version] = "Plan_90" ),
 			    KEEPFILTERS ( 'FCT Umsatz'[Betriebstyp] = "Plan-Betriebe ITY" )
 			)
@@ -1030,7 +1057,7 @@ table _Kennzahlen
 	/// Kennzahl den Wert einer alten Runde unbemerkt mit.
 	measure 'New Business Budget' =
 			CALCULATE (
-			    SUM ( 'FCT Umsatz'[Monatswert] ),
+			    [Umsatz Monatswert],
 			    KEEPFILTERS ( 'FCT Umsatz'[Werttyp Version] = "Plan_90" ),
 			    KEEPFILTERS('DIM Betrieb'[cause_of_change_ny] in {2}))+4900000
 		lineageTag: 607976c1-6bc8-41ca-a9cc-65310b47bb50
@@ -1077,6 +1104,7 @@ table _Kennzahlen
 			VAR _BudgetLaufend =
 			    CALCULATE (
 			        SUMX ( _Entdoppelt, CALCULATE ( AVERAGE ( 'FCT Umsatz'[Monatswert] ) ) ),
+			        KEEPFILTERS ( 'FCT Umsatz'[Kategorie] = "Revenue" ),
 			        KEEPFILTERS ( 'FCT Umsatz'[Werttyp Version] = "Plan_90" ),
 			        KEEPFILTERS ( 'FCT Umsatz'[Metric ID NY] <> 99 ),
 			        'FCT Umsatz'[GJ Jahr] = _GJ
@@ -1085,6 +1113,7 @@ table _Kennzahlen
 			VAR _ForecastVorjahr =
 			    CALCULATE (
 			        SUMX ( _Entdoppelt, CALCULATE ( AVERAGE ( 'FCT Umsatz'[Monatswert] ) ) ),
+			        KEEPFILTERS ( 'FCT Umsatz'[Kategorie] = "Revenue" ),
 			        KEEPFILTERS ( 'FCT Umsatz'[Werttyp Version] IN { "Plan_RGF", "Plan_R12" } ),
 			        KEEPFILTERS ( 'FCT Umsatz'[Metric ID NY] <> 99 ),
 			        'FCT Umsatz'[GJ Jahr] = _Vorjahr,

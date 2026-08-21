@@ -133,6 +133,24 @@ table 'FCT Umsatz'
 		summarizeBy: none
 		sourceColumn: betriebstyp
 
+	/// Kontenabgrenzung der Zeile:
+	///   Revenue  nur Ertragskonten (Level_2_Key = Total Revenue)
+	///   UP       ohne Abgrenzung, gesamter Buchungsstoff
+	///
+	/// ACHTUNG – beide Kategorien liegen auf DERSELBEN Granularität, es gibt
+	/// also zu jedem Werk, jeder Periode und jeder Version zwei Zeilen. Jede
+	/// Kennzahl, die auf [Monatswert] summiert, MUSS deshalb auf eine
+	/// Kategorie filtern; sonst zählt sie beide zusammen und liefert lautlos
+	/// den doppelten Wert.
+	///
+	/// Alle bestehenden Kennzahlen filtern auf "Revenue" – ihre Werte ändern
+	/// sich durch die Erweiterung also nicht.
+	column Kategorie
+		dataType: string
+		lineageTag: c3000000-0000-4000-8000-000000000118
+		summarizeBy: none
+		sourceColumn: kategorie
+
 	/// Cause of Change des Betriebs, wie in den SAP-Stammdaten gepflegt.
 	/// Rohwert, aus dem 'Metric ID' abgeleitet wird.
 	column cause_of_change

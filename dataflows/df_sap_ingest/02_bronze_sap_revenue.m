@@ -1,110 +1,123 @@
 // ===========================================================================
 // Dataflow Gen2 "df_sap_ingest"  ·  Abfrage: bronze_sap_revenue
 // ===========================================================================
-// Ist-, Budget- und Forecast-Umsaetze aus der SQL-View V_SAP_EXPORTS_cleansed
-// im SAP-Warehouse "Reporting" - dieselbe Quelle wie in den Altmodellen.
+// Ist-, Budget- und Forecast-Umsaetze aus V_SAP_EXPORTS_cleansed im
+// SAP-Warehouse "Reporting".
 //
 // Ziel  : lakehouse_group_controlling / bronze_sap_revenue
 // Modus : REPLACE (Ziel in den Dataflow-Einstellungen auf "Ersetzen" stellen)
 //
-// KEINE HISTORISIERUNG, aus demselben Grund wie bei bronze_sap_unit: die View
-// ist bereits der gepflegte Ist-/Planstand je Periode. Ein Tagessnapshot
-// darueber wuerde dieselben Buchungen taeglich vervielfachen, ohne eine Frage
-// zu beantworten, die nicht schon ueber fy_year/fy_period beantwortbar waere.
-// nb_05_snapshot fasst diese Tabelle deshalb nicht an.
+// KEINE HISTORISIERUNG: die View ist bereits der gepflegte Ist-/Planstand je
+// Periode. Ein Tagessnapshot darueber wuerde dieselben Buchungen taeglich
+// vervielfachen. nb_05_snapshot fasst diese Tabelle deshalb nicht an.
+// ===========================================================================
 //
-// SPALTENNAMEN NICHT UMBENENNEN. nb_20_gold liest Fiscal_Year, Period,
-// Object_group, SAP_Version und Value woertlich in dieser Schreibweise.
+// ZWEI KATEGORIEN JE WERK UND PERIODE
+// Die Abfrage liefert dieselbe Kennzahl zweimal, unterschieden durch die
+// Spalte "kategorie":
+//   Revenue  nur Ertragskonten (Level_2_Key = Total Revenue)
+//   UP       ohne Kontenabgrenzung, also der gesamte Buchungsstoff
+//
+// ACHTUNG - das verdoppelt die Zeilen je Werk/Periode/Version. JEDE Kennzahl,
+// die auf 'FCT Umsatz'[Monatswert] summiert, MUSS deshalb auf eine Kategorie
+// filtern; sonst zaehlt sie Revenue und UP zusammen. Alle bestehenden
+// Kennzahlen tun das (Kategorie = "Revenue"), damit sich ihre Werte durch
+// diese Erweiterung nicht aendern.
+//
+// WARUM Value.NativeQuery UND NICHT SCHRITTE IM EDITOR
+// Die Aggregation (GROUP BY) laeuft damit garantiert im SQL-Warehouse, nicht
+// in der Mashup-Engine. Das hat drei Wirkungen:
+//   1. Es kommt bereits verdichtet an - eine Zeile je Werk, Version,
+//      Geschaeftsjahr, Periode und Kategorie statt einer je Buchungskonto.
+//   2. Der Grain ist damit an der Quelle eindeutig. Dubletten, gegen die die
+//      Kennzahlen sonst mit SUMMARIZE/AVERAGE absichern muessen, entstehen
+//      hier gar nicht erst.
+//   3. HAVING SUM(Value) <> 0 wirft Nullzeilen weg, bevor sie uebertragen
+//      werden.
+// Ueber den Editor zusammengeklickt wuerde derselbe Ablauf das Falten
+// verlieren, sobald ein Schritt nicht uebersetzbar ist - und dann liefe die
+// Aggregation nach dem vollstaendigen Download lokal.
+//
+// SPALTENNAMEN: bewusst wie in der Quelle (Fiscal_Year, Period, Object_group,
+// SAP_Version, Value). Die Umbenennung auf die Modellnamen passiert an genau
+// einer Stelle, in nb_20_gold. Werttyp und Periodendatum werden dort ebenfalls
+// abgeleitet und deshalb hier nicht mitgeliefert - zwei Definitionen
+// derselben Groesse laufen sonst auseinander.
 // ===========================================================================
 let
-    // Servername des SAP-Warehouse. Beim Einrichten einmal eintragen bzw. als
-    // Dataflow-Parameter hinterlegen, damit DEV/PROD getauscht werden kann.
+    // Servername des SAP-Warehouse
     SapServer = "3w3wftkijo6ujehh4fb2eleovu-tuq7lxe5lznu7hpei5nzy67o3e.datawarehouse.fabric.microsoft.com",
 
     Quelle = Sql.Database(SapServer, "Reporting"),
-    View = Quelle{[Schema = "dbo", Item = "V_SAP_EXPORTS_cleansed"]}[Data],
 
-    // Kontenhierarchie aus derselben Quelle - liefert die Ertragsabgrenzung.
-    HierarchieTabelle = Quelle{[Schema = "dbo", Item = "tab_accounts_hierarchy"]}[Data],
+    // Untergrenze der geladenen Geschaeftsjahre. Das Vorjahr wird gebraucht,
+    // weil [Net New ITY] den Vorjahresanteil abzieht und die Metrik-Zuordnung
+    // PY-Groessen kennt - ohne FY-1 im Extrakt blieben beide leer.
+    // Nach oben bewusst offen: die Planjahressicht (metric_id_ny) rechnet
+    // gegen das Folgejahr, und Plandaten reichen weiter als das laufende Jahr.
+    AktuellesGJ = 2025,   // Mit CURRENT_FY in nb_00_config gleichhalten.
+    AbGeschaeftsjahr = Number.ToText(AktuellesGJ - 1),
 
-    // --- Mengenbegrenzung und Abgrenzung an der Quelle ---------------------
-    // Alle Filter stehen bewusst VOR allen weiteren Schritten, damit sie als
-    // WHERE bzw. JOIN an SQL Server durchgereicht werden (Query Folding) und
-    // nicht erst nach dem Laden greifen. Genau das ging in den Altmodellen
-    // verloren und machte die Aktualisierung langsam.
-    AktuellesGJ = 2025,   // 2025 = FY2025/26. Mit CURRENT_FY in
-                          // lakehouse/notebooks/nb_00_config.py gleichhalten.
+    SQL =
+        "WITH AggregatedData AS (
+            -- Revenue: nur Ertragskonten
+            SELECT
+                'Revenue' AS kategorie,
+                base.Object_group,
+                base.SAP_Version,
+                base.Fiscal_Year,
+                base.Period,
+                SUM(base.Value) AS Value
+            FROM V_SAP_EXPORTS_cleansed AS base
+            LEFT JOIN tab_accounts_hierarchy AS hier
+                ON base.Account = hier.Kostenart
+            WHERE base.Object_type = 'OR'
+              AND hier.Level_2_Key = 'IS10000_T - Total Revenue inkl. IFRS/ NEUTRA/MGMT'
+              AND base.Fiscal_Year >= " & AbGeschaeftsjahr & "
+            GROUP BY base.Object_group, base.SAP_Version, base.Fiscal_Year, base.Period
+            HAVING SUM(base.Value) <> 0
 
-    // 1. Geschaeftsjahre: Vorjahr, laufendes Jahr, Folgejahr.
-    //    Das Vorjahr wird gebraucht, weil [Net New ITY] den Vorjahresanteil
-    //    abzieht - ohne FY-1 im Extrakt waere dieser Abzug immer 0.
-    GefiltertNachJahr = Table.SelectRows(
-        View,
-        each [Fiscal_Year] >= AktuellesGJ - 1 and [Fiscal_Year] <= AktuellesGJ + 1
+            UNION ALL
+
+            -- UP: ohne Kontenabgrenzung
+            SELECT
+                'UP' AS kategorie,
+                base.Object_group,
+                base.SAP_Version,
+                base.Fiscal_Year,
+                base.Period,
+                SUM(base.Value) AS Value
+            FROM V_SAP_EXPORTS_cleansed AS base
+            WHERE base.Object_type = 'OR'
+              AND base.Fiscal_Year >= " & AbGeschaeftsjahr & "
+            GROUP BY base.Object_group, base.SAP_Version, base.Fiscal_Year, base.Period
+            HAVING SUM(base.Value) <> 0
+        )
+        SELECT kategorie, Object_group, SAP_Version, Fiscal_Year, Period, Value
+        FROM AggregatedData",
+
+    Ergebnis = Value.NativeQuery(Quelle, SQL),
+
+    Typen = Table.TransformColumnTypes(
+        Ergebnis,
+        {
+            {"kategorie", type text},
+            {"Object_group", Int64.Type},
+            {"SAP_Version", type text},
+            {"Fiscal_Year", Int64.Type},
+            {"Period", Int64.Type}
+        }
     ),
 
-    // 2. Nur Ergebnisobjekte (Object_type = "OR"). Andere Objektarten sind
-    //    keine Betriebe und wuerden die Werk-Zuordnung verfaelschen.
-    GefiltertNachObjectType = Table.SelectRows(
-        GefiltertNachJahr, each [Object_type] = "OR"
-    ),
-
-    // 3./4. Kontenhierarchie anhaengen, um auf Ertragskonten abzugrenzen.
-    EingebetteterJoin = Table.NestedJoin(
-        GefiltertNachObjectType, {"Account"},
-        HierarchieTabelle, {"Kostenart"},
-        "hier", JoinKind.LeftOuter
-    ),
-    ExpandierteHierarchie = Table.ExpandTableColumn(
-        EingebetteterJoin, "hier", {"Level_2_Key"}, {"Level_2_Key"}
-    ),
-
-    // 5. Nur Total Revenue. Ohne diese Abgrenzung liefe der gesamte
-    //    Kontenplan in die Umsatzkennzahlen - inklusive Kosten.
-    Gefiltert = Table.SelectRows(
-        ExpandierteHierarchie,
-        each [Level_2_Key] = "IS10000_T - Total Revenue inkl. IFRS/ NEUTRA/MGMT"
-    ),
-
-    // Nur die von nb_20_gold gelesenen Spalten. Schreibweise beibehalten.
-    GewuenschteSpalten = {
-        "Fiscal_Year",   // Geschaeftsjahr
-        "Period",        // Periode 1..12, P1 = Oktober
-        "Object_group",  // Werk / Betrieb
-        "SAP_Version",   // 0 = Ist, 20 = Budget, RGF/R12 = Forecast, 90 = Plan
-        "Value"          // Betrag, von SAP negativ geliefert (Vorzeichenumkehr
-                         // passiert zentral in nb_20_gold)
-    },
-
-    VorhandeneSpalten = Table.ColumnNames(Gefiltert),
-    Auswahl = List.Intersect({GewuenschteSpalten, VorhandeneSpalten}),
-    Fehlend = List.Difference(GewuenschteSpalten, VorhandeneSpalten),
-
-    // Reissleine, siehe 01_bronze_sap_unit.m. Ohne Object_group und Value ist
-    // die Tabelle fuer gold_fct_revenue wertlos; besser hier abbrechen als
-    // eine Tabelle mit zwei Hilfsspalten zu schreiben.
-    Pflicht = {"Fiscal_Year", "Period", "Object_group", "Value"},
-    FehlendPflicht = List.Difference(Pflicht, VorhandeneSpalten),
-    Geprueft =
-        if List.Count(FehlendPflicht) > 0 then
-            error Error.Record(
-                "Quelle liefert keine Umsatzdaten",
-                "Pflichtspalte(n) fehlen: " & Text.Combine(FehlendPflicht, ", ")
-                    & ". Zeigt die Abfrage wirklich auf V_SAP_EXPORTS_cleansed? "
-                    & "Schreibweise der Spalten beachten - nb_20_gold liest sie "
-                    & "woertlich.",
-                "Gefundene Spalten: " & Text.Combine(VorhandeneSpalten, ", ")
-            )
-        else
-            Gefiltert,
-
-    Selektiert = Table.SelectColumns(Geprueft, Auswahl),
+    // Werke, die sich nicht als Zahl lesen lassen, sind keine Betriebe und
+    // finden im Modell ohnehin keinen Anschluss.
+    OhneFehler = Table.RemoveRowsWithErrors(Typen, {"Object_group"}),
 
     MitLadezeit = Table.AddColumn(
-        Selektiert, "loaded_at", each DateTime.From(fn_berlin_now()), type datetime
+        OhneFehler, "loaded_at", each DateTime.From(fn_berlin_now()), type datetime
     ),
     MitDiagnose = Table.AddColumn(
-        MitLadezeit, "_fehlende_felder", each Text.Combine(Fehlend, ","), type text
+        MitLadezeit, "_fehlende_felder", each "", type text
     )
 in
     MitDiagnose

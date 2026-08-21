@@ -6,7 +6,7 @@
 > nicht hier.
 
 
-Das Modell enthält **76 Kennzahlen** in 11 Ordnern.
+Das Modell enthält **77 Kennzahlen** in 11 Ordnern.
 
 ## Inhalt
 
@@ -15,7 +15,7 @@ Das Modell enthält **76 Kennzahlen** in 11 Ordnern.
 - [02 Status](#02-status) – 10 Kennzahlen
 - [03 Zeit](#03-zeit) – 4 Kennzahlen
 - [04 Szenarien](#04-szenarien) – 4 Kennzahlen
-- [05 Budget und Forecast](#05-budget-und-forecast) – 8 Kennzahlen
+- [05 Budget und Forecast](#05-budget-und-forecast) – 9 Kennzahlen
 - [06 Quoten](#06-quoten) – 4 Kennzahlen
 - [07 CRM-Bewegung](#07-crm-bewegung) – 5 Kennzahlen
 - [08 Datenqualität](#08-datenqualität) – 3 Kennzahlen
@@ -124,7 +124,7 @@ ACHTUNG – manueller Zuschlag: die konstanten 4.900.000 € sind eine Korrektur
 ```dax
 New Business Budget =
 CALCULATE (
-    SUM ( 'FCT Umsatz'[Monatswert] ),
+    [Umsatz Monatswert],
     KEEPFILTERS ( 'FCT Umsatz'[Werttyp Version] = "Plan_90" ),
     KEEPFILTERS('DIM Betrieb'[cause_of_change_ny] in {2}))+4900000
 ```
@@ -719,6 +719,7 @@ VAR _Entdoppelt =
 VAR _BudgetLaufend =
     CALCULATE (
         SUMX ( _Entdoppelt, CALCULATE ( AVERAGE ( 'FCT Umsatz'[Monatswert] ) ) ),
+        KEEPFILTERS ( 'FCT Umsatz'[Kategorie] = "Revenue" ),
         KEEPFILTERS ( 'FCT Umsatz'[Werttyp Version] = "Plan_90" ),
         KEEPFILTERS ( 'FCT Umsatz'[Metric ID NY] <> 99 ),
         'FCT Umsatz'[GJ Jahr] = _GJ
@@ -727,6 +728,7 @@ VAR _BudgetLaufend =
 VAR _ForecastVorjahr =
     CALCULATE (
         SUMX ( _Entdoppelt, CALCULATE ( AVERAGE ( 'FCT Umsatz'[Monatswert] ) ) ),
+        KEEPFILTERS ( 'FCT Umsatz'[Kategorie] = "Revenue" ),
         KEEPFILTERS ( 'FCT Umsatz'[Werttyp Version] IN { "Plan_RGF", "Plan_R12" } ),
         KEEPFILTERS ( 'FCT Umsatz'[Metric ID NY] <> 99 ),
         'FCT Umsatz'[GJ Jahr] = _Vorjahr,
@@ -750,7 +752,7 @@ Budgetierter unknown-ITY-Effekt (SAP-Version 90, Planbetriebe). Der Wert, gegen 
 ```dax
 Net ITY Budget =
 CALCULATE (
-    SUM ( 'FCT Umsatz'[Monatswert] ),
+    [Umsatz Monatswert],
     KEEPFILTERS ( 'FCT Umsatz'[Werttyp Version] = "Plan_90" ),
     KEEPFILTERS('DIM Betrieb'[cause_of_change_ny] in {4,2}))+4900000-6842682.23
 ```
@@ -766,7 +768,7 @@ Organischer Umsatz Vorjahr =
 VAR _GJ = MAX ( 'DIM Datum'[GJ Jahr] )
 RETURN
     CALCULATE (
-        SUM ( 'FCT Umsatz'[Monatswert] ),
+        [Umsatz Monatswert],
         REMOVEFILTERS ( 'DIM Datum' ),
         'FCT Umsatz'[GJ Jahr] = _GJ - 1,
         KEEPFILTERS ( 'FCT Umsatz'[Werttyp Version] = "Actual_0" ),
@@ -783,7 +785,7 @@ Budgetierter Umsatz (SAP-Version 20).
 ```dax
 Umsatz Budget =
 CALCULATE (
-    SUM ( 'FCT Umsatz'[Monatswert] ),
+    [Umsatz Monatswert],
     KEEPFILTERS ( 'FCT Umsatz'[Werttyp Version] = "Plan_90" )
 )
 ```
@@ -797,14 +799,12 @@ Aktueller Forecast (SAP-Versionen RGF und R12).
 ```dax
 Umsatz Forecast =
 CALCULATE (
-    SUM ( 'FCT Umsatz'[Monatswert] ),
+    [Umsatz Monatswert],
     KEEPFILTERS ( 'FCT Umsatz'[Werttyp Version] IN { "Plan_RGF", "Plan_R12" } )
 )
 ```
 
 ### `Umsatz Ist`
-
-05 BUDGET UND FORECAST (SAP)
 
 Gebuchter Umsatz laut SAP (Version 0).
 
@@ -813,8 +813,30 @@ Gebuchter Umsatz laut SAP (Version 0).
 ```dax
 Umsatz Ist =
 CALCULATE (
-    SUM ( 'FCT Umsatz'[Monatswert] ),
+    [Umsatz Monatswert],
     KEEPFILTERS ( 'FCT Umsatz'[Werttyp Version] = "Actual_0" )
+)
+```
+
+### `Umsatz Monatswert`
+
+05 BUDGET UND FORECAST (SAP)
+
+Monatswert der Umsatztabelle, eingegrenzt auf die Ertragskonten.
+
+WOZU DIESE ZWISCHENSTUFE 'FCT Umsatz' führt seit der Kategorie-Aufteilung zwei Zeilenmengen auf derselben Granularität: "Revenue" (nur Ertragskonten) und "UP" (gesamter Buchungsstoff). Ein blankes SUM über [Monatswert] summiert beide und liefert lautlos den doppelten Wert.
+
+Statt denselben Filter in jede Umsatzkennzahl zu kopieren – und ihn beim Anlegen der nächsten zu vergessen – steht er hier einmal. Alle Umsatz-, Budget- und Forecastkennzahlen bauen darauf auf.
+
+Für eine Auswertung auf UP-Basis gehört eine zweite Basiskennzahl daneben, nicht ein Filter irgendwo weiter oben.
+
+**Format:** `#,0\ "€";-#,0\ "€";#,0\ "€"`
+
+```dax
+Umsatz Monatswert =
+CALCULATE (
+    SUM ( 'FCT Umsatz'[Monatswert] ),
+    KEEPFILTERS ( 'FCT Umsatz'[Kategorie] = "Revenue" )
 )
 ```
 
@@ -1185,7 +1207,7 @@ Budgetseite: Roll-Anteil des unknown-ITY-Budgets (SAP-Version 90, Planbetriebe v
 ```dax
 Roll Budget =
 CALCULATE (
-    SUM ( 'FCT Umsatz'[Monatswert] ),
+    [Umsatz Monatswert],
     KEEPFILTERS ( 'FCT Umsatz'[Werttyp Version] = "Plan_90" ),
     KEEPFILTERS ( 'FCT Umsatz'[Betriebstyp] = "Plan-Betriebe Roll" )
 )
@@ -1307,7 +1329,7 @@ Budgetseite: ITY-Anteil des unknown-ITY-Budgets (Planbetriebe Typ ITY). Entschei
 ```dax
 Unknown ITY Budget =
 CALCULATE (
-    SUM ( 'FCT Umsatz'[Monatswert] ),
+    [Umsatz Monatswert],
     KEEPFILTERS ( 'FCT Umsatz'[Werttyp Version] = "Plan_90" ),
     KEEPFILTERS ( 'FCT Umsatz'[Betriebstyp] = "Plan-Betriebe ITY" )
 )

@@ -20,13 +20,13 @@
 | `DQ Prüfungen` | Prüfung | 6 | 0 | `gold_dq_checks` |
 | `FCT CRM-Bewegung` | Fakt | 14 | 0 | `gold_fct_crm_movement` |
 | `FCT Net New ITY` | Fakt | 35 | 0 | `gold_fct_net_new_ity` |
-| `FCT Umsatz` | Fakt | 17 | 0 | `gold_fct_revenue` |
+| `FCT Umsatz` | Fakt | 18 | 0 | `gold_fct_revenue` |
 | `Szenario Anlauf` | Szenario-Parameter | 2 | 0 | berechnet (DATATABLE) |
 | `Szenario Anlaufdauer` | Szenario-Parameter | 2 | 0 | berechnet (DATATABLE) |
 | `Szenario Bewertung` | Szenario-Parameter | 3 | 0 | berechnet (DATATABLE) |
 | `Szenario Schwelle` | Szenario-Parameter | 2 | 0 | berechnet (DATATABLE) |
 | `Szenario Verschiebung` | Szenario-Parameter | 3 | 0 | berechnet (DATATABLE) |
-| `_Kennzahlen` | Kennzahlen | 1 | 70 | – |
+| `_Kennzahlen` | Kennzahlen | 1 | 71 | – |
 
 ## Beziehungen
 
@@ -326,6 +326,7 @@ Ersetzt die Tabelle Revenues der Altmodelle. Zwei Dinge sind bereinigt: 1. Das V
 | `Metric ID FY` _(technisch)_ | int64 | `metric_id_fy` | Variante des Mappings auf Basis cause_of_change_fy (Forecast-Sicht). |
 | `Metric ID NY` _(technisch)_ | int64 | `metric_id_ny` | Variante des Mappings auf Basis cause_of_change_ny (Planjahressicht). |
 | `Betriebstyp` | string | `betriebstyp` | – |
+| `Kategorie` | string | `kategorie` | Kontenabgrenzung der Zeile: Revenue  nur Ertragskonten (Level_2_Key = Total Revenue) UP       ohne Abgrenzung, gesamter Buchungsstoff ACHTUNG – beide Kategorien liegen auf DERSELBEN Granularität, es gibt also zu jedem Werk, jeder Periode und jeder Version zwei Zeilen. Jede Kennzahl, die auf [Monatswert] summiert, MUSS deshalb auf eine Kategorie filtern; sonst zählt sie beide zusammen und liefert lautlos den doppelten Wert. Alle bestehenden Kennzahlen filtern auf "Revenue" – ihre Werte ändern sich durch die Erweiterung also nicht. |
 | `cause_of_change` | int64 | `cause_of_change` | Cause of Change des Betriebs, wie in den SAP-Stammdaten gepflegt. Rohwert, aus dem 'Metric ID' abgeleitet wird. |
 | `cause_of_change_fy` | int64 | `cause_of_change_fy` | Cause of Change mit Blick auf das laufende Geschäftsjahr. |
 | `cause_of_change_ny` | int64 | `cause_of_change_ny` | Cause of Change mit Blick auf das FOLGEJAHR – die Sicht, auf der die Budgetlogik aufsetzt (im Altmodell "Mapping CoCh NY"). Liegt bewusst auf dem Fakt und nicht nur auf 'DIM Betrieb': die Budgetkennzahl grenzt über die Kombination aus Betriebstyp und diesem Wert ab. Über zwei Tabellen hinweg ließe sich das weder mit einem einzelnen ALL() ausdrücken noch performant auswerten. |

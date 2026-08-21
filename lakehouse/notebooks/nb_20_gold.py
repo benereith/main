@@ -759,9 +759,15 @@ if not spark.catalog.tableExists("bronze_sap_revenue"):
 else:
     rev = spark.table("bronze_sap_revenue")
 
-    # Monatswert und YTD je Werk/Version/Geschaeftsjahr
-    w_ytd = Window.partitionBy("werk", "version", "fy_year").orderBy("fy_period").rowsBetween(
-        Window.unboundedPreceding, Window.currentRow
+    # Monatswert und YTD je Werk/Version/Geschaeftsjahr UND KATEGORIE.
+    # Die Kategorie gehoert zwingend in die Partition: bronze_sap_revenue
+    # liefert Revenue und UP als zwei Zeilenmengen auf derselben Granularitaet.
+    # Ohne sie liefe der kumulierte Wert quer ueber beide und waere fuer keine
+    # der beiden richtig.
+    w_ytd = (
+        Window.partitionBy("kategorie", "werk", "version", "fy_year")
+        .orderBy("fy_period")
+        .rowsBetween(Window.unboundedPreceding, Window.currentRow)
     )
 
     rev = (
@@ -831,6 +837,10 @@ else:
         # CRM-Werte, nicht die SAP-Umsaetze hier.
         .withColumn("monat_index", (F.col("fy_year") * 12 + F.col("fy_period")).cast("int"))
         .select(
+            # kategorie trennt Revenue (nur Ertragskonten) von UP (gesamter
+            # Buchungsstoff). Beide liegen auf derselben Granularitaet - jede
+            # Kennzahl muss darauf filtern, sonst summiert sie beide.
+            "kategorie",
             "werk", "fy_year", "fy_period", "monat_index", "period_date",
             "werttyp", "version", "werttyp_version", "betrag_monat", "betrag_ytd",
             "metric_id", "metric_id_fy", "metric_id_ny", "betriebstyp",
