@@ -31,10 +31,10 @@ table Granularität
 		isHidden
 		formatString: 0
 		lineageTag: 33d4c09a-ac56-4e07-9cdd-7032d752e113
-		summarizeBy: sum
+		summarizeBy: none
 		sourceColumn: [Value3]
 
-		annotation SummarizationSetBy = Automatic
+		annotation SummarizationSetBy = User
 
 	partition Granularität = calculated
 		mode: import

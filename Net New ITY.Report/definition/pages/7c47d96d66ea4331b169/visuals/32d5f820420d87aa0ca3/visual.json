@@ -17,22 +17,17 @@
           "projections": [
             {
               "field": {
-                "Aggregation": {
+                "Measure": {
                   "Expression": {
-                    "Column": {
-                      "Expression": {
-                        "SourceRef": {
-                          "Entity": "SAP_Stammdaten"
-                        }
-                      },
-                      "Property": "bezeichnung_region"
+                    "SourceRef": {
+                      "Entity": "0. Measuretabelle"
                     }
                   },
-                  "Function": 3
+                  "Property": "Region (Name)"
                 }
               },
-              "queryRef": "Min(SAP_Stammdaten.bezeichnung_region)",
-              "nativeQueryRef": "Erstes Datum: bezeichnung_region"
+              "queryRef": "0. Measuretabelle.Region (Name)",
+              "nativeQueryRef": "Region (Name)"
             }
           ]
         }

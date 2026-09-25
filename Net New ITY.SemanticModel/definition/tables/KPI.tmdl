@@ -4,12 +4,12 @@ table KPI
 	column KPIKey
 		formatString: 0
 		lineageTag: 4ac3ce8c-bf45-4e10-af55-1d6225d208ea
-		summarizeBy: count
+		summarizeBy: none
 		isNameInferred
 		sourceColumn: [KPIKey]
 		sortByColumn: Sort
 
-		annotation SummarizationSetBy = Automatic
+		annotation SummarizationSetBy = User
 
 	column Section
 		lineageTag: 52b83e85-8ca4-4578-8284-2a3e0e366556
@@ -31,11 +31,11 @@ table KPI
 	column Sort
 		formatString: 0
 		lineageTag: 1fd6a5c1-9b55-4918-a424-a9eaaa1298d3
-		summarizeBy: sum
+		summarizeBy: none
 		isNameInferred
 		sourceColumn: [Sort]
 
-		annotation SummarizationSetBy = Automatic
+		annotation SummarizationSetBy = User
 
 	partition KPI = calculated
 		mode: import

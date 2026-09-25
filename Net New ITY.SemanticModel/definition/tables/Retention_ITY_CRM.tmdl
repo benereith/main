@@ -4,6 +4,7 @@ table Retention_ITY_CRM
 	column Werk
 		dataType: int64
 		formatString: 0
+		isHidden
 		lineageTag: ba24599d-b95a-45f7-9cff-ddf75f3598a3
 		summarizeBy: none
 		sourceColumn: Werk
@@ -14,27 +15,27 @@ table Retention_ITY_CRM
 		dataType: int64
 		formatString: 0
 		lineageTag: 5f266e93-74d6-4686-bcbc-a485b7424670
-		summarizeBy: sum
+		summarizeBy: none
 		sourceColumn: Buchungsperiode
 
-		annotation SummarizationSetBy = Automatic
+		annotation SummarizationSetBy = User
 
 	column Geschäftsjahr
 		dataType: int64
 		formatString: 0
 		lineageTag: d26fb32b-69e5-4432-967c-db5a4b9b73e2
-		summarizeBy: sum
+		summarizeBy: none
 		sourceColumn: Geschäftsjahr
 
-		annotation SummarizationSetBy = Automatic
+		annotation SummarizationSetBy = User
 
 	column Betrag
 		dataType: decimal
 		lineageTag: 6dcaa394-9cb0-4406-843a-bd9f2084cdf1
-		summarizeBy: sum
+		summarizeBy: none
 		sourceColumn: Betrag
 
-		annotation SummarizationSetBy = Automatic
+		annotation SummarizationSetBy = User
 
 		annotation PBI_FormatHint = {"isGeneralNumber":true}
 
@@ -49,6 +50,7 @@ table Retention_ITY_CRM
 	column Datum
 		dataType: dateTime
 		formatString: Long Date
+		isHidden
 		lineageTag: e6979f0e-ba52-43e8-b0f0-ba14f33630ea
 		summarizeBy: none
 		sourceColumn: Datum
@@ -99,10 +101,10 @@ table Retention_ITY_CRM
 	column 'LY ARO'
 		dataType: decimal
 		lineageTag: 915c3634-fde6-4905-b8f7-ea9b77d2e0d6
-		summarizeBy: sum
+		summarizeBy: none
 		sourceColumn: LY ARO
 
-		annotation SummarizationSetBy = Automatic
+		annotation SummarizationSetBy = User
 
 		annotation PBI_FormatHint = {"isGeneralNumber":true}
 

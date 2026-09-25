@@ -3,9 +3,9 @@
   "name": "195a294a159c58416e70",
   "position": {
     "x": 58.128973660308816,
-    "y": 4.6503178928247051,
+    "y": 4.650317892824705,
     "z": 5000,
-    "height": 79.055404178019984,
+    "height": 79.05540417801998,
     "width": 990.5177111716622,
     "tabOrder": 4000
   },
@@ -17,22 +17,17 @@
           "projections": [
             {
               "field": {
-                "Aggregation": {
+                "Measure": {
                   "Expression": {
-                    "Column": {
-                      "Expression": {
-                        "SourceRef": {
-                          "Entity": "SAP_Stammdaten"
-                        }
-                      },
-                      "Property": "Werk - Bezeichnung"
+                    "SourceRef": {
+                      "Entity": "0. Measuretabelle"
                     }
                   },
-                  "Function": 3
+                  "Property": "Werk (Name)"
                 }
               },
-              "queryRef": "Min(SAP_Stammdaten.Werk - Bezeichnung)",
-              "nativeQueryRef": "Erstes Datum: Werk - Bezeichnung"
+              "queryRef": "0. Measuretabelle.Werk (Name)",
+              "nativeQueryRef": "Werk (Name)"
             }
           ]
         }

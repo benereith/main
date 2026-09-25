@@ -17,22 +17,17 @@
           "projections": [
             {
               "field": {
-                "Aggregation": {
+                "Measure": {
                   "Expression": {
-                    "Column": {
-                      "Expression": {
-                        "SourceRef": {
-                          "Entity": "Retention_ITY_CRM"
-                        }
-                      },
-                      "Property": "Decisiondate"
+                    "SourceRef": {
+                      "Entity": "0. Measuretabelle"
                     }
                   },
-                  "Function": 3
+                  "Property": "Entscheidungsdatum"
                 }
               },
-              "queryRef": "Min(Retention_ITY_CRM.Decisiondate)",
-              "nativeQueryRef": "Frühestes Datum: Decisiondate"
+              "queryRef": "0. Measuretabelle.Entscheidungsdatum",
+              "nativeQueryRef": "Entscheidungsdatum"
             }
           ]
         }
@@ -41,18 +36,13 @@
         "sort": [
           {
             "field": {
-              "Aggregation": {
+              "Measure": {
                 "Expression": {
-                  "Column": {
-                    "Expression": {
-                      "SourceRef": {
-                        "Entity": "Retention_ITY_CRM"
-                      }
-                    },
-                    "Property": "Decisiondate"
+                  "SourceRef": {
+                    "Entity": "0. Measuretabelle"
                   }
                 },
-                "Function": 3
+                "Property": "Entscheidungsdatum"
               }
             },
             "direction": "Ascending"

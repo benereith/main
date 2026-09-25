@@ -59,19 +59,19 @@ table Sales_Pipeline_ITY
 		dataType: int64
 		formatString: 0
 		lineageTag: e1d14e9b-aead-49ed-b470-b871594c1a75
-		summarizeBy: sum
+		summarizeBy: none
 		sourceColumn: Buchungsperiode
 
-		annotation SummarizationSetBy = Automatic
+		annotation SummarizationSetBy = User
 
 	column Betrag
 		dataType: decimal
 		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
 		lineageTag: fd215768-9c9b-4568-a20e-ac736f3ed484
-		summarizeBy: sum
+		summarizeBy: none
 		sourceColumn: Betrag
 
-		annotation SummarizationSetBy = Automatic
+		annotation SummarizationSetBy = User
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
@@ -79,10 +79,10 @@ table Sales_Pipeline_ITY
 		dataType: int64
 		formatString: 0
 		lineageTag: 7f2fc6d5-6606-4001-8849-0ef35a397399
-		summarizeBy: sum
+		summarizeBy: none
 		sourceColumn: Geschäftsjahr
 
-		annotation SummarizationSetBy = Automatic
+		annotation SummarizationSetBy = User
 
 	column Werttyp
 		dataType: string
@@ -95,6 +95,7 @@ table Sales_Pipeline_ITY
 	column Datum
 		dataType: dateTime
 		formatString: Long Date
+		isHidden
 		lineageTag: 33ea8f4f-8837-40d6-9676-9163959a7f50
 		summarizeBy: none
 		sourceColumn: Datum
@@ -107,10 +108,10 @@ table Sales_Pipeline_ITY
 		dataType: double
 		formatString: 0.00\ %;-0.00\ %;0.00\ %
 		lineageTag: 9cee896b-1293-4d6d-92fa-218d3a2112d9
-		summarizeBy: sum
+		summarizeBy: none
 		sourceColumn: Win %
 
-		annotation SummarizationSetBy = Automatic
+		annotation SummarizationSetBy = User
 
 	column Sales_Status
 		dataType: string

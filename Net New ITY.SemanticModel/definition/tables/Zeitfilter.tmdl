@@ -13,10 +13,10 @@ table Zeitfilter
 		dataType: int64
 		formatString: 0
 		lineageTag: 99f04075-270f-44ed-86bc-0976d3a84d91
-		summarizeBy: sum
+		summarizeBy: none
 		sourceColumn: Sortierung
 
-		annotation SummarizationSetBy = Automatic
+		annotation SummarizationSetBy = User
 
 	partition Zeitfilter = m
 		mode: import

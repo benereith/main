@@ -2,10 +2,10 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.8.0/schema.json",
   "name": "0a3e54cd5d6044bc27ec",
   "position": {
-    "x": 5.8128973660308816,
-    "y": 81.380563124432342,
+    "x": 5.812897366030882,
+    "y": 81.38056312443234,
     "z": 0,
-    "height": 396.43960036330611,
+    "height": 396.4396003633061,
     "width": 1045.1589464123524,
     "tabOrder": 0
   },
@@ -109,22 +109,17 @@
             },
             {
               "field": {
-                "Aggregation": {
+                "Measure": {
                   "Expression": {
-                    "Column": {
-                      "Expression": {
-                        "SourceRef": {
-                          "Entity": "Sales_Pipeline_ITY"
-                        }
-                      },
-                      "Property": "owneridname"
+                    "SourceRef": {
+                      "Entity": "0. Measuretabelle"
                     }
                   },
-                  "Function": 3
+                  "Property": "Verantwortlicher"
                 }
               },
-              "queryRef": "Min(Sales_Pipeline_ITY.owneridname)",
-              "nativeQueryRef": "Owner",
+              "queryRef": "0. Measuretabelle.Verantwortlicher",
+              "nativeQueryRef": "Verantwortlicher",
               "displayName": "Owner"
             },
             {

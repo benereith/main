@@ -16,7 +16,7 @@ table '0. Measuretabelle'
 	/// nebeneinander): DIM_Szenario[Szenario] in die Spalten, dieses Measure
 	/// als Wert – kein szenariospezifisches Measure nötig.
 	measure Wert_Periodic = CALCULATE ( SUM ( Revenues[Betrag] ), Revenues[MetricId] <> 99 )
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 01 Szenario-Vergleich
 		lineageTag: 22532937-16e2-498e-b238-86c2aa219e3e
 
@@ -36,7 +36,7 @@ table '0. Measuretabelle'
 			RETURN
 			    CALCULATE ( [Wert_Periodic], REMOVEFILTERS ( 'DIM_DATE' ), PeriodenYTD )
 			```
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 01 Szenario-Vergleich
 		lineageTag: 168fe963-2b19-4ce9-922d-81a4fbe49354
 
@@ -124,7 +124,7 @@ table '0. Measuretabelle'
 			    Revenues[MetricId] <> 99
 			)
 			```
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 02 Umsatz gesamt\Actual
 		lineageTag: 252abade-6ec5-4791-8b54-c66fbbdafa90
 
@@ -138,7 +138,7 @@ table '0. Measuretabelle'
 			    Revenues[MetricId] <> 99
 			)
 			```
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 02 Umsatz gesamt\Budget
 		lineageTag: 21d138f0-367f-40ff-8c01-63f1ec315b42
 
@@ -152,11 +152,11 @@ table '0. Measuretabelle'
 			    Revenues[MetricId] <> 99
 			)
 			```
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 02 Umsatz gesamt\Forecast
 		lineageTag: fa014d4e-9023-4981-bb53-c5a48a38ac65
 
-		annotation PBI_FormatHint = {"currencyCulture":"de"}
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
 	/// Monatswerte Forecast RF/RTD (+ Ist Vorjahr).
 	measure RF_Periodic = ```
@@ -166,7 +166,7 @@ table '0. Measuretabelle'
 			    Revenues[MetricId] <> 99
 			)
 			```
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 02 Umsatz gesamt\Forecast
 		lineageTag: 08abeeb6-3d07-4704-89cd-7f02ac9405cf
 
@@ -187,7 +187,7 @@ table '0. Measuretabelle'
 			RETURN
 			    CALCULATE ( [ACT_Periodic], REMOVEFILTERS ( 'DIM_DATE' ), PeriodenYTD )
 			```
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 02 Umsatz gesamt\Actual
 		lineageTag: a7b08c4e-e87c-4246-8147-45e9b4088f51
 
@@ -206,7 +206,7 @@ table '0. Measuretabelle'
 			RETURN
 			    CALCULATE ( [BUD_Periodic], REMOVEFILTERS ( 'DIM_DATE' ), PeriodenYTD )
 			```
-		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 02 Umsatz gesamt\Budget
 		lineageTag: f68f4a10-133d-4bad-a6b9-7323f70df3fa
 
@@ -223,11 +223,11 @@ table '0. Measuretabelle'
 			RETURN
 			    CALCULATE ( [RGF_Periodic], REMOVEFILTERS ( 'DIM_DATE' ), PeriodenYTD )
 			```
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 02 Umsatz gesamt\Forecast
 		lineageTag: 0d0592d4-6860-4f80-96bb-fd652e4f0fe4
 
-		annotation PBI_FormatHint = {"currencyCulture":"de"}
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
 	/// YTD Budget, nur Plan_20 (laufendes GJ), inkl. Like for Like.
 	measure BUD_REV_YTD = ```
@@ -248,7 +248,7 @@ table '0. Measuretabelle'
 			        PeriodenYTD
 			    )
 			```
-		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 03 Umsatz nur akt. GJ\Budget
 		lineageTag: ebb75402-6314-47d2-bd4c-1079a882e892
 
@@ -273,7 +273,7 @@ table '0. Measuretabelle'
 			        PeriodenYTD
 			    )
 			```
-		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 03 Umsatz nur akt. GJ\Forecast
 		lineageTag: 7b18ce0e-1e96-4618-83b7-874bbb5dc1a3
 
@@ -299,7 +299,7 @@ table '0. Measuretabelle'
 			        PeriodenYTD
 			    )
 			```
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 03 Umsatz nur akt. GJ\Actual
 		lineageTag: 57c4077f-0dde-4853-97b5-bb6841126483
 
@@ -314,7 +314,7 @@ table '0. Measuretabelle'
 			    Revenues[FY_Offset] = 0
 			)
 			```
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 03 Umsatz nur akt. GJ\Actual
 		lineageTag: ab1c3f62-65ea-465a-b5c9-aba385e973a6
 
@@ -328,7 +328,7 @@ table '0. Measuretabelle'
 			    Revenues[Werttyp_Version] = "Plan_20"
 			)
 			```
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 03 Umsatz nur akt. GJ\Budget
 		lineageTag: e6256b43-0bfc-4f67-9777-fd52827982d0
 
@@ -342,7 +342,7 @@ table '0. Measuretabelle'
 			    Revenues[Werttyp_Version] = "Plan_RGF"
 			)
 			```
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 03 Umsatz nur akt. GJ\Forecast
 		lineageTag: 0cf378ba-0748-4163-96e6-b7648e84ceb7
 
@@ -364,12 +364,13 @@ table '0. Measuretabelle'
 			            + CALCULATE ( SUM ( Revenues[Betrag] ), Revenues[Szenario] = "ACT", Revenues[FY_Offset] = -1, REMOVEFILTERS ( 'DIM_DATE' ), PeriodenYTD )
 			    ) / 4
 			```
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: zz Recherche
 		lineageTag: fb47418e-8a12-4ca7-8797-c3f66adc3ebd
 
 		changedProperty = IsHidden
 
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
 	/// Ist-Umsatz Vorjahr der Werke aus der Retention-Pipeline (Recherche).
 	measure REV_LY = ```
@@ -391,7 +392,7 @@ table '0. Measuretabelle'
 			        TREATAS ( VALUES ( Retention_ITY_CRM[Werk] ), Revenues[Werk] )
 			    )
 			```
-		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: zz Recherche
 		lineageTag: 84c304e4-79d8-4409-97c5-ad3ff8d895e0
 
@@ -416,7 +417,7 @@ table '0. Measuretabelle'
 			        PeriodenYTD
 			    ) * -1
 			```
-		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: zz Recherche
 		lineageTag: d78945b3-0559-4b0e-b927-8c304c8ac495
 
@@ -437,7 +438,7 @@ table '0. Measuretabelle'
 			        PeriodenGesamtGJ
 			    )
 			```
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 07 Business ITY
 		lineageTag: b73f45f4-7632-49a9-9446-3b4dca02db09
 
@@ -460,59 +461,73 @@ table '0. Measuretabelle'
 			        PeriodenGesamtGJ
 			    )
 			```
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 07 Business ITY
 		lineageTag: ada82c0e-6829-462f-bdff-4e272cc2a07e
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
+	/// Retention: bereits verlorener Umsatz (Status "Lost YTD"), aktueller CRM-Stand.
 	measure CRM_Lost_ITY = CALCULATE([Retention_ITY_Act],Retention_ITY_CRM[Retention_Status]="Lost YTD" )
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 08 CRM Retention
 		lineageTag: 91a674b4-681d-4be7-824a-141447afec9b
 
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
+	/// Retention: erwarteter Verlust (Status "Expected Lost"), aktueller CRM-Stand.
 	measure CRM_Exp_Lost_ITY = CALCULATE([Retention_ITY_Act], Retention_ITY_CRM[Retention_Status]="Expected Lost")
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 08 CRM Retention
 		lineageTag: b0cd17af-8972-4a64-9db2-26c716d0e794
 
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
-	measure Retention_ITY = sum(Retention_ITY_CRM[Betrag])*-1
-		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+	/// Retention-Umsatz aus dem CRM (Vorzeichen gedreht: Verlust = negativ). Basis aller Retention-Measures.
+	measure Retention_ITY = - SUM ( Retention_ITY_CRM[Betrag] )
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 08 CRM Retention
 		lineageTag: 2a42ee19-3a11-4681-85f5-c4fef953e813
 
+	/// Retention: Verluste gesamt = Lost YTD + Expected Lost.
 	measure CRM_Losses_ITY = [CRM_Exp_Lost_ITY]+[CRM_Lost_ITY]
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 08 CRM Retention
 		lineageTag: 05c39287-7e27-4eb2-b0ad-71dca6d6b8a6
 
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
+	/// Retention: gefährdeter Umsatz (Status "At Risk").
 	measure CRM_At_Risk_ITY = CALCULATE([Retention_ITY_Act], Retention_ITY_CRM[Retention_Status]="At Risk")
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 08 CRM Retention
 		lineageTag: c9cbe267-d2da-4008-a339-9149078b170b
 
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
+	/// Retention gesamt = Verluste + At Risk.
 	measure CRM_Retention_all = [CRM_Losses_ITY]+[CRM_At_Risk_ITY]
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 08 CRM Retention
 		lineageTag: d1a81e18-39fc-4897-9706-07eddbe6ca38
 
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
+	/// Sales: gewonnener Umsatz (Status "Won YTD"), aktueller CRM-Stand.
 	measure CRM_Won_ITY = CALCULATE([Sales_ITY_Act],Sales_Pipeline_ITY[Sales_Status]="Won YTD" )
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 09 CRM Sales
 		lineageTag: c1467d52-6d27-401a-92e3-04e2557ab9a9
 
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
-	measure Sales_ITY = sum(Sales_Pipeline_ITY[Betrag])
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+	/// Sales-Pipeline-Umsatz aus dem CRM. Basis aller Sales-Measures.
+	measure Sales_ITY = SUM ( Sales_Pipeline_ITY[Betrag] )
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 09 CRM Sales
 		lineageTag: 0c5616e1-3c8c-497c-b102-7de4a05af26d
 
-		annotation PBI_FormatHint = {"currencyCulture":"de"}
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
 	/// Hybrid: bis zur abgeschlossenen Periode Actuals, danach Forecast Plan_02
 	/// (laufendes GJ ohne Plan-Betriebe Roll) + Ist Vorjahr.
@@ -550,7 +565,7 @@ table '0. Measuretabelle'
 			            )
 			    )
 			```
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 02 Umsatz gesamt\Forecast
 		lineageTag: dd3e3127-8f0e-43c2-8fe5-1b862f80d007
 
@@ -567,7 +582,7 @@ table '0. Measuretabelle'
 			RETURN
 			    CALCULATE ( [BUD_Periodic], REMOVEFILTERS ( 'DIM_DATE' ), PeriodenGesamtGJ )
 			```
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 06 Net New Roll\Details
 		lineageTag: fd71de7c-9ee1-4c18-b4f0-254ae621b692
 
@@ -584,36 +599,45 @@ table '0. Measuretabelle'
 			RETURN
 			    CALCULATE ( [BUD_Periodic], REMOVEFILTERS ( 'DIM_DATE' ), PeriodenGesamtGJ )
 			```
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 06 Net New Roll\Details
 		lineageTag: d534f5e8-83cd-45ba-975c-d384602cba25
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
+	/// Sales: erwarteter Gewinn (Status "Expected Win").
 	measure CRM_Exp_Won_ITY = CALCULATE([Sales_ITY_Act],Sales_Pipeline_ITY[Sales_Status]="Expected Win" )
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 09 CRM Sales
 		lineageTag: b7547626-dfd7-4186-a428-658ed22dc0e0
 
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
+	/// Sales: Gewinne gesamt = Won YTD + Expected Win.
 	measure CRM_Wins_ITY = [CRM_Won_ITY]+[CRM_Exp_Won_ITY]
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 09 CRM Sales
 		lineageTag: 681b5e50-5525-4a80-b145-18459a08b724
 
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
+	/// Sales: offene Pipeline (Status "In Pipeline").
 	measure CRM_In_Pipeline = CALCULATE([Sales_ITY_Act],Sales_Pipeline_ITY[Sales_Status]="In Pipeline")
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 09 CRM Sales
 		lineageTag: 68cb7f89-c2d0-4248-99c5-8e7b5d2edf2d
 
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
+	/// Sales gesamt = Gewinne + offene Pipeline.
 	measure CRM_Pipeline_all = [CRM_Wins_ITY]+[CRM_In_Pipeline]
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 09 CRM Sales
 		lineageTag: a3933a95-7d93-4cee-b557-5c792c3342a1
 
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
+	/// Sales-Umsatz zum jüngsten CRM-Timestamp.
 	measure Sales_ITY_Act = ```
 			VAR MaxTS = [Max_Timestamp_Sales]
 			RETURN
@@ -623,12 +647,13 @@ table '0. Measuretabelle'
 			    Sales_Pipeline_ITY[Timestamp] = MaxTS
 			)
 			```
-		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 09 CRM Sales
 		lineageTag: 4e4a044a-92b9-4aa5-a174-f7bfea16f374
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
+	/// Sales-Umsatz zum gewählten Vergleichszeitpunkt (leer ohne Auswahl).
 	measure Sales_ITY_Hist = ```
 			VAR SelTS =
 			    SELECTEDVALUE ( Vergleichszeitpunkt[Timestamp] )
@@ -643,12 +668,13 @@ table '0. Measuretabelle'
 			    )
 			)
 			```
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 09 CRM Sales
 		lineageTag: 865181b9-29f6-427c-8479-895643cb619b
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
+	/// Retention-Umsatz zum jüngsten CRM-Timestamp.
 	measure Retention_ITY_Act = ```
 			VAR MaxTS = [Max_Timestamp_Retention]
 			RETURN
@@ -664,6 +690,7 @@ table '0. Measuretabelle'
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
+	/// Retention-Umsatz zum gewählten Vergleichszeitpunkt (leer ohne Auswahl).
 	measure Retention_ITY_Hist = ```
 			VAR SelTS =
 			    SELECTEDVALUE ( Vergleichszeitpunkt[Timestamp] )
@@ -678,12 +705,13 @@ table '0. Measuretabelle'
 			    )
 			)
 			```
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 08 CRM Retention
 		lineageTag: cc1a0ac2-5e03-4839-8523-3335e8335516
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
+	/// Jüngster Timestamp der Sales-Pipeline (unabhängig vom Filter).
 	measure Max_Timestamp_Sales = ```
 			MAXX (
 			    ALL ( Sales_Pipeline_ITY[Timestamp] ),
@@ -694,6 +722,7 @@ table '0. Measuretabelle'
 		displayFolder: zz Technik
 		lineageTag: 5ea7362d-96eb-4be1-9995-c4a5c1a7e93a
 
+	/// Jüngster Timestamp der Retention-Pipeline (unabhängig vom Filter).
 	measure Max_Timestamp_Retention = ```
 			MAXX (
 			    ALL ( Retention_ITY_CRM[Timestamp] ),
@@ -726,13 +755,15 @@ table '0. Measuretabelle'
 		displayFolder: 05 Hybrid und ARO
 		lineageTag: 89a69ec8-aee4-432b-a33c-94b3084daec2
 
+	/// Monatliches Delta Forecast (8+4) − Budget.
 	measure BUD_2_FC = [RGF_Periodic]-[BUD_Periodic]
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 06 Net New Roll\Details
 		lineageTag: 8210a8c7-8693-4713-a034-66ab7b9814c4
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
+	/// Opening Date der Opportunity zum jüngsten Timestamp im Kontext.
 	measure 'Opening Date' = ```
 			VAR MaxTimestamp =
 			    MAX ( 'Sales_Pipeline_ITY'[Timestamp] )
@@ -748,6 +779,7 @@ table '0. Measuretabelle'
 		displayFolder: 09 CRM Sales
 		lineageTag: aa908e4a-a3d1-42c3-bf98-d09932ce0a61
 
+	/// Ø Gewinnwahrscheinlichkeit zum jüngsten CRM-Timestamp.
 	measure Win%_Act = ```
 			VAR MaxTS = [Max_Timestamp_Sales]
 			RETURN
@@ -757,7 +789,7 @@ table '0. Measuretabelle'
 			    Sales_Pipeline_ITY[Timestamp] = MaxTS
 			)
 			```
-		formatString: 0.00\ %;-0.00\ %;0.00\ %
+		formatString: 0.0\ %;-0.0\ %;0.0\ %
 		displayFolder: 09 CRM Sales
 		lineageTag: 3c55d16e-1831-4e0f-98b5-0a046060c166
 
@@ -773,7 +805,7 @@ table '0. Measuretabelle'
 			        SAP_Stammdaten[vertragsbeginn] < GJBeginn
 			    )
 			```
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 06 Net New Roll\Details
 		lineageTag: cff75afd-470b-4ecd-9641-fb4dd17c9c54
 
@@ -797,7 +829,7 @@ table '0. Measuretabelle'
 			        PeriodenGesamtGJ
 			    )
 			```
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 05 Hybrid und ARO
 		lineageTag: 4461dfb1-417e-4bc2-815e-f5df133fdd6d
 
@@ -822,7 +854,7 @@ table '0. Measuretabelle'
 			        PeriodenGesamtGJ
 			    )
 			```
-		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 05 Hybrid und ARO
 		lineageTag: 7c049c07-beb7-4b98-8316-2f3df4e797d7
 
@@ -843,7 +875,7 @@ table '0. Measuretabelle'
 			        SAP_Stammdaten[vertragsbeginn] < SnapshotR
 			    )
 			```
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 06 Net New Roll\Details
 		lineageTag: b8e0731b-1794-410c-9f67-be2af9081e02
 
@@ -862,12 +894,13 @@ table '0. Measuretabelle'
 			            || SAP_Stammdaten[vertragsbeginn] > SnapshotR
 			    )
 			```
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 06 Net New Roll\Details
 		lineageTag: 9be3305f-39c4-48ac-8893-8dc10bbfbf89
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
+	/// Erwartetes Abschlussdatum der Opportunity zum jüngsten Timestamp im Kontext.
 	measure 'Closing Date' = ```
 			VAR MaxTimestamp =
 			    MAX ( 'Sales_Pipeline_ITY'[Timestamp] )
@@ -883,6 +916,7 @@ table '0. Measuretabelle'
 		displayFolder: 09 CRM Sales
 		lineageTag: ffa9aae1-3a98-4198-916c-d638b6c77eef
 
+	/// Budget (monatlich) der Real-Betriebe mit CoC 1 (New Roll).
 	measure New_Roll_Bud = ```
 			CALCULATE (
 			    [BUD_Periodic],
@@ -890,22 +924,24 @@ table '0. Measuretabelle'
 			    Revenues[cause_of_change] = 1
 			)
 			```
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 06 Net New Roll\Details
 		lineageTag: 84cebb7e-362a-4e39-9d28-610462eae716
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
+	/// Net-New-Baustein: Budget der Buckets New Roll (MetricId 1, 2).
 	measure 'New Roll Budget' = ```
 			CALCULATE (
 			    [BUD_Periodic],
 			    KEEPFILTERS ( DIM_Struktur[MetricId] IN { 1, 2 } )
 			)
 			```
-		formatString: 0
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 06 Net New Roll\Budget
 		lineageTag: 721ea774-ef20-492b-8812-a689d82a2e81
 
+	/// Sales: ungewichteter Umsatz = gewichteter Umsatz / Win %, je Opportunity.
 	measure 'Unweighted ITY_Act' = ```
 			SUMX (
 			    KEEPFILTERS ( VALUES ( Sales_Pipeline_ITY[name] ) ),
@@ -919,12 +955,13 @@ table '0. Measuretabelle'
 			        )
 			)
 			```
-		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 09 CRM Sales
 		lineageTag: a8a05f3a-3d51-4db7-b7af-efc744b5029a
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
+	/// Retention: ungewichteter Umsatz (At Risk durch 1 − Retention % geteilt), aktueller Stand.
 	measure 'R_Unweighted ITY_ACT' = ```
 			SUMX (
 			    VALUES ( SAP_Stammdaten[Werk - Bezeichnung] ),
@@ -935,12 +972,13 @@ table '0. Measuretabelle'
 			    )
 			)
 			```
-		formatString: #,0.00\ "€";-#,0.00\ "€";#,0.00\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 08 CRM Retention
 		lineageTag: 8a8b3621-4886-4e61-b152-b08ce9a1f69e
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
+	/// Retention-Status des Werks zum jüngsten Timestamp im Kontext.
 	measure Retention_Status = ```
 			VAR MaxTimestamp =
 			    MAX ( 'Retention_ITY_CRM'[Timestamp] )
@@ -955,6 +993,7 @@ table '0. Measuretabelle'
 		displayFolder: 08 CRM Retention
 		lineageTag: 24c0fcdf-89c6-4ead-bb72-50f92224f81b
 
+	/// Retention-Wahrscheinlichkeit zum jüngsten Timestamp im Kontext.
 	measure Retention% = ```
 			VAR MaxTimestamp =
 			    MAX ( 'Retention_ITY_CRM'[Timestamp] )
@@ -966,22 +1005,24 @@ table '0. Measuretabelle'
 			RETURN
 			    Result
 			```
-		formatString: 0.00\ %;-0.00\ %;0.00\ %
+		formatString: 0.0\ %;-0.0\ %;0.0\ %
 		displayFolder: 08 CRM Retention
 		lineageTag: 0a582a06-9333-40a7-a9b7-337757b5c222
 
+	/// Net-New-Baustein: Forecast/Actuals (YTD) der Buckets New Roll (MetricId 1, 2).
 	measure 'New Roll Forecast/Actuals' = ```
 			CALCULATE (
 			    [RGF_Value],
 			    KEEPFILTERS ( DIM_Struktur[MetricId] IN { 1, 2 } )
 			)
 			```
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 06 Net New Roll\Forecast-Actuals
 		lineageTag: e8d0765f-0f0a-4760-843a-1c4ec15c6491
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
+	/// Wert der in KPI[KPI] gewählten Net-New-Kennzahl (Scorecard).
 	measure 'KPI Value' = ```
 			VAR _KPI = SELECTEDVALUE ( 'KPI'[KPI] )
 			RETURN
@@ -1010,60 +1051,67 @@ table '0. Measuretabelle'
 
 		annotation PBI_FormatHint = {"isCustom":true}
 
+	/// New Roll: Budget − Forecast/Actuals.
 	measure 'New Roll Delta' = [New Roll Budget]-[New Roll Forecast/Actuals]
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 06 Net New Roll\Delta
 		lineageTag: 1cd30983-a316-4012-a603-b7c6fb8e9d97
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
+	/// Net-New-Baustein: Budget (YTD) der Lost Rolls (MetricId 6).
 	measure 'Lost Roll Budget' = ```
 			CALCULATE (
 			    [BUD_Value],
 			    KEEPFILTERS ( DIM_Struktur[MetricId] IN { 6 } )
 			)
 			```
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 06 Net New Roll\Budget
 		lineageTag: 3f5cb920-289f-4773-b4b0-206e6c0a8c49
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
+	/// Net-New-Baustein: Forecast/Actuals (YTD) der Lost Rolls (MetricId 6).
 	measure 'Lost Roll Forecast/Actuals' = ```
 			CALCULATE (
 			    [RGF_Value],
 			    DIM_Struktur[MetricId] IN { 6 }
 			)
 			```
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 06 Net New Roll\Forecast-Actuals
 		lineageTag: 96cb63b1-b825-47d5-868d-ee3d325ef70e
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
+	/// Lost Roll: Forecast/Actuals − Budget.
 	measure 'Lost Roll Delta' = [Lost Roll Forecast/Actuals]-[Lost Roll Budget]
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 06 Net New Roll\Delta
 		lineageTag: e3d75283-eb36-403c-a224-72fb8cd4a903
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
+	/// Net New Budget = New Roll Budget + Lost Roll Budget.
 	measure 'Net New Roll Budget' = [New Roll Budget]+ [Lost Roll Budget]
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 06 Net New Roll\Budget
 		lineageTag: 5c90fee6-fe93-4ebb-b0b2-5036e9b07224
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
+	/// Net New Forecast/Actuals = New Roll + Lost Roll (Forecast/Actuals).
 	measure 'Net New Roll Forecast/Actuals' = [New Roll Forecast/Actuals]+ [Lost Roll Forecast/Actuals]
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 06 Net New Roll\Forecast-Actuals
 		lineageTag: a7259bdf-8547-4be1-b05e-179d0514e4a7
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
+	/// Net New: Forecast/Actuals − Budget.
 	measure 'Net New Roll Delta' = [Net New Roll Forecast/Actuals]-[Net New Roll Budget]
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 06 Net New Roll\Delta
 		lineageTag: d99b7b78-517f-4fd1-8623-597e678540e2
 
@@ -1078,7 +1126,7 @@ table '0. Measuretabelle'
 			        SAP_Stammdaten[cause_of_change] IN { 1, 2 }
 			    )
 			```
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 04 Dynamisch (MTD-YTD)
 		lineageTag: 1bdca7f9-50ff-4c2c-b477-af3a81cbb6ed
 
@@ -1095,7 +1143,7 @@ table '0. Measuretabelle'
 			        Revenues[cause_of_change_szenario] IN { 1, 2 }
 			    )
 			```
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 04 Dynamisch (MTD-YTD)
 		lineageTag: 6c5cbdbb-457d-450c-a4df-e9ac46474bb8
 
@@ -1110,7 +1158,7 @@ table '0. Measuretabelle'
 			        SAP_Stammdaten[cause_of_change] IN { 1, 2 }
 			    )
 			```
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 04 Dynamisch (MTD-YTD)
 		lineageTag: 56034549-cd31-4f9f-a35f-06c363ae30e4
 
@@ -1126,7 +1174,7 @@ table '0. Measuretabelle'
 			    SAP_Stammdaten[cause_of_change] = 4
 			)
 			```
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: zz Recherche
 		lineageTag: ea3f3dfa-0a62-4fec-826b-0b395d694f84
 
@@ -1143,12 +1191,13 @@ table '0. Measuretabelle'
 			    SAP_Stammdaten[cause_of_change] = 4
 			)
 			```
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: zz Recherche
 		lineageTag: 368cec98-f278-4117-a42b-06d368629345
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
+	/// Gewinnwahrscheinlichkeit zum gewählten Vergleichszeitpunkt.
 	measure LT_Win% = ```
 			VAR SelectedDate = ALLSELECTED ( Vergleichszeitpunkt[Timestamp] )
 			VAR Result =
@@ -1159,10 +1208,11 @@ table '0. Measuretabelle'
 			RETURN
 			    Result
 			```
-		formatString: 0.00\ %;-0.00\ %;0.00\ %
+		formatString: 0.0\ %;-0.0\ %;0.0\ %
 		displayFolder: 09 CRM Sales\Vergleichszeitpunkt
 		lineageTag: b0d9cf1b-c53c-4c33-8819-7c69b9dc0c89
 
+	/// Opening Date zum gewählten Vergleichszeitpunkt.
 	measure LT_Opening_Date = ```
 			VAR SelectedDate = ALLSELECTED ( Vergleichszeitpunkt[Timestamp] )
 			VAR Result =
@@ -1177,6 +1227,7 @@ table '0. Measuretabelle'
 		displayFolder: 09 CRM Sales\Vergleichszeitpunkt
 		lineageTag: 3066f06e-e087-493c-8744-a20d6cc40143
 
+	/// Retention-Wahrscheinlichkeit zum gewählten Vergleichszeitpunkt.
 	measure LT_Retention% = ```
 			VAR SelectedDate = ALLSELECTED ( Vergleichszeitpunkt[Timestamp] )
 			VAR Result =
@@ -1187,10 +1238,11 @@ table '0. Measuretabelle'
 			RETURN
 			    Result
 			```
-		formatString: 0.00\ %;-0.00\ %;0.00\ %
+		formatString: 0.0\ %;-0.0\ %;0.0\ %
 		displayFolder: 08 CRM Retention\Vergleichszeitpunkt
 		lineageTag: aefb301e-0f84-4dae-8127-47c817310244
 
+	/// Retention-Wahrscheinlichkeit zum jüngsten Timestamp im Kontext (Tabellenansicht).
 	measure Retention_% = ```
 			VAR MaxTimestamp =
 			    MAX ( 'Retention_ITY_CRM'[Timestamp] )
@@ -1202,7 +1254,7 @@ table '0. Measuretabelle'
 			RETURN
 			    Result
 			```
-		formatString: 0.00\ %;-0.00\ %;0.00\ %
+		formatString: 0.0\ %;-0.0\ %;0.0\ %
 		displayFolder: 08 CRM Retention
 		lineageTag: d538baee-4394-4f4d-aa4c-3293345d71b1
 
@@ -1220,12 +1272,13 @@ table '0. Measuretabelle'
 			        )
 			    )
 			```
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 05 Hybrid und ARO
 		lineageTag: 458362a8-32c0-49ef-a150-960f3e07c1f7
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
+	/// Vertragsende zum gewählten Vergleichszeitpunkt.
 	measure 'LT_Contract End Date' = ```
 			VAR SelectedDate = ALLSELECTED ( Vergleichszeitpunkt[Timestamp] )
 			VAR Result =
@@ -1240,6 +1293,7 @@ table '0. Measuretabelle'
 		displayFolder: 08 CRM Retention\Vergleichszeitpunkt
 		lineageTag: 4ce9fd59-30e3-40fa-a4c0-746839ec93ac
 
+	/// Vertragsende zum jüngsten Timestamp im Kontext.
 	measure Contract_End_Date = ```
 			VAR MaxTimestamp =
 			    MAX ( 'Retention_ITY_CRM'[Timestamp] )
@@ -1269,12 +1323,13 @@ table '0. Measuretabelle'
 			        )
 			    )
 			```
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 05 Hybrid und ARO
 		lineageTag: 1e0c82e7-c40c-4ca4-8366-d0bb0c6ec78f
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
+	/// Retention: ungewichteter Umsatz über alle Timestamps im Kontext.
 	measure 'R_Unweighted ITY' = ```
 			SUMX (
 			    VALUES ( SAP_Stammdaten[Werk - Bezeichnung] ),
@@ -1285,12 +1340,13 @@ table '0. Measuretabelle'
 			    )
 			)
 			```
-		formatString: #,0.###############\ "€";-#,0.###############\ "€";#,0.###############\ "€"
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 08 CRM Retention
 		lineageTag: 83ba9aca-8a08-46ad-b3d4-ba8cd79d7154
 
-		annotation PBI_FormatHint = {"currencyCulture":"de"}
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
+	/// Ø Gewinnwahrscheinlichkeit je Opportunity und Timestamp.
 	measure Win% = ```
 			AVERAGEX (
 			    KEEPFILTERS (
@@ -1302,9 +1358,121 @@ table '0. Measuretabelle'
 			    CALCULATE ( AVERAGE ( Sales_Pipeline_ITY[Win %] ) )
 			)
 			```
-		formatString: 0.00\ %;-0.00\ %;0.00\ %
+		formatString: 0.0\ %;-0.0\ %;0.0\ %
 		displayFolder: 09 CRM Sales
 		lineageTag: 82ed9d2c-6475-4fa7-8cb0-9668804002fd
+
+	/// Generischer Gesamtjahreswert (alle Perioden des Geschäftsjahres, unabhängig
+	/// vom Periodenfilter), reagiert auf DIM_Szenario. Grundlage der
+	/// Forecast-Leiter: Budget / 2+10 / 5+7 / 8+4 / 10+2 / Actual.
+	measure 'Wert Gesamtjahr' = CALCULATE ( [Wert_Periodic], REMOVEFILTERS ( 'DIM_DATE' ) )
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 01 Szenario-Vergleich
+		lineageTag: 6eaf7fc7-c781-48f3-8ba8-d744fe6ed3c4
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Kopfzeile: letzte gebuchte Ist-Periode des laufenden Geschäftsjahres.
+	measure Datenstand = ```
+			VAR LetzterIstMonat =
+			    CALCULATE (
+			        MAX ( Revenues[Datum] ),
+			        REMOVEFILTERS (),
+			        Revenues[Szenario] = "ACT",
+			        Revenues[FY_Offset] = 0
+			    )
+			VAR Periode =
+			    CALCULATE (
+			        MAX ( 'DIM_DATE'[FY_Periode] ),
+			        REMOVEFILTERS (),
+			        'DIM_DATE'[Datum] = LetzterIstMonat
+			    )
+			RETURN
+			    IF (
+			        ISBLANK ( LetzterIstMonat ),
+			        "Datenstand: keine Ist-Daten",
+			        "Datenstand: " & Periode & " · " & FORMAT ( LetzterIstMonat, "MMMM yyyy" )
+			    )
+			```
+		displayFolder: zz Technik\Beschriftung
+		lineageTag: 2156b487-a36c-4ec7-80f1-ed4715a6abf0
+
+	/// Kopfzeile: Berichtstitel mit gewähltem Berichtsjahr.
+	measure 'Titel Berichtsjahr' = "Net New ITY · " & SELECTEDVALUE ( DIM_Berichtsjahr[Berichtsjahr_Label], "alle Berichtsjahre" )
+		displayFolder: zz Technik\Beschriftung
+		lineageTag: 6173961c-a911-49bf-9487-33a1e36cf168
+
+	/// Bedingte Formatierung: Grün bei Actual ≥ Budget, sonst Rot.
+	measure 'Farbe Δ Actual vs Budget' = ```
+			VAR d = [Δ Actual vs Budget]
+			RETURN IF ( ISBLANK ( d ), BLANK (), IF ( d >= 0, "#0ca30c", "#d03b3b" ) )
+			```
+		displayFolder: zz Technik\Formatierung
+		lineageTag: 659767dd-6a3b-45b3-b50f-a2e2abedb395
+
+	/// Bedingte Formatierung: Grün bei Forecast ≥ Budget, sonst Rot.
+	measure 'Farbe Δ Forecast vs Budget' = ```
+			VAR d = [Δ Forecast vs Budget]
+			RETURN IF ( ISBLANK ( d ), BLANK (), IF ( d >= 0, "#0ca30c", "#d03b3b" ) )
+			```
+		displayFolder: zz Technik\Formatierung
+		lineageTag: 23d17d30-5a9d-4682-8d09-f69fc33feba5
+
+	/// Bedingte Formatierung der Forecast-Leiter: Budget grau, Forecast-Runden
+	/// von hell nach dunkel blau, Actual dunkelblau.
+	measure 'Farbe Runde' = ```
+			SWITCH (
+			    SELECTEDVALUE ( DIM_Szenario[Runde] ),
+			    "Budget",      "#8a8984",
+			    "2+10",        "#9ec5f4",
+			    "5+7",         "#6aa4ea",
+			    "8+4",         "#2a78d6",
+			    "10+2",        "#1a56a5",
+			    "Actual",      "#0d366b",
+			    "Budget FY27", "#52514e",
+			    "#2a78d6"
+			)
+			```
+		displayFolder: zz Technik\Formatierung
+		lineageTag: 743a27cb-ad96-48c4-b711-ee53f14680e5
+
+	/// Ø Retention-Wahrscheinlichkeit (ersetzt die implizite Aggregation).
+	measure 'Ø Retention-Wahrscheinlichkeit' = AVERAGE ( Retention_ITY_CRM[Retention-Wahrscheinlichkeit] )
+		formatString: 0.0\ %;-0.0\ %;0.0\ %
+		displayFolder: 08 CRM Retention
+		lineageTag: 743ac10b-16ca-440d-a0e1-11afb9b4dee6
+
+	/// Frühestes Entscheidungsdatum im Kontext (ersetzt die implizite Aggregation).
+	measure Entscheidungsdatum = MIN ( Retention_ITY_CRM[Decisiondate] )
+		formatString: Short Date
+		displayFolder: 08 CRM Retention
+		lineageTag: 2573fa13-e11f-40cc-b5c3-0532662fd670
+
+	/// Frühestes Vertragsende im Kontext (ersetzt die implizite Aggregation).
+	measure Vertragsende = MIN ( Retention_ITY_CRM[Contract End Date] )
+		formatString: Short Date
+		displayFolder: 08 CRM Retention
+		lineageTag: 2cc0ddeb-1c6e-423e-974e-b1e81e7941bb
+
+	/// Verantwortlicher der Opportunity (ersetzt die implizite Aggregation).
+	measure Verantwortlicher = MIN ( Sales_Pipeline_ITY[owneridname] )
+		displayFolder: 09 CRM Sales
+		lineageTag: 8b2d0973-8583-4e82-9328-1f888e55fce1
+
+	/// Werk im Kontext (Detailseite; ersetzt die implizite Aggregation).
+	measure 'Werk (Name)' = MIN ( SAP_Stammdaten[Werk - Bezeichnung] )
+		displayFolder: 11 Stammdaten-Details
+		lineageTag: 249b7ffc-127f-49fc-98dc-04524fb51304
+
+	/// Management im Kontext (Detailseite; ersetzt die implizite Aggregation).
+	measure 'Management (Name)' = MIN ( SAP_Stammdaten[bezeichnung_management] )
+		displayFolder: 11 Stammdaten-Details
+		lineageTag: e6f6650e-08ab-4771-bf36-c1cee21fdf58
+
+	/// Region im Kontext (Detailseite; ersetzt die implizite Aggregation).
+	measure 'Region (Name)' = MIN ( SAP_Stammdaten[bezeichnung_region] )
+		displayFolder: 11 Stammdaten-Details
+		lineageTag: 31257890-dd8a-4d35-936a-e625e8cd98cd
 
 	column 'Spalte "1"'
 		dataType: string

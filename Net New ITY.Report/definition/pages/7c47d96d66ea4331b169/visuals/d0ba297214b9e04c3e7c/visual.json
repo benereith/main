@@ -3,7 +3,7 @@
   "name": "d0ba297214b9e04c3e7c",
   "position": {
     "x": 58.128973660308816,
-    "y": 93.297002724795661,
+    "y": 93.29700272479566,
     "z": 6000,
     "height": 110.44504995458675,
     "width": 320,
@@ -17,22 +17,17 @@
           "projections": [
             {
               "field": {
-                "Aggregation": {
+                "Measure": {
                   "Expression": {
-                    "Column": {
-                      "Expression": {
-                        "SourceRef": {
-                          "Entity": "SAP_Stammdaten"
-                        }
-                      },
-                      "Property": "bezeichnung_management"
+                    "SourceRef": {
+                      "Entity": "0. Measuretabelle"
                     }
                   },
-                  "Function": 3
+                  "Property": "Management (Name)"
                 }
               },
-              "queryRef": "Min(SAP_Stammdaten.bezeichnung_management)",
-              "nativeQueryRef": "Erstes Datum: bezeichnung_management"
+              "queryRef": "0. Measuretabelle.Management (Name)",
+              "nativeQueryRef": "Management (Name)"
             }
           ]
         }

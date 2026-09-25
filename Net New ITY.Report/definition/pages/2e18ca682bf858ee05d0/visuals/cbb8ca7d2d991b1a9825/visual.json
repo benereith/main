@@ -2,10 +2,10 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.8.0/schema.json",
   "name": "cbb8ca7d2d991b1a9825",
   "position": {
-    "x": 5.8128973660308816,
-    "y": 81.380563124432342,
+    "x": 5.812897366030882,
+    "y": 81.38056312443234,
     "z": 0,
-    "height": 396.43960036330611,
+    "height": 396.4396003633061,
     "width": 1045.1589464123524,
     "tabOrder": 0
   },
@@ -95,42 +95,32 @@
             },
             {
               "field": {
-                "Aggregation": {
+                "Measure": {
                   "Expression": {
-                    "Column": {
-                      "Expression": {
-                        "SourceRef": {
-                          "Entity": "Retention_ITY_CRM"
-                        }
-                      },
-                      "Property": "Decisiondate"
+                    "SourceRef": {
+                      "Entity": "0. Measuretabelle"
                     }
                   },
-                  "Function": 3
+                  "Property": "Entscheidungsdatum"
                 }
               },
-              "queryRef": "Min(Retention_ITY_CRM.Decisiondate)",
-              "nativeQueryRef": "Decisiondate",
+              "queryRef": "0. Measuretabelle.Entscheidungsdatum",
+              "nativeQueryRef": "Entscheidungsdatum",
               "displayName": "Decisiondate"
             },
             {
               "field": {
-                "Aggregation": {
+                "Measure": {
                   "Expression": {
-                    "Column": {
-                      "Expression": {
-                        "SourceRef": {
-                          "Entity": "Retention_ITY_CRM"
-                        }
-                      },
-                      "Property": "Contract End Date"
+                    "SourceRef": {
+                      "Entity": "0. Measuretabelle"
                     }
                   },
-                  "Function": 3
+                  "Property": "Vertragsende"
                 }
               },
-              "queryRef": "Min(Retention_ITY_CRM.Contract End Date)",
-              "nativeQueryRef": "Contract End Date",
+              "queryRef": "0. Measuretabelle.Vertragsende",
+              "nativeQueryRef": "Vertragsende",
               "displayName": "Contract End Date"
             },
             {
@@ -578,18 +568,13 @@
         "name": "54e275326b15e6e133ee",
         "ordinal": 10,
         "field": {
-          "Aggregation": {
+          "Measure": {
             "Expression": {
-              "Column": {
-                "Expression": {
-                  "SourceRef": {
-                    "Entity": "Retention_ITY_CRM"
-                  }
-                },
-                "Property": "Decisiondate"
+              "SourceRef": {
+                "Entity": "0. Measuretabelle"
               }
             },
-            "Function": 3
+            "Property": "Entscheidungsdatum"
           }
         },
         "type": "Advanced"
@@ -598,18 +583,13 @@
         "name": "f29ef4a64f8328e83602",
         "ordinal": 11,
         "field": {
-          "Aggregation": {
+          "Measure": {
             "Expression": {
-              "Column": {
-                "Expression": {
-                  "SourceRef": {
-                    "Entity": "Retention_ITY_CRM"
-                  }
-                },
-                "Property": "Contract End Date"
+              "SourceRef": {
+                "Entity": "0. Measuretabelle"
               }
             },
-            "Function": 3
+            "Property": "Vertragsende"
           }
         },
         "type": "Advanced"

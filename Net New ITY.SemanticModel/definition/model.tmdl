@@ -1,5 +1,6 @@
 model Model
 	culture: de-DE
+	discourageImplicitMeasures
 	defaultPowerBIDataSourceVersion: powerBI_V3
 	sourceQueryCulture: de-DE
 	dataAccessOptions
@@ -38,7 +39,6 @@ ref table Sales_Pipeline_ITY
 ref table KPI
 ref table Revenues
 ref table Vergleichszeitpunkt
-ref table Zeitansicht
 ref table Zeitfilter
 ref table DIM_Struktur
 ref table DIM_Szenario

@@ -17,22 +17,17 @@
           "projections": [
             {
               "field": {
-                "Aggregation": {
+                "Measure": {
                   "Expression": {
-                    "Column": {
-                      "Expression": {
-                        "SourceRef": {
-                          "Entity": "Retention_ITY_CRM"
-                        }
-                      },
-                      "Property": "Retention-Wahrscheinlichkeit"
+                    "SourceRef": {
+                      "Entity": "0. Measuretabelle"
                     }
                   },
-                  "Function": 1
+                  "Property": "Ø Retention-Wahrscheinlichkeit"
                 }
               },
-              "queryRef": "CountNonNull(Retention_ITY_CRM.Retention-Wahrscheinlichkeit)",
-              "nativeQueryRef": "Durchschnitt von Retention-Wahrscheinlichkeit"
+              "queryRef": "0. Measuretabelle.Ø Retention-Wahrscheinlichkeit",
+              "nativeQueryRef": "Ø Retention-Wahrscheinlichkeit"
             }
           ]
         }
@@ -41,18 +36,13 @@
         "sort": [
           {
             "field": {
-              "Aggregation": {
+              "Measure": {
                 "Expression": {
-                  "Column": {
-                    "Expression": {
-                      "SourceRef": {
-                        "Entity": "Retention_ITY_CRM"
-                      }
-                    },
-                    "Property": "Retention-Wahrscheinlichkeit"
+                  "SourceRef": {
+                    "Entity": "0. Measuretabelle"
                   }
                 },
-                "Function": 1
+                "Property": "Ø Retention-Wahrscheinlichkeit"
               }
             },
             "direction": "Descending"

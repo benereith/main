@@ -270,10 +270,10 @@ table SAP_Stammdaten
 		dataType: int64
 		formatString: 0
 		lineageTag: 8af6cad2-c743-45ff-9c06-928a9ab0f587
-		summarizeBy: sum
+		summarizeBy: none
 		sourceColumn: cause_of_change
 
-		annotation SummarizationSetBy = Automatic
+		annotation SummarizationSetBy = User
 
 	column bezeichnung_cause_of_change
 		dataType: string
@@ -287,10 +287,10 @@ table SAP_Stammdaten
 		dataType: int64
 		formatString: 0
 		lineageTag: b09b3d30-8167-49bc-bc05-cea9d74b432d
-		summarizeBy: sum
+		summarizeBy: none
 		sourceColumn: cause_of_change_fy
 
-		annotation SummarizationSetBy = Automatic
+		annotation SummarizationSetBy = User
 
 	column bezeichnung_cause_of_change_fy
 		dataType: string
@@ -304,10 +304,10 @@ table SAP_Stammdaten
 		dataType: int64
 		formatString: 0
 		lineageTag: d0e704f8-e95b-4fa0-9243-d8cf5622578c
-		summarizeBy: sum
+		summarizeBy: none
 		sourceColumn: cause_of_change_ny
 
-		annotation SummarizationSetBy = Automatic
+		annotation SummarizationSetBy = User
 
 	column bezeichnung_cause_of_change_ny
 		dataType: string
