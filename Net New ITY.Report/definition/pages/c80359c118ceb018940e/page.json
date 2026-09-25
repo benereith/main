@@ -1,7 +1,7 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/2.1.0/schema.json",
   "name": "c80359c118ceb018940e",
-  "displayName": "CRM: Retention Pipeline ITY",
+  "displayName": "CRM · Retention Pipeline",
   "displayOption": "FitToPage",
   "height": 720,
   "width": 1280,
@@ -13,30 +13,6 @@
             "expr": {
               "Literal": {
                 "Value": "201L"
-              }
-            }
-          }
-        }
-      }
-    ],
-    "background": [
-      {
-        "properties": {
-          "color": {
-            "solid": {
-              "color": {
-                "expr": {
-                  "Literal": {
-                    "Value": "'#E5E5E5'"
-                  }
-                }
-              }
-            }
-          },
-          "transparency": {
-            "expr": {
-              "Literal": {
-                "Value": "0D"
               }
             }
           }

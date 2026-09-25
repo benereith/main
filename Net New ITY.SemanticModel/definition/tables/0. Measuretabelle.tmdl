@@ -22,26 +22,6 @@ table '0. Measuretabelle'
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
-	/// Generischer YTD-Wert (kumuliert bis zur Periode im Kontext), reagiert
-	/// ebenfalls auf DIM_Szenario. Gegenstück zu Wert_Periodic.
-	measure Wert_YTD = ```
-			VAR p = MAX ( 'DIM_DATE'[FY_MonatNr] )
-			VAR PeriodenYTD =
-			    CALCULATETABLE (
-			        DISTINCT ( 'DIM_DATE'[Datum] ),
-			        REMOVEFILTERS ( 'DIM_DATE' ),
-			        'DIM_DATE'[FY_MonatNr] <= p,
-			        VALUES ( 'DIM_DATE'[FY_Start] )
-			    )
-			RETURN
-			    CALCULATE ( [Wert_Periodic], REMOVEFILTERS ( 'DIM_DATE' ), PeriodenYTD )
-			```
-		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
-		displayFolder: 01 Szenario-Vergleich
-		lineageTag: 168fe963-2b19-4ce9-922d-81a4fbe49354
-
-		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
-
 	/// Delta Actual − Budget (YTD). Positiv = über Budget.
 	measure 'Δ Actual vs Budget' = [ACT_Value] - [BUD_Value]
 		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
@@ -58,45 +38,27 @@ table '0. Measuretabelle'
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
-	/// Zielerreichung Actual gegenüber Budget (YTD).
-	measure 'Zielerreichung Actual %' = DIVIDE ( [ACT_Value], [BUD_Value] )
-		formatString: 0.0\ %;-0.0\ %;0.0\ %
-		displayFolder: 00 KPIs
-		lineageTag: 157ce513-7585-4323-814e-346b00fcf66f
-
-	/// Zielerreichung Forecast gegenüber Budget (YTD).
-	measure 'Zielerreichung Forecast %' = DIVIDE ( [RGF_Value], [BUD_Value] )
-		formatString: 0.0\ %;-0.0\ %;0.0\ %
-		displayFolder: 00 KPIs
-		lineageTag: a1eb0132-44d1-408a-bb1d-fe36428c3444
-
-	/// Forecast Accuracy: 1 − |Actual − Forecast| / Actual (YTD).
-	/// 100 % = Forecast trifft Ist exakt.
-	measure 'Forecast Accuracy %' = ```
-			VAR Abweichung = ABS ( [ACT_Value] - [RGF_Value] )
-			RETURN
-			    IF ( [ACT_Value] <> 0, 1 - DIVIDE ( Abweichung, ABS ( [ACT_Value] ) ) )
-			```
-		formatString: 0.0\ %;-0.0\ %;0.0\ %
-		displayFolder: 00 KPIs
-		lineageTag: 50fd8e5b-8a43-4c46-9468-8f50ca0e0308
-
-	/// Net New Roll Delta relativ zum Budget (YTD).
-	measure 'Net New Roll Delta %' = DIVIDE ( [Net New Roll Delta], [Net New Roll Budget] )
-		formatString: 0.0\ %;-0.0\ %;0.0\ %
-		displayFolder: 00 KPIs
-		lineageTag: 78a172da-da3c-467c-afc4-37819f5a264c
-
-	/// Vorjahresumsatz = Basis für die Net-New-%-Betrachtung.
-	/// FY26: Planversion 35 des Vorjahres (FY_Offset = -1).
-	/// Für das Berichtsjahr FY27 wäre die Basis RGF + R12 des FY26 – das
-	/// setzt die Mehrjahr-/Berichtsjahr-Erweiterung voraus (siehe README).
+	/// Vorjahresumsatz = Basis für Net New % (Gesamtjahr, unabhängig vom
+	/// Periodenfilter). Je Berichtsjahr die Vorjahresbasis des Budget-Szenarios
+	/// (Konvention: Szenario-Kürzel beginnt mit "BUD"):
+	///   FY26 = Plan_35 FY25 (BUD), FY27 = Plan_RGF + Plan_R12 FY26 (BUD_FY27).
+	/// Ohne Berichtsjahr-Auswahl gilt das laufende Geschäftsjahr. Vorjahreszeilen
+	/// sind in der Szenario-Engine negativ gespeichert → Vorzeichen gedreht.
 	measure Vorjahresumsatz = ```
-			CALCULATE (
-			    SUM ( Revenues[Betrag] ),
-			    Revenues[Werttyp_Version] = "Plan_35",
-			    Revenues[FY_Offset] = -1
-			)
+			VAR AktuellesGJ =
+			    CALCULATE ( MAX ( Revenues[Geschäftsjahr] ), REMOVEFILTERS (), Revenues[FY_Offset] = 0 )
+			VAR BJ = SELECTEDVALUE ( DIM_Berichtsjahr[Berichtsjahr], AktuellesGJ )
+			RETURN
+			    - CALCULATE (
+			        SUM ( Revenues[Betrag] ),
+			        REMOVEFILTERS ( 'DIM_DATE' ),
+			        REMOVEFILTERS ( DIM_Struktur ),
+			        REMOVEFILTERS ( DIM_Szenario ),
+			        REMOVEFILTERS ( DIM_Berichtsjahr ),
+			        Revenues[Berichtsjahr] = BJ,
+			        Revenues[Geschäftsjahr] < BJ,
+			        FILTER ( ALL ( Revenues[Szenario] ), LEFT ( Revenues[Szenario], 3 ) = "BUD" )
+			    )
 			```
 		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
 		displayFolder: 00 KPIs
@@ -104,14 +66,38 @@ table '0. Measuretabelle'
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
-	/// Net New (Forecast/Actual) in % des Vorjahresumsatzes.
-	measure 'Net New % (Forecast/Actual)' = DIVIDE ( [Net New Roll Forecast/Actuals], [Vorjahresumsatz] )
+	/// Net New Roll (Forecast/Actual, Gesamtjahr) in % des Vorjahresumsatzes.
+	measure 'Net New % (Forecast/Actual)' = ```
+			DIVIDE (
+			    CALCULATE ( [Net New Roll Forecast/Actuals], REMOVEFILTERS ( 'DIM_DATE' ) ),
+			    [Vorjahresumsatz]
+			)
+			```
 		formatString: 0.0\ %;-0.0\ %;0.0\ %
 		displayFolder: 00 KPIs
 		lineageTag: 9b5f848d-f29f-43ec-be3b-186e15198a64
 
-	/// Net New (Budget) in % des Vorjahresumsatzes.
-	measure 'Net New % (Budget)' = DIVIDE ( [Net New Roll Budget], [Vorjahresumsatz] )
+	/// Net New Roll (Budget, Gesamtjahr) in % des Vorjahresumsatzes – je
+	/// Berichtsjahr mit dem passenden Budget-Szenario (FY26 = BUD, FY27 =
+	/// BUD_FY27). Net New Roll = New Business Roll (MetricId 1, 2) + Lost
+	/// Business Roll (MetricId 6); für FY26 identisch mit [Net New Roll Budget].
+	measure 'Net New % (Budget)' = ```
+			VAR AktuellesGJ =
+			    CALCULATE ( MAX ( Revenues[Geschäftsjahr] ), REMOVEFILTERS (), Revenues[FY_Offset] = 0 )
+			VAR BJ = SELECTEDVALUE ( DIM_Berichtsjahr[Berichtsjahr], AktuellesGJ )
+			VAR NetNewBudget =
+			    CALCULATE (
+			        [Wert_Periodic],
+			        REMOVEFILTERS ( 'DIM_DATE' ),
+			        REMOVEFILTERS ( DIM_Szenario ),
+			        REMOVEFILTERS ( DIM_Berichtsjahr ),
+			        Revenues[Berichtsjahr] = BJ,
+			        FILTER ( ALL ( Revenues[Szenario] ), LEFT ( Revenues[Szenario], 3 ) = "BUD" ),
+			        KEEPFILTERS ( DIM_Struktur[MetricId] IN { 1, 2, 6 } )
+			    )
+			RETURN
+			    DIVIDE ( NetNewBudget, [Vorjahresumsatz] )
+			```
 		formatString: 0.0\ %;-0.0\ %;0.0\ %
 		displayFolder: 00 KPIs
 		lineageTag: 20f2fb7a-3981-42a7-a7a1-e88e556da070
@@ -1164,39 +1150,6 @@ table '0. Measuretabelle'
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
-	/// Recherche-/Test-Measure (Alt): Ist Vorjahr, Bucket 7, CoC 4.
-	measure Act_test = ```
-			CALCULATE (
-			    SUM ( Revenues[Betrag] ),
-			    Revenues[Szenario] = "ACT",
-			    Revenues[FY_Offset] = -1,
-			    Revenues[MetricId] = 7,
-			    SAP_Stammdaten[cause_of_change] = 4
-			)
-			```
-		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
-		displayFolder: zz Recherche
-		lineageTag: ea3f3dfa-0a62-4fec-826b-0b395d694f84
-
-		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
-
-	/// Recherche-/Test-Measure (Alt): Plan_41 Vorjahr, Bucket 7, CoC 4.
-	measure 41_test = ```
-			CALCULATE (
-			    SUM ( Revenues[Betrag] ),
-			    Revenues[Szenario] = "R03",
-			    Revenues[Werttyp_Version] = "Plan_41",
-			    Revenues[FY_Offset] = -1,
-			    Revenues[MetricId] = 7,
-			    SAP_Stammdaten[cause_of_change] = 4
-			)
-			```
-		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
-		displayFolder: zz Recherche
-		lineageTag: 368cec98-f278-4117-a42b-06d368629345
-
-		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
-
 	/// Gewinnwahrscheinlichkeit zum gewählten Vergleichszeitpunkt.
 	measure LT_Win% = ```
 			VAR SelectedDate = ALLSELECTED ( Vergleichszeitpunkt[Timestamp] )
@@ -1372,6 +1325,51 @@ table '0. Measuretabelle'
 
 		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
 
+	/// Veränderung einer Forecast-Runde gegenüber der vorherigen Runde desselben
+	/// Berichtsjahres (Gesamtjahr). Leer für die erste Runde (Budget).
+	measure 'Δ zur Vorrunde' = ```
+			VAR AktSort = SELECTEDVALUE ( DIM_Szenario[RundeSort] )
+			VAR AktBJ = SELECTEDVALUE ( DIM_Szenario[Berichtsjahr] )
+			VAR VorSort =
+			    CALCULATE (
+			        MAX ( DIM_Szenario[RundeSort] ),
+			        REMOVEFILTERS ( DIM_Szenario ),
+			        DIM_Szenario[RundeSort] < AktSort,
+			        DIM_Szenario[Berichtsjahr] = AktBJ,
+			        NOT ISBLANK ( DIM_Szenario[Runde] )
+			    )
+			RETURN
+			    IF (
+			        NOT ISBLANK ( VorSort ),
+			        [Wert Gesamtjahr]
+			            - CALCULATE ( [Wert Gesamtjahr], REMOVEFILTERS ( DIM_Szenario ), DIM_Szenario[RundeSort] = VorSort )
+			    )
+			```
+		formatString: +#,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 01 Szenario-Vergleich
+		lineageTag: 05d3ae5c-a412-4fab-b3de-41c62f515ae1
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
+	/// Net New Actual kumuliert, endet an der letzten gebuchten Ist-Periode
+	/// (keine flache Fortschreibung in die Zukunft). Für Verlaufsdiagramme.
+	measure 'Actual YTD bis Datenstand' = ```
+			VAR LetzteIstPeriode =
+			    CALCULATE (
+			        MAX ( Revenues[Buchungsperiode] ),
+			        REMOVEFILTERS (),
+			        Revenues[Szenario] = "ACT",
+			        Revenues[FY_Offset] = 0
+			    )
+			RETURN
+			    IF ( MAX ( 'DIM_DATE'[FY_MonatNr] ) <= LetzteIstPeriode, [ACT_Value] )
+			```
+		formatString: #,0\ "€";-#,0\ "€";#,0\ "€"
+		displayFolder: 01 Szenario-Vergleich
+		lineageTag: c6d39d5c-afa7-4f95-810b-8ffb0317351c
+
+		annotation PBI_FormatHint = {"currencyCulture":"de-DE"}
+
 	/// Kopfzeile: letzte gebuchte Ist-Periode des laufenden Geschäftsjahres.
 	measure Datenstand = ```
 			VAR LetzterIstMonat =
@@ -1396,11 +1394,6 @@ table '0. Measuretabelle'
 			```
 		displayFolder: zz Technik\Beschriftung
 		lineageTag: 2156b487-a36c-4ec7-80f1-ed4715a6abf0
-
-	/// Kopfzeile: Berichtstitel mit gewähltem Berichtsjahr.
-	measure 'Titel Berichtsjahr' = "Net New ITY · " & SELECTEDVALUE ( DIM_Berichtsjahr[Berichtsjahr_Label], "alle Berichtsjahre" )
-		displayFolder: zz Technik\Beschriftung
-		lineageTag: 6173961c-a911-49bf-9487-33a1e36cf168
 
 	/// Bedingte Formatierung: Grün bei Actual ≥ Budget, sonst Rot.
 	measure 'Farbe Δ Actual vs Budget' = ```

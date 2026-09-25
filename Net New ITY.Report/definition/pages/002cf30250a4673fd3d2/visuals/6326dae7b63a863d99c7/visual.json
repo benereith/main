@@ -2,10 +2,10 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.10.0/schema.json",
   "name": "6326dae7b63a863d99c7",
   "position": {
-    "x": 5.2837977296181631,
-    "y": 5.2837977296181631,
+    "x": 5.283797729618163,
+    "y": 5.283797729618163,
     "z": 2000,
-    "height": 60.763673890608871,
+    "height": 60.76367389060887,
     "width": 157.19298245614033,
     "tabOrder": 2000
   },
@@ -144,36 +144,6 @@
               "expr": {
                 "Literal": {
                   "Value": "'Buchungsperioden'"
-                }
-              }
-            },
-            "background": {
-              "solid": {
-                "color": {
-                  "expr": {
-                    "Literal": {
-                      "Value": "'#B3985A'"
-                    }
-                  }
-                }
-              }
-            },
-            "fontColor": {
-              "solid": {
-                "color": {
-                  "expr": {
-                    "ThemeDataColor": {
-                      "ColorId": 0,
-                      "Percent": 0
-                    }
-                  }
-                }
-              }
-            },
-            "bold": {
-              "expr": {
-                "Literal": {
-                  "Value": "false"
                 }
               }
             }

@@ -244,7 +244,7 @@ Faktentabelle.
   Bericht zeigen, in `0. Measuretabelle` zwei Measures nach Muster `RGF_Value`
   / `RGF_Periodic` anlegen – nur `Revenues[Szenario] = "R06"` als Filter
   tauschen. Ohne eigenes Measure ist die Runde trotzdem sofort über die
-  generischen `Wert_YTD`/`Wert_Periodic` + `DIM_Szenario[Szenario]` sichtbar
+  generischen `Wert Gesamtjahr`/`Wert_Periodic` + `DIM_Szenario[Runde]` sichtbar (Seite **Forecast-Leiter**)
   (siehe Abschnitt 5.2a).
 
 > **Nur neu einfrieren (bestehende Runde, kein neues Szenario)?** Dann in der
@@ -313,8 +313,9 @@ Diese Runden tragen in `DIM_Szenario` die Spalte **`Runde`** (Budget/2+10/5+7/
 **Vergleichsansicht bauen (ohne Measure je Runde):**
 
 Matrix/Zebra-Tabelle: **Zeilen** = Net-New-Hierarchie (`DIM_Struktur`),
-**Spalten** = `DIM_Szenario[Szenario]`, **Wert** = `[Wert_YTD]` (oder
-`[Wert_Periodic]` für Monatswerte). Jede Runde erscheint automatisch als eigene
+**Spalten** = `DIM_Szenario[Runde]`, **Wert** = `[Wert Gesamtjahr]` (oder
+`[Wert_Periodic]` für Monatswerte, `[Δ zur Vorrunde]` für die Veränderung).
+Genau so ist die Seite **Forecast-Leiter** gebaut. Jede Runde erscheint automatisch als eigene
 Spalte; neue Runde = neue Spalte, kein neues Measure. Reihenfolge der Spalten
 steuert die Spalte `Sort` in `Szenario_Konfig` / `DIM_Szenario`.
 
@@ -354,11 +355,17 @@ Die Revenue-Quelle läuft jetzt über das **Reporting-Warehouse** statt der Exce
 
 ### Net New in % des Vorjahresumsatzes
 
-Kennzahl `Net New % (Forecast/Actual)` bzw. `(Budget)` = Net New / `Vorjahresumsatz`.
-Die **Basis** (`Vorjahresumsatz`) ist berichtsjahr-abhängig:
-- **FY26** → Planversion **35** des Vorjahres (`FY_Offset = -1`) — so umgesetzt.
-- **FY27** → **RGF + R12** des FY26. Setzt die Berichtsjahr-Erweiterung voraus
-  (dann wird die Basis-Version je Berichtsjahr umgeschaltet).
+Kennzahl `Net New % (Forecast/Actual)` bzw. `(Budget)` = Net New Roll
+(Gesamtjahr) / `Vorjahresumsatz` (Gesamtjahr). Beide ignorieren den
+Periodenfilter, damit Zähler und Nenner zusammenpassen.
+Die **Basis** (`Vorjahresumsatz`) folgt dem gewählten Berichtsjahr (ohne
+Auswahl: laufendes GJ) und ist die Vorjahresbasis des jeweiligen
+Budget-Szenarios (Konvention: Kürzel beginnt mit `BUD`):
+- **FY26** → Planversion **35** FY25 (Szenario `BUD`).
+- **FY27** → **RGF + R12** FY26 (Szenario `BUD_FY27`).
+`Net New % (Budget)` nimmt ebenso das Budget-Szenario des Berichtsjahres – für
+FY27 also automatisch das Budget FY27. Neue Budgets (`BUD_FY28` …) werden ohne
+DAX-Änderung erkannt.
 
 ### Mehrjahr / Berichtsjahr (umgesetzt für FY26 + FY27)
 
@@ -377,7 +384,7 @@ Die Engine ist jetzt **berichtsjahr-fähig**:
   Jahre ab Vorjahr (`Fiscal_Year >= Aktuelles_Geschäftsjahr - 1`).
 - **FY26-Measures bleiben unverändert**, weil ihre Szenarien (BUD/ACT/RGF …)
   nur FY26-Zeilen enthalten. **FY27 = Szenario `BUD_FY27`** (Runde „Budget FY27"),
-  sichtbar über die generischen `Wert_YTD`/`Wert_Periodic` + `DIM_Szenario[Runde]`.
+  sichtbar über die generischen `Wert Gesamtjahr`/`Wert_Periodic` + `DIM_Szenario[Runde]`.
 
 #### CoC-Snapshot für Budget FY27 (eingefroren)
 
@@ -433,10 +440,41 @@ weitere Jahre:
   Periodenfilter = Gesamtjahr) – berechnet über `DIM_DATE[FY_MonatNr]`.
 - Szenario-Auswahl über `Revenues[Szenario]`; `MetricId <> 99` blendet
   „Like for Like" aus.
-- Es wurden 15 im Bericht ungenutzte Measures entfernt; die verbleibenden 79
-  werden alle in Visuals verwendet oder von diesen als Abhängigkeit benötigt.
-  Namen, Formatstrings und Anzeigeordner blieben stabil, damit alle Visuals
-  unverändert funktionieren.
+- Jedes Measure hat eine Beschreibung (Tooltip in der Feldliste) und einen
+  Anzeigeordner. Einheitliche Formate: Beträge `#,0 €`, Quoten `0,0 %`.
+- Nur Measures, die im Bericht verwendet werden (direkt oder als Abhängigkeit).
+- **Keine impliziten Measures** (`discourageImplicitMeasures`): Aggregationen
+  immer über explizite Measures (z. B. `Entscheidungsdatum`, `Vertragsende`,
+  `Ø Retention-Wahrscheinlichkeit`, `Werk (Name)`).
+- Technische Schlüssel/Faktspalten (`Revenues[Betrag]`, `Werk`, `Szenario`,
+  `MetricId`, `Datum` …) sind ausgeblendet – Auswertung über Dimensionen.
+- `zz Technik\Formatierung`: Farb-Measures für bedingte Formatierung
+  (`Farbe Δ Actual vs Budget`, `Farbe Runde` …) – Farben nur dort ändern.
+
+## 7a. Berichtsaufbau
+
+| Bereich | Seiten |
+|---|---|
+| Management | **Übersicht** (KPI-Leiste, kumulierter Verlauf, Forecast-Leiter, Δ je Management), **Forecast-Leiter** (Matrix Baustein × Runde, Management/Werk × Runde) |
+| Net New | Periode · YTD · Budget vs Forecast · Split Rolls |
+| Top 15 | Rolls · Opening PY · Opening CY · Not Opening Yet |
+| New Business | Revenues |
+| CRM | Sales Pipeline · Retention Pipeline · Growth View Sales · Growth View Retention |
+| ausgeblendet | Detail · Werk (Drillthrough), Scorecard, Split nach Management, Budget vs RF, New Business · Export, Recherche |
+
+Konventionen:
+- **Theme `NetNewITY_Theme`** steuert Farben, Schriften, Rahmen, Schatten und
+  Seitenhintergrund. Visuals tragen **keine** eigenen Hintergrund-/Rahmen-/
+  Titelfarben mehr – Änderungen am Look nur im Theme.
+- Einheitliche Kopfzeile auf den neuen Seiten: Titel · Datenstand ·
+  Berichtsjahr · Periode · Management. Periode und Management sind über
+  Sync-Gruppen mit allen Seiten verbunden; der Vergleichszeitpunkt (Sales +
+  Retention) hat eine gemeinsame Sync-Gruppe `Vergleichszeitpunkt`.
+- Verlauf und Forecast-Leiter reagieren bewusst **nicht** auf den
+  Periodenslicer (Gesamtjahr bzw. Verlauf über alle Perioden).
+- Farblogik: Budget grau, Forecast-Runden hell→dunkel blau, Actual dunkelblau;
+  Abweichungen grün (≥ Budget) / rot (< Budget).
+- Alle neuen Visuals haben Alt-Text (Barrierefreiheit).
 
 ---
 

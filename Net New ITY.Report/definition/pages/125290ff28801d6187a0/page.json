@@ -1,7 +1,7 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/2.1.0/schema.json",
   "name": "125290ff28801d6187a0",
-  "displayName": "Top 15 Rolls Opening PY",
+  "displayName": "Top 15 · Opening PY",
   "displayOption": "FitToPage",
   "height": 720,
   "width": 1280,
@@ -13,30 +13,6 @@
             "expr": {
               "Literal": {
                 "Value": "201L"
-              }
-            }
-          }
-        }
-      }
-    ],
-    "background": [
-      {
-        "properties": {
-          "color": {
-            "solid": {
-              "color": {
-                "expr": {
-                  "Literal": {
-                    "Value": "'#E5E5E5'"
-                  }
-                }
-              }
-            }
-          },
-          "transparency": {
-            "expr": {
-              "Literal": {
-                "Value": "0D"
               }
             }
           }

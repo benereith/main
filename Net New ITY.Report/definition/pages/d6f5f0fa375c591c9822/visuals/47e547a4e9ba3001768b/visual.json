@@ -2,10 +2,10 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.9.0/schema.json",
   "name": "47e547a4e9ba3001768b",
   "position": {
-    "x": 6.0377358490566042,
-    "y": 78.490566037735846,
+    "x": 6.037735849056604,
+    "y": 78.49056603773585,
     "z": 4000,
-    "height": 630.33962264150944,
+    "height": 630.3396226415094,
     "width": 1037.2830188679245,
     "tabOrder": 4000
   },
@@ -442,29 +442,6 @@
               "expr": {
                 "Literal": {
                   "Value": "'Revenues Act vs. Bud vs. FC New Business'"
-                }
-              }
-            },
-            "fontColor": {
-              "solid": {
-                "color": {
-                  "expr": {
-                    "ThemeDataColor": {
-                      "ColorId": 0,
-                      "Percent": 0
-                    }
-                  }
-                }
-              }
-            },
-            "background": {
-              "solid": {
-                "color": {
-                  "expr": {
-                    "Literal": {
-                      "Value": "'#B3985A'"
-                    }
-                  }
                 }
               }
             }

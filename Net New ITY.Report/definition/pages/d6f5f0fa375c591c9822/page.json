@@ -1,7 +1,7 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/2.1.0/schema.json",
   "name": "d6f5f0fa375c591c9822",
-  "displayName": "New Business Revenues",
+  "displayName": "New Business · Revenues",
   "displayOption": "FitToPage",
   "height": 720,
   "width": 1280,
@@ -13,30 +13,6 @@
             "expr": {
               "Literal": {
                 "Value": "188L"
-              }
-            }
-          }
-        }
-      }
-    ],
-    "background": [
-      {
-        "properties": {
-          "color": {
-            "solid": {
-              "color": {
-                "expr": {
-                  "Literal": {
-                    "Value": "'#E5E5E5'"
-                  }
-                }
-              }
-            }
-          },
-          "transparency": {
-            "expr": {
-              "Literal": {
-                "Value": "0D"
               }
             }
           }

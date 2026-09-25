@@ -58,6 +58,18 @@ table DIM_Szenario
 
 		annotation SummarizationSetBy = User
 
+	/// Berichtsjahr (GJ-Beginn), zu dem das Szenario gehört. Grenzt die
+	/// Forecast-Leiter je Berichtsjahr ab (z. B. Delta zur Vorrunde).
+	column Berichtsjahr
+		dataType: int64
+		formatString: 0
+		isHidden
+		lineageTag: 6eccc82c-c829-494b-a5e0-4e3d7e162d83
+		summarizeBy: none
+		sourceColumn: Berichtsjahr
+
+		annotation SummarizationSetBy = User
+
 	partition DIM_Szenario = m
 		mode: import
 		source = ```
@@ -81,7 +93,7 @@ table DIM_Szenario
 				    //   8+4 = Plan_RGF + R12 (RGF), 10+2 = Plan_35 + RTD (P35).
 				    RundeMap     = [ BUD = "Budget", R03 = "2+10", FC57 = "5+7", RGF = "8+4", P35 = "10+2", ACT = "Actual", BUD_FY27 = "Budget FY27" ],
 				    RundeSortMap = [ BUD = 1,        R03 = 2,      FC57 = 3,     RGF = 4,     P35 = 5,      ACT = 6,      BUD_FY27 = 7 ],
-				    Auswahl = Table.Distinct(Table.SelectColumns(Szenario_Konfig, {"Szenario", "Sort"})),
+				    Auswahl = Table.Group(Szenario_Konfig, {"Szenario", "Sort"}, {{"Berichtsjahr", each List.Min([Berichtsjahr_Start]), Int64.Type}}),
 				    MitBeschreibung = Table.AddColumn(Auswahl, "Beschreibung", each Record.FieldOrDefault(Beschreibungen, [Szenario], [Szenario]), type text),
 				    MitRunde = Table.AddColumn(MitBeschreibung, "Runde", each Record.FieldOrDefault(RundeMap, [Szenario], null), type nullable text),
 				    MitRundeSort = Table.AddColumn(MitRunde, "RundeSort", each Record.FieldOrDefault(RundeSortMap, [Szenario], 99), Int64.Type)
