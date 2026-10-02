@@ -1,0 +1,19 @@
+/// Steuertabelle ohne Beziehung: Anzahl der Units in den Flop-Listen (Standard 20).
+table p_TopN
+	lineageTag: d079c5da-4f1a-58e9-a6a0-6f3fbaeaeacf
+
+	/// Auswahlwert 5 bis 50 in Fünferschritten.
+	column 'Top N'
+		dataType: int64
+		formatString: 0
+		lineageTag: ddccba09-d487-5be2-8d14-6d72b5ba82a6
+		summarizeBy: none
+		sourceColumn: [Top N]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition p_TopN = calculated
+		mode: import
+		source = SELECTCOLUMNS(GENERATESERIES(5, 50, 5), "Top N", [Value])
+
+	annotation PBI_ResultType = Table

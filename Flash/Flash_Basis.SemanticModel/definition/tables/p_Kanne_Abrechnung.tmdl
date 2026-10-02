@@ -1,31 +1,26 @@
-/// Steuertabelle ohne Beziehung (Was-wäre-wenn-Schalter) für den Managementbereich Kanne.
-///
-/// Hintergrund: Kanne wird abweichend von den übrigen Managementbereichen abgerechnet.
-/// Steht der Schalter auf "Ja", werden ALLE Kanne-Units als Actuals (SAP-Version 0) gerechnet,
-/// unabhängig von ihrem Übergabestatus. Steht er auf "Nein", gilt für Kanne dieselbe
-/// ACT/FC/V-Logik wie überall sonst.
-///
-/// Der Schalter wirkt ausschließlich über die Measure [Flash] (bzw. [Flash Basis]) und braucht
-/// deshalb keinen Refresh - er ist reine Berichtslogik.
+/// Steuertabelle ohne Beziehung: Schalter für den Managementbereich Kanne.
+/// Kanne wird abweichend abgerechnet. Bei 'Ja' zählen alle Kanne-Units mit ihren Ist-Werten (SAP-Version 0),
+/// unabhängig vom Übergabestatus; bei 'Nein' gilt dieselbe Logik wie für alle anderen Bereiche.
+/// Wirkt ausschließlich über die Measure Flash und braucht keinen Refresh.
 table p_Kanne_Abrechnung
-	lineageTag: 6f0a8d31-4b72-4e59-93c1-2d85f7069ea4
+	lineageTag: f79c52bc-1682-59e4-bde6-259b8678a8ef
 
-	/// Auswahlwert des Slicers: "Nein" (Standard, normale Statuslogik) oder "Ja" (alles ACT).
+	/// Auswahlwert: 'Nein' (Standard, Statuslogik) oder 'Ja' (Kanne komplett als Actuals).
 	column 'Kanne abgerechnet'
 		dataType: string
-		lineageTag: 91c5e73b-8a04-4d16-b2f7-50e6c1a97d38
+		lineageTag: edb8752f-cdcc-51d6-9386-1034fbf1bc0a
 		summarizeBy: none
 		sourceColumn: [Kanne abgerechnet]
 		sortByColumn: Sortierung
 
 		annotation SummarizationSetBy = Automatic
 
-	/// Sortierung, damit "Nein" im Slicer vor "Ja" steht.
+	/// Sortierung, damit 'Nein' vor 'Ja' steht.
 	column Sortierung
 		dataType: int64
-		formatString: 0
 		isHidden
-		lineageTag: 2ab94c07-5d61-482f-90b3-e8a7f2c40d59
+		formatString: 0
+		lineageTag: e43d1de4-b132-502a-8160-7f0eceb62e1c
 		summarizeBy: none
 		sourceColumn: [Sortierung]
 
@@ -38,11 +33,10 @@ table p_Kanne_Abrechnung
 				    "Kanne abgerechnet", STRING,
 				    "Sortierung", INTEGER,
 				    {
-				        {"Nein", 1},
-				        {"Ja", 2}
+				        { "Nein", 1 },
+				        { "Ja", 2 }
 				    }
 				)
 				```
 
-	annotation PBI_Id = 7d41c9b60e2a45f8ac13b57e29d604fa
-
+	annotation PBI_ResultType = Table

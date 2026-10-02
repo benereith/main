@@ -9,53 +9,29 @@
         "page": "2.3.0"
       },
       "type": "SharedResources"
+    },
+    "customTheme": {
+      "name": "FlashTheme-c4a91e7d.json",
+      "reportVersionAtImport": {
+        "visual": "2.5.0",
+        "report": "3.1.0",
+        "page": "2.3.0"
+      },
+      "type": "RegisteredResources"
     }
   },
   "filterConfig": {
     "filters": [
       {
-        "name": "d4afacda9b2de37d81ee",
-        "ordinal": 0,
+        "name": "73ce0556df0215681586",
         "field": {
           "Column": {
             "Expression": {
               "SourceRef": {
-                "Entity": "sap_master_data_unit"
+                "Entity": "Dim_Unit"
               }
             },
-            "Property": "bezeichnung_management"
-          }
-        },
-        "type": "Categorical",
-        "howCreated": "User",
-        "isLockedInViewMode": true,
-        "objects": {
-          "general": [
-            {
-              "properties": {
-                "isInvertedSelectionMode": {
-                  "expr": {
-                    "Literal": {
-                      "Value": "true"
-                    }
-                  }
-                }
-              }
-            }
-          ]
-        }
-      },
-      {
-        "name": "f2887c3738fa1f46bcc7",
-        "ordinal": 1,
-        "field": {
-          "Column": {
-            "Expression": {
-              "SourceRef": {
-                "Entity": "sap_master_data_unit"
-              }
-            },
-            "Property": "innenauftragsart"
+            "Property": "Innenauftragsart"
           }
         },
         "type": "Categorical",
@@ -63,8 +39,8 @@
           "Version": 2,
           "From": [
             {
-              "Name": "s",
-              "Entity": "sap_master_data_unit",
+              "Name": "t",
+              "Entity": "Dim_Unit",
               "Type": 0
             }
           ],
@@ -79,10 +55,10 @@
                           "Column": {
                             "Expression": {
                               "SourceRef": {
-                                "Source": "s"
+                                "Source": "t"
                               }
                             },
-                            "Property": "innenauftragsart"
+                            "Property": "Innenauftragsart"
                           }
                         }
                       ],
@@ -103,34 +79,19 @@
           ]
         },
         "howCreated": "User",
-        "isLockedInViewMode": true,
-        "objects": {
-          "general": [
-            {
-              "properties": {
-                "isInvertedSelectionMode": {
-                  "expr": {
-                    "Literal": {
-                      "Value": "true"
-                    }
-                  }
-                }
-              }
-            }
-          ]
-        }
+        "ordinal": 0,
+        "isLockedInViewMode": true
       },
       {
-        "name": "4e21118e9bd09b18825c",
-        "ordinal": 2,
+        "name": "e2c4dbd53449ab88fcd4",
         "field": {
           "Column": {
             "Expression": {
               "SourceRef": {
-                "Entity": "tab_accounts_hierarchy"
+                "Entity": "Dim_Konto"
               }
             },
-            "Property": "Type"
+            "Property": "Typ"
           }
         },
         "type": "Categorical",
@@ -139,7 +100,7 @@
           "From": [
             {
               "Name": "t",
-              "Entity": "tab_accounts_hierarchy",
+              "Entity": "Dim_Konto",
               "Type": 0
             }
           ],
@@ -155,7 +116,7 @@
                             "Source": "t"
                           }
                         },
-                        "Property": "Type"
+                        "Property": "Typ"
                       }
                     }
                   ],
@@ -174,19 +135,19 @@
           ]
         },
         "howCreated": "User",
+        "ordinal": 1,
         "isLockedInViewMode": true
       },
       {
-        "name": "d74efae0000716c1632b",
-        "ordinal": 3,
+        "name": "ec51b5646e5ef0fd13d4",
         "field": {
           "Column": {
             "Expression": {
               "SourceRef": {
-                "Entity": "tab_accounts_hierarchy"
+                "Entity": "Dim_Konto"
               }
             },
-            "Property": "Level_2_Key"
+            "Property": "GuV Ebene 2"
           }
         },
         "type": "Categorical",
@@ -195,7 +156,7 @@
           "From": [
             {
               "Name": "t",
-              "Entity": "tab_accounts_hierarchy",
+              "Entity": "Dim_Konto",
               "Type": 0
             }
           ],
@@ -213,7 +174,7 @@
                                 "Source": "t"
                               }
                             },
-                            "Property": "Level_2_Key"
+                            "Property": "GuV Ebene 2"
                           }
                         }
                       ],
@@ -234,100 +195,10 @@
           ]
         },
         "howCreated": "User",
-        "isLockedInViewMode": true,
-        "objects": {
-          "general": [
-            {
-              "properties": {
-                "isInvertedSelectionMode": {
-                  "expr": {
-                    "Literal": {
-                      "Value": "true"
-                    }
-                  }
-                }
-              }
-            }
-          ]
-        }
-      },
-      {
-        "name": "ebddafadf4cbe2dc669d",
-        "ordinal": 4,
-        "field": {
-          "Column": {
-            "Expression": {
-              "SourceRef": {
-                "Entity": "Unit_Status"
-              }
-            },
-            "Property": "Status"
-          }
-        },
-        "type": "Categorical",
-        "filter": {
-          "Version": 2,
-          "From": [
-            {
-              "Name": "s",
-              "Entity": "Unit_Status",
-              "Type": 0
-            }
-          ],
-          "Where": [
-            {
-              "Condition": {
-                "Not": {
-                  "Expression": {
-                    "In": {
-                      "Expressions": [
-                        {
-                          "Column": {
-                            "Expression": {
-                              "SourceRef": {
-                                "Source": "s"
-                              }
-                            },
-                            "Property": "Status"
-                          }
-                        }
-                      ],
-                      "Values": [
-                        [
-                          {
-                            "Literal": {
-                              "Value": "null"
-                            }
-                          }
-                        ]
-                      ]
-                    }
-                  }
-                }
-              }
-            }
-          ]
-        },
-        "howCreated": "User",
-        "isLockedInViewMode": true,
-        "objects": {
-          "general": [
-            {
-              "properties": {
-                "isInvertedSelectionMode": {
-                  "expr": {
-                    "Literal": {
-                      "Value": "true"
-                    }
-                  }
-                }
-              }
-            }
-          ]
-        }
+        "ordinal": 2,
+        "isLockedInViewMode": true
       }
-    ],
-    "filterSortOrder": "Custom"
+    ]
   },
   "objects": {
     "section": [
@@ -349,7 +220,7 @@
           "expanded": {
             "expr": {
               "Literal": {
-                "Value": "true"
+                "Value": "false"
               }
             }
           }
@@ -357,11 +228,6 @@
       }
     ]
   },
-  "publicCustomVisuals": [
-    "waterfall6C9ED82ABD1F44C4A0D590CE01EB5EE7",
-    "zebraBiCards2C860CFAA9944091B75F0DBD117F20FA",
-    "ZebraBITablesBAE31B370F254F808553548EFB35BFA5"
-  ],
   "resourcePackages": [
     {
       "name": "SharedResources",
@@ -371,6 +237,17 @@
           "name": "CY25SU12",
           "path": "BaseThemes/CY25SU12.json",
           "type": "BaseTheme"
+        }
+      ]
+    },
+    {
+      "name": "RegisteredResources",
+      "type": "RegisteredResources",
+      "items": [
+        {
+          "name": "FlashTheme-c4a91e7d.json",
+          "path": "FlashTheme-c4a91e7d.json",
+          "type": "CustomTheme"
         }
       ]
     }

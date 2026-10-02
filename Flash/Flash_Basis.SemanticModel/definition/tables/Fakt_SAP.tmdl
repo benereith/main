@@ -1,0 +1,64 @@
+/// SAP-Werte je Werk, Periode, Konto und Version (Faktentabelle).
+/// Bewusst schmal: Werk und Periode stecken im Status_Key, die Zeit- und Unit-Filter laufen über Dim_UnitStatus.
+/// Faktenzeilen von Werken außerhalb der Managementbereiche werden beim Laden verworfen.
+table Fakt_SAP
+	lineageTag: cf58d3f9-9b70-5cc6-abc3-5b333ee5ae5c
+
+	/// Schlüssel Werk * 1.000.000 + Geschäftsjahr * 100 + Periode. Verknüpfung zu Dim_UnitStatus.
+	column Status_Key
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 4764ab16-dd89-5022-9345-5edc2d54fa18
+		summarizeBy: none
+		sourceColumn: Status_Key
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Konto / Kostenart. Verknüpfung zu Dim_Konto.
+	column Konto
+		dataType: string
+		isHidden
+		lineageTag: ad482e5b-1265-5c43-891e-14c8e7ac6860
+		summarizeBy: none
+		sourceColumn: Konto
+
+		annotation SummarizationSetBy = Automatic
+
+	/// SAP-Version: 0 = Actuals, 20 = Budget, RGF/R12 = aktueller Forecast, RF/35/RTD = weitere Forecast-Stände, V = Version V.
+	column Version
+		dataType: string
+		isHidden
+		lineageTag: e43ec545-0b40-5dce-ae49-4048649069e7
+		summarizeBy: none
+		sourceColumn: Version
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Betrag in Euro. Nicht direkt verwenden, sondern über die Measures (Act, Budget, Forecast, Flash).
+	column Wert
+		dataType: decimal
+		isHidden
+		formatString: #,0.00
+		lineageTag: b7c6431a-af1b-5190-8b54-7bb5c4bd1dfd
+		summarizeBy: none
+		sourceColumn: Wert
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Fakt_SAP = m
+		mode: import
+		queryGroup: Fakten
+		source = ```
+				let
+				    Fakten = Quelle_SAP,
+				    Werke = Table.Buffer(Table.RenameColumns(Table.Distinct(Table.SelectColumns(Quelle_Unit, {"betrieb"})), {{"betrieb", "Werk"}})),
+
+				    // Nur Werke der berichteten Managementbereiche behalten
+				    Verbunden = Table.NestedJoin(Fakten, {"Werk"}, Werke, {"Werk"}, "Stammdaten", JoinKind.Inner),
+				    Ergebnis = Table.SelectColumns(Verbunden, {"Status_Key", "Konto", "Version", "Wert"})
+				in
+				    Ergebnis
+				```
+
+	annotation PBI_ResultType = Table

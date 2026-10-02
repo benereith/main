@@ -4,56 +4,43 @@
     {
       "ordinal": 0,
       "scrollPosition": {
-        "x": 353.14285278320313,
+        "x": 0,
         "y": 0
       },
       "nodes": [
         {
           "location": {
-            "x": 923.47456340167059,
+            "x": 660,
             "y": 0
           },
-          "nodeIndex": "tab_accounts_hierarchy",
-          "nodeLineageTag": "6cce14b9-dfcf-45f9-973d-ede908978984",
+          "nodeIndex": "Fakt_SAP",
+          "nodeLineageTag": "cf58d3f9-9b70-5cc6-abc3-5b333ee5ae5c",
           "size": {
             "height": 300,
             "width": 234
           },
-          "zIndex": 4
+          "zIndex": 0
         },
         {
           "location": {
-            "x": 334,
-            "y": -25
+            "x": 330,
+            "y": 0
           },
-          "nodeIndex": "V_SAP_EXPORTS_cleansed",
-          "nodeLineageTag": "82637c4d-e27a-4baa-ad5b-042b6f1d0cdf",
+          "nodeIndex": "Dim_UnitStatus",
+          "nodeLineageTag": "2bc7b9c0-eee5-5220-96fb-5fc9ab337fa8",
           "size": {
             "height": 300,
             "width": 234
           },
-          "zIndex": 3
+          "zIndex": 1
         },
         {
           "location": {
-            "x": 375.34092634776005,
-            "y": 383.93697798025812
+            "x": 0,
+            "y": 0
           },
-          "nodeIndex": "DIM_DATE",
-          "nodeLineageTag": "f8025ca9-5491-418b-a989-b3192bf3dfdf",
-          "size": {
-            "height": 300,
-            "width": 234
-          },
-          "zIndex": 5
-        },
-        {
-          "location": {
-            "x": 633.53010087862,
-            "y": 403.31652022995985
-          },
-          "nodeIndex": "sap_master_data_unit",
-          "nodeLineageTag": "8ddf1904-d18a-4726-9e70-2f12bcde619d",
+          "nodeIndex": "Dim_Unit",
+          "nodeLineageTag": "de03f84f-83ea-596a-a992-9cd93c832899",
           "size": {
             "height": 300,
             "width": 234
@@ -62,43 +49,123 @@
         },
         {
           "location": {
-            "x": 1838,
-            "y": 254.46848899012906
+            "x": 330,
+            "y": 380
           },
-          "nodeIndex": "Abgeschlossene Periode",
+          "nodeIndex": "Dim_Datum",
+          "nodeLineageTag": "adb9fab3-ae62-5573-a66d-68bf2a40c7c9",
           "size": {
-            "height": 200,
+            "height": 300,
             "width": 234
           },
-          "zIndex": 0
+          "zIndex": 3
         },
         {
           "location": {
-            "x": 1370,
-            "y": 302.46848899012906
+            "x": 990,
+            "y": 0
           },
-          "nodeIndex": "0_Measuretabelle",
+          "nodeIndex": "Dim_Konto",
+          "nodeLineageTag": "cc490f53-ea08-5e47-a1d4-beecfdd5b9e6",
           "size": {
-            "height": 104,
+            "height": 300,
             "width": 234
           },
-          "zIndex": 0
+          "zIndex": 4
         },
         {
           "location": {
-            "x": 1206.5714285714284,
-            "y": 29.325631847271922
+            "x": 660,
+            "y": 380
           },
-          "nodeIndex": "Übergabedatum",
-          "nodeLineageTag": "6399f1a2-06eb-4657-aa5f-628dd4b19ff7",
+          "nodeIndex": "Kommentare",
+          "nodeLineageTag": "db65c5d3-4f62-5ae6-af2f-a578acb219d0",
           "size": {
-            "height": 176,
+            "height": 300,
             "width": 234
           },
-          "zIndex": 0
+          "zIndex": 5
+        },
+        {
+          "location": {
+            "x": 1320,
+            "y": 0
+          },
+          "nodeIndex": "_Kennzahlen",
+          "nodeLineageTag": "d6e2a1e9-b138-5c60-ae7e-d8ae4f922818",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 6
+        },
+        {
+          "location": {
+            "x": 1320,
+            "y": 380
+          },
+          "nodeIndex": "p_Zeitbezug",
+          "nodeLineageTag": "19115f25-268d-5e54-b39d-b59fbe2885a3",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 7
+        },
+        {
+          "location": {
+            "x": 1650,
+            "y": 380
+          },
+          "nodeIndex": "p_Kanne_Abrechnung",
+          "nodeLineageTag": "f79c52bc-1682-59e4-bde6-259b8678a8ef",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 8
+        },
+        {
+          "location": {
+            "x": 1980,
+            "y": 380
+          },
+          "nodeIndex": "p_TopN",
+          "nodeLineageTag": "d079c5da-4f1a-58e9-a6a0-6f3fbaeaeacf",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 9
+        },
+        {
+          "location": {
+            "x": 2310,
+            "y": 380
+          },
+          "nodeIndex": "p_Kategorie",
+          "nodeLineageTag": "69cb8557-210a-50fa-8b69-041339afd731",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 10
+        },
+        {
+          "location": {
+            "x": 2640,
+            "y": 380
+          },
+          "nodeIndex": "p_Eingabe",
+          "nodeLineageTag": "3d89e01e-552a-5756-b15c-a728cf339f06",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 11
         }
       ],
-      "name": "Alle Tabellen",
+      "name": "Sternschema",
       "zoomValue": 70,
       "pinKeyFieldsToTop": false,
       "showExtraHeaderInfo": false,
@@ -106,6 +173,6 @@
       "tablesLocked": false
     }
   ],
-  "selectedDiagram": "Alle Tabellen",
-  "defaultDiagram": "Alle Tabellen"
+  "selectedDiagram": "Sternschema",
+  "defaultDiagram": "Sternschema"
 }

@@ -1,0 +1,26 @@
+/// Steuertabelle ohne Beziehung: Platzhalterfeld für das Texteingabefeld der Kommentarerfassung.
+/// Der Text-Slicer braucht ein Feld; über diese entkoppelte Tabelle beeinflusst die Eingabe keine anderen Visuals.
+table p_Eingabe
+	lineageTag: 3d89e01e-552a-5756-b15c-a728cf339f06
+
+	/// Platzhalter für den eingegebenen Kommentartext. Enthält keine Daten.
+	column Kommentartext
+		dataType: string
+		lineageTag: 64e69fb3-5a81-515e-ab39-23f02a53b338
+		summarizeBy: none
+		sourceColumn: [Kommentartext]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition p_Eingabe = calculated
+		mode: import
+		source = ```
+				DATATABLE(
+				    "Kommentartext", STRING,
+				    {
+				        { "" }
+				    }
+				)
+				```
+
+	annotation PBI_ResultType = Table

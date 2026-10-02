@@ -1,0 +1,446 @@
+/// Zentrale Measure-Tabelle des Flash-Berichts. Aufbau in Schichten, damit Änderungen nur an einer Stelle nötig sind:
+/// 1 Werte      - Act, Budget, Forecast, Version V (alle über die Zeitlogik in _Wert P&L)
+/// 2 Flash      - Szenario-Mix je Unit inklusive Kanne-Schalter
+/// 3-5          - Abweichungen, Quoten/Flex und Rangfolge bauen ausschließlich auf Schicht 1 und 2 auf
+/// 6-8          - Datenlage, Kommentare, Kopfzeile
+/// 9 Hilfsmaße - ausgeblendete Bausteine und Farbmeasures
+table _Kennzahlen
+	lineageTag: d6e2a1e9-b138-5c60-ae7e-d8ae4f922818
+
+	/// Technische Platzhalterspalte, damit die Tabelle geladen werden kann. Ausgeblendet.
+	column Platzhalter
+		dataType: string
+		isHidden
+		lineageTag: b1233036-df4d-5c6a-be83-fea2f64dacdb
+		summarizeBy: none
+		sourceColumn: Platzhalter
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Wahr, wenn im aktuellen Kontext irgendein Monatsfilter auf Dim_Datum liegt (Slicer, Zeile, Spalte). Falsch = es ist nichts gewählt, dann gilt der Berichtsmonat.
+	measure '_Monat gefiltert' = ISCROSSFILTERED ( Dim_Datum[Datum] )
+		isHidden
+		displayFolder: 9 Hilfsmaße
+		lineageTag: b0c70270-e205-525b-8144-2c7fc33c4aef
+
+	/// Geschäftsjahresmonat (1-12) des Berichtsmonats laut Parameter Aktuelle_Periode, unabhängig von allen Filtern.
+	measure '_Berichtsmonat Nr' = ```
+			CALCULATE (
+			    MAX ( Dim_Datum[FY_MonatNr] ),
+			    REMOVEFILTERS ( Dim_Datum ),
+			    Dim_Datum[Ist_Berichtsmonat] = TRUE ()
+			)
+			```
+		isHidden
+		formatString: 0
+		displayFolder: 9 Hilfsmaße
+		lineageTag: d254fe1f-2290-5d2e-bf33-7d638fd46b6e
+
+	/// Letzter betrachteter Geschäftsjahresmonat: der späteste gewählte Monat, ohne Auswahl der Berichtsmonat.
+	measure '_Bis Monat Nr' = IF ( [_Monat gefiltert], MAX ( Dim_Datum[FY_MonatNr] ), [_Berichtsmonat Nr] )
+		isHidden
+		formatString: 0
+		displayFolder: 9 Hilfsmaße
+		lineageTag: 162a780c-48b2-5dbe-863a-25c7d9f056fa
+
+	/// Wahr, wenn der Zeitbezug-Schalter auf 'Kumuliert (YTD)' steht. Ohne eindeutige Auswahl gilt Einzelmonat.
+	measure _Kumuliert = SELECTEDVALUE ( p_Zeitbezug[Zeitbezug], "Einzelmonat" ) = "Kumuliert (YTD)"
+		isHidden
+		displayFolder: 9 Hilfsmaße
+		lineageTag: b46c96f3-3790-5d27-92be-6b62a820b7d1
+
+	/// Wahr, wenn der Kanne-Schalter auf 'Ja' steht. Ohne eindeutige Auswahl gilt 'Nein'.
+	measure '_Kanne abgerechnet' = SELECTEDVALUE ( p_Kanne_Abrechnung[Kanne abgerechnet], "Nein" ) = "Ja"
+		isHidden
+		displayFolder: 9 Hilfsmaße
+		lineageTag: 37d6da72-0d57-5fb2-a3e6-8bd7816e9fbf
+
+	/// Gewählte Anzahl der Flop-Units, ohne Auswahl 20.
+	measure '_Top N' = SELECTEDVALUE ( p_TopN[Top N], 20 )
+		isHidden
+		formatString: 0
+		displayFolder: 9 Hilfsmaße
+		lineageTag: 3e5b67ee-dfa0-5eff-a920-4b21ae20a1a1
+
+	/// Summe aller P&L-Werte im betrachteten Zeitraum, noch ohne Versionsfilter. Einzige Stelle mit Zeitlogik:
+	/// alle Werte-Measures, Flash, Quoten, Flex und Rang bauen darauf auf und folgen dem Zeitbezug-Schalter automatisch.
+	measure '_Wert P&L' = ```
+			VAR _BisMonat = [_Bis Monat Nr]
+			VAR _MonatGefiltert = [_Monat gefiltert]
+			RETURN
+			    SWITCH (
+			        TRUE (),
+			        -- Kumuliert: alle Monate bis einschließlich des letzten betrachteten Monats
+			        [_Kumuliert],
+			            CALCULATE (
+			                SUM ( Fakt_SAP[Wert] ),
+			                Dim_Konto[Typ] = "P&L",
+			                REMOVEFILTERS ( Dim_Datum ),
+			                Dim_Datum[FY_MonatNr] <= _BisMonat
+			            ),
+			        -- Einzelmonat ohne Auswahl: Berichtsmonat
+			        NOT _MonatGefiltert,
+			            CALCULATE (
+			                SUM ( Fakt_SAP[Wert] ),
+			                Dim_Konto[Typ] = "P&L",
+			                Dim_Datum[FY_MonatNr] = _BisMonat
+			            ),
+			        -- Einzelmonat mit Auswahl: genau die gewählten Monate
+			        CALCULATE (
+			            SUM ( Fakt_SAP[Wert] ),
+			            Dim_Konto[Typ] = "P&L"
+			        )
+			    )
+			```
+		isHidden
+		formatString: #,0\ "€";-#,0\ "€";0\ "€"
+		displayFolder: 9 Hilfsmaße
+		lineageTag: 2aad5fe3-7509-5da8-8742-f46491fd4933
+
+	/// Ist-Werte (SAP-Version 0) der P&L-Konten im betrachteten Zeitraum.
+	measure Act = CALCULATE ( [_Wert P&L], Fakt_SAP[Version] = "0" )
+		formatString: #,0\ "€";-#,0\ "€";0\ "€"
+		displayFolder: 1 Werte
+		lineageTag: 21d5f66c-9ab5-5463-8711-d238ed604745
+
+	/// Budgetwerte (SAP-Version 20) der P&L-Konten im betrachteten Zeitraum.
+	measure Budget = CALCULATE ( [_Wert P&L], Fakt_SAP[Version] = "20" )
+		formatString: #,0\ "€";-#,0\ "€";0\ "€"
+		displayFolder: 1 Werte
+		lineageTag: a4cbc425-5e92-590c-906e-29c8c64b0d56
+
+	/// Aktueller Forecast der P&L-Konten: Summe aus RGF und R12. Die übrigen Forecast-Stände (RF, 35, RTD) zählen nur für die Datenprüfung in Dim_UnitStatus, nicht hier.
+	measure Forecast = CALCULATE ( [_Wert P&L], Fakt_SAP[Version] IN { "RGF", "R12" } )
+		formatString: #,0\ "€";-#,0\ "€";0\ "€"
+		displayFolder: 1 Werte
+		lineageTag: f3dd9f2c-a546-5c57-b6fd-dcf6b6a33d85
+
+	/// Werte der SAP-Version V. Wird im Flash für Units verwendet, die weder als Actuals noch als Forecast gelten.
+	measure 'Version V' = CALCULATE ( [_Wert P&L], Fakt_SAP[Version] = "V" )
+		formatString: #,0\ "€";-#,0\ "€";0\ "€"
+		displayFolder: 1 Werte
+		lineageTag: 8f6e84c6-5bf6-5aa3-a908-ec13dff749c2
+
+	/// Flash nach reiner Statuslogik, ohne Kanne-Ausnahme. Je Unit und Periode entscheidet Dim_UnitStatus[Flash_Szenario], welche Wertart zählt. Units mit Szenario 'Ohne Wertung' (Status Inaktiv) tauchen in keinem Zweig auf.
+	measure '_Flash nach Status' = ```
+			CALCULATE ( [Act], KEEPFILTERS ( Dim_UnitStatus[Flash_Szenario] = "ACT" ) )
+			    + CALCULATE ( [Forecast], KEEPFILTERS ( Dim_UnitStatus[Flash_Szenario] = "FC" ) )
+			    + CALCULATE ( [Version V], KEEPFILTERS ( Dim_UnitStatus[Flash_Szenario] = "V" ) )
+			```
+		isHidden
+		formatString: #,0\ "€";-#,0\ "€";0\ "€"
+		displayFolder: 9 Hilfsmaße
+		lineageTag: eeaa1cd9-eef7-579a-9b4b-c8e37d73309c
+
+	/// Flash-Wert des Berichts. Alle Managementbereiche außer Kanne folgen der Statuslogik aus Dim_UnitStatus[Flash_Szenario].
+	/// Kanne hängt am Schalter p_Kanne_Abrechnung:
+	/// 'Ja'   - Kanne ist abgerechnet, alle Kanne-Units zählen mit ihren Ist-Werten (ACT)
+	/// 'Nein' - Kanne folgt derselben ACT/FC/V-Logik wie alle anderen Bereiche (Standard)
+	/// KEEPFILTERS erhält eine im Bericht gesetzte Auswahl des Managementbereichs: ist Kanne herausgefiltert, bleibt der Kanne-Teil leer.
+	measure Flash = ```
+			VAR _OhneKanne =
+			    CALCULATE ( [_Flash nach Status], KEEPFILTERS ( Dim_Unit[Managementbereich] <> "Kanne" ) )
+			VAR _Kanne =
+			    IF (
+			        [_Kanne abgerechnet],
+			        CALCULATE ( [Act], KEEPFILTERS ( Dim_Unit[Managementbereich] = "Kanne" ) ),
+			        CALCULATE ( [_Flash nach Status], KEEPFILTERS ( Dim_Unit[Managementbereich] = "Kanne" ) )
+			    )
+			RETURN
+			    _OhneKanne + _Kanne
+			```
+		formatString: #,0\ "€";-#,0\ "€";0\ "€"
+		displayFolder: 2 Flash
+		lineageTag: b27f07e4-eb1f-5066-a391-45559511925b
+
+	/// Flash minus Budget in Euro. Positiv = besser als Budget, sofern Kosten in den SAP-Daten negativ geführt werden.
+	measure 'Abw. Flash zu Budget' = [Flash] - [Budget]
+		formatString: #,0\ "€";-#,0\ "€";0\ "€"
+		displayFolder: 3 Abweichungen
+		lineageTag: 45d4f77a-efcd-5fee-b66e-4458bb6b501f
+
+	/// Flash minus Forecast (RGF + R12) in Euro. Positiv = besser als Forecast, sofern Kosten negativ geführt werden.
+	measure 'Abw. Flash zu Forecast' = [Flash] - [Forecast]
+		formatString: #,0\ "€";-#,0\ "€";0\ "€"
+		displayFolder: 3 Abweichungen
+		lineageTag: c2edcbd5-5dd1-5bf9-8619-f0fe3e46f853
+
+	/// Abweichung Flash zu Budget relativ zum Betrag des Budgets.
+	measure 'Abw. Flash zu Budget %' = DIVIDE ( [Abw. Flash zu Budget], ABS ( [Budget] ) )
+		formatString: +0.0\ %;-0.0\ %;0.0\ %
+		displayFolder: 3 Abweichungen
+		lineageTag: 2da7f619-7685-57a0-a19a-e2c89d0ea91b
+
+	/// Abweichung Flash zu Forecast relativ zum Betrag des Forecasts.
+	measure 'Abw. Flash zu Forecast %' = DIVIDE ( [Abw. Flash zu Forecast], ABS ( [Forecast] ) )
+		formatString: +0.0\ %;-0.0\ %;0.0\ %
+		displayFolder: 3 Abweichungen
+		lineageTag: c2058d3c-57fc-5411-92ee-6808063435e4
+
+	/// Ist-Wert der Kennzahl Umsatz (Konten mit Kennzahl = Umsatz).
+	measure 'Act Umsatz' = CALCULATE ( [Act], Dim_Konto[Kennzahl] = "Umsatz" )
+		formatString: #,0\ "€";-#,0\ "€";0\ "€"
+		displayFolder: 4 Quoten und Flex
+		lineageTag: 40479121-82fb-564b-a4d7-6f579336da56
+
+	/// Forecast-Wert der Kennzahl Umsatz (Konten mit Kennzahl = Umsatz).
+	measure 'FC Umsatz' = CALCULATE ( [Forecast], Dim_Konto[Kennzahl] = "Umsatz" )
+		formatString: #,0\ "€";-#,0\ "€";0\ "€"
+		displayFolder: 4 Quoten und Flex
+		lineageTag: 0a08a3e7-c648-5b45-85a4-de44439d2a1a
+
+	/// Ist-Wert der Kennzahl CoS (Konten mit Kennzahl = CoS).
+	measure 'Act CoS' = CALCULATE ( [Act], Dim_Konto[Kennzahl] = "CoS" )
+		formatString: #,0\ "€";-#,0\ "€";0\ "€"
+		displayFolder: 4 Quoten und Flex
+		lineageTag: 66a0dbcb-b20e-50ed-af8d-13d2e03aa18d
+
+	/// Forecast-Wert der Kennzahl CoS (Konten mit Kennzahl = CoS).
+	measure 'FC CoS' = CALCULATE ( [Forecast], Dim_Konto[Kennzahl] = "CoS" )
+		formatString: #,0\ "€";-#,0\ "€";0\ "€"
+		displayFolder: 4 Quoten und Flex
+		lineageTag: 71499245-043a-5b8d-84cf-9804587e15af
+
+	/// Ist-Wert der Kennzahl Overhead (Konten mit Kennzahl = Overhead).
+	measure 'Act Overhead' = CALCULATE ( [Act], Dim_Konto[Kennzahl] = "Overhead" )
+		formatString: #,0\ "€";-#,0\ "€";0\ "€"
+		displayFolder: 4 Quoten und Flex
+		lineageTag: fdbeaf51-26b0-5583-ab9f-5fe40d63011c
+
+	/// Forecast-Wert der Kennzahl Overhead (Konten mit Kennzahl = Overhead).
+	measure 'FC Overhead' = CALCULATE ( [Forecast], Dim_Konto[Kennzahl] = "Overhead" )
+		formatString: #,0\ "€";-#,0\ "€";0\ "€"
+		displayFolder: 4 Quoten und Flex
+		lineageTag: 5658b9d8-25d9-5225-9f6c-cc7bf918db08
+
+	/// CoS im Verhältnis zum Umsatz, auf Basis der Ist-Werte.
+	measure 'Act CoS-Quote' = DIVIDE ( [Act CoS], [Act Umsatz] )
+		formatString: 0.00\ %;-0.00\ %;0.00\ %
+		displayFolder: 4 Quoten und Flex
+		lineageTag: 390c7116-9f26-5d34-89f5-98363c8ebaeb
+
+	/// CoS im Verhältnis zum Umsatz, auf Basis des Forecasts.
+	measure 'FC CoS-Quote' = DIVIDE ( [FC CoS], [FC Umsatz] )
+		formatString: 0.00\ %;-0.00\ %;0.00\ %
+		displayFolder: 4 Quoten und Flex
+		lineageTag: a1a6fab7-d6ed-5d45-8766-536f0369aec0
+
+	/// Abweichung der CoS-Quote im Ist gegen den Forecast in Prozentpunkten. Negativ = ungeplant höhere Kostenquote (Kosten sind negativ geführt).
+	measure 'Delta CoS-Quote' = [Act CoS-Quote] - [FC CoS-Quote]
+		formatString: 0.00\ %;-0.00\ %;0.00\ %
+		displayFolder: 4 Quoten und Flex
+		lineageTag: 29a39809-e4f0-5534-b4df-61106d19e731
+
+	/// Geflexter CoS-Effekt in Euro: Ist-Umsatz mal Quotenabweichung. Beantwortet, was die Quotenabweichung bei dem tatsächlichen Umsatz kostet.
+	measure 'Flex CoS' = [Act Umsatz] * [Delta CoS-Quote]
+		formatString: #,0\ "€";-#,0\ "€";0\ "€"
+		displayFolder: 4 Quoten und Flex
+		lineageTag: 83f801e8-c21d-5be7-9191-8132642191ec
+
+	/// Overhead im Verhältnis zum Umsatz, auf Basis der Ist-Werte.
+	measure 'Act OvH-Quote' = DIVIDE ( [Act Overhead], [Act Umsatz] )
+		formatString: 0.00\ %;-0.00\ %;0.00\ %
+		displayFolder: 4 Quoten und Flex
+		lineageTag: 28ad9ab1-cbbe-5017-9566-11cf2e98eb9c
+
+	/// Overhead im Verhältnis zum Umsatz, auf Basis des Forecasts.
+	measure 'FC OvH-Quote' = DIVIDE ( [FC Overhead], [FC Umsatz] )
+		formatString: 0.00\ %;-0.00\ %;0.00\ %
+		displayFolder: 4 Quoten und Flex
+		lineageTag: 970b6e41-dcf1-562a-8955-96e3dabfbb8f
+
+	/// Abweichung der OvH-Quote im Ist gegen den Forecast in Prozentpunkten. Negativ = ungeplant höhere Kostenquote (Kosten sind negativ geführt).
+	measure 'Delta OvH-Quote' = [Act OvH-Quote] - [FC OvH-Quote]
+		formatString: 0.00\ %;-0.00\ %;0.00\ %
+		displayFolder: 4 Quoten und Flex
+		lineageTag: fa0c4ec9-844c-5c73-b188-492ed02bae7b
+
+	/// Geflexter OvH-Effekt in Euro: Ist-Umsatz mal Quotenabweichung. Beantwortet, was die Quotenabweichung bei dem tatsächlichen Umsatz kostet.
+	measure 'Flex OvH' = [Act Umsatz] * [Delta OvH-Quote]
+		formatString: #,0\ "€";-#,0\ "€";0\ "€"
+		displayFolder: 4 Quoten und Flex
+		lineageTag: 8f16d13c-205e-5f18-a9df-b88e1db74cb0
+
+	/// Rang der Unit nach Flex CoS (1 = größter Nachteil). Berücksichtigt nur Units mit Ist-Umsatz > 0; die Wertung erfolgt über alle im Bericht gewählten Units (ALLSELECTED).
+	measure 'Rang Flex CoS' = ```
+			VAR _Aktuell = [Flex CoS]
+			VAR _Units =
+			    FILTER (
+			        ADDCOLUMNS (
+			            ALLSELECTED ( Dim_Unit[Werk - Bezeichnung] ),
+			            "@Wert", [Flex CoS], "@Umsatz", [Act Umsatz]
+			        ),
+			        NOT ISBLANK ( [@Wert] ) && [@Umsatz] > 0
+			    )
+			RETURN
+			    IF (
+			        NOT ISBLANK ( _Aktuell ) && [Act Umsatz] > 0,
+			        RANKX ( _Units, [@Wert], _Aktuell, ASC, DENSE )
+			    )
+			```
+		formatString: 0
+		displayFolder: 5 Rangfolge
+		lineageTag: b6a40d15-3599-5838-8533-a0b97aa36781
+
+	/// Rang der Unit nach Flex OvH (1 = größter Nachteil). Berücksichtigt nur Units mit Ist-Umsatz > 0.
+	measure 'Rang Flex OvH' = ```
+			VAR _Aktuell = [Flex OvH]
+			VAR _Units =
+			    FILTER (
+			        ADDCOLUMNS (
+			            ALLSELECTED ( Dim_Unit[Werk - Bezeichnung] ),
+			            "@Wert", [Flex OvH], "@Umsatz", [Act Umsatz]
+			        ),
+			        NOT ISBLANK ( [@Wert] ) && [@Umsatz] > 0
+			    )
+			RETURN
+			    IF (
+			        NOT ISBLANK ( _Aktuell ) && [Act Umsatz] > 0,
+			        RANKX ( _Units, [@Wert], _Aktuell, ASC, DENSE )
+			    )
+			```
+		formatString: 0
+		displayFolder: 5 Rangfolge
+		lineageTag: 44d0124d-03ee-5118-89ce-07e1f8f9a30b
+
+	/// Rang der Unit nach Act (1 = niedrigster Wert). Grundlage der Flop-UPC-Seite.
+	measure 'Rang Act' = ```
+			VAR _Aktuell = [Act]
+			VAR _Units =
+			    FILTER (
+			        ADDCOLUMNS (
+			            ALLSELECTED ( Dim_Unit[Werk - Bezeichnung] ),
+			            "@Wert", [Act]
+			        ),
+			        NOT ISBLANK ( [@Wert] )
+			    )
+			RETURN
+			    IF (
+			        NOT ISBLANK ( _Aktuell ),
+			        RANKX ( _Units, [@Wert], _Aktuell, ASC, DENSE )
+			    )
+			```
+		formatString: 0
+		displayFolder: 5 Rangfolge
+		lineageTag: 29c58f6d-b7dc-5cf0-b9e4-337948e6eb60
+
+	/// 1, wenn die Unit zu den N schlechtesten nach Flex CoS gehört, sonst leer. Visual-Filter 'ist nicht leer'.
+	measure 'Im Top N CoS' = IF ( [Rang Flex CoS] <= [_Top N], 1 )
+		formatString: 0
+		displayFolder: 5 Rangfolge
+		lineageTag: a0c9af21-c230-5814-97de-4da0c3a10a90
+
+	/// 1, wenn die Unit zu den N schlechtesten nach Flex OvH gehört, sonst leer. Visual-Filter 'ist nicht leer'.
+	measure 'Im Top N OvH' = IF ( [Rang Flex OvH] <= [_Top N], 1 )
+		formatString: 0
+		displayFolder: 5 Rangfolge
+		lineageTag: 522c1112-5877-5c1c-ba08-6a17ae429b35
+
+	/// 1, wenn die Unit zu den N niedrigsten nach Act gehört, sonst leer. Visual-Filter 'ist nicht leer'.
+	measure 'Im Top N Act' = IF ( [Rang Act] <= [_Top N], 1 )
+		formatString: 0
+		displayFolder: 5 Rangfolge
+		lineageTag: c922ee92-a24f-5eda-b98b-74046aea8f9b
+
+	/// Anzahl Units im Filterkontext. Ohne Monatsauswahl der Berichtsmonat. Unabhängig vom Zeitbezug-Schalter.
+	measure Units = ```
+			IF (
+			    [_Monat gefiltert],
+			    DISTINCTCOUNT ( Dim_UnitStatus[Werk] ),
+			    CALCULATE ( DISTINCTCOUNT ( Dim_UnitStatus[Werk] ), Dim_Datum[Ist_Berichtsmonat] = TRUE () )
+			)
+			```
+		formatString: 0
+		displayFolder: 6 Datenlage
+		lineageTag: 664e70b4-c297-5448-b2f7-6826ec5e53ee
+
+	/// Units ohne Actuals, Budget und Forecast im betrachteten Monat. Mit Abrechnung oder Flash ist nicht zu rechnen.
+	measure 'Units inaktiv' = CALCULATE ( [Units], KEEPFILTERS ( Dim_UnitStatus[Status] = "Inaktiv" ) )
+		formatString: 0
+		displayFolder: 6 Datenlage
+		lineageTag: 03697b42-3eee-530f-9512-88a5c752525e
+
+	/// Units mit Werten, aber ohne Abrechnungs- oder Flash-Kennzeichen im betrachteten Monat. Werden als Actuals gerechnet.
+	measure 'Units ohne Kennzeichen' = CALCULATE ( [Units], KEEPFILTERS ( Dim_UnitStatus[Status] = "Kein Kennzeichen" ) )
+		formatString: 0
+		displayFolder: 6 Datenlage
+		lineageTag: dde7b6a5-efe7-5fbc-a5f5-be03bd2cb241
+
+	/// Anzahl der Kommentare im aktuellen Filterkontext.
+	measure 'Kommentar Anzahl' = COUNTROWS ( Kommentare )
+		formatString: 0
+		displayFolder: 7 Kommentare
+		lineageTag: a2e8766b-d41d-5645-bb24-3bde0b41d3d3
+
+	/// Zeitpunkt des jüngsten Kommentars im Filterkontext.
+	measure 'Letzter Kommentar am' = MAX ( Kommentare[Erfasst_am] )
+		formatString: dd.mm.yyyy hh:nn
+		displayFolder: 7 Kommentare
+		lineageTag: ecb7cc85-7d64-57f7-83b0-dd294e438522
+
+	/// Textzeile für den Berichtskopf: betrachteter Monat, Zeitbezug und Kanne-Einstellung.
+	measure Berichtskopf = ```
+			VAR _Monat =
+			    IF (
+			        [_Monat gefiltert],
+			        SELECTEDVALUE ( Dim_Datum[Periode], "mehrere Monate" ),
+			        CALCULATE (
+			            SELECTEDVALUE ( Dim_Datum[Periode] ),
+			            REMOVEFILTERS ( Dim_Datum ),
+			            Dim_Datum[Ist_Berichtsmonat] = TRUE ()
+			        )
+			    )
+			VAR _Zeit = SELECTEDVALUE ( p_Zeitbezug[Zeitbezug], "Einzelmonat" )
+			VAR _Kanne = IF ( [_Kanne abgerechnet], "Kanne: abgerechnet", "Kanne: nach Status" )
+			RETURN
+			    _Monat & "   |   " & _Zeit & "   |   " & _Kanne
+			```
+		displayFolder: 8 Kopfzeile
+		lineageTag: a4fc3a96-d692-536a-98ee-beab060bafa3
+
+	/// Name der ausgewählten Unit, für die Überschrift der Drillthrough-Seite Unit-Detail.
+	measure 'Unit-Titel' = SELECTEDVALUE ( Dim_Unit[Werk - Bezeichnung], "mehrere Units" )
+		displayFolder: 8 Kopfzeile
+		lineageTag: 61f98d5d-c4d7-50c9-98ed-5ccf11fb790b
+
+	/// Schriftfarbe für Abweichungen zu Budget: rot negativ, grün positiv, sonst grau.
+	measure 'Farbe Abw. Budget' = SWITCH ( TRUE (), [Abw. Flash zu Budget] < 0, "#B3261E", [Abw. Flash zu Budget] > 0, "#1B7F3B", "#5F6368" )
+		isHidden
+		displayFolder: 9 Hilfsmaße\Farben
+		lineageTag: edd1eee8-9291-5b10-8141-6e024825a984
+
+	/// Schriftfarbe für Abweichungen zu Forecast: rot negativ, grün positiv, sonst grau.
+	measure 'Farbe Abw. Forecast' = SWITCH ( TRUE (), [Abw. Flash zu Forecast] < 0, "#B3261E", [Abw. Flash zu Forecast] > 0, "#1B7F3B", "#5F6368" )
+		isHidden
+		displayFolder: 9 Hilfsmaße\Farben
+		lineageTag: 44d95c32-ac4d-586d-b016-d35240f199ab
+
+	/// Schriftfarbe für Flex CoS und Delta CoS-Quote: rot negativ, grün positiv, sonst grau.
+	measure 'Farbe Flex CoS' = SWITCH ( TRUE (), [Flex CoS] < 0, "#B3261E", [Flex CoS] > 0, "#1B7F3B", "#5F6368" )
+		isHidden
+		displayFolder: 9 Hilfsmaße\Farben
+		lineageTag: de41f336-2f17-5627-9cc3-aae3892c64b3
+
+	/// Schriftfarbe für Flex OvH und Delta OvH-Quote: rot negativ, grün positiv, sonst grau.
+	measure 'Farbe Flex OvH' = SWITCH ( TRUE (), [Flex OvH] < 0, "#B3261E", [Flex OvH] > 0, "#1B7F3B", "#5F6368" )
+		isHidden
+		displayFolder: 9 Hilfsmaße\Farben
+		lineageTag: 48fec140-9553-55bc-9ba4-9847897a2dcd
+
+	/// Schriftfarbe für Act: rot negativ, grün positiv, sonst grau.
+	measure 'Farbe Act' = SWITCH ( TRUE (), [Act] < 0, "#B3261E", [Act] > 0, "#1B7F3B", "#5F6368" )
+		isHidden
+		displayFolder: 9 Hilfsmaße\Farben
+		lineageTag: eb0d6417-9091-57a4-bc20-d7af1907df4a
+
+	partition _Kennzahlen = m
+		mode: import
+		queryGroup: Kennzahlen
+		source = ```
+				let
+				    Quelle = #table(type table [Platzhalter = text], {})
+				in
+				    Quelle
+				```
+
+	annotation PBI_ResultType = Table

@@ -1,34 +1,19 @@
-relationship c7d1e6e7-2f63-66f2-6043-277bfa3454a0
-	fromColumn: V_SAP_EXPORTS_cleansed.Datum
-	toColumn: DIM_DATE.Datum
+relationship de2a8b33-4fa6-55b5-abf0-e15c38fb64ce
+	fromColumn: Fakt_SAP.Status_Key
+	toColumn: Dim_UnitStatus.Status_Key
 
-relationship dd992e52-f2cf-a39f-52d2-417eb088fafc
-	fromColumn: V_SAP_EXPORTS_cleansed.Object_group
-	toColumn: sap_master_data_unit.betrieb
+relationship f047ee69-bd83-5766-b9cf-f6d2dfb28c6f
+	fromColumn: Fakt_SAP.Konto
+	toColumn: Dim_Konto.Konto
 
-relationship 5c2f8ae1-90d3-4b76-a1e8-4f60c7395bd2
-	fromColumn: V_SAP_EXPORTS_cleansed.Status_Key
-	toColumn: Unit_Status.Status_Key
+relationship fd04ac9c-0c6b-568c-b9e2-ea41d634509b
+	fromColumn: Dim_UnitStatus.Werk
+	toColumn: Dim_Unit.Werk
 
-relationship 7b39d0f5-6c48-41ea-92b7-08d5a1e64c37
-	fromColumn: Kommentare.Werk
-	toColumn: sap_master_data_unit.betrieb
+relationship e24965e9-e6ec-5bf2-b17d-d022f7092a0a
+	fromColumn: Dim_UnitStatus.Datum
+	toColumn: Dim_Datum.Datum
 
-relationship e4a1682c-3f95-4d07-b6c1-29e0d7b53f8a
-	fromColumn: Kommentare.Datum
-	toColumn: DIM_DATE.Datum
-
-relationship 213da7ec-ce3a-4db7-a4e9-209e1187eebe
-	joinOnDateBehavior: datePartOnly
-	fromColumn: Übergabedatum.FIBU_Übergabe_Datum
-	toColumn: LocalDateTable_bc039c3a-c4a4-402d-b31c-f5d1a4419ca6.Date
-
-relationship da8bdda7-b445-4f4f-b16a-f3be4d919ee2
-	joinOnDateBehavior: datePartOnly
-	fromColumn: Übergabedatum.Flash_Übergabedatum
-	toColumn: LocalDateTable_9f350d77-b502-41aa-bf08-f3603321a9d7.Date
-
-relationship a814f36d-48d7-8752-a9d1-af3b6ac324b4
-	fromColumn: V_SAP_EXPORTS_cleansed.Account
-	toColumn: tab_accounts_hierarchy.Kostenart
-
+relationship 732dbc80-e6bf-51eb-a226-d8077a0c0544
+	fromColumn: Kommentare.Status_Key
+	toColumn: Dim_UnitStatus.Status_Key

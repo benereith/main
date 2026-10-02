@@ -1,35 +1,81 @@
-/// Geschäftsjahr laut SAP (FY2025 = Oktober 2025 bis September 2026).
-/// Steuert die WHERE-Klausel von V_SAP_EXPORTS_cleansed und den Aufbau von Unit_Status.
-expression Geschäftsjahr = 2025 meta [IsParameterQuery=true, Type="Number", IsParameterQueryRequired=true]
-	lineageTag: d52e89f7-2268-45fd-8408-5fe16e64946d
-
-	annotation PBI_NavigationStepName = Navigation
-
-	annotation PBI_ResultType = Number
-
-/// Letzte zu ladende SAP-Periode (1 = Oktober ... 12 = September). Das ist der Berichtsmonat.
-/// Es werden alle Perioden von Startperiode bis Aktuelle_Periode geladen, nicht mehr nur ein einzelner Monat.
-/// Der frühere Parameter pBerichtsmonat entfällt: der Berichtsmonat wird aus Geschäftsjahr + Aktuelle_Periode
-/// über fnPeriodeStart abgeleitet, damit Faktentabelle und Statuslogik nicht auseinanderlaufen können.
-expression Aktuelle_Periode = 9 meta [IsParameterQuery = true, IsParameterQueryRequired = true, Type = "Number", List = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}, DefaultValue = 1]
-	lineageTag: 51f656ad-5db6-49f9-909c-33990b7e08ad
-
-	annotation PBI_NavigationStepName = Navigation
+/// SAP-Geschäftsjahr. FY2025 = Oktober 2025 bis September 2026.
+/// Steuert die Faktenabfrage, die Datumstabelle und die Periodenbewertung in Dim_UnitStatus.
+expression Geschäftsjahr = 2025 meta [IsParameterQuery = true, Type = "Number", IsParameterQueryRequired = true]
+	lineageTag: 0a6ada47-1407-5134-b0c7-b89eb25f3dd5
+	queryGroup: Parameter
 
 	annotation PBI_ResultType = Number
 
-/// Erste zu ladende SAP-Periode. Standard 1 (= komplettes Geschäftsjahr ab Oktober / YTD).
+/// Erste zu ladende SAP-Periode (1 = Oktober). Standard 1 = komplettes Geschäftsjahr bis zum Berichtsmonat (YTD).
 /// Höher setzen, wenn bewusst nur ein kürzeres Fenster geladen werden soll.
-expression Startperiode = 1 meta [IsParameterQuery = true, IsParameterQueryRequired = true, Type = "Number", List = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}, DefaultValue = 1]
-	lineageTag: 8f2c1d40-6b7e-4d2a-9f31-5e0a7c93b118
-
-	annotation PBI_NavigationStepName = Navigation
+expression Startperiode = 1 meta [IsParameterQuery = true, Type = "Number", IsParameterQueryRequired = true, List = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}, DefaultValue = 1]
+	lineageTag: e843b046-3e1b-5f20-ad20-c6da1cb481ff
+	queryGroup: Parameter
 
 	annotation PBI_ResultType = Number
+
+/// Berichtsmonat als SAP-Periode (1 = Oktober ... 12 = September). Letzte geladene Periode.
+/// Der Bericht zeigt standardmäßig diesen Monat, solange im Monats-Slicer nichts gewählt ist.
+expression Aktuelle_Periode = 9 meta [IsParameterQuery = true, Type = "Number", IsParameterQueryRequired = true, List = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}, DefaultValue = 1]
+	lineageTag: 2f93e3a1-6ea7-56f6-affa-0ccbee4690a5
+	queryGroup: Parameter
+
+	annotation PBI_ResultType = Number
+
+/// Managementbereiche, die im Bericht enthalten sind. Faktenzeilen anderer Bereiche werden beim Laden verworfen.
+expression Managementbereiche = {"Eurest", "Food Affairs", "Kanne", "Leonardi", "Medirest"}
+	lineageTag: f5d506d2-584d-559e-924d-1968d5686cf6
+	queryGroup: Parameter
+
+	annotation PBI_ResultType = List
+
+/// Alle SAP-Versionen, die als Forecast gelten. Nur für die Datenprüfung (Hat Forecastwerte) in Dim_UnitStatus.
+/// Der aktuelle Forecast im Bericht ist ausschließlich RGF + R12 (siehe Measure Forecast).
+expression FC_Versionen = {"RF", "RGF", "35", "R12", "RTD"}
+	lineageTag: 7f995a88-6f33-5c46-9873-4358e25eee3a
+	queryGroup: Parameter
+
+	annotation PBI_ResultType = List
+
+/// Alle SAP-Versionen, die in die Faktentabelle geladen werden: Actuals (0), Budget (20), Version V und alle Forecast-Stände.
+expression SAP_Versionen = List.Combine({{"0", "20", "V"}, FC_Versionen})
+	lineageTag: d290cf46-7fc3-528c-b012-8ece008baf06
+	queryGroup: Parameter
+
+	annotation PBI_ResultType = List
+
+/// Werksnummern, die als Betriebstyp 'Plan-Betriebe Roll' gelten.
+expression Planbetriebe_Roll = {127, 1678, 1680, 1682, 1684, 1686, 1688, 1690, 1692, 1694, 1696, 1862, 1863, 2119, 4350, 4590, 5200, 5226, 7133, 7120, 7937, 8535, 8849, 9736, 9747, 9876, 9937}
+	lineageTag: 4f7325cc-4b38-5c21-a2ac-e7a2c31d96cf
+	queryGroup: Parameter
+
+	annotation PBI_ResultType = List
+
+/// Werksnummern, die als Betriebstyp 'Plan-Betriebe ITY' gelten.
+expression Planbetriebe_ITY = {1679, 1681, 1683, 1685, 1687, 1689, 1691, 1693, 1695, 7933, 8385, 8386, 9911, 9913, 9916, 9920, 9922, 9924, 9926, 9933, 9936, 9940, 9944, 9945, 9946, 9947, 9950, 9952}
+	lineageTag: 1390c65e-cee7-5125-9927-e709b0ee40b7
+	queryGroup: Parameter
+
+	annotation PBI_ResultType = List
+
+/// SQL-Endpunkt der Fabric-SQL-Datenbank mit den Berichtskommentaren (siehe docs/kommentare/README.md).
+/// Muss vor der ersten Nutzung der Kommentarfunktion gesetzt werden.
+expression Kommentar_SQL_Endpoint = "PLATZHALTER.database.fabric.microsoft.com" meta [IsParameterQuery = true, Type = "Text", IsParameterQueryRequired = true]
+	lineageTag: 21660035-9a8f-515f-a2f2-2058bbefe446
+	queryGroup: Parameter
+
+	annotation PBI_ResultType = Text
+
+/// Name der Fabric-SQL-Datenbank, in der dbo.Flash_Kommentare liegt.
+expression Kommentar_Datenbank = "Flash_Writeback" meta [IsParameterQuery = true, Type = "Text", IsParameterQueryRequired = true]
+	lineageTag: a3e1ba98-3c1f-5117-9fc8-9009a17a00bb
+	queryGroup: Parameter
+
+	annotation PBI_ResultType = Text
 
 /// Wandelt Geschäftsjahr + SAP-Periode in den ersten Kalendertag des Monats um.
-/// Periode 1-3 = Okt-Dez des Geschäftsjahres, Periode 4-12 = Jan-Sep des Folgejahres.
-/// Identisch zur Datum-Ableitung in V_SAP_EXPORTS_cleansed, damit beide Tabellen exakt gleich rechnen.
+/// Periode 1-3 = Oktober bis Dezember des Geschäftsjahres, Periode 4-12 = Januar bis September des Folgejahres.
+/// Einzige Quelle dieser Regel in Power Query: Dim_Datum und Dim_UnitStatus rechnen damit exakt gleich.
 expression fnPeriodeStart = ```
 		(Jahr as number, Periode as number) as date =>
 		let
@@ -38,37 +84,124 @@ expression fnPeriodeStart = ```
 		in
 		    #date(Kalenderjahr, Monat, 1)
 		```
-	lineageTag: 3a5d9e11-8c44-4f76-b0d2-1e7fa6c4d902
+	lineageTag: de798f41-7bb5-5fb0-bc0a-608a78a3f62d
+	queryGroup: Funktionen
 
 	annotation PBI_ResultType = Function
 
-/// Alle SAP-Versionen, die geladen werden sollen.
-/// Actuals = 0, Budget = 20, Forecast = RF/RGF/35/R12/RTD, Vorschau = V.
-/// RF und 35 waren bisher nicht in der Abfrage enthalten und wurden ergänzt, damit die
-/// Prüfung "Unit hat überhaupt Forecastwerte" (Status Inaktiv) vollständig ist.
-/// Ergänzungen nur hier pflegen - die Faktenabfrage baut ihre IN-Liste daraus.
-expression SAP_Versionen = ```
-		{"0", "20", "V", "RF", "RGF", "35", "R12", "RTD"}
+/// Stammdaten der Units aus dem Dataflow, gefiltert auf die Managementbereiche. Nicht geladen (Staging).
+/// Basis für Dim_Unit, Dim_UnitStatus und die Bereinigung von Fakt_SAP.
+expression Quelle_Unit = ```
+		let
+		    Quelle = PowerPlatform.Dataflows(null),
+		    Workspaces = Quelle{[Id = "Workspaces"]}[Data],
+		    Workspace = Workspaces{[workspaceId = "ddc66bda-5a20-49f0-be6e-b68e17a1cc90"]}[Data],
+		    Dataflow = Workspace{[dataflowId = "a65e47b1-6a8b-4cf2-8131-c90e55bf14c7"]}[Data],
+		    Stammdaten = Dataflow{[entity = "sap_master_data_unit", version = ""]}[Data],
+
+		    // Zuerst filtern, damit alle weiteren Schritte weniger Zeilen sehen
+		    Gefiltert = Table.SelectRows(Stammdaten, each List.Contains(Managementbereiche, [bezeichnung_management])),
+		    Spalten = Table.SelectColumns(Gefiltert, {"betrieb", "bezeichnung_betrieb", "buchungskreis", "sektor", "vertragsart", "innenauftragsart", "bezirk", "service", "bezeichnung_management", "verantwortungsbereich", "bezeichnung_region"})
+		in
+		    Spalten
 		```
-	lineageTag: b6e0c358-2f19-41ad-9c73-4d80a2f5e731
+	lineageTag: 1fe06c49-c5c5-5711-9158-6f06b0162b1e
+	queryGroup: Staging
 
-	annotation PBI_ResultType = List
+	annotation PBI_ResultType = Table
 
-/// SQL-Endpunkt der Fabric-SQL-Datenbank, in der die Berichtskommentare liegen.
-/// Muss auf die Fabric-Datenbank zeigen, die auch die User Data Function für den
-/// Translytical Task Flow bedient - Setup siehe docs/kommentare/README.md.
-expression Kommentar_SQL_Endpoint = "PLATZHALTER.database.fabric.microsoft.com" meta [IsParameterQuery = true, IsParameterQueryRequired = true, Type = "Text"]
-	lineageTag: 9d13ab7e-45c2-4c0e-8b6f-2a91e5d7c064
+/// Späteste FIBU- und Flash-Übergabe je Werk aus IA_Stammdaten.XLSX (SharePoint Group Controlling). Nicht geladen (Staging).
+/// Achtung: Die Datei enthält nur den jeweils aktuellen Stand, keine Historie. Für vergangene Monate wird der Status
+/// daher aus diesem einen Datum abgeleitet (siehe Dim_UnitStatus).
+expression Quelle_Übergabe = ```
+		let
+		    Quelle = SharePoint.Contents("https://cpgplc.sharepoint.com/sites/GroupControlling", [ApiVersion = 15]),
+		    SharedDocuments = Quelle{[Name = "Shared Documents"]}[Content],
+		    GroupControlling = SharedDocuments{[Name = "Group Controlling"]}[Content],
+		    Flash = GroupControlling{[Name = "Flash"]}[Content],
+		    Input = Flash{[Name = "01_Input"]}[Content],
+		    Stammdaten = Input{[Name = "IA_Stammdaten.XLSX"]}[Content],
+		    Arbeitsmappe = Excel.Workbook(Stammdaten),
+		    Blatt = Arbeitsmappe{[Item = "Sheet1", Kind = "Sheet"]}[Data],
+		    Kopfzeile = Table.PromoteHeaders(Blatt, [PromoteAllScalars = true]),
+		    Spalten = Table.SelectColumns(Kopfzeile, {"Werk", "FibuübergFaktKalJahr", "FlashÜbergabedatum"}),
+		    Typen = Table.TransformColumnTypes(Spalten, {{"Werk", Int64.Type}, {"FibuübergFaktKalJahr", type date}, {"FlashÜbergabedatum", type date}}),
+		    MitWerk = Table.SelectRows(Typen, each [Werk] <> null),
 
-	annotation PBI_NavigationStepName = Navigation
+		    // Je Werk das jeweils späteste Übergabedatum. Die Bewertung gegen einen Monat
+		    // passiert bewusst erst in Dim_UnitStatus - dort je Periode.
+		    Gruppiert = Table.Group(MitWerk, {"Werk"}, {
+		        {"FIBU_Übergabe", each List.Max([FibuübergFaktKalJahr]), type nullable date},
+		        {"Flash_Übergabe", each List.Max([FlashÜbergabedatum]), type nullable date}
+		    })
+		in
+		    Gruppiert
+		```
+	lineageTag: 9fc27a80-6534-58ae-9c30-e21f9c4c841e
+	queryGroup: Staging
 
-	annotation PBI_ResultType = Text
+	annotation PBI_ResultType = Table
 
-/// Name der Fabric-SQL-Datenbank mit der Tabelle dbo.Flash_Kommentare.
-expression Kommentar_Datenbank = "Flash_Writeback" meta [IsParameterQuery = true, IsParameterQueryRequired = true, Type = "Text"]
-	lineageTag: 71c4f2b9-3e08-4a15-a2d7-c8b0e6349f5d
+/// Je Werk und Periode: liegen Actuals (Version 0), Budget (Version 20) oder Forecastwerte (FC_Versionen) mit Wert <> 0 vor?
+/// Wird im Warehouse aggregiert, damit nur eine Zeile je Werk und Periode ins Modell kommt. Nicht geladen (Staging).
+expression Quelle_Datenlage = ```
+		let
+		    Quelle = Sql.Database("3w3wftkijo6ujehh4fb2eleovu-tuq7lxe5lznu7hpei5nzy67o3e.datawarehouse.pbidedicated.windows.net", "Reporting"),
+		    FC_Liste = Text.Combine(List.Transform(FC_Versionen, each "'" & _ & "'"), ", "),
+		    Abfrage = Value.NativeQuery(
+		        Quelle,
+		        "SELECT
+		            Object_group AS Werk,
+		            CAST(Period AS INT) AS Periode,
+		            MAX(CASE WHEN SAP_Version = '0'  AND [Value] <> 0 THEN 1 ELSE 0 END) AS Hat_Actuals,
+		            MAX(CASE WHEN SAP_Version = '20' AND [Value] <> 0 THEN 1 ELSE 0 END) AS Hat_Budget,
+		            MAX(CASE WHEN SAP_Version IN (" & FC_Liste & ") AND [Value] <> 0 THEN 1 ELSE 0 END) AS Hat_Forecast
+		         FROM V_SAP_EXPORTS_cleansed
+		         WHERE Object_type = 'OR'
+		           AND CAST(Fiscal_Year AS INT) = @Jahr
+		           AND CAST(Period AS INT) BETWEEN @VonPeriode AND @BisPeriode
+		         GROUP BY Object_group, CAST(Period AS INT)",
+		        [Jahr = Geschäftsjahr, VonPeriode = Startperiode, BisPeriode = Aktuelle_Periode]
+		    ),
+		    Typen = Table.TransformColumnTypes(Abfrage, {"Werk", Int64.Type}, {"Periode", Int64.Type}, {"Hat_Actuals", Int64.Type}, {"Hat_Budget", Int64.Type}, {"Hat_Forecast", Int64.Type}),
+		    Logisch = Table.TransformColumns(Typen, {"Hat_Actuals", each _ = 1, type logical}, {"Hat_Budget", each _ = 1, type logical}, {"Hat_Forecast", each _ = 1, type logical})
+		in
+		    Logisch
+		```
+	lineageTag: 85726fe6-726a-5e20-8ebd-8bda677e8fcc
+	queryGroup: Staging
 
-	annotation PBI_NavigationStepName = Navigation
+	annotation PBI_ResultType = Table
 
-	annotation PBI_ResultType = Text
+/// SAP-Export (Objekttyp OR) für die geladenen Perioden, im Warehouse auf Werk x Periode x Konto x Version aggregiert
+/// und auf die benötigten Spalten reduziert. Nicht geladen (Staging).
+/// Der Status_Key (Werk * 1.000.000 + Geschäftsjahr * 100 + Periode) muss exakt wie in Dim_UnitStatus und
+/// dbo.Flash_Kommentare gebildet werden.
+expression Quelle_SAP = ```
+		let
+		    Quelle = Sql.Database("3w3wftkijo6ujehh4fb2eleovu-tuq7lxe5lznu7hpei5nzy67o3e.datawarehouse.pbidedicated.windows.net", "Reporting"),
+		    VersionsListe = Text.Combine(List.Transform(SAP_Versionen, each "'" & _ & "'"), ", "),
+		    Abfrage = Value.NativeQuery(
+		        Quelle,
+		        "SELECT
+		            Object_group AS Werk,
+		            CAST(Object_group AS BIGINT) * 1000000 + CAST(Fiscal_Year AS BIGINT) * 100 + CAST(Period AS BIGINT) AS Status_Key,
+		            Account AS Konto,
+		            SAP_Version AS [Version],
+		            SUM([Value]) AS Wert
+		         FROM V_SAP_EXPORTS_cleansed
+		         WHERE Object_type = 'OR'
+		           AND CAST(Fiscal_Year AS INT) = @Jahr
+		           AND CAST(Period AS INT) BETWEEN @VonPeriode AND @BisPeriode
+		           AND SAP_Version IN (" & VersionsListe & ")
+		         GROUP BY Object_group, Fiscal_Year, Period, Account, SAP_Version",
+		        [Jahr = Geschäftsjahr, VonPeriode = Startperiode, BisPeriode = Aktuelle_Periode]
+		    ),
+		    Typen = Table.TransformColumnTypes(Abfrage, {"Werk", Int64.Type}, {"Status_Key", Int64.Type}, {"Konto", type text}, {"Version", type text}, {"Wert", Currency.Type})
+		in
+		    Typen
+		```
+	lineageTag: 5107e4eb-af6d-56ee-bdb7-1ba9565f04f0
+	queryGroup: Staging
 
+	annotation PBI_ResultType = Table

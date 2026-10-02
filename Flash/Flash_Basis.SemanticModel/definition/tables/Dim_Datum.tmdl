@@ -1,0 +1,117 @@
+/// Datumsdimension des geladenen Geschäftsjahres (Oktober bis September), taggenau.
+/// Die Fakten sind monatsgenau und hängen am ersten Tag des Monats. Die Tabelle enthält bewusst nur das aktuelle
+/// Geschäftsjahr: so ist MAX(FY_Jahr) im ungefilterten Kontext eindeutig und der Monats-Slicer zeigt genau zwölf Einträge.
+table Dim_Datum
+	lineageTag: adb9fab3-ae62-5573-a66d-68bf2a40c7c9
+	dataCategory: Time
+
+	/// Kalendertag. Schlüsselspalte der Datumstabelle; Verknüpfung zu Dim_UnitStatus über den Monatsersten.
+	column Datum
+		dataType: dateTime
+		isKey
+		isHidden
+		formatString: dd.mm.yyyy
+		lineageTag: 0e73beab-e3b9-51ef-aa85-1dbb584d84f0
+		summarizeBy: none
+		sourceColumn: Datum
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	/// SAP-Periode mit Monat, z. B. 'P09 · Jun 26'. Das Feld für den Monats-Slicer; sortiert nach Geschäftsjahresmonat.
+	column Periode
+		dataType: string
+		lineageTag: 6d166182-8064-5e2c-8402-c129ad777153
+		summarizeBy: none
+		sourceColumn: Periode
+		sortByColumn: FY_MonatNr
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Monatsname (z. B. Juni), sortiert nach Geschäftsjahresmonat.
+	column Monat
+		dataType: string
+		lineageTag: 3ff9ea21-9d05-5177-afe7-8ff705e7089b
+		summarizeBy: none
+		sourceColumn: Monat
+		sortByColumn: FY_MonatNr
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Geschäftsjahr als Text, z. B. 'FY2025/26'.
+	column FY_Jahr
+		dataType: string
+		lineageTag: c9a81a72-001b-5770-828e-91041f527f6b
+		summarizeBy: none
+		sourceColumn: FY_Jahr
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Geschäftsquartal, z. B. 'FQ3'.
+	column FY_Quartal
+		dataType: string
+		lineageTag: 5641bd12-5a83-5c0f-a0c8-80d4693ebdfa
+		summarizeBy: none
+		sourceColumn: FY_Quartal
+		sortByColumn: FY_QuartalNr
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Nummer des Geschäftsquartals 1-4. Sortierspalte für FY_Quartal.
+	column FY_QuartalNr
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 0771b5b4-e68f-5552-a33e-3884fdebab20
+		summarizeBy: none
+		sourceColumn: FY_QuartalNr
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Geschäftsjahresmonat 1-12 (Oktober = 1) und damit identisch zur SAP-Periode. Grundlage der Kumulierung (YTD) in der Measure _Wert P&L.
+	column FY_MonatNr
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: b18c3d6d-2e48-5a23-91f4-e897a7b485e7
+		summarizeBy: none
+		sourceColumn: FY_MonatNr
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Wahr für den Monat, der dem Parameter Aktuelle_Periode entspricht. Dient als Standardmonat, solange im Bericht kein Monat gewählt ist.
+	column Ist_Berichtsmonat
+		dataType: boolean
+		isHidden
+		lineageTag: 2252c7ac-408d-5c4f-822c-1ab5e87bc794
+		summarizeBy: none
+		sourceColumn: Ist_Berichtsmonat
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Dim_Datum = m
+		mode: import
+		queryGroup: Dimensionen
+		source = ```
+				let
+				    Startdatum = fnPeriodeStart(Geschäftsjahr, 1),
+				    Enddatum = Date.EndOfMonth(fnPeriodeStart(Geschäftsjahr, 12)),
+				    Tage = List.Dates(Startdatum, Duration.Days(Enddatum - Startdatum) + 1, #duration(1, 0, 0, 0)),
+				    Tabelle = Table.FromList(Tage, Splitter.SplitByNothing(), {"Datum"}, null, ExtraValues.Error),
+				    Typ = Table.TransformColumnTypes(Tabelle, {{"Datum", type date}}),
+
+				    FY_MonatNr = Table.AddColumn(Typ, "FY_MonatNr", each if Date.Month([Datum]) >= 10 then Date.Month([Datum]) - 9 else Date.Month([Datum]) + 3, Int64.Type),
+				    FY_QuartalNr = Table.AddColumn(FY_MonatNr, "FY_QuartalNr", each Number.RoundUp([FY_MonatNr] / 3), Int64.Type),
+				    FY_Quartal = Table.AddColumn(FY_QuartalNr, "FY_Quartal", each "FQ" & Text.From([FY_QuartalNr]), type text),
+				    FY_Jahr = Table.AddColumn(FY_Quartal, "FY_Jahr", each "FY" & Text.From(Geschäftsjahr) & "/" & Text.End(Text.From(Geschäftsjahr + 1), 2), type text),
+				    Monat = Table.AddColumn(FY_Jahr, "Monat", each Date.MonthName([Datum], "de-DE"), type text),
+				    Periode = Table.AddColumn(Monat, "Periode", each "P" & Text.PadStart(Text.From([FY_MonatNr]), 2, "0") & " · " & Date.ToText([Datum], [Format = "MMM yy", Culture = "de-DE"]), type text),
+				    Berichtsmonat = Table.AddColumn(Periode, "Ist_Berichtsmonat", each [FY_MonatNr] = Aktuelle_Periode, type logical),
+
+				    Ergebnis = Table.SelectColumns(Berichtsmonat, {"Datum", "Periode", "Monat", "FY_Jahr", "FY_Quartal", "FY_QuartalNr", "FY_MonatNr", "Ist_Berichtsmonat"})
+				in
+				    Ergebnis
+				```
+
+	annotation PBI_ResultType = Table

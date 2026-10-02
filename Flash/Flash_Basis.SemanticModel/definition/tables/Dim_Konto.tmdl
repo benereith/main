@@ -1,0 +1,179 @@
+/// Kontenplan mit GuV-Hierarchie aus dem Warehouse (dbo.tab_accounts_hierarchy).
+table Dim_Konto
+	lineageTag: cc490f53-ea08-5e47-a1d4-beecfdd5b9e6
+
+	/// Kostenart / Konto (Schlüssel). Verknüpfung zu Fakt_SAP.
+	column Konto
+		dataType: string
+		isKey
+		isHidden
+		lineageTag: f26da9f8-791f-5abb-bfe8-87a19d43c607
+		summarizeBy: none
+		sourceColumn: Konto
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Beschreibung der Kostenart.
+	column 'Konto Bezeichnung'
+		dataType: string
+		lineageTag: 8689bd83-60da-5ab4-921d-19592edcaa37
+		summarizeBy: none
+		sourceColumn: Konto Bezeichnung
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Ebene 2 der GuV-Hierarchie (Schlüssel mit Bezeichnung).
+	column 'GuV Ebene 2'
+		dataType: string
+		lineageTag: 120c2189-95b7-58b2-ac49-68b47fafbe5e
+		summarizeBy: none
+		sourceColumn: GuV Ebene 2
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Ebene 3 der GuV-Hierarchie (Schlüssel mit Bezeichnung).
+	column 'GuV Ebene 3'
+		dataType: string
+		lineageTag: 0302b0e1-8630-53e1-989e-3d0e54c21b55
+		summarizeBy: none
+		sourceColumn: GuV Ebene 3
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Ebene 4 der GuV-Hierarchie (Schlüssel mit Bezeichnung).
+	column 'GuV Ebene 4'
+		dataType: string
+		lineageTag: f733c086-6687-5b8f-a915-5f2f4e635134
+		summarizeBy: none
+		sourceColumn: GuV Ebene 4
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Ebene 5 der GuV-Hierarchie (Schlüssel mit Bezeichnung).
+	column 'GuV Ebene 5'
+		dataType: string
+		lineageTag: e92ce01d-b4c8-591e-bb89-6ab0057a6c14
+		summarizeBy: none
+		sourceColumn: GuV Ebene 5
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Ebene 6 der GuV-Hierarchie (Schlüssel mit Bezeichnung).
+	column 'GuV Ebene 6'
+		dataType: string
+		isHidden
+		lineageTag: f28bc275-5ca9-578a-8992-23224f9073ec
+		summarizeBy: none
+		sourceColumn: GuV Ebene 6
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Ebene 7 der GuV-Hierarchie (Schlüssel mit Bezeichnung).
+	column 'GuV Ebene 7'
+		dataType: string
+		isHidden
+		lineageTag: 75f060ea-bf56-5e9f-bc49-8a713e772ec2
+		summarizeBy: none
+		sourceColumn: GuV Ebene 7
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Ebene 8 der GuV-Hierarchie (Schlüssel mit Bezeichnung).
+	column 'GuV Ebene 8'
+		dataType: string
+		isHidden
+		lineageTag: 573abe64-b217-5fa2-b5ab-8dc32c8f6a5b
+		summarizeBy: none
+		sourceColumn: GuV Ebene 8
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Ebene 9 der GuV-Hierarchie (Schlüssel mit Bezeichnung).
+	column 'GuV Ebene 9'
+		dataType: string
+		isHidden
+		lineageTag: eb024597-d748-59f4-aca5-9a6150f7c43e
+		summarizeBy: none
+		sourceColumn: GuV Ebene 9
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Kontotyp, z. B. 'P&L'. Der Bericht rechnet ausschließlich mit P&L-Konten.
+	column Typ
+		dataType: string
+		lineageTag: 702dacd9-31d8-5d83-88ad-63f6b7887f7b
+		summarizeBy: none
+		sourceColumn: Typ
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Ordnet die drei Steuerkennzahlen der Quoten-Logik zu: Umsatz, CoS, Overhead (sonst leer). Wird anhand des Schlüsselpräfixes der Ebene 2 gebildet (IS10000_T, IS20000_T, IS40000_T), nicht über den ganzen Text.
+	column Kennzahl
+		dataType: string
+		lineageTag: ca1d57f5-4e91-561e-842d-9d1c69e491ed
+		summarizeBy: none
+		sourceColumn: Kennzahl
+
+		annotation SummarizationSetBy = Automatic
+
+	/// GuV-Hierarchie von Ebene 2 (oberste Summe) bis Ebene 9. Zeilenstruktur der P&L-Matrix.
+	hierarchy GuV
+		lineageTag: 8c8a4f1d-93bf-54ef-ab13-1151995e5d00
+
+		level 'GuV Ebene 2'
+			lineageTag: ab0fda14-d650-5f6d-ab10-1b84dea4ccb2
+			column: 'GuV Ebene 2'
+
+		level 'GuV Ebene 3'
+			lineageTag: 2b1dd977-2d49-55eb-b9bb-24851d8dc0d9
+			column: 'GuV Ebene 3'
+
+		level 'GuV Ebene 4'
+			lineageTag: c0a82219-7779-51df-a5b4-7b79c5250518
+			column: 'GuV Ebene 4'
+
+		level 'GuV Ebene 5'
+			lineageTag: dfd1d8d3-1d43-580b-9c65-c0fb32f34462
+			column: 'GuV Ebene 5'
+
+		level 'GuV Ebene 6'
+			lineageTag: 115fbda7-5dfe-58bf-a73f-c19e9e226343
+			column: 'GuV Ebene 6'
+
+		level 'GuV Ebene 7'
+			lineageTag: e14ea805-0d09-5c73-950a-2a784cdd0185
+			column: 'GuV Ebene 7'
+
+		level 'GuV Ebene 8'
+			lineageTag: 6694224e-ed3c-5a3d-87d0-95227d95c8f5
+			column: 'GuV Ebene 8'
+
+		level 'GuV Ebene 9'
+			lineageTag: efb472e8-896c-5720-a569-dbd9eaa99017
+			column: 'GuV Ebene 9'
+
+	partition Dim_Konto = m
+		mode: import
+		queryGroup: Dimensionen
+		source = ```
+				let
+				    Quelle = Sql.Databases("3w3wftkijo6ujehh4fb2eleovu-tuq7lxe5lznu7hpei5nzy67o3e.datawarehouse.fabric.microsoft.com"),
+				    Reporting = Quelle{[Name = "Reporting"]}[Data],
+				    Konten = Reporting{[Schema = "dbo", Item = "tab_accounts_hierarchy"]}[Data],
+				    Spalten = Table.SelectColumns(Konten, {"Kostenart", "Kostenart_Beschreibung", "Level_2_Key", "Level_3_Key", "Level_4_Key", "Level_5_Key", "Level_6_Key", "Level_7_Key", "Level_8_Key", "Level_9_Key", "Type"}),
+				    Kennzahl = Table.AddColumn(Spalten, "Kennzahl", each
+				        if Text.StartsWith([Level_2_Key] ?? "", "IS10000_T") then "Umsatz"
+				        else if Text.StartsWith([Level_2_Key] ?? "", "IS20000_T") then "CoS"
+				        else if Text.StartsWith([Level_2_Key] ?? "", "IS40000_T") then "Overhead"
+				        else null, type nullable text),
+				    Umbenannt = Table.RenameColumns(Kennzahl, {
+				        {"Kostenart", "Konto"}, {"Kostenart_Beschreibung", "Konto Bezeichnung"}, {"Type", "Typ"},
+				        {"Level_2_Key", "GuV Ebene 2"}, {"Level_3_Key", "GuV Ebene 3"}, {"Level_4_Key", "GuV Ebene 4"}, {"Level_5_Key", "GuV Ebene 5"},
+				        {"Level_6_Key", "GuV Ebene 6"}, {"Level_7_Key", "GuV Ebene 7"}, {"Level_8_Key", "GuV Ebene 8"}, {"Level_9_Key", "GuV Ebene 9"}
+				    }),
+				    Ergebnis = Table.SelectColumns(Umbenannt, {"Konto", "Konto Bezeichnung", "GuV Ebene 2", "GuV Ebene 3", "GuV Ebene 4", "GuV Ebene 5", "GuV Ebene 6", "GuV Ebene 7", "GuV Ebene 8", "GuV Ebene 9", "Typ", "Kennzahl"})
+				in
+				    Ergebnis
+				```
+
+	annotation PBI_ResultType = Table

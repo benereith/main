@@ -1,0 +1,255 @@
+/// Abrechnungsstatus und Flash-Szenario je Werk UND Periode.
+/// Zentrale Tabelle der Mehrmonats-Logik: Dim_Unit und Dim_Datum filtern diese Tabelle, sie filtert Fakt_SAP und Kommentare.
+/// Dadurch gilt jeder Monat mit dem Status, den er hat, und Unit-Zählungen respektieren Unit- und Monatsfilter.
+///
+/// Achtung Historie: IA_Stammdaten enthält je Werk nur das letzte Übergabedatum. Für Monate vor diesem Datum ergibt
+/// die Regel daher 'Kein Kennzeichen' (= Actuals) - was für abgeschlossene Monate fachlich passt, aber keine echte
+/// Statushistorie ist.
+table Dim_UnitStatus
+	lineageTag: 2bc7b9c0-eee5-5220-96fb-5fc9ab337fa8
+
+	/// Schlüssel Werk * 1.000.000 + Geschäftsjahr * 100 + Periode. Verknüpfung zu Fakt_SAP und Kommentare.
+	column Status_Key
+		dataType: int64
+		isKey
+		isHidden
+		formatString: 0
+		lineageTag: 4eb709df-310b-52e5-8a26-f5200fa442ef
+		summarizeBy: none
+		sourceColumn: Status_Key
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Werksnummer. Verknüpfung zu Dim_Unit.
+	column Werk
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 32bf2244-daf5-55c8-87ca-4e5b46d839a2
+		summarizeBy: none
+		sourceColumn: Werk
+
+		annotation SummarizationSetBy = Automatic
+
+	/// SAP-Periode 1-12 (1 = Oktober).
+	column Periode
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 8d90f070-ef5e-5615-a095-13a6bd34b097
+		summarizeBy: none
+		sourceColumn: Periode
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Erster Kalendertag der Periode. Verknüpfung zu Dim_Datum.
+	column Datum
+		dataType: dateTime
+		isHidden
+		formatString: dd.mm.yyyy
+		lineageTag: e06448d1-29c7-57c1-b68f-13bb507d52d8
+		summarizeBy: none
+		sourceColumn: Datum
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	/// Spätestes FIBU-Übergabedatum der Unit (nicht periodenbezogen).
+	column FIBU_Übergabe
+		dataType: dateTime
+		formatString: dd.mm.yyyy
+		lineageTag: c01d2b94-0254-530d-83ac-169f86aee810
+		summarizeBy: none
+		sourceColumn: FIBU_Übergabe
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	/// Spätestes Flash-Übergabedatum der Unit (nicht periodenbezogen).
+	column Flash_Übergabe
+		dataType: dateTime
+		formatString: dd.mm.yyyy
+		lineageTag: 4a967ace-adcd-5545-8403-03f135e55edd
+		summarizeBy: none
+		sourceColumn: Flash_Übergabe
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	/// Rohes Kennzeichen aus den Übergabedaten, bewertet gegen genau diese Periode: Abgerechnet (FIBU-Übergabe im Monat), Flash (Flash-Übergabe im Monat), Offen (FIBU-Übergabe im Vormonat), sonst Kein Kennzeichen.
+	column Kennzeichen
+		dataType: string
+		isHidden
+		lineageTag: 6c7fd735-eb3e-5541-8c5b-a5b8a4faf189
+		summarizeBy: none
+		sourceColumn: Kennzeichen
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Wahr, wenn die Unit in dieser Periode Actuals (SAP-Version 0) mit Wert <> 0 hat.
+	column Hat_Actuals
+		dataType: boolean
+		isHidden
+		lineageTag: 41f5982d-fa7e-5497-930e-5f53872593d7
+		summarizeBy: none
+		sourceColumn: Hat_Actuals
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Wahr, wenn die Unit in dieser Periode Budgetwerte (SAP-Version 20) mit Wert <> 0 hat.
+	column Hat_Budget
+		dataType: boolean
+		isHidden
+		lineageTag: eb8bb73e-41f9-555e-ad7d-e7eb00e48ec0
+		summarizeBy: none
+		sourceColumn: Hat_Budget
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Wahr, wenn die Unit in dieser Periode Forecastwerte (RF, RGF, 35, R12, RTD) mit Wert <> 0 hat.
+	column Hat_Forecast
+		dataType: boolean
+		isHidden
+		lineageTag: 7296c37b-439e-546e-9918-7dcbe5c00b30
+		summarizeBy: none
+		sourceColumn: Hat_Forecast
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Innenauftragsart der Unit (Kopie aus Dim_Unit, nur zur Szenario-Berechnung).
+	column Innenauftragsart
+		dataType: string
+		isHidden
+		lineageTag: e025e4a7-c0ab-52cc-b38f-3371e6b1c504
+		summarizeBy: none
+		sourceColumn: Innenauftragsart
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Vertragsart der Unit (Kopie aus Dim_Unit, nur zur Szenario-Berechnung).
+	column Vertragsart
+		dataType: string
+		isHidden
+		lineageTag: b631951f-3952-5ab7-b03e-1705a0db84b1
+		summarizeBy: none
+		sourceColumn: Vertragsart
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Auswertbarer Status der Unit in dieser Periode.
+	/// Inaktiv          - weder Actuals (0) noch Budget (20) noch Forecast (RF/RGF/35/R12/RTD). Mit Abrechnung oder Flash ist nicht zu rechnen; die Unit fällt aus dem Flash.
+	/// Kein Kennzeichen - Werte vorhanden, aber weder Abrechnung noch Flash gemeldet. Echte Kennzeichnung, wird als Actuals gerechnet.
+	/// Abgerechnet      - FIBU-Übergabe in diesem Monat.
+	/// Flash            - Flash-Übergabe in diesem Monat.
+	/// Offen            - FIBU-Übergabe im Vormonat, in diesem Monat noch nichts.
+	column Status
+		dataType: string
+		lineageTag: 422dc4cc-70b2-5d94-8a0a-58d450bc7801
+		summarizeBy: none
+		sourceColumn: Status
+		sortByColumn: Status_Sortierung
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Fachliche Sortierreihenfolge für Status.
+	column Status_Sortierung
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: e55a1b81-86a6-5352-8423-cf7ef085909a
+		summarizeBy: none
+		sourceColumn: Status_Sortierung
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Welche Wertart bildet für diese Unit in dieser Periode den Flash ab?
+	/// Ohne Wertung - Status Inaktiv, kein Beitrag zum Flash.
+	/// ACT          - Innenauftragsart I oder N, oder Status Abgerechnet / Kein Kennzeichen.
+	/// FC           - Status Offen, oder Status Flash bei Vertragsart PR / M / XK / XP.
+	/// V            - alles Übrige.
+	/// Die Kanne-Sonderlogik ist bewusst NICHT hier, sondern in der Measure Flash: ein Slicer kann keine berechnete Spalte umsteuern.
+	column Flash_Szenario = ```
+			VAR _Status = Dim_UnitStatus[Status]
+			VAR _Innenauftragsart = Dim_UnitStatus[Innenauftragsart]
+			VAR _Vertragsart = Dim_UnitStatus[Vertragsart]
+			RETURN
+			    SWITCH(
+			        TRUE(),
+			        _Status = "Inaktiv", "Ohne Wertung",
+			        _Innenauftragsart IN { "I", "N" } || _Status IN { "Kein Kennzeichen", "Abgerechnet" }, "ACT",
+			        _Status = "Offen" || ( _Status = "Flash" && _Vertragsart IN { "PR", "M", "XK", "XP" } ), "FC",
+			        "V"
+			    )
+			```
+		dataType: string
+		lineageTag: ad772d62-ac5a-5ea3-b793-946d19f45eef
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Dim_UnitStatus = m
+		mode: import
+		queryGroup: Dimensionen
+		source = ```
+				let
+				    Perioden = List.Numbers(Startperiode, Aktuelle_Periode - Startperiode + 1),
+
+				    // Eine Zeile je Werk (Stammdaten sind je Werk eindeutig)
+				    Werke = Table.Distinct(Table.SelectColumns(Quelle_Unit, {"betrieb", "innenauftragsart", "vertragsart"}), {"betrieb"}),
+				    WerkeUmbenannt = Table.RenameColumns(Werke, {{"betrieb", "Werk"}, {"innenauftragsart", "Innenauftragsart"}, {"vertragsart", "Vertragsart"}}),
+
+				    // Kreuzprodukt Werk x Periode
+				    MitPerioden = Table.ExpandListColumn(Table.AddColumn(WerkeUmbenannt, "Periode", each Perioden), "Periode"),
+				    PeriodeTyp = Table.TransformColumnTypes(MitPerioden, {{"Periode", Int64.Type}}),
+				    MitDatum = Table.AddColumn(PeriodeTyp, "Datum", each fnPeriodeStart(Geschäftsjahr, [Periode]), type date),
+
+				    // Übergabedaten je Werk
+				    Uebergabe = Table.Buffer(Quelle_Übergabe),
+				    MitUebergabe = Table.NestedJoin(MitDatum, {"Werk"}, Uebergabe, {"Werk"}, "Uebergabe", JoinKind.LeftOuter),
+				    UebergabeExpandiert = Table.ExpandTableColumn(MitUebergabe, "Uebergabe", {"FIBU_Übergabe", "Flash_Übergabe"}),
+
+				    // Datenlage je Werk und Periode (fehlende Zeile = keine Werte)
+				    Datenlage = Table.Buffer(Quelle_Datenlage),
+				    MitDatenlage = Table.NestedJoin(UebergabeExpandiert, {"Werk", "Periode"}, Datenlage, {"Werk", "Periode"}, "Datenlage", JoinKind.LeftOuter),
+				    DatenlageExpandiert = Table.ExpandTableColumn(MitDatenlage, "Datenlage", {"Hat_Actuals", "Hat_Budget", "Hat_Forecast"}),
+				    OhneNull = Table.ReplaceValue(DatenlageExpandiert, null, false, Replacer.ReplaceValue, {"Hat_Actuals", "Hat_Budget", "Hat_Forecast"}),
+
+				    // Kennzeichen: dieselbe Regel wie früher in Übergabedatum, nur je Periode statt einmal global
+				    MitKennzeichen = Table.AddColumn(OhneNull, "Kennzeichen", each
+				        let
+				            MonatStart = [Datum],
+				            MonatEnde = Date.AddMonths(MonatStart, 1),
+				            VormonatStart = Date.AddMonths(MonatStart, -1),
+				            Fibu = [FIBU_Übergabe],
+				            Flash = [Flash_Übergabe],
+				            FibuAktuell = Fibu <> null and Fibu >= MonatStart and Fibu < MonatEnde,
+				            FlashAktuell = Flash <> null and Flash >= MonatStart and Flash < MonatEnde,
+				            FibuVormonat = Fibu <> null and Fibu >= VormonatStart and Fibu < MonatStart
+				        in
+				            if FibuAktuell then "Abgerechnet"
+				            else if FlashAktuell then "Flash"
+				            else if FibuVormonat then "Offen"
+				            else "Kein Kennzeichen", type text),
+
+				    // Status: ohne jeden Wert (Actuals, Budget, Forecast) gibt es nichts zu kennzeichnen -> Inaktiv
+				    MitStatus = Table.AddColumn(MitKennzeichen, "Status", each if [Hat_Actuals] or [Hat_Budget] or [Hat_Forecast] then [Kennzeichen] else "Inaktiv", type text),
+				    MitSortierung = Table.AddColumn(MitStatus, "Status_Sortierung", each
+				        if [Status] = "Abgerechnet" then 1
+				        else if [Status] = "Flash" then 2
+				        else if [Status] = "Offen" then 3
+				        else if [Status] = "Kein Kennzeichen" then 4
+				        else 5, Int64.Type),
+
+				    // Schlüssel exakt wie in Quelle_SAP gebildet
+				    MitSchluessel = Table.AddColumn(MitSortierung, "Status_Key", each [Werk] * 1000000 + Geschäftsjahr * 100 + [Periode], Int64.Type),
+
+				    Typen = Table.TransformColumnTypes(MitSchluessel, {{"Werk", Int64.Type}, {"Hat_Actuals", type logical}, {"Hat_Budget", type logical}, {"Hat_Forecast", type logical}, {"FIBU_Übergabe", type date}, {"Flash_Übergabe", type date}}),
+				    Ergebnis = Table.SelectColumns(Typen, {"Status_Key", "Werk", "Periode", "Datum", "FIBU_Übergabe", "Flash_Übergabe", "Kennzeichen", "Hat_Actuals", "Hat_Budget", "Hat_Forecast", "Innenauftragsart", "Vertragsart", "Status", "Status_Sortierung"})
+				in
+				    Ergebnis
+				```
+
+	annotation PBI_ResultType = Table

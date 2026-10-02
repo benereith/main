@@ -1,0 +1,173 @@
+/// Units (Werke) mit Organisationszuordnung. Reine Stammdaten ohne Zeitbezug: alles, was sich je Monat ändert
+/// (Abrechnungsstatus, Flash-Szenario), liegt in Dim_UnitStatus.
+table Dim_Unit
+	lineageTag: de03f84f-83ea-596a-a992-9cd93c832899
+
+	/// Werksnummer (Schlüssel). Verknüpfung zu Dim_UnitStatus.
+	column Werk
+		dataType: int64
+		isKey
+		isHidden
+		formatString: 0
+		lineageTag: 801810d1-f43d-538b-b4f9-27db6d0b4e74
+		summarizeBy: none
+		sourceColumn: Werk
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Werksnummer (vierstellig) und Bezeichnung, z. B. '0127 - Musterbetrieb'. Standardfeld zur Anzeige einer Unit.
+	column 'Werk - Bezeichnung'
+		dataType: string
+		lineageTag: cad554ee-98aa-5817-a6fe-01eba406aeb3
+		summarizeBy: none
+		sourceColumn: Werk - Bezeichnung
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Reine Bezeichnung des Betriebs ohne Werksnummer.
+	column Betriebsbezeichnung
+		dataType: string
+		isHidden
+		lineageTag: 06bd5489-79b5-5f41-8dd7-6b455597f532
+		summarizeBy: none
+		sourceColumn: Betriebsbezeichnung
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Managementbereich der Unit (Eurest, Food Affairs, Kanne, Leonardi, Medirest). Der Wert 'Kanne' steuert die Sonderlogik der Measure Flash.
+	column Managementbereich
+		dataType: string
+		lineageTag: f2ce8397-ab60-5ddc-9b14-3fa79e7b92c3
+		summarizeBy: none
+		sourceColumn: Managementbereich
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Region der Unit.
+	column Region
+		dataType: string
+		lineageTag: effca2a9-2d0c-53e7-825e-c811df13d19c
+		summarizeBy: none
+		sourceColumn: Region
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Bezirk der Unit.
+	column Bezirk
+		dataType: string
+		lineageTag: 6edf629d-a43e-5882-b1a5-be48fbba8093
+		summarizeBy: none
+		sourceColumn: Bezirk
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Sektor der Unit.
+	column Sektor
+		dataType: string
+		lineageTag: 83aa2259-830f-50c0-a071-803d91b502d8
+		summarizeBy: none
+		sourceColumn: Sektor
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Plan-Betriebe Roll, Plan-Betriebe ITY oder Real-Betriebe. Ableitung über die Listen Planbetriebe_Roll und Planbetriebe_ITY.
+	column Betriebstyp
+		dataType: string
+		lineageTag: 5a159aa6-8c4f-5ca8-ab34-de3021b74b76
+		summarizeBy: none
+		sourceColumn: Betriebstyp
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Vertragsart der Unit (z. B. PR, M, XK, XP). Steuert in Dim_UnitStatus, ob eine Flash-Meldung als Forecast gilt.
+	column Vertragsart
+		dataType: string
+		lineageTag: ecc0483e-a714-5c6f-947f-fcea1c8ef665
+		summarizeBy: none
+		sourceColumn: Vertragsart
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Innenauftragsart der Unit. I und N werden im Flash immer als Actuals gerechnet, P wird per Berichtsfilter ausgeschlossen.
+	column Innenauftragsart
+		dataType: string
+		lineageTag: 9b96f96f-ed7a-5a42-ab14-d3157b3c1cb7
+		summarizeBy: none
+		sourceColumn: Innenauftragsart
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Buchungskreis der Unit.
+	column Buchungskreis
+		dataType: int64
+		formatString: 0
+		lineageTag: 918e4741-4405-51f2-9726-7f81c08d64ea
+		summarizeBy: none
+		sourceColumn: Buchungskreis
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Service-Kennzeichen der Unit.
+	column Service
+		dataType: int64
+		formatString: 0
+		lineageTag: 7a96ed64-8823-518d-9564-4cc104c4ab15
+		summarizeBy: none
+		sourceColumn: Service
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Verantwortungsbereich der Unit.
+	column Verantwortungsbereich
+		dataType: int64
+		formatString: 0
+		lineageTag: 0b4381c4-7416-5b4f-963b-5c6032d4cea6
+		summarizeBy: none
+		sourceColumn: Verantwortungsbereich
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Organisationshierarchie Managementbereich > Region > Bezirk > Werk. Grundlage des Hierarchie-Slicers.
+	hierarchy Organisation
+		lineageTag: fa71ce0f-4d9c-556d-8746-567f9eb924e2
+
+		level Managementbereich
+			lineageTag: 38a4b6da-0828-5ee3-91f3-e45d4a36b82a
+			column: Managementbereich
+
+		level Region
+			lineageTag: 6ca84c13-fe3d-574f-bacd-054ed14a9ee8
+			column: Region
+
+		level Bezirk
+			lineageTag: 84163b4e-f202-588a-8c89-1a3c21d694e9
+			column: Bezirk
+
+		level 'Werk - Bezeichnung'
+			lineageTag: b6b4964a-feb5-5c75-971d-04970367bfeb
+			column: 'Werk - Bezeichnung'
+
+	partition Dim_Unit = m
+		mode: import
+		queryGroup: Dimensionen
+		source = ```
+				let
+				    Basis = Quelle_Unit,
+				    Werkname = Table.AddColumn(Basis, "Werk - Bezeichnung", each Text.Combine({Text.PadStart(Text.From([betrieb], "de-DE"), 4, "0"), " - ", [bezeichnung_betrieb]}), type text),
+				    Betriebstyp = Table.AddColumn(Werkname, "Betriebstyp", each
+				        if List.Contains(Planbetriebe_Roll, [betrieb]) then "Plan-Betriebe Roll"
+				        else if List.Contains(Planbetriebe_ITY, [betrieb]) then "Plan-Betriebe ITY"
+				        else "Real-Betriebe", type text),
+				    Umbenannt = Table.RenameColumns(Betriebstyp, {
+				        {"betrieb", "Werk"}, {"bezeichnung_betrieb", "Betriebsbezeichnung"}, {"bezeichnung_management", "Managementbereich"},
+				        {"bezeichnung_region", "Region"}, {"bezirk", "Bezirk"}, {"sektor", "Sektor"}, {"vertragsart", "Vertragsart"},
+				        {"innenauftragsart", "Innenauftragsart"}, {"buchungskreis", "Buchungskreis"}, {"service", "Service"},
+				        {"verantwortungsbereich", "Verantwortungsbereich"}
+				    }),
+				    Typen = Table.TransformColumnTypes(Umbenannt, {{"Werk", Int64.Type}, {"Buchungskreis", Int64.Type}, {"Service", Int64.Type}, {"Verantwortungsbereich", Int64.Type}}),
+				    Ergebnis = Table.SelectColumns(Typen, {"Werk", "Werk - Bezeichnung", "Betriebsbezeichnung", "Managementbereich", "Region", "Bezirk", "Sektor", "Betriebstyp", "Vertragsart", "Innenauftragsart", "Buchungskreis", "Service", "Verantwortungsbereich"})
+				in
+				    Ergebnis
+				```
+
+	annotation PBI_ResultType = Table

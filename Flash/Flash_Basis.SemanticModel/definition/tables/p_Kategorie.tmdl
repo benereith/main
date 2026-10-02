@@ -1,0 +1,43 @@
+/// Steuertabelle ohne Beziehung: Auswahlliste der Kommentarkategorien für die Erfassung (Translytical Task Flow).
+/// Die Liste muss zu KATEGORIEN in der User Data Function passen.
+table p_Kategorie
+	lineageTag: 69cb8557-210a-50fa-8b69-041339afd731
+
+	/// Kommentarkategorie zur Auswahl in der Erfassungsmaske.
+	column Kategorie
+		dataType: string
+		lineageTag: d5d9411b-224c-58dd-bd80-b4fc16513d07
+		summarizeBy: none
+		sourceColumn: [Kategorie]
+		sortByColumn: Sortierung
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Sortierung der Kategorien.
+	column Sortierung
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: f8f88b76-9eb7-55ff-9993-b40ca68154aa
+		summarizeBy: none
+		sourceColumn: [Sortierung]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition p_Kategorie = calculated
+		mode: import
+		source = ```
+				DATATABLE(
+				    "Kategorie", STRING,
+				    "Sortierung", INTEGER,
+				    {
+				        { "Abrechnung", 1 },
+				        { "CoS", 2 },
+				        { "Overhead", 3 },
+				        { "Umsatz", 4 },
+				        { "Sonstiges", 5 }
+				    }
+				)
+				```
+
+	annotation PBI_ResultType = Table

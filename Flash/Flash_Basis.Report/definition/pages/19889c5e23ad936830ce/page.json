@@ -1,0 +1,66 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/2.1.0/schema.json",
+  "name": "19889c5e23ad936830ce",
+  "displayName": "Flop UPC",
+  "displayOption": "FitToPage",
+  "height": 1080,
+  "width": 1920,
+  "objects": {
+    "background": [
+      {
+        "properties": {
+          "color": {
+            "solid": {
+              "color": {
+                "expr": {
+                  "Literal": {
+                    "Value": "'#F4F3F0'"
+                  }
+                }
+              }
+            }
+          },
+          "transparency": {
+            "expr": {
+              "Literal": {
+                "Value": "0D"
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "5e9d189e0cb4534ff496",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Dim_Unit"
+              }
+            },
+            "Property": "Vertragsart"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "486f9bdc8d31b1e1521a",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Dim_Unit"
+              }
+            },
+            "Property": "Betriebstyp"
+          }
+        },
+        "type": "Categorical"
+      }
+    ]
+  }
+}
